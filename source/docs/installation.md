@@ -55,7 +55,7 @@ omnitrace-1.0.0-ubuntu-18.04-ROCm-405000-OMPT-PAPI-Python3.sh
 omnitrace-1.0.0-ubuntu-20.04-ROCm-50000-OMPT-PAPI-Python3.sh
 ```
 
-Any of the EXTRA fields with a cmake build option above (e.g. PAPI) or no link requirements (e.g. OMPT) have
+Any of the EXTRA fields with a cmake build option (e.g. PAPI, see below) or no link requirements (e.g. OMPT) have
 self-contained support for these packages.
 
 ### Download the appropriate binary distribution
@@ -73,7 +73,7 @@ mkdir /opt/omnitrace
 ### Run the installer script
 
 ```shell
-./omnitrace-1.0.0-ubuntu-18.04-ROCm-405000-OMPT-PAPI.sh --prefix=/opt/omnitrace
+./omnitrace-1.0.0-ubuntu-18.04-ROCm-405000-OMPT-PAPI.sh --prefix=/opt/omnitrace --exclude-subdir
 ```
 
 ## Installing Omnitrace from source
@@ -131,17 +131,15 @@ and Dyninst requires TBB), and the CMake option to build the package alongside o
 - [PAPI](https://icl.utk.edu/papi/)
 - MPI
   - `OMNITRACE_USE_MPI` will enable full MPI support
-  - `OMNITRACE_USE_MPI_HEADERS` will enable wrapping all MPI function calls
-    - If you have an OpenMPI installation, it is highly recommended to enable this option
-- Several optional third-party profiling tools supported by timemory (e.g. CrayPAT, etc.)
-  - [Caliper](https://github.com/LLNL/Caliper)
-  - [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
+  - `OMNITRACE_USE_MPI_HEADERS` will enable wrapping of the dynamically-linked MPI C function calls
+    - By default, if an OpenMPI MPI distribution cannot be found, omnitrace will use a local copy of the OpenMPI mpi.h
+- Several optional third-party profiling tools supported by timemory (e.g. [Caliper](https://github.com/LLNL/Caliper), [TAU](https://www.cs.uoregon.edu/research/tau/home.php), CrayPAT, etc.)
 
 | Third-Party Library | CMake Enable Option                        | CMake Build Option                   |
 |---------------------|--------------------------------------------|--------------------------------------|
 | PAPI                | `OMNITRACE_USE_PAPI` (default: ON)         | `OMNITRACE_BUILD_PAPI` (default: ON) |
 | MPI                 | `OMNITRACE_USE_MPI` (default: OFF)         |                                      |
-| MPI (header-only)   | `OMNITRACE_USE_MPI_HEADERS` (default: OFF) |                                      |
+| MPI (header-only)   | `OMNITRACE_USE_MPI_HEADERS` (default: ON)  |                                      |
 
 ### Installing DynInst
 

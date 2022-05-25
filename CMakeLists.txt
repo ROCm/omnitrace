@@ -107,7 +107,7 @@ omnitrace_add_option(
     OMNITRACE_USE_ROCM_SMI "Enable rocm-smi support for power/temp/etc. sampling"
     ${OMNITRACE_USE_HIP})
 omnitrace_add_option(OMNITRACE_USE_MPI_HEADERS
-                     "Enable wrapping MPI functions w/o enabling MPI dependency" OFF)
+                     "Enable wrapping MPI functions w/o enabling MPI dependency" ON)
 omnitrace_add_option(OMNITRACE_USE_OMPT "Enable OpenMP tools support" ON)
 omnitrace_add_option(OMNITRACE_USE_PYTHON "Enable Python support" OFF)
 omnitrace_add_option(OMNITRACE_BUILD_DYNINST "Build dyninst from submodule" OFF)
