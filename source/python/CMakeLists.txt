@@ -5,7 +5,8 @@
 # ########################################################################################
 
 if(OMNITRACE_BUILD_STATIC_LIBSTDCXX)
-    omnitrace_message(FATAL_ERROR "static libstdc++ is not compatible with python bindings")
+    omnitrace_message(FATAL_ERROR
+                      "static libstdc++ is not compatible with python bindings")
 endif()
 
 # if set, will screw up loading library
