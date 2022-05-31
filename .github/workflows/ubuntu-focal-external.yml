@@ -17,17 +17,27 @@ jobs:
       image: jrmadsen/omnitrace-ci:ubuntu-20.04
     strategy:
       matrix:
-        compiler: ['g++-7', 'g++-8', 'g++-9']
+        compiler: ['g++-7', 'g++-8']
         lto: ['OFF']
         strip: ['OFF']
+        python: ['ON']
         build-type: ['Release']
         mpi-headers: ['OFF']
         static-libgcc: ['OFF']
         static-libstdcxx: ['OFF']
         include:
+          - compiler: 'g++-9'
+            lto: 'OFF'
+            strip: 'ON'
+            python: 'OFF'
+            build-type: 'Release'
+            mpi-headers: 'ON'
+            static-libgcc: 'ON'
+            static-libstdcxx: 'ON'
           - compiler: 'g++-10'
             lto: 'OFF'
             strip: 'ON'
+            python: 'ON'
             build-type: 'RelWithDebInfo'
             mpi-headers: 'ON'
             static-libgcc: 'ON'
@@ -35,6 +45,7 @@ jobs:
           - compiler: 'g++-11'
             lto: 'ON'
             strip: 'ON'
+            python: 'OFF'
             build-type: 'Release'
             mpi-headers: 'ON'
             static-libgcc: 'ON'
@@ -79,7 +90,7 @@ jobs:
           -DOMNITRACE_USE_HIP=OFF
           -DOMNITRACE_USE_OMPT=OFF
           -DOMNITRACE_USE_PAPI=OFF
-          -DOMNITRACE_USE_PYTHON=ON
+          -DOMNITRACE_USE_PYTHON=${{ matrix.python }}
           -DOMNITRACE_USE_MPI_HEADERS=${{ matrix.mpi-headers }}
           -DOMNITRACE_STRIP_LIBRARIES=${{ matrix.strip }}
           -DOMNITRACE_BUILD_LTO=${{ matrix.lto }}
