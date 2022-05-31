@@ -17,19 +17,28 @@ jobs:
       image: jrmadsen/omnitrace-ci:ubuntu-20.04
     strategy:
       matrix:
-        compiler: ['g++-8', 'g++-9', 'g++-10']
-        link: ['OFF']
+        compiler: ['g++-7', 'g++-8', 'g++-9']
+        lto: ['OFF']
+        strip: ['OFF']
         build-type: ['Release']
         mpi-headers: ['OFF']
+        static-libgcc: ['OFF']
+        static-libstdcxx: ['OFF']
         include:
-          - compiler: 'g++-7'
-            link: 'OFF'
+          - compiler: 'g++-10'
+            lto: 'OFF'
+            strip: 'ON'
             build-type: 'RelWithDebInfo'
             mpi-headers: 'ON'
+            static-libgcc: 'ON'
+            static-libstdcxx: 'OFF'
           - compiler: 'g++-11'
-            link: 'ON'
+            lto: 'ON'
+            strip: 'ON'
             build-type: 'Release'
             mpi-headers: 'ON'
+            static-libgcc: 'ON'
+            static-libstdcxx: 'OFF'
 
     steps:
     - uses: actions/checkout@v2
@@ -72,10 +81,10 @@ jobs:
           -DOMNITRACE_USE_PAPI=OFF
           -DOMNITRACE_USE_PYTHON=ON
           -DOMNITRACE_USE_MPI_HEADERS=${{ matrix.mpi-headers }}
-          -DOMNITRACE_BUILD_LTO=${{ matrix.link }}
-          -DOMNITRACE_BUILD_STATIC_LIBGCC=${{ matrix.link }}
-          -DOMNITRACE_BUILD_STATIC_LIBSTDCXX=${{ matrix.link }}
-          -DOMNITRACE_STRIP_LIBRARIES=${{ matrix.link }}
+          -DOMNITRACE_STRIP_LIBRARIES=${{ matrix.strip }}
+          -DOMNITRACE_BUILD_LTO=${{ matrix.lto }}
+          -DOMNITRACE_BUILD_STATIC_LIBGCC=${{ matrix.static-libgcc }}
+          -DOMNITRACE_BUILD_STATIC_LIBSTDCXX=${{ matrix.static-libstdcxx }}
           -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
           -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9"
 
