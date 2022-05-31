@@ -9,7 +9,7 @@
 : ${LTO:="OFF"}
 : ${STRIP:="ON"}
 : ${LIBGCC:="ON"}
-: ${LIBSTDCXX:="ON"}
+: ${LIBSTDCXX:="OFF"}
 : ${MAX_THREADS:=2048}
 : ${PERFETTO_TOOLS:="ON"}
 : ${HIDDEN_VIZ:="ON"}
