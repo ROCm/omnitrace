@@ -68,8 +68,12 @@ PERFETTO_DEFINE_CATEGORIES(PERFETTO_CATEGORIES);
 
 #include "library/debug.hpp"
 
+#include <map>
+#include <memory>
 #include <string>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 namespace omnitrace
 {
