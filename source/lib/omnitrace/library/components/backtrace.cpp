@@ -28,8 +28,6 @@
 #include "library/perfetto.hpp"
 #include "library/ptl.hpp"
 #include "library/sampling.hpp"
-#include "timemory/components/rusage/components.hpp"
-#include "timemory/components/rusage/types.hpp"
 
 #include <timemory/backends/papi.hpp>
 #include <timemory/backends/threading.hpp>
@@ -38,6 +36,8 @@
 #include <timemory/components/papi/extern.hpp>
 #include <timemory/components/papi/papi_array.hpp>
 #include <timemory/components/papi/papi_vector.hpp>
+#include <timemory/components/rusage/components.hpp>
+#include <timemory/components/rusage/types.hpp>
 #include <timemory/components/timing/backends.hpp>
 #include <timemory/components/trip_count/extern.hpp>
 #include <timemory/macros.hpp>
