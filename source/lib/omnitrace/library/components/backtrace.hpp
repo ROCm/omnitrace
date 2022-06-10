@@ -28,7 +28,6 @@
 #include "library/thread_data.hpp"
 #include "library/timemory.hpp"
 
-#include <bits/stdint-uintn.h>
 #include <timemory/components/base.hpp>
 #include <timemory/components/papi/papi_array.hpp>
 #include <timemory/components/papi/types.hpp>
