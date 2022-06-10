@@ -28,6 +28,7 @@
 #include "library/thread_data.hpp"
 #include "library/timemory.hpp"
 
+#include <bits/stdint-uintn.h>
 #include <timemory/components/base.hpp>
 #include <timemory/components/papi/papi_array.hpp>
 #include <timemory/components/papi/types.hpp>
@@ -57,7 +58,6 @@ struct backtrace
 
     using data_t            = std::array<char[buffer_width], stack_depth>;
     using clock_type        = std::chrono::steady_clock;
-    using time_point_type   = typename clock_type::time_point;
     using value_type        = void;
     using hw_counters       = tim::component::papi_array<num_hw_counters>;
     using hw_counter_data_t = typename hw_counters::value_type;
@@ -88,7 +88,7 @@ struct backtrace
     bool                     empty() const;
     size_t                   size() const;
     std::vector<std::string> get() const;
-    time_point_type          get_timestamp() const;
+    uint64_t                 get_timestamp() const;
     int64_t                  get_thread_cpu_timestamp() const;
 
 private:
@@ -97,8 +97,8 @@ private:
     int64_t           m_mem_peak   = 0;
     int64_t           m_ctx_swch   = 0;
     int64_t           m_page_flt   = 0;
+    uint64_t          m_ts         = {};
     size_t            m_size       = 0;
-    time_point_type   m_ts         = {};
     data_t            m_data       = {};
     hw_counter_data_t m_hw_counter = {};
 };
