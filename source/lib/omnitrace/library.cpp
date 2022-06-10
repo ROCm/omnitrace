@@ -744,6 +744,7 @@ omnitrace_init_tooling_hidden()
                 _data.allocator.destroy(_v);
                 _data.allocator.deallocate(_v, 1);
                 _data.bundles.erase(_data.bundles.begin() + (i - 1));
+                break;
             }
         }
     };
