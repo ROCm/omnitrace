@@ -696,8 +696,10 @@ omnitrace_init_tooling_hidden()
             if(get_state() != State::Finalized)
             {
                 if(get_use_sampling()) sampling::shutdown();
-                if(thread_data<omnitrace_thread_bundle_t>::instance())
-                    thread_data<omnitrace_thread_bundle_t>::instance()->stop();
+                auto& _thr_bundle = thread_data<omnitrace_thread_bundle_t>::instance();
+                if(_thr_bundle && _thr_bundle->get<comp::wall_clock>() &&
+                   _thr_bundle->get<comp::wall_clock>()->get_is_running())
+                    _thr_bundle->stop();
             }
         } };
         (void) _thread_setup;

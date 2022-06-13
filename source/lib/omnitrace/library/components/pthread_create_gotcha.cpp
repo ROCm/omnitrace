@@ -136,8 +136,10 @@ pthread_create_gotcha::wrapper::operator()() const
         if(_tid >= 0)
         {
             get_execution_time(_tid)->second = comp::wall_clock::record();
-            if(thread_bundle_data_t::instances().at(_tid))
-                thread_bundle_data_t::instances().at(_tid)->stop();
+            auto& _thr_bundle                = thread_bundle_data_t::instance();
+            if(_thr_bundle && _thr_bundle->get<comp::wall_clock>() &&
+               _thr_bundle->get<comp::wall_clock>()->get_is_running())
+                _thr_bundle->stop();
             pthread_create_gotcha::shutdown(_tid);
         }
         set_thread_state(ThreadState::Completed);
@@ -150,9 +152,13 @@ pthread_create_gotcha::wrapper::operator()() const
     {
         _tid = threading::get_id();
         threading::set_thread_name(TIMEMORY_JOIN(" ", "Thread", _tid).c_str());
-        thread_bundle_data_t::instance(thread_bundle_data_t::construct_on_init{});
-        if(thread_bundle_data_t::instances().at(_tid))
+        if(!thread_bundle_data_t::instances().at(_tid))
+        {
+            thread_data<omnitrace_thread_bundle_t>::construct(
+                TIMEMORY_JOIN("", get_exe_name(), "/thread-", threading::get_id()),
+                quirk::config<quirk::auto_start>{});
             thread_bundle_data_t::instances().at(_tid)->start();
+        }
         if(bundles && bundles_mutex)
         {
             std::unique_lock<std::mutex> _lk{ *bundles_mutex };
