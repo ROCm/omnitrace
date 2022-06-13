@@ -162,10 +162,10 @@ Pushing custom region :: run(20) x 100
 
 [omnitrace][86267][0] omnitrace : 5.190895 sec wall_clock,    2.748 mb peak_rss, 6.330000 sec cpu_clock,  121.9 % cpu_util [laps: 1]
 [omnitrace][86267][0] user-api.inst/thread-0 : 5.078713 sec wall_clock, 4.722415 sec thread_cpu_clock,   93.0 % thread_cpu_util,    1.276 mb peak_rss [laps: 1]
-[omnitrace][86267][0] user-api.inst/thread-1 : 0.322248 sec wall_clock, 0.322191 sec thread_cpu_clock,  100.0 % thread_cpu_util,    1.000 mb peak_rss [laps: 2]
-[omnitrace][86267][0] user-api.inst/thread-2 : 0.323255 sec wall_clock, 0.323194 sec thread_cpu_clock,  100.0 % thread_cpu_util,    0.000 mb peak_rss [laps: 2]
-[omnitrace][86267][0] user-api.inst/thread-3 : 0.323569 sec wall_clock, 0.323484 sec thread_cpu_clock,  100.0 % thread_cpu_util,    1.092 mb peak_rss [laps: 2]
-[omnitrace][86267][0] user-api.inst/thread-4 : 0.324178 sec wall_clock, 0.324057 sec thread_cpu_clock,  100.0 % thread_cpu_util,    1.184 mb peak_rss [laps: 2]
+[omnitrace][86267][0] user-api.inst/thread-1 : 0.322248 sec wall_clock, 0.322191 sec thread_cpu_clock,  100.0 % thread_cpu_util,    1.000 mb peak_rss [laps: 1]
+[omnitrace][86267][0] user-api.inst/thread-2 : 0.323255 sec wall_clock, 0.323194 sec thread_cpu_clock,  100.0 % thread_cpu_util,    0.000 mb peak_rss [laps: 1]
+[omnitrace][86267][0] user-api.inst/thread-3 : 0.323569 sec wall_clock, 0.323484 sec thread_cpu_clock,  100.0 % thread_cpu_util,    1.092 mb peak_rss [laps: 1]
+[omnitrace][86267][0] user-api.inst/thread-4 : 0.324178 sec wall_clock, 0.324057 sec thread_cpu_clock,  100.0 % thread_cpu_util,    1.184 mb peak_rss [laps: 1]
 [omnitrace][86267][0] Post-processing 51 cpu frequency and memory usage entries...
 
 [omnitrace][wall_clock]|0> Outputting 'omnitrace-user-api.inst-output/wall_clock.json'...
