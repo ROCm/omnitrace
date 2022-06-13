@@ -109,6 +109,8 @@ pthread_create_gotcha::wrapper::wrapper(routine_t _routine, void* _arg,
 void*
 pthread_create_gotcha::wrapper::operator()() const
 {
+    using thread_bundle_data_t = thread_data<omnitrace_thread_bundle_t>;
+
     if(is_shutdown && *is_shutdown)
     {
         if(m_promise) m_promise->set_value();
@@ -134,6 +136,8 @@ pthread_create_gotcha::wrapper::operator()() const
         if(_tid >= 0)
         {
             get_execution_time(_tid)->second = comp::wall_clock::record();
+            if(thread_bundle_data_t::instances().at(_tid))
+                thread_bundle_data_t::instances().at(_tid)->stop();
             pthread_create_gotcha::shutdown(_tid);
         }
         set_thread_state(ThreadState::Completed);
@@ -146,6 +150,9 @@ pthread_create_gotcha::wrapper::operator()() const
     {
         _tid = threading::get_id();
         threading::set_thread_name(TIMEMORY_JOIN(" ", "Thread", _tid).c_str());
+        thread_bundle_data_t::instance(thread_bundle_data_t::construct_on_init{});
+        if(thread_bundle_data_t::instances().at(_tid))
+            thread_bundle_data_t::instances().at(_tid)->start();
         if(bundles && bundles_mutex)
         {
             std::unique_lock<std::mutex> _lk{ *bundles_mutex };

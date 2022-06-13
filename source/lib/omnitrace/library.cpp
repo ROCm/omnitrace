@@ -1123,7 +1123,6 @@ omnitrace_finalize_hidden(void)
         if(itr && itr->get<comp::wall_clock>() &&
            !itr->get<comp::wall_clock>()->get_is_running())
         {
-            continue;
             std::string _msg = JOIN("", *itr);
             auto        _pos = _msg.find(">>>  ");
             if(_pos != std::string::npos) _msg = _msg.substr(_pos + 5);
