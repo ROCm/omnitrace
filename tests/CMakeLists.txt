@@ -106,7 +106,7 @@ option(
     "Enabled --allow-run-as-root in MPI tests with OpenMPI. Enable with care! Should only be in docker containers"
     OFF)
 mark_as_advanced(OMNITRACE_CI_MPI_RUN_AS_ROOT)
-if("$ENV{USER}" STREQUAL "root" AND OMNITRACE_CI_MPI_RUN_AS_ROOT)
+if(OMNITRACE_CI_MPI_RUN_AS_ROOT)
     execute_process(
         COMMAND ${MPIEXEC_EXECUTABLE} --allow-run-as-root --help
         RESULT_VARIABLE _mpiexec_allow_run_as_root
