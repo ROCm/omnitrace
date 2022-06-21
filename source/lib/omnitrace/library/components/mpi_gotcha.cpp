@@ -232,12 +232,12 @@ mpi_gotcha::audit(const gotcha_data_t& _data, audit::incoming, comm_t _comm, int
     omnitrace_push_trace_hidden(_data.tool_id.c_str());
     if(_data.tool_id == "MPI_Comm_rank")
     {
-        m_comm_val = reinterpret_cast<uintptr_t>(_comm);
+        m_comm_val = (uintptr_t) _comm;  // NOLINT
         m_rank_ptr = _val;
     }
     else if(_data.tool_id == "MPI_Comm_size")
     {
-        m_comm_val = reinterpret_cast<uintptr_t>(_comm);
+        m_comm_val = (uintptr_t) _comm;  // NOLINT
         m_size_ptr = _val;
     }
     else
