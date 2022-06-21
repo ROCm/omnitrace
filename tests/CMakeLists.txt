@@ -826,7 +826,20 @@ omnitrace_add_test(
 #
 # -------------------------------------------------------------------------------------- #
 
-if(TARGET parallel-overhead)
+set(_VALID_PTRACE_SCOPE OFF)
+if(EXISTS "/proc/sys/kernel/yama/ptrace_scope")
+    file(READ "/proc/sys/kernel/yama/ptrace_scope" _PTRACE_SCOPE LIMIT 1)
+    if("${_PTRACE_SCOPE}" EQUAL 0)
+        set(_VALID_PTRACE_SCOPE ON)
+    endif()
+else()
+    omnitrace_message(
+        WARNING
+        "Disabling attach tests. Run 'echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope' to enable attaching to process"
+        )
+endif()
+
+if(TARGET parallel-overhead AND _VALID_PTRACE_SCOPE)
     add_test(
         NAME parallel-overhead-attach
         COMMAND
