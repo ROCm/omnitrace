@@ -98,6 +98,22 @@ set(_python_environment
     "LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}:${OMNITRACE_DYNINST_API_RT_DIR}:$ENV{LD_LIBRARY_PATH}"
     "PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python/site-packages")
 
+set(_attach_environment
+    "OMNITRACE_USE_PERFETTO=ON"
+    "OMNITRACE_USE_TIMEMORY=ON"
+    "OMNITRACE_USE_SAMPLING=OFF"
+    "OMNITRACE_USE_THREAD_SAMPLING=ON"
+    "OMNITRACE_USE_CRITICAL_TRACE=ON"
+    "OMNITRACE_USE_OMPT=ON"
+    "OMNITRACE_USE_KOKKOSP=ON"
+    "OMNITRACE_TIME_OUTPUT=OFF"
+    "OMNITRACE_USE_PID=OFF"
+    "OMP_PROC_BIND=spread"
+    "OMP_PLACES=threads"
+    "OMP_NUM_THREADS=2"
+    "LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}:${OMNITRACE_DYNINST_API_RT_DIR}:$ENV{LD_LIBRARY_PATH}"
+    )
+
 # -------------------------------------------------------------------------------------- #
 
 set(MPIEXEC_EXECUTABLE_ARGS)
@@ -803,6 +819,39 @@ omnitrace_add_test(
     ENVIRONMENT "${_base_environment}"
     RUNTIME_PASS_REGEX "(\\\[[0-9]+\\\]) function coverage ::  66.67%"
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) function coverage ::  66.67%")
+
+# -------------------------------------------------------------------------------------- #
+#
+# attach tests
+#
+# -------------------------------------------------------------------------------------- #
+
+if(TARGET parallel-overhead)
+    add_test(
+        NAME parallel-overhead-attach
+        COMMAND
+            ${CMAKE_CURRENT_LIST_DIR}/run-omnitrace-pid.sh $<TARGET_FILE:omnitrace-exe>
+            -ME "\.c$" -e -v 1 --label return args file -l --
+            $<TARGET_FILE:parallel-overhead> 30 8 1000
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+    set(_parallel_overhead_attach_environ
+        "${_attach_environment}" "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output"
+        "OMNITRACE_OUTPUT_PREFIX=parallel-overhead-attach/")
+
+    set_tests_properties(
+        parallel-overhead-attach
+        PROPERTIES ENVIRONMENT
+                   "${_parallel_overhead_attach_environ}"
+                   TIMEOUT
+                   300
+                   LABELS
+                   "parallel-overhead;attach"
+                   PASS_REGULAR_EXPRESSION
+                   "Outputting.*(perfetto-trace.proto).*Outputting.*(wall_clock.txt)"
+                   FAIL_REGULAR_EXPRESSION
+                   "Dyninst was unable to attach to the specified process")
+endif()
 
 # -------------------------------------------------------------------------------------- #
 #
