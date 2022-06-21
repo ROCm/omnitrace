@@ -834,7 +834,7 @@ if(EXISTS "/proc/sys/kernel/yama/ptrace_scope")
     endif()
 else()
     omnitrace_message(
-        WARNING
+        AUTHOR_WARNING
         "Disabling attach tests. Run 'echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope' to enable attaching to process"
         )
 endif()
