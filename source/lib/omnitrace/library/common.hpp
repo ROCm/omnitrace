@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "common/join.hpp"
 #include "library/defines.hpp"
 
 #include <timemory/api.hpp>
@@ -50,3 +51,8 @@ namespace omnitrace
 namespace api      = tim::api;       // NOLINT
 namespace category = tim::category;  // NOLINT
 }  // namespace omnitrace
+
+// same sort of functionality as python's " ".join([...])
+#if !defined(JOIN)
+#    define JOIN(...) ::omnitrace::common::join(__VA_ARGS__)
+#endif
