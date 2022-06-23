@@ -83,10 +83,13 @@ for itr in perfetto_data:
 ret = 0
 
 try:
-    validate_perfetto(args.labels,
-    args.counts,
-    args.depths,
+    validate_perfetto(
+        perfetto_data, 
+        args.labels,
+        args.counts,
+        args.depths,
     )
+
 except RuntimeError as e:
     print(f"{e}")
     ret = 1
