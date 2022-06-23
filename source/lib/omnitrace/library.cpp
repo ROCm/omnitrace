@@ -36,10 +36,10 @@
 #include "library/defines.hpp"
 #include "library/gpu.hpp"
 #include "library/ompt.hpp"
+#include "library/process_sampler.hpp"
 #include "library/ptl.hpp"
 #include "library/sampling.hpp"
 #include "library/thread_data.hpp"
-#include "library/thread_sampler.hpp"
 #include "library/timemory.hpp"
 
 #include <timemory/utility/procfs/maps.hpp>
@@ -64,8 +64,8 @@ struct user_regions
 using omni_functors = omnitrace::component::functors<omni_regions>;
 using user_functors = omnitrace::component::functors<user_regions>;
 
-TIMEMORY_DEFINE_NAME_TRAIT("host", omni_functors);
-TIMEMORY_DEFINE_NAME_TRAIT("user", user_functors);
+TIMEMORY_DEFINE_NAME_TRAIT("host", omni_functors)
+TIMEMORY_DEFINE_NAME_TRAIT("user", user_functors)
 
 TIMEMORY_INVOKE_PREINIT(omni_functors)
 TIMEMORY_INVOKE_PREINIT(user_functors)
@@ -494,13 +494,13 @@ omnitrace_init_library_hidden()
                                       std::to_string(_mode).c_str());
         get_use_critical_trace() = false;
         get_use_sampling()       = tim::get_env("OMNITRACE_USE_SAMPLING", true);
-        get_use_thread_sampling() =
-            tim::get_env("OMNITRACE_USE_THREAD_SAMPLING", get_use_sampling());
+        get_use_process_sampling() =
+            tim::get_env("OMNITRACE_USE_PROCESS_SAMPLING", get_use_sampling());
     }
     else if(_mode == Mode::Coverage)
     {
         for(auto&& itr :
-            { "USE_SAMPLING", "USE_THREAD_SAMPLING", "CRITICAL_TRACE", "USE_ROCTRACER",
+            { "USE_SAMPLING", "USE_PROCESS_SAMPLING", "CRITICAL_TRACE", "USE_ROCTRACER",
               "USE_ROCM_SMI", "USE_PERFETTO", "USE_TIMEMORY", "USE_KOKKOSP", "USE_OMPT" })
         {
             auto _name = JOIN('_', "OMNITRACE", itr);
@@ -582,10 +582,10 @@ omnitrace_init_tooling_hidden()
         // if set to finalized, don't continue
         if(get_state() > State::Active) return;
         if(config::get_trace_thread_locks()) pthread_mutex_gotcha::validate();
-        if(get_use_thread_sampling())
+        if(get_use_process_sampling())
         {
             pthread_gotcha::push_enable_sampling_on_child_threads(false);
-            thread_sampler::setup();
+            process_sampler::setup();
             pthread_gotcha::pop_enable_sampling_on_child_threads();
         }
         if(get_use_sampling())
@@ -708,7 +708,7 @@ omnitrace_init_tooling_hidden()
 
     // separate from _thread_init so that it can be called after the first
     // instrumentation on the thread
-    auto _setup_thread_sampling = []() {
+    auto _setup_process_sampling = []() {
         static thread_local auto _v = []() {
             auto _use_sampling = get_use_sampling();
             if(_use_sampling) sampling::setup();
@@ -772,7 +772,7 @@ omnitrace_init_tooling_hidden()
                 _thread_init();
                 _push_perfetto(type_list<omni_functors>{}, name);
                 _push_timemory(name);
-                _setup_thread_sampling();
+                _setup_process_sampling();
             },
             [=](const char* name) {
                 _pop_timemory(name);
@@ -795,14 +795,14 @@ omnitrace_init_tooling_hidden()
             [=](const char* name) {
                 _thread_init();
                 _push_perfetto(type_list<omni_functors>{}, name);
-                _setup_thread_sampling();
+                _setup_process_sampling();
             },
             [=](const char* name) { _pop_perfetto(type_list<omni_functors>{}, name); });
         user_functors::configure(
             [=](const char* name) {
                 _thread_init();
                 _push_perfetto(type_list<user_functors>{}, name);
-                _setup_thread_sampling();
+                _setup_process_sampling();
             },
             [=](const char* name) { _pop_perfetto(type_list<user_functors>{}, name); });
     }
@@ -812,14 +812,14 @@ omnitrace_init_tooling_hidden()
             [=](const char* name) {
                 _thread_init();
                 _push_timemory(name);
-                _setup_thread_sampling();
+                _setup_process_sampling();
             },
             [=](const char* name) { _pop_timemory(name); });
         user_functors::configure(
             [=](const char* name) {
                 _thread_init();
                 _push_timemory(name);
-                _setup_thread_sampling();
+                _setup_process_sampling();
             },
             [=](const char* name) { _pop_timemory(name); });
     }
@@ -1083,10 +1083,10 @@ omnitrace_finalize_hidden(void)
     OMNITRACE_VERBOSE_F(1, "Shutting down pthread gotcha...\n");
     pthread_gotcha::shutdown();
 
-    if(get_use_thread_sampling())
+    if(get_use_process_sampling())
     {
         OMNITRACE_VERBOSE_F(1, "Shutting down background sampler...\n");
-        thread_sampler::shutdown();
+        process_sampler::shutdown();
     }
 
     if(get_use_roctracer())
@@ -1185,10 +1185,10 @@ omnitrace_finalize_hidden(void)
         tasking::join();
     }
 
-    if(get_use_thread_sampling())
+    if(get_use_process_sampling())
     {
         OMNITRACE_VERBOSE_F(1, "Post-processing the system-level samples...\n");
-        thread_sampler::post_process();
+        process_sampler::post_process();
     }
 
     if(get_use_critical_trace())

@@ -146,7 +146,7 @@ bool&
 get_use_sampling() OMNITRACE_HOT;
 
 bool&
-get_use_thread_sampling() OMNITRACE_HOT;
+get_use_process_sampling() OMNITRACE_HOT;
 
 bool&
 get_use_pid();
@@ -237,7 +237,7 @@ std::string
 get_sampling_cpus();
 
 double&
-get_thread_sampling_freq();
+get_process_sampling_freq();
 
 std::string
 get_sampling_gpus();

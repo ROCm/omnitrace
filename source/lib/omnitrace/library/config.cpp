@@ -72,7 +72,7 @@ get_setting_name(std::string _v)
 }
 
 #define OMNITRACE_CONFIG_SETTING(TYPE, ENV_NAME, DESCRIPTION, INITIAL_VALUE, ...)        \
-    {                                                                                    \
+    [&]() {                                                                              \
         auto _ret = _config->insert<TYPE, TYPE>(                                         \
             ENV_NAME, get_setting_name(ENV_NAME), DESCRIPTION, INITIAL_VALUE,            \
             std::set<std::string>{ "custom", "omnitrace", "omnitrace_library",           \
@@ -80,23 +80,25 @@ get_setting_name(std::string _v)
         if(!_ret.second)                                                                 \
             OMNITRACE_PRINT("Warning! Duplicate setting: %s / %s\n",                     \
                             get_setting_name(ENV_NAME).c_str(), ENV_NAME);               \
-    }
+        return _config->find(ENV_NAME)->second;                                          \
+    }()
 
 // below does not include "omnitrace_library"
 #define OMNITRACE_CONFIG_EXT_SETTING(TYPE, ENV_NAME, DESCRIPTION, INITIAL_VALUE, ...)    \
-    {                                                                                    \
+    [&]() {                                                                              \
         auto _ret = _config->insert<TYPE, TYPE>(                                         \
             ENV_NAME, get_setting_name(ENV_NAME), DESCRIPTION, INITIAL_VALUE,            \
             std::set<std::string>{ "custom", "omnitrace", __VA_ARGS__ });                \
         if(!_ret.second)                                                                 \
             OMNITRACE_PRINT("Warning! Duplicate setting: %s / %s\n",                     \
                             get_setting_name(ENV_NAME).c_str(), ENV_NAME);               \
-    }
+        return _config->find(ENV_NAME)->second;                                          \
+    }()
 
 // setting + command line option
 #define OMNITRACE_CONFIG_CL_SETTING(TYPE, ENV_NAME, DESCRIPTION, INITIAL_VALUE,          \
                                     CMD_LINE, ...)                                       \
-    {                                                                                    \
+    [&]() {                                                                              \
         auto _ret = _config->insert<TYPE, TYPE>(                                         \
             ENV_NAME, get_setting_name(ENV_NAME), DESCRIPTION, INITIAL_VALUE,            \
             std::set<std::string>{ "custom", "omnitrace", "omnitrace_library",           \
@@ -105,7 +107,8 @@ get_setting_name(std::string _v)
         if(!_ret.second)                                                                 \
             OMNITRACE_PRINT("Warning! Duplicate setting: %s / %s\n",                     \
                             get_setting_name(ENV_NAME).c_str(), ENV_NAME);               \
-    }
+        return _config->find(ENV_NAME)->second;                                          \
+    }()
 }  // namespace
 
 inline namespace config
@@ -188,9 +191,15 @@ configure_settings(bool _init)
                              "backend", "sampling");
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_THREAD_SAMPLING",
-                             "Enable a background thread which samples system metrics "
-                             "such as the CPU/GPU freq, power, etc.",
-                             true, "backend", "sampling", "thread_sampling");
+                             "[DEPRECATED] Renamed to OMNITRACE_USE_PROCESS_SAMPLING",
+                             true, "backend", "sampling", "process_sampling",
+                             "deprecated");
+
+    OMNITRACE_CONFIG_SETTING(
+        bool, "OMNITRACE_USE_PROCESS_SAMPLING",
+        "Enable a background thread which samples process-level and system metrics "
+        "such as the CPU/GPU freq, power, memory usage, etc.",
+        true, "backend", "sampling", "process_sampling");
 
     OMNITRACE_CONFIG_SETTING(
         bool, "OMNITRACE_USE_PID",
@@ -221,27 +230,27 @@ configure_settings(bool _init)
     OMNITRACE_CONFIG_SETTING(
         double, "OMNITRACE_SAMPLING_FREQ",
         "Number of software interrupts per second when OMNITTRACE_USE_SAMPLING=ON", 10.0,
-        "sampling", "thread_sampling");
+        "sampling", "process_sampling");
 
     OMNITRACE_CONFIG_SETTING(
         double, "OMNITRACE_SAMPLING_DELAY",
         "Number of seconds to wait before the first sampling signal is delivered, "
         "increasing this value can fix deadlocks during init",
-        0.5, "sampling", "thread_sampling");
+        0.5, "sampling", "process_sampling");
 
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_SAMPLING_CPUS",
         "CPUs to collect frequency information for. Values should be separated by commas "
         "and can be explicit or ranges, e.g. 0,1,5-8. An empty value implies 'all' and "
         "'none' suppresses all CPU frequency sampling",
-        "", "thread_sampling");
+        "", "process_sampling");
 
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_SAMPLING_GPUS",
         "Devices to query when OMNITRACE_USE_ROCM_SMI=ON. Values should be separated by "
         "commas and can be explicit or ranges, e.g. 0,1,5-8. An empty value implies "
         "'all' and 'none' suppresses all GPU sampling",
-        "all", "rocm_smi", "rocm", "thread_sampling");
+        "all", "rocm_smi", "rocm", "process_sampling");
 
     auto _backend = tim::get_env_choice<std::string>(
         "OMNITRACE_PERFETTO_BACKEND",
@@ -253,10 +262,8 @@ configure_settings(bool _init)
     OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_PERFETTO_BACKEND",
                              "Specify the perfetto backend to activate. Options are: "
                              "'inprocess', 'system', or 'all'",
-                             _backend, "perfetto");
-
-    _config->find("OMNITRACE_PERFETTO_BACKEND")
-        ->second->set_choices({ "inprocess", "system", "all" });
+                             _backend, "perfetto")
+        ->set_choices({ "inprocess", "system", "all" });
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_CRITICAL_TRACE",
                              "Enable generation of the critical trace", false, "backend",
@@ -325,10 +332,8 @@ configure_settings(bool _init)
         std::string, "OMNITRACE_PERFETTO_FILL_POLICY",
         "Behavior when perfetto buffer is full. 'discard' will ignore new entries, "
         "'ring_buffer' will overwrite old entries",
-        "discard", "perfetto", "data");
-
-    _config->find("OMNITRACE_PERFETTO_FILL_POLICY")
-        ->second->set_choices({ "fill", "discard" });
+        "discard", "perfetto", "data")
+        ->set_choices({ "fill", "discard" });
 
     OMNITRACE_CONFIG_EXT_SETTING(int64_t, "OMNITRACE_CRITICAL_TRACE_COUNT",
                                  "Number of critical trace to export (0 == all)", 0,
@@ -359,7 +364,9 @@ configure_settings(bool _init)
     OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_OUTPUT_FILE", "Perfetto filename",
                              "", "perfetto", "io", "filename");
 
+    // set the defaults
     _config->get_flamegraph_output()     = false;
+    _config->get_ctest_notes()           = false;
     _config->get_cout_output()           = false;
     _config->get_file_output()           = true;
     _config->get_json_output()           = true;
@@ -471,6 +478,26 @@ configure_settings(bool _init)
         _combine_perfetto_traces->second->set(_config->get<bool>("collapse_processes"));
     }
 
+    auto _use_thread_sampling  = _config->find("OMNITRACE_USE_THREAD_SAMPLING");
+    auto _use_process_sampling = _config->find("OMNITRACE_USE_PROCESS_SAMPLING");
+    if(_use_thread_sampling->second->get_environ_updated() ||
+       _use_thread_sampling->second->get_config_updated())
+    {
+        OMNITRACE_VERBOSE(0, "\n");
+        OMNITRACE_VERBOSE(
+            0, "=====================================================================\n");
+        OMNITRACE_VERBOSE(0, "DEPRECATION NOTICE:\n");
+        OMNITRACE_VERBOSE(0, "  OMNITRACE_USE_THREAD_SAMPLING is deprecated. Use "
+                             "OMNITRACE_USE_PROCESS_SAMPLING instead.");
+        OMNITRACE_VERBOSE(
+            0, "=====================================================================\n");
+        OMNITRACE_VERBOSE(0, "\n");
+        if(!_use_process_sampling->second->get_environ_updated() &&
+           !_use_process_sampling->second->get_config_updated())
+            _use_process_sampling->second->parse(
+                _use_thread_sampling->second->as_string());
+    }
+
     scope::get_fields()[scope::flat::value]     = _config->get_flat_profile();
     scope::get_fields()[scope::timeline::value] = _config->get_timeline_profile();
 
@@ -552,7 +579,7 @@ configure_settings(bool _init)
     };
 
     _handle_use_option("OMNITRACE_USE_SAMPLING", "sampling");
-    _handle_use_option("OMNITRACE_USE_THREAD_SAMPLING", "thread_sampling");
+    _handle_use_option("OMNITRACE_USE_PROCESS_SAMPLING", "process_sampling");
     _handle_use_option("OMNITRACE_USE_KOKKOSP", "kokkos");
     _handle_use_option("OMNITRACE_USE_PERFETTO", "perfetto");
     _handle_use_option("OMNITRACE_USE_TIMEMORY", "timemory");
@@ -888,9 +915,9 @@ get_use_sampling()
 }
 
 bool&
-get_use_thread_sampling()
+get_use_process_sampling()
 {
-    static auto _v = get_config()->find("OMNITRACE_USE_THREAD_SAMPLING");
+    static auto _v = get_config()->find("OMNITRACE_USE_PROCESS_SAMPLING");
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
@@ -1142,7 +1169,7 @@ get_critical_trace_count()
 }
 
 double&
-get_thread_sampling_freq()
+get_process_sampling_freq()
 {
     static auto _v = std::min<double>(get_sampling_freq(), 1000.0);
     return _v;
