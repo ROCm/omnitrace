@@ -23,6 +23,7 @@
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/defines.hpp"
+#include "library/gpu.hpp"
 
 #include <timemory/backends/dmp.hpp>
 #include <timemory/backends/mpi.hpp>
@@ -161,6 +162,12 @@ configure_settings(bool _init)
 
     auto _omnitrace_debug = _config->get<bool>("OMNITRACE_DEBUG");
     if(_omnitrace_debug) tim::set_env("TIMEMORY_DEBUG_SETTINGS", "1", 0);
+
+    OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_MODE",
+        "Data collection mode. Used to set default values for OMNITRACE_USE_* options. "
+        "Typically set by omnitrace binary instrumenter.",
+        "trace", "backend");
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_CI",
                              "Enable some runtime validation checks (typically enabled "
@@ -478,25 +485,8 @@ configure_settings(bool _init)
         _combine_perfetto_traces->second->set(_config->get<bool>("collapse_processes"));
     }
 
-    auto _use_thread_sampling  = _config->find("OMNITRACE_USE_THREAD_SAMPLING");
-    auto _use_process_sampling = _config->find("OMNITRACE_USE_PROCESS_SAMPLING");
-    if(_use_thread_sampling->second->get_environ_updated() ||
-       _use_thread_sampling->second->get_config_updated())
-    {
-        OMNITRACE_VERBOSE(0, "\n");
-        OMNITRACE_VERBOSE(
-            0, "=====================================================================\n");
-        OMNITRACE_VERBOSE(0, "DEPRECATION NOTICE:\n");
-        OMNITRACE_VERBOSE(0, "  OMNITRACE_USE_THREAD_SAMPLING is deprecated. Use "
-                             "OMNITRACE_USE_PROCESS_SAMPLING instead.");
-        OMNITRACE_VERBOSE(
-            0, "=====================================================================\n");
-        OMNITRACE_VERBOSE(0, "\n");
-        if(!_use_process_sampling->second->get_environ_updated() &&
-           !_use_process_sampling->second->get_config_updated())
-            _use_process_sampling->second->parse(
-                _use_thread_sampling->second->as_string());
-    }
+    handle_deprecated_setting("OMNITRACE_USE_THREAD_SAMPLING",
+                              "OMNITRACE_USE_PROCESS_SAMPLING");
 
     scope::get_fields()[scope::flat::value]     = _config->get_flat_profile();
     scope::get_fields()[scope::timeline::value] = _config->get_timeline_profile();
@@ -506,8 +496,88 @@ configure_settings(bool _init)
 #if !defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_MPI_HEADERS)
     if(tim::dmp::is_initialized()) settings::default_process_suffix() = tim::dmp::rank();
 #endif
-    OMNITRACE_CONDITIONAL_BASIC_PRINT(get_verbose_env() > 0, "configuration complete\n");
 
+    auto _dl_verbose = _config->find("OMNITRACE_DL_VERBOSE");
+    tim::set_env(std::string{ _dl_verbose->first }, _dl_verbose->second->as_string(), 0);
+
+#if !defined(TIMEMORY_USE_MPI) || TIMEMORY_USE_MPI == 0
+    _config->disable("OMNITRACE_PERFETTO_COMBINE_TRACES");
+#endif
+
+    configure_mode_settings();
+    configure_signal_handler();
+    configure_disabled_settings();
+
+    OMNITRACE_CONDITIONAL_BASIC_PRINT(get_verbose_env() > 0, "configuration complete\n");
+}
+
+void
+configure_mode_settings()
+{
+    auto _set = [](const std::string& _name, bool _v) {
+        if(!set_setting_value(_name, _v))
+        {
+            OMNITRACE_VERBOSE(
+                4, "[configure_mode_settings] No configuration setting named '%s'...\n",
+                _name.data());
+        }
+        else
+        {
+            OMNITRACE_VERBOSE(
+                1, "[configure_mode_settings] Overriding %s to %s in %s mode...\n",
+                _name.c_str(), JOIN("", std::boolalpha, _v).c_str(),
+                std::to_string(get_mode()).c_str());
+        }
+    };
+
+    if(get_mode() == Mode::Coverage)
+    {
+        set_default_setting_value("OMNITRACE_USE_CODE_COVERAGE", true);
+        _set("OMNITRACE_USE_PERFETTO", false);
+        _set("OMNITRACE_USE_TIMEMORY", false);
+        _set("OMNITRACE_USE_ROCM_SMI", false);
+        _set("OMNITRACE_USE_ROCTRACER", false);
+        _set("OMNITRACE_USE_KOKKOSP", false);
+        _set("OMNITRACE_USE_OMPT", false);
+        _set("OMNITRACE_USE_SAMPLING", false);
+        _set("OMNITRACE_USE_PROCESS_SAMPLING", false);
+        _set("OMNITRACE_CRITICAL_TRACE", false);
+    }
+    else if(get_mode() == Mode::Sampling)
+    {
+        set_default_setting_value("OMNITRACE_USE_SAMPLING", true);
+        set_default_setting_value("OMNITRACE_USE_PROCESS_SAMPLING", true);
+        _set("OMNITRACE_CRITICAL_TRACE", false);
+    }
+
+    if(gpu::device_count() == 0)
+    {
+        OMNITRACE_VERBOSE_F(
+            1, "No HIP devices were found: disabling roctracer and rocm_smi...\n");
+        get_use_roctracer() = false;
+        get_use_rocm_smi()  = false;
+    }
+
+    get_instrumentation_interval() = std::max<size_t>(get_instrumentation_interval(), 1);
+
+    if(get_use_kokkosp())
+    {
+        auto _force               = 0;
+        auto _current_kokkosp_lib = tim::get_env<std::string>("KOKKOS_PROFILE_LIBRARY");
+        if(std::regex_search(_current_kokkosp_lib, std::regex{ "libtimemory\\." }))
+            _force = 1;
+        tim::set_env("KOKKOS_PROFILE_LIBRARY", "libomnitrace.so", _force);
+    }
+
+    // recycle all subsequent thread ids
+    threading::recycle_ids() =
+        tim::get_env<bool>("OMNITRACE_RECYCLE_TIDS", !get_use_sampling());
+}
+
+void
+configure_signal_handler()
+{
+    auto _config = settings::shared_instance();
     auto _ignore_dyninst_trampoline =
         tim::get_env("OMNITRACE_IGNORE_DYNINST_TRAMPOLINE", false);
     // this is how dyninst looks up the env variable
@@ -560,8 +630,14 @@ configure_settings(bool _init)
         _old_handler = signal(_dyninst_trampoline_signal,
                               static_cast<signal_handler_t>(_trampoline_handler));
     }
+}
 
-    auto _handle_use_option = [](const std::string& _opt, const std::string& _category) {
+void
+configure_disabled_settings()
+{
+    auto _config            = settings::shared_instance();
+    auto _handle_use_option = [_config](const std::string& _opt,
+                                        const std::string& _category) {
         if(!_config->get<bool>(_opt))
         {
             auto _disabled = _config->disable_category(_category);
@@ -600,31 +676,79 @@ configure_settings(bool _init)
     _config->disable_category("ompt");
 #endif
 
-    // user bundle components
     _config->disable_category("throttle");
+
+    // user bundle components
     _config->disable("components");
     _config->disable("global_components");
     _config->disable("ompt_components");
     _config->disable("kokkos_components");
     _config->disable("trace_components");
     _config->disable("profiler_components");
+
+    // miscellaneous
     _config->disable("destructor_report");
     _config->disable("stack_clearing");
+    _config->disable("add_secondary");
+
+    // output fields
     _config->disable("auto_output");
     _config->disable("file_output");
     _config->disable("plot_output");
     _config->disable("dart_output");
     _config->disable("flamegraph_output");
     _config->disable("separator_freq");
-    _config->disable("width");
-    _config->disable("max_width");
+}
 
-    auto _dl_verbose = _config->find("OMNITRACE_DL_VERBOSE");
-    tim::set_env(std::string{ _dl_verbose->first }, _dl_verbose->second->as_string(), 0);
+void
+handle_deprecated_setting(const std::string& _old, const std::string& _new, int _verbose)
+{
+    auto _config      = settings::shared_instance();
+    auto _old_setting = _config->find(_old);
+    auto _new_setting = _config->find(_new);
 
-#if !defined(TIMEMORY_USE_MPI) || TIMEMORY_USE_MPI == 0
-    _config->disable("OMNITRACE_PERFETTO_COMBINE_TRACES");
-#endif
+    if(_old_setting == _config->end()) return;
+
+    OMNITRACE_CI_THROW(_new_setting == _config->end(),
+                       "New configuration setting not found: '%s'", _new.c_str());
+
+    if(_old_setting->second->get_environ_updated() ||
+       _old_setting->second->get_config_updated())
+    {
+        auto _separator = [_verbose]() {
+            std::array<char, 79> _v = {};
+            _v.fill('=');
+            _v.back() = '\0';
+            OMNITRACE_VERBOSE(_verbose, "#%s#\n", _v.data());
+        };
+        _separator();
+        OMNITRACE_VERBOSE(_verbose, "#\n");
+        OMNITRACE_VERBOSE(_verbose, "# DEPRECATION NOTICE:\n");
+        OMNITRACE_VERBOSE(_verbose, "#   %s is deprecated!\n", _old.c_str());
+        OMNITRACE_VERBOSE(_verbose, "#   Use %s instead!\n", _new.c_str());
+
+        if(!_new_setting->second->get_environ_updated() &&
+           !_new_setting->second->get_config_updated())
+        {
+            auto _before = _new_setting->second->as_string();
+            _new_setting->second->parse(_old_setting->second->as_string());
+            auto _after = _new_setting->second->as_string();
+
+            if(_before != _after)
+            {
+                std::string _cause =
+                    (_old_setting->second->get_environ_updated()) ? "environ" : "config";
+                OMNITRACE_VERBOSE(_verbose, "#\n");
+                OMNITRACE_VERBOSE(_verbose, "# %s :: '%s' -> '%s'\n", _new.c_str(),
+                                  _before.c_str(), _after.c_str());
+                OMNITRACE_VERBOSE(_verbose, "#   via %s (%s)\n", _old.c_str(),
+                                  _cause.c_str());
+            }
+        }
+
+        OMNITRACE_VERBOSE(_verbose, "#\n");
+        _separator();
+    }
 }
 
 void
@@ -680,6 +804,9 @@ print_settings(
     std::sort(_data.begin(), _data.end(), [](const auto& lhs, const auto& rhs) {
         auto _npos = std::string::npos;
         // OMNITRACE_CONFIG_FILE always first
+        if(lhs.at(0) == "OMNITRACE_MODE") return true;
+        if(rhs.at(0) == "OMNITRACE_MODE") return false;
+        // OMNITRACE_CONFIG_FILE always second
         if(lhs.at(0).find("OMNITRACE_CONFIG") != _npos) return true;
         if(rhs.at(0).find("OMNITRACE_CONFIG") != _npos) return false;
         // OMNITRACE_USE_* prioritized
@@ -783,7 +910,8 @@ get_config_file()
 Mode
 get_mode()
 {
-    static auto _v = []() {
+    if(!settings_are_configured())
+    {
         auto _mode = tim::get_env_choice<std::string>(
             "OMNITRACE_MODE", "trace", { "trace", "sampling", "coverage" });
         if(_mode == "sampling")
@@ -791,8 +919,26 @@ get_mode()
         else if(_mode == "coverage")
             return Mode::Coverage;
         return Mode::Trace;
-    }();
-    return _v;
+    }
+    static auto _m =
+        std::unordered_map<std::string_view, Mode>{ { "trace", Mode::Trace },
+                                                    { "sampling", Mode::Sampling },
+                                                    { "coverage", Mode::Coverage } };
+    static auto _v = get_config()->find("OMNITRACE_MODE");
+    try
+    {
+        return _m.at(static_cast<tim::tsettings<std::string>&>(*_v->second).get());
+    } catch(std::runtime_error& _e)
+    {
+        auto _mode = static_cast<tim::tsettings<std::string>&>(*_v->second).get();
+        std::stringstream _ss{};
+        for(const auto& itr : _v->second->get_choices())
+            _ss << ", " << itr;
+        auto _msg = (_ss.str().length() > 2) ? _ss.str().substr(2) : std::string{};
+        OMNITRACE_THROW("[%s] invalid mode %s. Choices: %s\n", __FUNCTION__,
+                        _mode.c_str(), _msg.c_str());
+    }
+    return Mode::Trace;
 }
 
 bool&
