@@ -658,7 +658,7 @@ omnitrace_init_tooling_hidden()
 
     // separate from _thread_init so that it can be called after the first
     // instrumentation on the thread
-    auto _setup_process_sampling = []() {
+    auto _setup_thread_sampling = []() {
         static thread_local auto _v = []() {
             auto _use_sampling = get_use_sampling();
             if(_use_sampling) sampling::setup();
@@ -722,7 +722,7 @@ omnitrace_init_tooling_hidden()
                 _thread_init();
                 _push_perfetto(type_list<omni_functors>{}, name);
                 _push_timemory(name);
-                _setup_process_sampling();
+                _setup_thread_sampling();
             },
             [=](const char* name) {
                 _pop_timemory(name);
@@ -745,14 +745,14 @@ omnitrace_init_tooling_hidden()
             [=](const char* name) {
                 _thread_init();
                 _push_perfetto(type_list<omni_functors>{}, name);
-                _setup_process_sampling();
+                _setup_thread_sampling();
             },
             [=](const char* name) { _pop_perfetto(type_list<omni_functors>{}, name); });
         user_functors::configure(
             [=](const char* name) {
                 _thread_init();
                 _push_perfetto(type_list<user_functors>{}, name);
-                _setup_process_sampling();
+                _setup_thread_sampling();
             },
             [=](const char* name) { _pop_perfetto(type_list<user_functors>{}, name); });
     }
@@ -762,14 +762,14 @@ omnitrace_init_tooling_hidden()
             [=](const char* name) {
                 _thread_init();
                 _push_timemory(name);
-                _setup_process_sampling();
+                _setup_thread_sampling();
             },
             [=](const char* name) { _pop_timemory(name); });
         user_functors::configure(
             [=](const char* name) {
                 _thread_init();
                 _push_timemory(name);
-                _setup_process_sampling();
+                _setup_thread_sampling();
             },
             [=](const char* name) { _pop_timemory(name); });
     }
