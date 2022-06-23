@@ -3,7 +3,7 @@ import sys
 import argparse
 from perfetto.trace_processor import TraceProcessor
 
-def validate_perfetto(labels, counts, depths):
+def validate_perfetto(data, labels, counts, depths):
     expected = []
     for litr, citr, ditr in zip(labels, counts, depths):
         entry = []
