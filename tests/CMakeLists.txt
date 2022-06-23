@@ -989,8 +989,9 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
 
         omnitrace_add_python_test(
             NAME ${TEST_NAME}-validate-perfetto
-            COMMAND ${_PYTHON_EXECUTABLE}
-                    ${CMAKE_CURRENT_LIST_DIR}/validate-perfetto-proto.py ${TEST_ARGS} -p -i
+            COMMAND
+                ${_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/validate-perfetto-proto.py
+                ${TEST_ARGS} -p -i
             PYTHON_VERSION ${_VERSION}
             FILE omnitrace-tests-output/${TEST_NAME}/${_VERSION}/${TEST_PERFETTO_FILE}
             DEPENDS ${TEST_NAME}-${_VERSION}
