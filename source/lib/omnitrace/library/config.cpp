@@ -252,6 +252,10 @@ configure_settings(bool _init)
         "'none' suppresses all CPU frequency sampling",
         "", "process_sampling");
 
+    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_ROCM_SMI_DEVICES",
+                             "[DEPRECATED] Renamed to OMNITRACE_SAMPLING_GPUS", "all",
+                             "rocm_smi", "rocm", "process_sampling");
+
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_SAMPLING_GPUS",
         "Devices to query when OMNITRACE_USE_ROCM_SMI=ON. Values should be separated by "
@@ -485,6 +489,7 @@ configure_settings(bool _init)
         _combine_perfetto_traces->second->set(_config->get<bool>("collapse_processes"));
     }
 
+    handle_deprecated_setting("OMNITRACE_ROCM_SMI_DEVICES", "OMNITRACE_SAMPLING_GPUS");
     handle_deprecated_setting("OMNITRACE_USE_THREAD_SAMPLING",
                               "OMNITRACE_USE_PROCESS_SAMPLING");
 
@@ -991,8 +996,10 @@ get_debug()
 bool
 get_debug_sampling()
 {
-    static bool _v = tim::get_env<bool>("OMNITRACE_DEBUG_SAMPLING", get_debug_env());
-    return (_v || get_debug());
+    static bool _v =
+        tim::get_env<bool>("OMNITRACE_DEBUG_SAMPLING",
+                           (settings_are_configured() ? get_debug() : get_debug_env()));
+    return _v;
 }
 
 int
