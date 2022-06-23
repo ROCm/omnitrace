@@ -13,7 +13,7 @@ def validate_perfetto(data, labels, counts, depths):
         entry = [_label, citr, ditr]
         expected.append(entry)
 
-    for ditr, eitr in zip(perfetto_data, expected):
+    for ditr, eitr in zip(data, expected):
         _label = ditr["label"]
         _count = ditr["count"]
         _depth = ditr["depth"]
