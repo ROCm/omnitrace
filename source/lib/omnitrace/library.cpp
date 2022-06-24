@@ -36,10 +36,10 @@
 #include "library/defines.hpp"
 #include "library/gpu.hpp"
 #include "library/ompt.hpp"
+#include "library/process_sampler.hpp"
 #include "library/ptl.hpp"
 #include "library/sampling.hpp"
 #include "library/thread_data.hpp"
-#include "library/thread_sampler.hpp"
 #include "library/timemory.hpp"
 #include "library/tracing.hpp"
 
@@ -89,6 +89,9 @@ ensure_finalization(bool _static_init = false)
         // see:
         // https://github.com/ROCm-Developer-Tools/roctracer/issues/22#issuecomment-572814465
         tim::set_env("HSA_ENABLE_INTERRUPT", "0", 0);
+#if defined(OMNITRACE_USE_ROCTRACER) && OMNITRACE_USE_ROCTRACER > 0
+        tim::set_env("HSA_TOOLS_LIB", "libomnitrace.so", 0);
+#endif
     }
     return scope::destructor{ []() { omnitrace_finalize_hidden(); } };
 }
@@ -358,7 +361,6 @@ omnitrace_init_library_hidden()
     (void) _tid;
 
     static bool _once       = false;
-    auto        _mode       = get_mode();
     auto        _debug_init = get_debug_init();
 
     OMNITRACE_CONDITIONAL_BASIC_PRINT_F(_debug_init, "State is %s...\n",
@@ -402,68 +404,16 @@ omnitrace_init_library_hidden()
         if(_debug_init) config::set_setting_value("OMNITRACE_DEBUG", _debug_value);
     } };
 
-    OMNITRACE_DEBUG_F("\n");
-
     // below will effectively do:
     //      get_cpu_cid_stack(0)->emplace_back(-1);
     // plus query some env variables
     add_critical_trace<Device::CPU, Phase::NONE>(0, -1, 0, 0, 0, 0, 0, 0, 0, -1, 0);
 
-    if(gpu::device_count() == 0 && get_state() != State::Active)
-    {
-        OMNITRACE_DEBUG_F(
-            "No HIP devices were found: disabling roctracer and rocm_smi...\n");
-        get_use_roctracer() = false;
-        get_use_rocm_smi()  = false;
-    }
-
-    if(_mode == Mode::Sampling)
-    {
-        OMNITRACE_CONDITIONAL_PRINT_F(get_verbose() >= 0,
-                                      "Disabling critical trace in %s mode...\n",
-                                      std::to_string(_mode).c_str());
-        get_use_critical_trace() = false;
-        get_use_sampling()       = tim::get_env("OMNITRACE_USE_SAMPLING", true);
-        get_use_thread_sampling() =
-            tim::get_env("OMNITRACE_USE_THREAD_SAMPLING", get_use_sampling());
-    }
-    else if(_mode == Mode::Coverage)
-    {
-        for(auto&& itr :
-            { "USE_SAMPLING", "USE_THREAD_SAMPLING", "CRITICAL_TRACE", "USE_ROCTRACER",
-              "USE_ROCM_SMI", "USE_PERFETTO", "USE_TIMEMORY", "USE_KOKKOSP", "USE_OMPT" })
-        {
-            auto _name = JOIN('_', "OMNITRACE", itr);
-            if(!config::set_setting_value(_name, false))
-            {
-                OMNITRACE_VERBOSE_F(4, "No configuration setting named '%s'",
-                                    _name.c_str());
-            }
-        }
-    }
-
     tim::trait::runtime_enabled<comp::roctracer>::set(get_use_roctracer());
     tim::trait::runtime_enabled<comp::roctracer_data>::set(get_use_roctracer() &&
                                                            get_use_timemory());
 
-    get_instrumentation_interval() = std::max<size_t>(get_instrumentation_interval(), 1);
-
-    if(get_use_kokkosp())
-    {
-        auto _force               = 0;
-        auto _current_kokkosp_lib = tim::get_env<std::string>("KOKKOS_PROFILE_LIBRARY");
-        if(std::regex_search(_current_kokkosp_lib, std::regex{ "libtimemory\\." }))
-            _force = 1;
-        tim::set_env("KOKKOS_PROFILE_LIBRARY", "libomnitrace.so", _force);
-    }
-
-    // recycle all subsequent thread ids
-    threading::recycle_ids() =
-        tim::get_env<bool>("OMNITRACE_RECYCLE_TIDS", !get_use_sampling());
-
-#if defined(OMNITRACE_USE_ROCTRACER) && OMNITRACE_USE_ROCTRACER > 0
-    tim::set_env("HSA_TOOLS_LIB", "libomnitrace.so", 0);
-#endif
+    OMNITRACE_CONDITIONAL_BASIC_PRINT_F(_debug_init, "\n");
 }
 
 //======================================================================================//
@@ -512,10 +462,10 @@ omnitrace_init_tooling_hidden()
         // if set to finalized, don't continue
         if(get_state() > State::Active) return;
         if(config::get_trace_thread_locks()) pthread_mutex_gotcha::validate();
-        if(get_use_thread_sampling())
+        if(get_use_process_sampling())
         {
             pthread_gotcha::push_enable_sampling_on_child_threads(false);
-            thread_sampler::setup();
+            process_sampler::setup();
             pthread_gotcha::pop_enable_sampling_on_child_threads();
         }
         if(get_use_sampling())
@@ -771,24 +721,6 @@ omnitrace_init_hidden(const char* _mode, bool _is_binary_rewrite, const char* _a
     tim::set_env("OMNITRACE_MODE", _mode, 0);
     config::is_binary_rewrite() = _is_binary_rewrite;
 
-    if(get_mode() == Mode::Coverage)
-    {
-        tim::set_env("OMNITRACE_USE_PERFETTO", "OFF", 0);
-        tim::set_env("OMNITRACE_USE_TIMEMORY", "OFF", 0);
-        tim::set_env("OMNITRACE_USE_KOKKOSP", "OFF", 0);
-        tim::set_env("OMNITRACE_USE_SAMPLING", "OFF", 0);
-        tim::set_env("OMNITRACE_USE_ROCTRACER", "OFF", 0);
-        tim::set_env("OMNITRACE_USE_ROCM_SMI", "OFF", 0);
-    }
-
-    // set OMNITRACE_USE_SAMPLING to ON by default if mode is sampling
-    tim::set_env("OMNITRACE_USE_SAMPLING", (get_mode() == Mode::Sampling) ? "ON" : "OFF",
-                 0);
-
-    // default to KokkosP enabled when sampling, otherwise default to off
-    tim::set_env("OMNITRACE_USE_KOKKOSP", (get_mode() == Mode::Sampling) ? "ON" : "OFF",
-                 0);
-
     if(!_set_mpi_called)
     {
         _start_gotcha_callback = []() { get_gotcha_bundle()->start(); };
@@ -925,10 +857,10 @@ omnitrace_finalize_hidden(void)
     OMNITRACE_VERBOSE_F(1, "Shutting down pthread gotcha...\n");
     pthread_gotcha::shutdown();
 
-    if(get_use_thread_sampling())
+    if(get_use_process_sampling())
     {
         OMNITRACE_VERBOSE_F(1, "Shutting down background sampler...\n");
-        thread_sampler::shutdown();
+        process_sampler::shutdown();
     }
 
     if(get_use_roctracer())
@@ -1027,10 +959,10 @@ omnitrace_finalize_hidden(void)
         tasking::join();
     }
 
-    if(get_use_thread_sampling())
+    if(get_use_process_sampling())
     {
         OMNITRACE_VERBOSE_F(1, "Post-processing the system-level samples...\n");
-        thread_sampler::post_process();
+        process_sampler::post_process();
     }
 
     if(get_use_critical_trace())
