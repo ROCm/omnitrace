@@ -536,10 +536,6 @@ configure_settings(bool _init)
         tim::set_env(std::string{ _dl_verbose->first }, _dl_verbose->second->as_string(),
                      0);
 
-#if !defined(TIMEMORY_USE_MPI) || TIMEMORY_USE_MPI == 0
-    _config->disable("OMNITRACE_PERFETTO_COMBINE_TRACES");
-#endif
-
     configure_mode_settings();
     configure_signal_handler();
     configure_disabled_settings();
@@ -716,6 +712,13 @@ configure_disabled_settings()
     _config->find("OMNITRACE_USE_OMPT")->second->set_hidden(true);
     for(const auto& itr : _config->disable_category("ompt"))
         _config->find(itr)->second->set_hidden(true);
+#endif
+
+#if !defined(TIMEMORY_USE_MPI) || TIMEMORY_USE_MPI == 0
+    _config->disable("OMNITRACE_PERFETTO_COMBINE_TRACES");
+    _config->disable("OMNITRACE_COLLAPSE_PROCESSES");
+    _config->find("OMNITRACE_PERFETTO_COMBINE_TRACES")->second->set_hidden(true);
+    _config->find("OMNITRACE_COLLAPSE_PROCESSES")->second->set_hidden(true);
 #endif
 
     _config->disable_category("throttle");
