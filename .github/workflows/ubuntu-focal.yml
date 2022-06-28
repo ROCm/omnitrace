@@ -29,7 +29,7 @@ jobs:
           mpi: ''
           boost: 'ON'
           tbb: 'ON'
-          build-type: 'MinSizeRel'
+          build-type: 'RelWithDebInfo'
           python: 'OFF'
           ompt: 'OFF'
           papi: 'OFF'
