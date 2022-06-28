@@ -38,7 +38,9 @@
 #include <timemory/utility/types.hpp>
 
 #include <cstddef>
+#include <cstdlib>
 #include <sstream>
+#include <string>
 
 namespace cereal   = ::tim::cereal;
 namespace filepath = ::tim::filepath;
@@ -115,10 +117,16 @@ struct setting_serialization<tsettings<Tp>, custom_setting_serializer>
 
         if(ignore_setting(&_val)) return;
 
+        auto _save = std::shared_ptr<value_type>{};
         if constexpr(concepts::is_string_type<Tp>::value)
         {
             if(_val.get_name() != "time_format")
                 _val.set(settings::format(_val.get(), settings::instance()->get_tag()));
+            if(_val.get_name() == "config_file")
+            {
+                _save = std::make_shared<value_type>(_val);
+                _val.set(Tp{});
+            }
         }
 
         if(all_info)
@@ -140,6 +148,8 @@ struct setting_serialization<tsettings<Tp>, custom_setting_serializer>
                 _ar(cereal::make_nvp("choices", _val.get_choices()));
             _ar.finishNode();
         }
+
+        if(_save) _val.set(_save->get());
     }
 };
 }  // namespace operation
@@ -174,10 +184,10 @@ dump_config(std::string _config_file, const std::set<std::string>& _config_fmts,
 {
     custom_setting_serializer::options = _options;
 
+    _config_file   = settings::format(_config_file, settings::instance()->get_tag());
     bool _absolute = _config_file.at(0) == '/';
-    auto _dirs     = tim::delimit(
-        settings::format(_config_file, settings::instance()->get_tag()), "/\\/");
-    _config_file = _dirs.back();
+    auto _dirs     = tim::delimit(_config_file, "/\\/");
+    _config_file   = _dirs.back();
     _dirs.pop_back();
 
     std::string _output_dir = ".";
@@ -190,11 +200,15 @@ dump_config(std::string _config_file, const std::set<std::string>& _config_fmts,
     }
     _output_dir += "/";
 
+    std::string _txt_ext = ".cfg";
     for(std::string itr : { ".cfg", ".txt", ".json", ".xml" })
     {
         auto _pos = _config_file.rfind(itr);
         if(_pos == _config_file.length() - itr.length())
+        {
+            if(itr == ".cfg" || itr == ".txt") _txt_ext = itr;
             _config_file = _config_file.substr(0, _pos);
+        }
     }
 
     update_choices();
@@ -219,6 +233,24 @@ dump_config(std::string _config_file, const std::set<std::string>& _config_fmts,
 
     auto _open = [](std::ofstream& _ofs, const std::string& _fname,
                     const std::string& _type) -> std::ofstream& {
+        if(file_exists(_fname))
+        {
+            if(force_config)
+            {
+                if(settings::verbose() >= 1)
+                    std::cout << "[omnitrace-avail] File '" << _fname
+                              << "' exists. Overwrite force...\n";
+            }
+            else
+            {
+                std::cout << "[omnitrace-avail] File '" << _fname
+                          << "' exists. Overwrite? " << std::flush;
+                std::string _response = {};
+                std::cin >> _response;
+                if(!tim::get_bool(_response, false)) std::exit(EXIT_FAILURE);
+            }
+        }
+
         if(filepath::open(_ofs, _fname))
         {
             if(settings::verbose() >= 0)
@@ -282,18 +314,20 @@ dump_config(std::string _config_file, const std::set<std::string>& _config_fmts,
                 auto _romni = _rhs->get_categories().count("omnitrace") > 0;
                 if(_lomni && !_romni) return true;
                 if(_romni && !_lomni) return false;
-                if(_lhs->get_env_name().find("OMNITRACE_CONFIG") == 0 &&
-                   _rhs->get_env_name().find("OMNITRACE_CONFIG") != 0)
-                    return true;
-                if(_rhs->get_env_name().find("OMNITRACE_CONFIG") == 0 &&
-                   _lhs->get_env_name().find("OMNITRACE_CONFIG") != 0)
-                    return false;
-                if(_lhs->get_env_name().find("OMNITRACE_USE") == 0 &&
-                   _rhs->get_env_name().find("OMNITRACE_USE") != 0)
-                    return true;
-                if(_rhs->get_env_name().find("OMNITRACE_USE") == 0 &&
-                   _lhs->get_env_name().find("OMNITRACE_USE") != 0)
-                    return false;
+                for(const auto* itr :
+                    { "OMNITRACE_CONFIG", "OMNITRACE_MODE", "OMNITRACE_USE_PERFETTO",
+                      "OMNITRACE_USE_TIMEMORY", "OMNITRACE_USE_SAMPLING",
+                      "OMNITRACE_USE_PROCESS_SAMPLING", "OMNITRACE_USE_ROCTRACER",
+                      "OMNITRACE_USE_ROCM_SMI", "OMNITRACE_USE_KOKKOSP",
+                      "OMNITRACE_USE_OMPT", "OMNITRACE_USE", "OMNITRACE_OUTPUT" })
+                {
+                    if(_lhs->get_env_name().find(itr) == 0 &&
+                       _rhs->get_env_name().find(itr) != 0)
+                        return true;
+                    if(_rhs->get_env_name().find(itr) == 0 &&
+                       _lhs->get_env_name().find(itr) != 0)
+                        return false;
+                }
                 return _lhs->get_name() < _rhs->get_name();
             });
         }
@@ -348,11 +382,12 @@ dump_config(std::string _config_file, const std::set<std::string>& _config_fmts,
             if(_has_info) _ss << "\n";
             _ss << std::left << std::setw(_w + 10) << itr->get_env_name() << " = ";
             auto _v = itr->as_string();
+            if(itr->get_name() == "config_file") _v = {};
             if(!_v.empty() && expand_keys && itr->get_name() != "time_format")
                 _v = settings::format(_v, _settings->get_tag());
             _ss << _v << "\n";
         }
-        auto _fname = settings::compose_output_filename(_config_file, ".cfg", false, -1,
+        auto _fname = settings::compose_output_filename(_config_file, _txt_ext, false, -1,
                                                         true, _output_dir);
         std::ofstream ofs{};
         _open(ofs, _fname, "text")

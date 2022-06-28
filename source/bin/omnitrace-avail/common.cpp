@@ -26,6 +26,9 @@
 #include <timemory/settings/settings.hpp>
 #include <timemory/variadic/macros.hpp>
 
+#include <string>
+#include <sys/stat.h>
+
 using settings = ::tim::settings;
 
 std::string       global_delim        = std::string{ "|" };
@@ -39,6 +42,7 @@ bool              debug_msg           = false;
 bool              case_insensitive    = false;
 bool              regex_hl            = false;
 bool              expand_keys         = false;
+bool              force_config        = false;
 int32_t           max_width           = 0;
 int32_t           num_cols            = 0;
 int32_t           min_width           = 40;
@@ -374,3 +378,16 @@ remove(std::string inp, const std::set<std::string>& entries)
     }
     return inp;
 }
+
+//--------------------------------------------------------------------------------------//
+
+bool
+file_exists(const std::string& _fname)
+{
+    struct stat _buffer;
+    if(stat(_fname.c_str(), &_buffer) == 0)
+        return (S_ISREG(_buffer.st_mode) != 0 || S_ISLNK(_buffer.st_mode) != 0);
+    return false;
+}
+
+//--------------------------------------------------------------------------------------//

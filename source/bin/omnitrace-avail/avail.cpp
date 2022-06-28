@@ -29,17 +29,8 @@
 #include "get_availability.hpp"
 #include "info_type.hpp"
 
-#include "library/api.hpp"
-#include "library/components/backtrace.hpp"
-#include "library/components/fork_gotcha.hpp"
-#include "library/components/mpi_gotcha.hpp"
-#include "library/components/omnitrace.hpp"
-#include "library/components/pthread_gotcha.hpp"
-#include "library/components/roctracer.hpp"
-#include "library/components/user_region.hpp"
 #include "library/config.hpp"
 
-#include <stdexcept>
 #include <timemory/components.hpp>
 #include <timemory/components/definition.hpp>
 #include <timemory/components/placeholder.hpp>
@@ -48,6 +39,7 @@
 #include <timemory/mpl/types.hpp>
 #include <timemory/timemory.hpp>
 #include <timemory/utility/types.hpp>
+#include <timemory/utility/utility.hpp>
 
 #include <algorithm>
 #include <array>
@@ -59,6 +51,7 @@
 #include <regex>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -335,12 +328,22 @@ main(int argc, char** argv)
     std::set<std::string> _config_fmts = {};
     parser.add_argument({ "" }, "");
     parser.add_argument({ "[OUTPUT OPTIONS]" }, "");
-    parser.add_argument({ "-D", "--dump-config" }, "Dump a configuration file")
+    parser
+        .add_argument({ "-D", "--dump-config" },
+                      "Dump a configuration to a specified file.")
         .max_count(1)
         .dtype("filename")
         .set_default(std::string{ "omnitrace-config" })
         .action([&_config_file](parser_t& _p) {
-            _config_file = _p.get<std::string>("dump-config");
+            auto _out =
+                (_p.exists("output")) ? _p.get<std::string>("output") : std::string{};
+            if(_p.get_count("dump-config") == 0 && !_out.empty())
+                _config_file = _out;
+            else
+            {
+                _config_file = _p.get<std::string>("dump-config");
+                if(get_bool(_config_file, false) && !_out.empty()) _config_file = _out;
+            }
         });
     parser.add_argument({ "-F", "--config-format" }, "Configuration file format")
         .min_count(1)
@@ -373,6 +376,11 @@ main(int argc, char** argv)
                       "Use the provided string instead of a ',' to separate values")
         .max_count(1)
         .action([](parser_t& p) { global_delim = p.get<std::string>("csv-separator"); });
+    parser
+        .add_argument({ "--force" },
+                      "Force the generation of an configuration file even if it exists")
+        .max_count(1)
+        .action([](parser_t& p) { force_config = p.get<bool>("force"); });
 
     parser.add_positional_argument("REGEX_FILTER").set_default(std::string{});
 

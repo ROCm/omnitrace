@@ -94,6 +94,7 @@ extern bool              debug_msg;
 extern bool              case_insensitive;
 extern bool              regex_hl;
 extern bool              expand_keys;
+extern bool              force_config;
 extern int32_t           max_width;
 extern int32_t           num_cols;
 extern int32_t           min_width;
@@ -139,3 +140,6 @@ dump_log_abort(int _v);
 
 std::string
 remove(std::string inp, const std::set<std::string>& entries);
+
+bool
+file_exists(const std::string&);
