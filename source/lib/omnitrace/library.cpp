@@ -542,6 +542,24 @@ omnitrace_init_tooling_hidden()
         buffer_config->set_size_kb(buffer_size);
         buffer_config->set_fill_policy(_policy);
 
+        std::set<std::string> _available_categories = {};
+        std::set<std::string> _disabled_categories  = {};
+        for(auto itr : { OMNITRACE_PERFETTO_CATEGORIES })
+            _available_categories.emplace(itr.name);
+        auto _enabled_categories = config::get_perfetto_categories();
+        for(const auto& itr : _available_categories)
+        {
+            if(!_enabled_categories.empty() && _enabled_categories.count(itr) == 0)
+                _disabled_categories.emplace(itr);
+        }
+
+        for(const auto& itr : _disabled_categories)
+        {
+            OMNITRACE_VERBOSE(1, "Disabling perfetto track event category: %s\n",
+                              itr.c_str());
+            track_event_cfg.add_disabled_categories(itr);
+        }
+
         auto* ds_cfg = cfg.add_data_sources()->mutable_config();
         ds_cfg->set_name("track_event");  // this MUST be track_event
         ds_cfg->set_track_event_config_raw(track_event_cfg.SerializeAsString());
@@ -1012,22 +1030,26 @@ omnitrace_finalize_hidden(void)
 #if defined(TIMEMORY_USE_MPI) && TIMEMORY_USE_MPI > 0
         if(get_perfetto_combined_traces())
         {
-            using perfetto_mpi_get_t =
-                tim::operation::finalize::mpi_get<char_vec_t, true>;
+            namespace operation = tim::operation;
+            auto _trace_data    = tracing_session->ReadTraceBlocking();
+            auto _rank_data     = std::vector<char_vec_t>{};
+            auto _mpi_get       = operation::finalize::mpi_get<char_vec_t, true>{ false };
 
-            char_vec_t              _trace_data{ tracing_session->ReadTraceBlocking() };
-            std::vector<char_vec_t> _rank_data = {};
-            auto _combine = [](char_vec_t& _dst, const char_vec_t& _src) -> char_vec_t& {
-                _dst.reserve(_dst.size() + _src.size());
-                for(auto&& itr : _src)
-                    _dst.emplace_back(itr);
-                return _dst;
-            };
+            _mpi_get(_rank_data, _trace_data);
 
-            perfetto_mpi_get_t{ _rank_data, _trace_data, _combine };
-            for(auto& itr : _rank_data)
-                trace_data =
-                    (trace_data.empty()) ? std::move(itr) : _combine(trace_data, itr);
+            if(tim::mpi::rank() == 0)
+            {
+                for(auto& itr : _rank_data)
+                {
+                    if(trace_data.empty())
+                        std::swap(trace_data, itr);
+                    else
+                        trace_data.insert(trace_data.end(),
+                                          std::make_move_iterator(itr.begin()),
+                                          std::make_move_iterator(itr.end()));
+                    itr.clear();
+                }
+            }
         }
         else
         {
