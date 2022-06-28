@@ -28,5 +28,5 @@
 #include <string>
 
 void
-dump_config(std::string _config_file, const std::set<std::string>& _config_fmts,
-            const std::array<bool, TOTAL>&);
+generate_config(std::string _config_file, const std::set<std::string>& _config_fmts,
+                const std::array<bool, TOTAL>&);

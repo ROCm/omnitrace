@@ -14,13 +14,13 @@ target_sources(
             ${CMAKE_CURRENT_LIST_DIR}/common.hpp
             ${CMAKE_CURRENT_LIST_DIR}/component_categories.hpp
             ${CMAKE_CURRENT_LIST_DIR}/defines.hpp
-            ${CMAKE_CURRENT_LIST_DIR}/dump_config.cpp
-            ${CMAKE_CURRENT_LIST_DIR}/dump_config.hpp
             ${CMAKE_CURRENT_LIST_DIR}/enumerated_list.hpp
+            ${CMAKE_CURRENT_LIST_DIR}/generate_config.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/generate_config.hpp
+            ${CMAKE_CURRENT_LIST_DIR}/get_availability.hpp
+            ${CMAKE_CURRENT_LIST_DIR}/get_categories.hpp
             ${CMAKE_CURRENT_LIST_DIR}/info_type.cpp
             ${CMAKE_CURRENT_LIST_DIR}/info_type.hpp
-            ${CMAKE_CURRENT_LIST_DIR}/get_categories.hpp
-            ${CMAKE_CURRENT_LIST_DIR}/get_availability.hpp
             $<TARGET_OBJECTS:omnitrace::omnitrace-object-library>)
 
 target_include_directories(omnitrace-avail PRIVATE ${CMAKE_CURRENT_LIST_DIR})

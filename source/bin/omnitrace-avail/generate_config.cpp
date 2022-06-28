@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "dump_config.hpp"
+#include "generate_config.hpp"
 #include "common.hpp"
 #include "defines.hpp"
 #include "info_type.hpp"
@@ -179,8 +179,8 @@ void
 update_choices();
 
 void
-dump_config(std::string _config_file, const std::set<std::string>& _config_fmts,
-            const std::array<bool, TOTAL>& _options)
+generate_config(std::string _config_file, const std::set<std::string>& _config_fmts,
+                const std::array<bool, TOTAL>& _options)
 {
     custom_setting_serializer::options = _options;
 

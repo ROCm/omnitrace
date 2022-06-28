@@ -24,8 +24,8 @@
 #include "common.hpp"
 #include "component_categories.hpp"
 #include "defines.hpp"
-#include "dump_config.hpp"
 #include "enumerated_list.hpp"
+#include "generate_config.hpp"
 #include "get_availability.hpp"
 #include "info_type.hpp"
 
@@ -329,7 +329,7 @@ main(int argc, char** argv)
     parser.add_argument({ "" }, "");
     parser.add_argument({ "[OUTPUT OPTIONS]" }, "");
     parser
-        .add_argument({ "-D", "--dump-config" },
+        .add_argument({ "-G", "--generate-config" },
                       "Dump a configuration to a specified file.")
         .max_count(1)
         .dtype("filename")
@@ -337,11 +337,11 @@ main(int argc, char** argv)
         .action([&_config_file](parser_t& _p) {
             auto _out =
                 (_p.exists("output")) ? _p.get<std::string>("output") : std::string{};
-            if(_p.get_count("dump-config") == 0 && !_out.empty())
+            if(_p.get_count("generate-config") == 0 && !_out.empty())
                 _config_file = _out;
             else
             {
-                _config_file = _p.get<std::string>("dump-config");
+                _config_file = _p.get<std::string>("generate-config");
                 if(get_bool(_config_file, false) && !_out.empty()) _config_file = _out;
             }
         });
@@ -414,7 +414,7 @@ main(int argc, char** argv)
     _parser_set_if_exists(include_settings, "settings");
     _parser_set_if_exists(include_hw_counters, "hw-counters");
 
-    if(parser.exists("dump-config"))
+    if(parser.exists("generate-config"))
     {
         if(_config_file.empty())
             throw std::runtime_error("Error! No config output file specified!");
@@ -422,7 +422,7 @@ main(int argc, char** argv)
             throw std::runtime_error("Error! No config output formats specified!");
         try
         {
-            dump_config(_config_file, _config_fmts, options);
+            generate_config(_config_file, _config_fmts, options);
         } catch(std::runtime_error& _e)
         {
             std::cerr << "[omnitrace-avail] " << _e.what() << std::endl;

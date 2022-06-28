@@ -194,7 +194,7 @@ string(REPLACE "+" "\\\+" _AVAIL_CFG_PATH
 omnitrace_add_bin_test(
     NAME omnitrace-avail-write-config
     TARGET omnitrace-avail
-    ARGS -D %env{PWD}%/omnitrace-tests-output/omnitrace-avail/omnitrace-test.cfg -F txt
+    ARGS -G %env{PWD}%/omnitrace-tests-output/omnitrace-avail/omnitrace-test.cfg -F txt
          json xml --force --all
     TIMEOUT 45
     LABELS "omnitrace-avail"
@@ -205,7 +205,7 @@ omnitrace_add_bin_test(
 omnitrace_add_bin_test(
     NAME omnitrace-avail-write-config-tweak
     TARGET omnitrace-avail
-    ARGS -D %env{PWD}%/omnitrace-tests-output/omnitrace-avail/omnitrace-tweak.cfg -F txt
+    ARGS -G %env{PWD}%/omnitrace-tests-output/omnitrace-avail/omnitrace-tweak.cfg -F txt
          json xml --force
     TIMEOUT 45
     LABELS "omnitrace-avail"
