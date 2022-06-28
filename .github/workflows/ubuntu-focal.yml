@@ -29,7 +29,7 @@ jobs:
           mpi: ''
           boost: 'ON'
           tbb: 'ON'
-          build-type: 'RelWithDebInfo'
+          build-type: 'Release'
           python: 'OFF'
           ompt: 'OFF'
           papi: 'OFF'
@@ -93,7 +93,7 @@ jobs:
 
     - name: Install
       working-directory: ${{ github.workspace }}/build
-      run:
+      run: |
         cpack -G STGZ
         mkdir -p /opt/omnitrace
         ./omnitrace-*.sh --prefix=/opt/omnitrace --exclude-subdir --skip-license
