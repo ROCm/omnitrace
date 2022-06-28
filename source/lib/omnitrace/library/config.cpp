@@ -31,6 +31,7 @@
 #include <timemory/backends/threading.hpp>
 #include <timemory/environment.hpp>
 #include <timemory/environment/types.hpp>
+#include <timemory/manager.hpp>
 #include <timemory/sampling/allocator.hpp>
 #include <timemory/settings.hpp>
 #include <timemory/settings/types.hpp>
@@ -149,6 +150,21 @@ configure_settings(bool _init)
                                     "omnitrace_init_library. state = %s",
                                     std::to_string(get_state()).c_str());
     }
+
+    tim::manager::add_metadata("OMNITRACE_VERSION", OMNITRACE_VERSION_STRING);
+    tim::manager::add_metadata("OMNITRACE_VERSION_MAJOR", OMNITRACE_VERSION_MAJOR);
+    tim::manager::add_metadata("OMNITRACE_VERSION_MINOR", OMNITRACE_VERSION_MINOR);
+    tim::manager::add_metadata("OMNITRACE_VERSION_PATCH", OMNITRACE_VERSION_PATCH);
+
+#if OMNITRACE_HIP_VERSION > 0
+    tim::manager::add_metadata("OMNITRACE_HIP_VERSION", OMNITRACE_HIP_VERSION_STRING);
+    tim::manager::add_metadata("OMNITRACE_HIP_VERSION_MAJOR",
+                               OMNITRACE_HIP_VERSION_MAJOR);
+    tim::manager::add_metadata("OMNITRACE_HIP_VERSION_MINOR",
+                               OMNITRACE_HIP_VERSION_MINOR);
+    tim::manager::add_metadata("OMNITRACE_HIP_VERSION_PATCH",
+                               OMNITRACE_HIP_VERSION_PATCH);
+#endif
 
     static auto _config = settings::shared_instance();
 
