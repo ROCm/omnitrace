@@ -149,9 +149,16 @@ std::vector<std::string>
 backtrace::get() const
 {
     std::vector<std::string> _v{};
-    _v.reserve(m_size);
-    for(size_t i = 0; i < m_size; ++i)
+    const auto*              itr   = m_data.begin();
+    size_t                   _size = 0;
+    for(; itr != m_data.end(); ++itr, ++_size)
+    {
+        if(strlen(*itr) == 0) break;
+    }
+    _v.reserve(_size);
+    for(size_t i = 0; i < _size; ++i)
         _v.emplace_back(m_data.at(i));
+    std::reverse(_v.begin(), _v.end());
     return _v;
 }
 
@@ -282,26 +289,9 @@ backtrace::sample(int signum)
                  _cache.get_num_voluntary_context_switch();
     m_page_flt = _cache.get_num_major_page_faults() + _cache.get_num_minor_page_faults();
     m_data     = tim::get_unw_backtrace<stack_depth, 4, false>();
-    auto* itr  = m_data.begin();
-    for(; itr != m_data.end(); ++itr, ++m_size)
+    for(auto* itr = m_data.begin(); itr != m_data.end(); ++itr, ++m_size)
     {
-        if(strlen(*itr) == 0) break;
-    }
-    std::reverse(m_data.begin(), itr);
-    if(!get_debug_sampling())
-    {
-        bool _ignore = false;
-        for(auto& itr : m_data)
-        {
-            if(strlen(itr) == 0) break;
-            if(strncmp(itr, "funlockfile", 11) == 0) _ignore = true;
-            if(_ignore && strlen(itr) > 0)
-            {
-                OMNITRACE_DEBUG("Discarding sample: '%s'...\n", itr);
-                itr[0] = '\0';
-                --m_size;
-            }
-        }
+        if((*itr)[0] == '\0') break;
     }
 
     if constexpr(tim::trait::is_available<hw_counters>::value)
@@ -337,7 +327,7 @@ backtrace::configure(bool _setup, int64_t _tid)
             if(get_papi_vector(_tid)) get_papi_vector(_tid)->start();
         }
 
-        auto _alrm_freq = 1.0 / std::min<double>(get_sampling_freq(), 5.0);
+        auto _alrm_freq = 1.0 / get_sampling_freq();
         auto _prof_freq = 1.0 / get_sampling_freq();
         auto _delay     = std::max<double>(1.0e-3, get_sampling_delay());
 
@@ -348,8 +338,10 @@ backtrace::configure(bool _setup, int64_t _tid)
         _sampler->set_flags(SA_RESTART);
         _sampler->set_delay(_delay);
         _sampler->set_verbose(std::min<size_t>(_sampler->get_verbose(), 2));
-        _sampler->set_frequency(_prof_freq, { SIGPROF });
-        _sampler->set_frequency(_alrm_freq, { SIGALRM });
+        if(_signal_types->count(SIGALRM) > 0)
+            _sampler->set_frequency(_alrm_freq, { SIGALRM });
+        if(_signal_types->count(SIGPROF) > 0)
+            _sampler->set_frequency(_prof_freq, { SIGPROF });
 
         static_assert(tim::trait::buffer_size<sampling::sampler_t>::value > 0,
                       "Error! Zero buffer size");
@@ -443,20 +435,18 @@ backtrace::post_process(int64_t _tid)
             tim::get_env<bool>("OMNITRACE_SAMPLING_KEEP_INTERNAL", get_debug_sampling());
         const auto _npos = std::string::npos;
         if(_keep_internal) return 1;
-        if(_lbl.find("omnitrace_init_tooling") != _npos) return -1;
-        if(_lbl.find("omnitrace_push_trace") != _npos) return -1;
-        if(_lbl.find("omnitrace_pop_trace") != _npos) return -1;
+        if(_lbl.find("omnitrace_") != _npos) return -1;
         if(_lbl.find("amd_comgr_") == 0) return -1;
+        if(_lbl.find("roctracer_") != _npos) return -1;
+        if(_lbl.find("omnitrace::hip_") != _npos) return -1;
+        if(_lbl.find("perfetto::") != _npos) return -1;
+        if(_lbl.find("omnitrace::") != _npos) return 0;
+        if(_lbl.find("tim::") != _npos) return 0;
         if(_check_internal)
         {
-            if(std::regex_search(
-                   _lbl, std::regex("(14pthread_gotcha7wrapper|default_error_condition)",
-                                    std::regex_constants::optimize)))
-                return 0;
-            else if(std::regex_search(
-                        _lbl, std::regex("(8sampling9backtrace9configure|"
-                                         "8sampling15unblock_signals|pthread_sigmask)",
-                                         std::regex_constants::optimize)))
+            if(std::regex_search(_lbl, std::regex("(pthread_sigmask|"
+                                                  "default_error_condition)",
+                                                  std::regex_constants::optimize)))
                 return 0;
         }
         return 1;
@@ -685,7 +675,7 @@ backtrace::post_process(int64_t _tid)
         // generate the instances of the tuple of components and start them
         for(const auto& itr : _bt->get())
         {
-            auto _lbl = _patch_label(itr);
+            auto _lbl = tim::demangle(_patch_label(itr));
             auto _use =
                 _use_label(_lbl, !_tc.empty() && (_tc.back().key() == "start_thread" ||
                                                   _tc.back().key() == "clone"));
