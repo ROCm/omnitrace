@@ -104,12 +104,12 @@ jobs:
         ./omnitrace-*.sh --prefix=/opt/omnitrace --exclude-subdir --skip-license
 
     - name: Test Install
-      timeout-minutes: 10
+      timeout-minutes: 15
       run: |
         set -v
         source /opt/omnitrace/share/omnitrace/setup-env.sh
         cat << EOF > ${HOME}/.omnitrace.cfg
-        OMNITRACE_DEBUG = ON
+        OMNITRACE_VERBOSE = 2
         OMNITRACE_USE_TIMEMORY = ON
         OMNITRACE_USE_PERFETTO = ON
         OMNITRACE_USE_SAMPLING = ON
