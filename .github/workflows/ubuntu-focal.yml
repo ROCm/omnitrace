@@ -1,4 +1,4 @@
-name: Ubuntu 20.04 (GCC, MPICH, OpenMPI)
+name: Ubuntu 20.04 (GCC, GCC + MPICH, GCC + OpenMPI)
 
 on:
   push:
