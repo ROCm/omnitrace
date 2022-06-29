@@ -1,4 +1,4 @@
-name: Ubuntu 20.04 (GCC 7-11, GCC + Python + ROCm 4.3, 4.5, latest)
+name: Ubuntu 20.04 (GCC, Python, ROCm)
 
 on:
   push:
