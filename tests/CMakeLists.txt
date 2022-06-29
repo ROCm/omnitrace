@@ -462,16 +462,8 @@ add_test(
 set_tests_properties(
     omnitrace-invalid-config
     PROPERTIES ENVIRONMENT
-               "OMNITRACE_CONFIG_FILE=${CMAKE_CURRENT_BINARY_DIR}/invalid.cfg"
-               TIMEOUT
-               120
-               LABELS
-               "config"
-               WILL_FAIL
-               ON
-               PASS_REGULAR_EXPRESSION
-               "Error reading configuration file: ${CMAKE_CURRENT_BINARY_DIR}/invalid.cfg"
-    )
+               "OMNITRACE_CONFIG_FILE=${CMAKE_CURRENT_BINARY_DIR}/invalid.cfg" TIMEOUT
+               120 LABELS "config" WILL_FAIL ON)
 
 add_test(
     NAME omnitrace-missing-config
@@ -481,16 +473,8 @@ add_test(
 set_tests_properties(
     omnitrace-missing-config
     PROPERTIES ENVIRONMENT
-               "OMNITRACE_CONFIG_FILE=${CMAKE_CURRENT_BINARY_DIR}/missing.cfg"
-               TIMEOUT
-               120
-               LABELS
-               "config"
-               WILL_FAIL
-               ON
-               PASS_REGULAR_EXPRESSION
-               "Error reading configuration file: ${CMAKE_CURRENT_BINARY_DIR}/missing.cfg"
-    )
+               "OMNITRACE_CONFIG_FILE=${CMAKE_CURRENT_BINARY_DIR}/missing.cfg" TIMEOUT
+               120 LABELS "config" WILL_FAIL ON)
 
 # -------------------------------------------------------------------------------------- #
 #
