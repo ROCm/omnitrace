@@ -1,4 +1,4 @@
-name: ubuntu-bionic
+name: Ubuntu 18.04 (GCC 7-8 + MPICH + Python 3.6-3.9)
 
 on:
   push:

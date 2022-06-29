@@ -1,4 +1,4 @@
-name: ubuntu-focal
+name: Ubuntu 20.04 (GCC, MPICH, OpenMPI)
 
 on:
   push:

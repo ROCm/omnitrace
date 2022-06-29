@@ -1,4 +1,4 @@
-name: opensuse
+name: OpenSUSE 15.2, 15.3 (Python 3.6-3.10)
 
 on:
   push:
