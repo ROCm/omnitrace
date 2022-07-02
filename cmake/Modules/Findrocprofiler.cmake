@@ -5,15 +5,24 @@ include(FindPackageHandleStandardArgs)
 
 # ----------------------------------------------------------------------------------------#
 
-set(_ROCM_PATHS $ENV{ROCM_HOME} /opt/rocm /opt/rocm/rocprofiler)
+if(NOT ROCM_PATH AND NOT "$ENV{ROCM_PATH}" STREQUAL "")
+    set(ROCM_PATH "$ENV{ROCM_PATH}")
+endif()
+
+foreach(_DIR ${ROCM_PATH} /opt/rocm /opt/rocm/rocprofiler)
+    if(EXISTS ${_DIR})
+        get_filename_component(_ABS_DIR "${_DIR}" ABSOLUTE)
+        list(APPEND _ROCM_ROCPROFILER_PATHS ${_ABS_DIR})
+    endif()
+endforeach()
 
 # ----------------------------------------------------------------------------------------#
 
 find_path(
     rocprofiler_ROOT_DIR
     NAMES include/rocprofiler/rocprofiler.h include/rocprofiler.h
-    HINTS ${_ROCM_PATHS}
-    PATHS ${_ROCM_PATHS}
+    HINTS ${_ROCM_ROCPROFILER_PATHS}
+    PATHS ${_ROCM_ROCPROFILER_PATHS}
     PATH_SUFFIXES rocprofiler)
 
 mark_as_advanced(rocprofiler_ROOT_DIR)
@@ -23,8 +32,8 @@ mark_as_advanced(rocprofiler_ROOT_DIR)
 find_path(
     rocprofiler_INCLUDE_DIR
     NAMES rocprofiler.h
-    HINTS ${rocprofiler_ROOT_DIR} ${_ROCM_PATHS}
-    PATHS ${rocprofiler_ROOT_DIR} ${_ROCM_PATHS}
+    HINTS ${rocprofiler_ROOT_DIR} ${_ROCM_ROCPROFILER_PATHS}
+    PATHS ${rocprofiler_ROOT_DIR} ${_ROCM_ROCPROFILER_PATHS}
     PATH_SUFFIXES include include/rocprofiler rocprofiler/include)
 
 mark_as_advanced(rocprofiler_INCLUDE_DIR)
@@ -32,8 +41,8 @@ mark_as_advanced(rocprofiler_INCLUDE_DIR)
 find_path(
     rocprofiler_hsa_INCLUDE_DIR
     NAMES hsa.h
-    HINTS ${rocprofiler_ROOT_DIR} ${_ROCM_PATHS}
-    PATHS ${rocprofiler_ROOT_DIR} ${_ROCM_PATHS}
+    HINTS ${rocprofiler_ROOT_DIR} ${_ROCM_ROCPROFILER_PATHS}
+    PATHS ${rocprofiler_ROOT_DIR} ${_ROCM_ROCPROFILER_PATHS}
     PATH_SUFFIXES include include/hsa)
 
 mark_as_advanced(rocprofiler_hsa_INCLUDE_DIR)
@@ -43,15 +52,15 @@ mark_as_advanced(rocprofiler_hsa_INCLUDE_DIR)
 find_library(
     rocprofiler_LIBRARY
     NAMES rocprofiler64 rocprofiler
-    HINTS ${rocprofiler_ROOT_DIR} ${_ROCM_PATHS}
-    PATHS ${rocprofiler_ROOT_DIR} ${_ROCM_PATHS}
+    HINTS ${rocprofiler_ROOT_DIR} ${_ROCM_ROCPROFILER_PATHS}
+    PATHS ${rocprofiler_ROOT_DIR} ${_ROCM_ROCPROFILER_PATHS}
     PATH_SUFFIXES lib lib64)
 
 find_library(
     rocprofiler_hsa-runtime_LIBRARY
     NAMES hsa-runtime64 hsa-runtime
-    HINTS ${rocprofiler_ROOT_DIR} ${_ROCM_PATHS}
-    PATHS ${rocprofiler_ROOT_DIR} ${_ROCM_PATHS}
+    HINTS ${rocprofiler_ROOT_DIR} ${_ROCM_ROCPROFILER_PATHS}
+    PATHS ${rocprofiler_ROOT_DIR} ${_ROCM_ROCPROFILER_PATHS}
     PATH_SUFFIXES lib lib64)
 
 if(rocprofiler_LIBRARY)
@@ -84,6 +93,6 @@ if(rocprofiler_FOUND)
 endif()
 # ------------------------------------------------------------------------------#
 
-unset(_ROCM_PATHS)
+unset(_ROCM_ROCPROFILER_PATHS)
 
 # ------------------------------------------------------------------------------#
