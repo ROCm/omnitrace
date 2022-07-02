@@ -11,7 +11,7 @@ set(_ROCM_PATHS $ENV{ROCM_HOME} /opt/rocm /opt/rocm/rocprofiler)
 
 find_path(
     rocprofiler_ROOT_DIR
-    NAMES include/rocprofiler.h
+    NAMES include/rocprofiler/rocprofiler.h include/rocprofiler.h
     HINTS ${_ROCM_PATHS}
     PATHS ${_ROCM_PATHS}
     PATH_SUFFIXES rocprofiler)
@@ -25,7 +25,7 @@ find_path(
     NAMES rocprofiler.h
     HINTS ${rocprofiler_ROOT_DIR} ${_ROCM_PATHS}
     PATHS ${rocprofiler_ROOT_DIR} ${_ROCM_PATHS}
-    PATH_SUFFIXES rocprofiler/include include)
+    PATH_SUFFIXES include include/rocprofiler rocprofiler/include)
 
 mark_as_advanced(rocprofiler_INCLUDE_DIR)
 

@@ -11,7 +11,7 @@ set(_ROCM_PATHS $ENV{ROCM_HOME} /opt/rocm /opt/rocm/roctracer)
 
 find_path(
     roctracer_ROOT_DIR
-    NAMES include/roctracer.h
+    NAMES include/roctracer/roctracer.h include/roctracer.h
     HINTS ${_ROCM_PATHS}
     PATHS ${_ROCM_PATHS}
     PATH_SUFFIXES roctracer)
@@ -25,7 +25,7 @@ find_path(
     NAMES roctracer.h
     HINTS ${roctracer_ROOT_DIR} ${_ROCM_PATHS}
     PATHS ${roctracer_ROOT_DIR} ${_ROCM_PATHS}
-    PATH_SUFFIXES roctracer/include include)
+    PATH_SUFFIXES include include/roctracer roctracer/include)
 
 mark_as_advanced(roctracer_INCLUDE_DIR)
 
