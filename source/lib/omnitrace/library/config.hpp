@@ -162,10 +162,13 @@ get_use_perfetto() OMNITRACE_HOT;
 bool&
 get_use_timemory() OMNITRACE_HOT;
 
-bool&
+bool
 get_use_roctracer() OMNITRACE_HOT;
 
-bool&
+bool
+get_use_rocprofiler() OMNITRACE_HOT;
+
+bool
 get_use_rocm_smi() OMNITRACE_HOT;
 
 bool&

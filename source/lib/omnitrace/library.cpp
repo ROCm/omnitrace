@@ -92,6 +92,16 @@ ensure_finalization(bool _static_init = false)
 #if defined(OMNITRACE_USE_ROCTRACER) && OMNITRACE_USE_ROCTRACER > 0
         tim::set_env("HSA_TOOLS_LIB", "libomnitrace.so", 0);
 #endif
+#if defined(OMNITRACE_USE_ROCPROFILER) && OMNITRACE_USE_ROCPROFILER > 0
+        auto _rocm_path    = tim::get_env<std::string>("ROCM_PATH", "/opt/rocm");
+        auto _rocp_metrics = JOIN('/', _rocm_path, "rocprofiler/lib/metrics.xml");
+        tim::set_env("HSA_TOOLS_LIB", "libomnitrace.so", 0);
+        tim::set_env("ROCP_TOOL_LIB", "libomnitrace.so", 0);
+        tim::set_env("ROCPROFILER_LOG", "1", 0);
+        tim::set_env("ROCP_HSA_INTERCEPT", "1", 0);
+        tim::set_env("ROCP_METRICS", _rocp_metrics, 0);
+        tim::set_env("HSA_TOOLS_REPORT_LOAD_FAILURE", "1", 0);
+#endif
     }
     return scope::destructor{ []() { omnitrace_finalize_hidden(); } };
 }

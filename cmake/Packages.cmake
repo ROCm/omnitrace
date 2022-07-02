@@ -16,6 +16,8 @@ omnitrace_add_interface_library(
 omnitrace_add_interface_library(omnitrace-hip "Provides flags and libraries for HIP")
 omnitrace_add_interface_library(omnitrace-roctracer
                                 "Provides flags and libraries for roctracer")
+omnitrace_add_interface_library(omnitrace-rocprofiler
+                                "Provides flags and libraries for rocprofiler")
 omnitrace_add_interface_library(omnitrace-rocm-smi
                                 "Provides flags and libraries for rocm-smi")
 omnitrace_add_interface_library(omnitrace-mpi "Provides MPI or MPI headers")
@@ -31,9 +33,15 @@ omnitrace_add_interface_library(omnitrace-compile-definitions "Compile definitio
 
 # libraries with relevant compile definitions
 set(OMNITRACE_EXTENSION_LIBRARIES
-    omnitrace::omnitrace-hip omnitrace::omnitrace-roctracer omnitrace::omnitrace-rocm-smi
-    omnitrace::omnitrace-mpi omnitrace::omnitrace-ptl omnitrace::omnitrace-ompt
-    omnitrace::omnitrace-papi omnitrace::omnitrace-perfetto)
+    omnitrace::omnitrace-hip
+    omnitrace::omnitrace-roctracer
+    omnitrace::omnitrace-rocprofiler
+    omnitrace::omnitrace-rocm-smi
+    omnitrace::omnitrace-mpi
+    omnitrace::omnitrace-ptl
+    omnitrace::omnitrace-ompt
+    omnitrace::omnitrace-papi
+    omnitrace::omnitrace-perfetto)
 
 target_include_directories(
     omnitrace-headers INTERFACE ${PROJECT_SOURCE_DIR}/source/lib/omnitrace
@@ -104,6 +112,20 @@ if(OMNITRACE_USE_ROCTRACER)
     target_link_libraries(omnitrace-roctracer INTERFACE roctracer::roctracer
                                                         omnitrace::omnitrace-hip)
     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${roctracer_LIBRARY_DIRS}")
+endif()
+
+# ----------------------------------------------------------------------------------------#
+#
+# rocprofiler
+#
+# ----------------------------------------------------------------------------------------#
+if(OMNITRACE_USE_ROCPROFILER)
+    list(APPEND CMAKE_PREFIX_PATH /opt/rocm)
+    find_package(rocprofiler ${omnitrace_FIND_QUIETLY} REQUIRED)
+    omnitrace_target_compile_definitions(omnitrace-rocprofiler
+                                         INTERFACE OMNITRACE_USE_ROCPROFILER)
+    target_link_libraries(omnitrace-rocprofiler INTERFACE rocprofiler::rocprofiler)
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${rocprofiler_LIBRARY_DIRS}")
 endif()
 
 # ----------------------------------------------------------------------------------------#

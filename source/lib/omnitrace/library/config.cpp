@@ -142,7 +142,6 @@ configure_settings(bool _init)
 {
     volatile bool _v = _settings_are_configured();
     if(_v) return;
-    _settings_are_configured() = true;
 
     static bool _once = false;
     if(_once) return;
@@ -161,6 +160,8 @@ configure_settings(bool _init)
     tim::manager::add_metadata("OMNITRACE_VERSION_MAJOR", OMNITRACE_VERSION_MAJOR);
     tim::manager::add_metadata("OMNITRACE_VERSION_MINOR", OMNITRACE_VERSION_MINOR);
     tim::manager::add_metadata("OMNITRACE_VERSION_PATCH", OMNITRACE_VERSION_PATCH);
+    tim::manager::add_metadata("OMNITRACE_GIT_DESCRIBE", OMNITRACE_GIT_DESCRIBE);
+    tim::manager::add_metadata("OMNITRACE_GIT_REVISION", OMNITRACE_GIT_REVISION);
 
 #if OMNITRACE_HIP_VERSION > 0
     tim::manager::add_metadata("OMNITRACE_HIP_VERSION", OMNITRACE_HIP_VERSION_STRING);
@@ -206,8 +207,13 @@ configure_settings(bool _init)
                              !_config->get<bool>("OMNITRACE_USE_PERFETTO"), "backend",
                              "timemory");
 
-    OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_ROCTRACER", "Enable ROCM tracing", true,
-                             "backend", "roctracer", "rocm");
+    OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_ROCTRACER",
+                             "Enable ROCm API and kernel tracing", true, "backend",
+                             "roctracer", "rocm");
+
+    OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_ROCPROFILER",
+                             "Enable ROCm hardware counters", true, "backend",
+                             "rocprofiler", "rocm");
 
     OMNITRACE_CONFIG_SETTING(
         bool, "OMNITRACE_USE_ROCM_SMI",
@@ -553,6 +559,8 @@ configure_settings(bool _init)
     configure_signal_handler();
     configure_disabled_settings();
 
+    _settings_are_configured() = true;
+
     OMNITRACE_CONDITIONAL_BASIC_PRINT(get_verbose_env() > 0, "configuration complete\n");
 }
 
@@ -582,6 +590,7 @@ configure_mode_settings()
         _set("OMNITRACE_USE_TIMEMORY", false);
         _set("OMNITRACE_USE_ROCM_SMI", false);
         _set("OMNITRACE_USE_ROCTRACER", false);
+        _set("OMNITRACE_USE_ROCPROFILER", false);
         _set("OMNITRACE_USE_KOKKOSP", false);
         _set("OMNITRACE_USE_OMPT", false);
         _set("OMNITRACE_USE_SAMPLING", false);
@@ -599,8 +608,9 @@ configure_mode_settings()
     {
         OMNITRACE_VERBOSE_F(
             1, "No HIP devices were found: disabling roctracer and rocm_smi...\n");
-        get_use_roctracer() = false;
-        get_use_rocm_smi()  = false;
+        _set("OMNITRACE_USE_ROCTRACER", false);
+        _set("OMNITRACE_USE_ROCPROFILER", false);
+        _set("OMNITRACE_USE_ROCM_SMI", false);
     }
 
     get_instrumentation_interval() = std::max<size_t>(get_instrumentation_interval(), 1);
@@ -624,6 +634,7 @@ configure_mode_settings()
         _set("OMNITRACE_USE_TIMEMORY", false);
         _set("OMNITRACE_USE_ROCM_SMI", false);
         _set("OMNITRACE_USE_ROCTRACER", false);
+        _set("OMNITRACE_USE_ROCPROFILER", false);
         _set("OMNITRACE_USE_KOKKOSP", false);
         _set("OMNITRACE_USE_OMPT", false);
         _set("OMNITRACE_USE_SAMPLING", false);
@@ -723,11 +734,18 @@ configure_disabled_settings()
     _handle_use_option("OMNITRACE_USE_OMPT", "ompt");
     _handle_use_option("OMNITRACE_USE_ROCM_SMI", "rocm_smi");
     _handle_use_option("OMNITRACE_USE_ROCTRACER", "roctracer");
+    _handle_use_option("OMNITRACE_USE_ROCPROFILER", "rocprofiler");
     _handle_use_option("OMNITRACE_CRITICAL_TRACE", "critical_trace");
 
 #if !defined(OMNITRACE_USE_ROCTRACER) || OMNITRACE_USE_ROCTRACER == 0
     _config->find("OMNITRACE_USE_ROCTRACER")->second->set_hidden(true);
     for(const auto& itr : _config->disable_category("roctracer"))
+        _config->find(itr)->second->set_hidden(true);
+#endif
+
+#if !defined(OMNITRACE_USE_ROCPROFILER) || OMNITRACE_USE_ROCPROFILER == 0
+    _config->find("OMNITRACE_USE_ROCPROFILER")->second->set_hidden(true);
+    for(const auto& itr : _config->disable_category("rocprofiler"))
         _config->find(itr)->second->set_hidden(true);
 #endif
 
@@ -1064,7 +1082,8 @@ is_binary_rewrite()
 bool
 get_debug_env()
 {
-    return tim::get_env<bool>("OMNITRACE_DEBUG", false);
+    return (settings_are_configured()) ? get_debug()
+                                       : tim::get_env<bool>("OMNITRACE_DEBUG", false);
 }
 
 bool
@@ -1106,7 +1125,8 @@ get_debug_sampling()
 int
 get_verbose_env()
 {
-    return tim::get_env<int>("OMNITRACE_VERBOSE", 0);
+    return (settings_are_configured()) ? get_verbose()
+                                       : tim::get_env<int>("OMNITRACE_VERBOSE", 0);
 }
 
 int
@@ -1130,27 +1150,36 @@ get_use_timemory()
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
-bool&
+bool
 get_use_roctracer()
 {
 #if defined(OMNITRACE_USE_ROCTRACER) && OMNITRACE_USE_ROCTRACER > 0
     static auto _v = get_config()->find("OMNITRACE_USE_ROCTRACER");
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 #else
-    static auto _v            = false;
-    return _v;
+    return false;
 #endif
 }
 
-bool&
+bool
+get_use_rocprofiler()
+{
+#if defined(OMNITRACE_USE_ROCPROFILER) && OMNITRACE_USE_ROCPROFILER > 0
+    static auto _v = get_config()->find("OMNITRACE_USE_ROCPROFILER");
+    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
+#else
+    return false;
+#endif
+}
+
+bool
 get_use_rocm_smi()
 {
 #if defined(OMNITRACE_USE_ROCM_SMI) && OMNITRACE_USE_ROCM_SMI > 0
     static auto _v = get_config()->find("OMNITRACE_USE_ROCM_SMI");
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 #else
-    static auto _v = false;
-    return _v;
+    return false;
 #endif
 }
 
