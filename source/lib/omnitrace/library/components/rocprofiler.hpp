@@ -155,5 +155,14 @@ metadata_task(const char* name, const char* value, int tid);
 void
 stop_top_level_timer_if_necessary_task(int tid);
 
+#if !defined(OMNITRACE_USE_ROCPROFILER) || OMNITRACE_USE_ROCPROFILER == 0
+inline std::map<unsigned, std::vector<info_entry_t>>
+rocm_metrics()
+{
+    return std::map<unsigned, std::vector<info_entry_t>>{};
+}
+
+#endif
+
 }  // namespace rocprofiler
 }  // namespace omnitrace

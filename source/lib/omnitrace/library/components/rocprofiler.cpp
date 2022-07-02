@@ -293,7 +293,7 @@ metrics_input(rocprofiler_feature_t** ret)
 hsa_status_t
 info_data_callback(const rocprofiler_info_data_t info, void* data)
 {
-    auto _data = static_cast<std::vector<info_entry_t>*>(data);
+    auto* _data = static_cast<std::vector<info_entry_t>*>(data);
     switch(info.kind)
     {
         case ROCPROFILER_INFO_KIND_METRIC:

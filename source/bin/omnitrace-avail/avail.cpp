@@ -29,6 +29,7 @@
 #include "get_availability.hpp"
 #include "info_type.hpp"
 
+#include "library/components/rocprofiler.hpp"
 #include "library/config.hpp"
 
 #include <timemory/components.hpp>
@@ -927,6 +928,7 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
     using width_bool = array_t<bool, N>;
 
     auto _papi_events = tim::papi::available_events_info();
+    auto _rocm_events = omnitrace::rocprofiler::rocm_metrics();
 
     auto _process_counters = [](auto& _events, int32_t _offset) {
         for(auto& itr : _events)
