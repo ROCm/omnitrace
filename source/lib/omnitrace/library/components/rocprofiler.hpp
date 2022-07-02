@@ -25,11 +25,13 @@
 #include "library/defines.hpp"
 
 #include <atomic>
+#include <cstring>
 #include <dlfcn.h>
 #include <iostream>
 #include <list>
-#include <string.h>
+#include <map>
 #include <string>
+#include <tuple>
 #include <unistd.h>
 #include <utility>
 #include <vector>
@@ -50,7 +52,8 @@ namespace omnitrace
 {
 namespace rocprofiler
 {
-using metric_type = unsigned long long;
+using metric_type  = unsigned long long;
+using info_entry_t = std::tuple<std::string, std::string, std::string>;
 
 struct RocmCounter
 {
@@ -136,6 +139,9 @@ get_last_timestamp_ns(void);
 
 extern void
 set_last_timestamp_ns(metric_type timestamp);
+
+std::map<unsigned, std::vector<info_entry_t>>
+rocm_metrics();
 
 uint64_t
 trace_get_time_stamp();

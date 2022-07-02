@@ -72,7 +72,7 @@ rocm_check_status(hsa_status_t status)
     {
         const char* error_string = nullptr;
         rocprofiler_error_string(&error_string);
-        fprintf(stderr, "ERROR: %s\n", error_string);
+        OMNITRACE_PRINT_F("ERROR: %s\n", error_string);
         abort();
     }
 }
@@ -104,20 +104,23 @@ void
 rocm_dump_context_entry(context_entry_t* entry, rocprofiler_feature_t* features,
                         unsigned feature_count)
 {
-    static metric_type last_timestamp = get_last_timestamp_ns();
+    // static metric_type last_timestamp = get_last_timestamp_ns();
 
     volatile std::atomic<bool>* valid =
         reinterpret_cast<std::atomic<bool>*>(&entry->valid);
     while(valid->load() == false)
         sched_yield();
 
-    const rocprofiler_dispatch_record_t* record      = entry->data.record;
-    std::string                          kernel_name = entry->data.kernel_name;
+    const rocprofiler_dispatch_record_t* record = entry->data.record;
     if(!record) return;  // there is nothing to do here.
 
-    kernel_name = kernel_name.substr(0, kernel_name.find(" [clone"));
-    int queueid = entry->data.queue_id;
-    int taskid  = get_initialized_queues(queueid);
+    int  queueid     = entry->data.queue_id;
+    int  taskid      = get_initialized_queues(queueid);
+    auto kernel_name = std::string{ entry->data.kernel_name };
+    auto _pos        = kernel_name.find_last_of(')');
+    if(_pos != std::string::npos) kernel_name = kernel_name.substr(0, _pos + 1);
+
+    // free(entry->data.kernel_name);
 
     /*if(taskid == -1)
     {  // not initialized
@@ -146,11 +149,11 @@ rocm_dump_context_entry(context_entry_t* entry, rocprofiler_feature_t* features,
                         kernel_name.c_str(), record->begin, record->end);
 
     process_rocm_events(_evt);
-    auto timestamp = record->begin;
+    // auto timestamp = record->begin;
 
-    last_timestamp = timestamp;
-    timestamp      = record->end;
-    last_timestamp = timestamp;
+    // last_timestamp = timestamp;
+    // timestamp      = record->end;
+    // last_timestamp = timestamp;
     set_last_timestamp_ns(record->complete);
 
 #ifdef DEBUG_PROF
@@ -173,10 +176,8 @@ rocm_dump_context_entry(context_entry_t* entry, rocprofiler_feature_t* features,
 
     if(feature_count > 0)
     {
-        hsa_status_t status = rocprofiler_group_get_data(&group);
-        rocm_check_status(status);
-        status = rocprofiler_get_metrics(group.context);
-        rocm_check_status(status);
+        rocm_check_status(rocprofiler_group_get_data(&group));
+        rocm_check_status(rocprofiler_get_metrics(group.context));
     }
 
     for(unsigned i = 0; i < feature_count; ++i)
@@ -222,7 +223,7 @@ rocm_context_handler(const rocprofiler_pool_entry_t* entry, void* arg)
 
     rocm_dump_context_entry(ctx_entry, handler_arg->features, handler_arg->feature_count);
 
-    return false;
+    return true;
 }
 
 // Kernel disoatch callback
@@ -232,35 +233,19 @@ rocm_dispatch_callback(const rocprofiler_callback_data_t* callback_data, void* a
 {
     // Passed tool data
     hsa_agent_t agent = callback_data->agent;
-    // HSA status
-    hsa_status_t status = HSA_STATUS_ERROR;
 
-#if 1
     // Open profiling context
     const unsigned   gpu_id = HsaRsrcFactory::Instance().GetAgentInfo(agent)->dev_index;
     callbacks_arg_t* callbacks_arg = reinterpret_cast<callbacks_arg_t*>(arg);
     rocprofiler_pool_t*      pool  = callbacks_arg->pools[gpu_id];
     rocprofiler_pool_entry_t pool_entry{};
-    status = rocprofiler_pool_fetch(pool, &pool_entry);
-    rocm_check_status(status);
+    rocm_check_status(rocprofiler_pool_fetch(pool, &pool_entry));
     // Profiling context entry
     rocprofiler_t*   context = pool_entry.context;
     context_entry_t* entry   = reinterpret_cast<context_entry_t*>(pool_entry.payload);
-#else
-    // Open profiling context
-    // context properties
-    context_entry_t*         entry   = new context_entry_t{};
-    rocprofiler_t*           context = nullptr;
-    rocprofiler_properties_t properties{};
-    properties.handler     = rocm_context_handler1;
-    properties.handler_arg = (void*) entry;
-    status                 = rocprofiler_open(agent, features, feature_count, &context,
-                              0 /*ROCPROFILER_MODE_SINGLEGROUP*/, &properties);
-    rocm_check_status(status);
-#endif
+
     // Get group[0]
-    status = rocprofiler_get_group(context, 0, group);
-    rocm_check_status(status);
+    rocm_check_status(rocprofiler_get_group(context, 0, group));
 
     // Fill profiling context entry
     entry->agent            = agent;
@@ -303,6 +288,72 @@ metrics_input(rocprofiler_feature_t** ret)
 
     *ret = features;
     return feature_count;
+}
+
+hsa_status_t
+info_data_callback(const rocprofiler_info_data_t info, void* data)
+{
+    auto _data = static_cast<std::vector<info_entry_t>*>(data);
+    switch(info.kind)
+    {
+        case ROCPROFILER_INFO_KIND_METRIC:
+        {
+            if(info.metric.expr != nullptr)
+            {
+                /*
+                fprintf(stdout, "Derived counter:  gpu-agent%d : %s : %s\n",
+                        info.agent_index, info.metric.name, info.metric.description);
+                fprintf(stdout, "      %s = %s\n", info.metric.name, info.metric.expr);
+                */
+                _data->emplace_back(info.metric.name, info.metric.expr,
+                                    info.metric.description);
+            }
+            else
+            {
+                /*
+                fprintf(stdout, "Basic counter:  gpu-agent%d : %s", info.agent_index,
+                        info.metric.name);
+                if(info.metric.instances > 1)
+                {
+                    fprintf(stdout, "[0-%u]", info.metric.instances - 1);
+                }
+                fprintf(stdout, " : %s\n", info.metric.description);
+                fprintf(stdout, "      block %s has %u counters\n",
+                        info.metric.block_name, info.metric.block_counters);
+                */
+                _data->emplace_back(info.metric.name, std::string{},
+                                    info.metric.description);
+            }
+            // fflush(stdout);
+            break;
+        }
+        default: printf("wrong info kind %u\n", info.kind); return HSA_STATUS_ERROR;
+    }
+    return HSA_STATUS_SUCCESS;
+}
+
+std::map<unsigned, std::vector<info_entry_t>>
+rocm_metrics()
+{
+    std::map<unsigned, std::vector<info_entry_t>> _data = {};
+    // Available GPU agents
+    const unsigned gpu_count = HsaRsrcFactory::Instance().GetCountOfGpuAgents();
+
+    std::vector<AgentInfo*> _gpu_agents(gpu_count, nullptr);
+    for(unsigned i = 0; i < gpu_count; ++i)
+    {
+        const AgentInfo*  _agent   = _gpu_agents[i];
+        const AgentInfo** _agent_p = &_agent;
+        HsaRsrcFactory::Instance().GetGpuAgentInfo(i, _agent_p);
+
+        auto _entries = std::vector<info_entry_t>{};
+        rocm_check_status(rocprofiler_iterate_info(
+            &_agent->dev_id, ROCPROFILER_INFO_KIND_METRIC, info_data_callback,
+            reinterpret_cast<void*>(&_entries)));
+        _data[i] = _entries;
+    }
+
+    return _data;
 }
 
 void
