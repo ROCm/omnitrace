@@ -21,20 +21,23 @@ THE SOFTWARE.
 *******************************************************************************/
 
 #include "library/components/rocprofiler.hpp"
+#include "library/common.hpp"
+#include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/rocm.hpp"
 #include "library/rocprofiler/hsa_rsrc_factory.hpp"
 
-#include <cstdlib>
-#include <mutex>
-#include <rocprofiler.h>
-
+#include <timemory/backends/hardware_counters.hpp>
 #include <timemory/manager.hpp>
 
+#include <rocprofiler.h>
+
 #include <atomic>
+#include <cstdlib>
 #include <dlfcn.h>
 #include <hsa.h>
 #include <iostream>
+#include <mutex>
 #include <sstream>
 #include <string.h>
 #include <unistd.h>
@@ -258,71 +261,112 @@ rocm_dispatch_callback(const rocprofiler_callback_data_t* callback_data, void* a
 }
 
 unsigned
-metrics_input(rocprofiler_feature_t** ret)
+metrics_input(unsigned _device, rocprofiler_feature_t** ret)
 {
     // OMNITRACE_THROW("%s\n", __FUNCTION__);
     // Profiling feature objects
-    const unsigned         feature_count = 6;
+    auto                     _events = tim::delimit(config::get_rocm_events(), ", ;\t\n");
+    std::vector<std::string> _features    = {};
+    auto                     _this_device = JOIN("", ":device=", _device);
+    for(auto itr : _events)
+    {
+        auto _pos = itr.find(":device=");
+        if(_pos != std::string::npos)
+        {
+            if(itr.find(_this_device) != std::string::npos)
+            {
+                _features.emplace_back(itr.substr(0, _pos));
+            }
+        }
+        else
+        {
+            _features.emplace_back(itr);
+        }
+    }
+    const unsigned         feature_count = _features.size();
     rocprofiler_feature_t* features      = new rocprofiler_feature_t[feature_count];
     memset(features, 0, feature_count * sizeof(rocprofiler_feature_t));
 
     // PMC events
-    features[0].kind = ROCPROFILER_FEATURE_KIND_METRIC;
-    features[0].name = "GRBM_COUNT";
-    features[1].kind = ROCPROFILER_FEATURE_KIND_METRIC;
-    features[1].name = "GRBM_GUI_ACTIVE";
-    features[2].kind = ROCPROFILER_FEATURE_KIND_METRIC;
-    features[2].name = "GPUBusy";
-    features[3].kind = ROCPROFILER_FEATURE_KIND_METRIC;
-    features[3].name = "SQ_WAVES";
-    features[4].kind = ROCPROFILER_FEATURE_KIND_METRIC;
-    features[4].name = "SQ_INSTS_VALU";
-    features[5].kind = ROCPROFILER_FEATURE_KIND_METRIC;
-    features[5].name = "VALUInsts";
-    //  features[6].kind = ROCPROFILER_FEATURE_KIND_METRIC;
-    //  features[6].name = "TCC_HIT_sum";
-    //  features[7].kind = ROCPROFILER_FEATURE_KIND_METRIC;
-    //  features[7].name = "TCC_MISS_sum";
-    //  features[8].kind = ROCPROFILER_FEATURE_KIND_METRIC;
-    //  features[8].name = "WRITE_SIZE";
+    for(unsigned i = 0; i < feature_count; ++i)
+    {
+        features[i].kind            = ROCPROFILER_FEATURE_KIND_METRIC;
+        features[i].name            = strdup(_features.at(i).c_str());
+        features[i].parameters      = nullptr;
+        features[i].parameter_count = 0;
+    }
 
     *ret = features;
     return feature_count;
 }
 
-hsa_status_t
-info_data_callback(const rocprofiler_info_data_t info, void* data)
+struct info_data
 {
-    auto* _data = static_cast<std::vector<info_entry_t>*>(data);
+    const AgentInfo*           agent = nullptr;
+    std::vector<info_entry_t>* data  = nullptr;
+};
+
+hsa_status_t
+info_data_callback(const rocprofiler_info_data_t info, void* arg)
+{
+    using qualifier_t     = tim::hardware_counters::qualifier;
+    using qualifier_vec_t = std::vector<qualifier_t>;
+    auto*       _arg      = static_cast<info_data*>(arg);
+    const auto* _agent    = _arg->agent;
+    auto*       _data     = _arg->data;
+
     switch(info.kind)
     {
         case ROCPROFILER_INFO_KIND_METRIC:
         {
+            auto _device_qualifier_sym = JOIN("", ":device=", _agent->dev_index);
+            auto _device_qualifier     = tim::hardware_counters::qualifier{
+                true, static_cast<int>(_agent->dev_index), _device_qualifier_sym,
+                JOIN(" ", "Device", _agent->dev_index)
+            };
+            auto _long_desc = std::string{ info.metric.description };
+            auto _units     = std::string{};
+            auto _pysym     = std::string{};
             if(info.metric.expr != nullptr)
             {
-                /*
-                fprintf(stdout, "Derived counter:  gpu-agent%d : %s : %s\n",
-                        info.agent_index, info.metric.name, info.metric.description);
-                fprintf(stdout, "      %s = %s\n", info.metric.name, info.metric.expr);
-                */
-                _data->emplace_back(info.metric.name, info.metric.expr,
-                                    info.metric.description);
+                auto _sym        = JOIN("", info.metric.name, _device_qualifier_sym);
+                auto _short_desc = JOIN("", "Derived counter: ", info.metric.expr);
+                _data->emplace_back(info_entry_t(true, tim::hardware_counters::api::rocm,
+                                                 _data->size(), 0, _sym, _pysym,
+                                                 _short_desc, _long_desc, _units,
+                                                 qualifier_vec_t{ _device_qualifier }));
             }
             else
             {
-                /*
-                fprintf(stdout, "Basic counter:  gpu-agent%d : %s", info.agent_index,
-                        info.metric.name);
-                if(info.metric.instances > 1)
+                if(info.metric.instances == 1)
                 {
-                    fprintf(stdout, "[0-%u]", info.metric.instances - 1);
+                    auto _sym = JOIN("", info.metric.name, _device_qualifier_sym);
+                    auto _short_desc =
+                        JOIN("", info.metric.name, " on device ", _agent->dev_index);
+                    _data->emplace_back(info_entry_t(
+                        true, tim::hardware_counters::api::rocm, _data->size(), 0, _sym,
+                        _pysym, _short_desc, _long_desc, _units,
+                        qualifier_vec_t{ _device_qualifier }));
                 }
-                fprintf(stdout, " : %s\n", info.metric.description);
-                fprintf(stdout, "      block %s has %u counters\n",
-                        info.metric.block_name, info.metric.block_counters);
-                */
-                _data->emplace_back(info.metric.name, std::string{},
-                                    info.metric.description);
+                else
+                {
+                    for(uint32_t i = 0; i < info.metric.instances; ++i)
+                    {
+                        auto _instance_qualifier_sym = JOIN("", '[', i, ']');
+                        auto _instance_qualifier =
+                            tim::hardware_counters::qualifier{ true, static_cast<int>(i),
+                                                               _instance_qualifier_sym,
+                                                               JOIN(" ", "Instance", i) };
+                        auto _sym = JOIN("", info.metric.name, _instance_qualifier_sym,
+                                         _device_qualifier_sym);
+                        auto _short_desc = JOIN("", info.metric.name, " instance ", i,
+                                                " on device ", _agent->dev_index);
+                        _data->emplace_back(info_entry_t(
+                            true, tim::hardware_counters::api::rocm, _data->size(), 0,
+                            _sym, _pysym, _short_desc, _long_desc, _units,
+                            qualifier_vec_t{ _device_qualifier, _instance_qualifier }));
+                    }
+                }
             }
             // fflush(stdout);
             break;
@@ -332,10 +376,10 @@ info_data_callback(const rocprofiler_info_data_t info, void* data)
     return HSA_STATUS_SUCCESS;
 }
 
-std::map<unsigned, std::vector<info_entry_t>>
+std::vector<info_entry_t>
 rocm_metrics()
 {
-    std::map<unsigned, std::vector<info_entry_t>> _data = {};
+    std::vector<info_entry_t> _data = {};
     // Available GPU agents
     const unsigned gpu_count = HsaRsrcFactory::Instance().GetCountOfGpuAgents();
 
@@ -346,11 +390,30 @@ rocm_metrics()
         const AgentInfo** _agent_p = &_agent;
         HsaRsrcFactory::Instance().GetGpuAgentInfo(i, _agent_p);
 
-        auto _entries = std::vector<info_entry_t>{};
-        rocm_check_status(rocprofiler_iterate_info(
-            &_agent->dev_id, ROCPROFILER_INFO_KIND_METRIC, info_data_callback,
-            reinterpret_cast<void*>(&_entries)));
-        _data[i] = _entries;
+        auto _v = info_data{ _agent, &_data };
+        rocm_check_status(
+            rocprofiler_iterate_info(&_agent->dev_id, ROCPROFILER_INFO_KIND_METRIC,
+                                     info_data_callback, reinterpret_cast<void*>(&_v)));
+    }
+
+    auto _settings = tim::settings::shared_instance();
+    if(_settings)
+    {
+        auto ritr = _settings->find("OMNITRACE_ROCM_EVENTS");
+        if(ritr != _settings->end())
+        {
+            auto _rocm_events = ritr->second;
+            if(_rocm_events->get_choices().empty())
+            {
+                std::vector<std::string> _choices = {};
+                _choices.reserve(_data.size());
+                for(auto itr : _data)
+                {
+                    if(!itr.symbol().empty()) _choices.emplace_back(itr.symbol());
+                }
+                _rocm_events->set_choices(_choices);
+            }
+        }
     }
 
     return _data;
@@ -362,29 +425,31 @@ rocm_initialize()
     // Available GPU agents
     const unsigned gpu_count = HsaRsrcFactory::Instance().GetCountOfGpuAgents();
 
-    // Getting profiling features
-    rocprofiler_feature_t* features = nullptr;
-    // TAU doesn't support features or metrics yet! SSS
-    unsigned feature_count = metrics_input(&features);
-    // unsigned feature_count = 0;
-
-    // Handler arg
-    handler_arg_t* handler_arg = new handler_arg_t{};
-    handler_arg->features      = features;
-    handler_arg->feature_count = feature_count;
-
-    // Context properties
-    rocprofiler_pool_properties_t properties{};
-    properties.num_entries   = 100;
-    properties.payload_bytes = sizeof(context_entry_t);
-    properties.handler       = rocm_context_handler;
-    properties.handler_arg   = handler_arg;
+    (void) rocm_metrics();
 
     // Adding dispatch observer
     callbacks_arg_t* callbacks_arg = new callbacks_arg_t{};
     callbacks_arg->pools           = new rocprofiler_pool_t*[gpu_count];
     for(unsigned gpu_id = 0; gpu_id < gpu_count; gpu_id++)
     {
+        // Getting profiling features
+        rocprofiler_feature_t* features = nullptr;
+        // TAU doesn't support features or metrics yet! SSS
+        unsigned feature_count = metrics_input(gpu_id, &features);
+        // unsigned feature_count = 0;
+
+        // Handler arg
+        handler_arg_t* handler_arg = new handler_arg_t{};
+        handler_arg->features      = features;
+        handler_arg->feature_count = feature_count;
+
+        // Context properties
+        rocprofiler_pool_properties_t properties{};
+        properties.num_entries   = 100;
+        properties.payload_bytes = sizeof(context_entry_t);
+        properties.handler       = rocm_context_handler;
+        properties.handler_arg   = handler_arg;
+
         // Getting GPU device info
         const AgentInfo* agent_info = nullptr;
         if(HsaRsrcFactory::Instance().GetGpuAgentInfo(gpu_id, &agent_info) == false)
@@ -395,17 +460,16 @@ rocm_initialize()
 
         // Open profiling pool
         rocprofiler_pool_t* pool = nullptr;
-        hsa_status_t        status =
-            rocprofiler_pool_open(agent_info->dev_id, features, feature_count, &pool,
-                                  0 /*ROCPROFILER_MODE_SINGLEGROUP*/, &properties);
-        rocm_check_status(status);
+        uint32_t            mode = 0;  // ROCPROFILER_MODE_SINGLEGROUP
+        rocm_check_status(rocprofiler_pool_open(agent_info->dev_id, features,
+                                                feature_count, &pool, mode, &properties));
         callbacks_arg->pools[gpu_id] = pool;
     }
 
     rocprofiler_queue_callbacks_t callbacks_ptrs{};
     callbacks_ptrs.dispatch = rocm_dispatch_callback;
     int err = rocprofiler_set_queue_callbacks(callbacks_ptrs, callbacks_arg);
-    OMNITRACE_VERBOSE_F(0, "err=%d, rocprofiler_set_queue_callbacks\n", err);
+    OMNITRACE_VERBOSE_F(3, "err=%d, rocprofiler_set_queue_callbacks\n", err);
 }
 
 void
@@ -466,7 +530,7 @@ metric_set_synchronized_gpu_timestamp(int /*tid*/, double value)
         // offset_timestamp = trace_get_time_stamp() - ((double) value);
     }
     // metric_set_gpu_timestamp(tid, offset_timestamp + value);
-    OMNITRACE_VERBOSE_F(0, "metric_set_gpu_timestamp = %llu + %f = %f\n",
+    OMNITRACE_VERBOSE_F(4, "metric_set_gpu_timestamp = %llu + %f = %f\n",
                         offset_timestamp, value, offset_timestamp + value);
     return offset_timestamp + value;
 }
@@ -490,7 +554,7 @@ add_metadata_for_task(const char* key, int value, int taskid)
     char buf[1024];
     sprintf(buf, "%d", value);
     // metadata_task(key, buf, taskid);
-    OMNITRACE_VERBOSE_F(0, "Adding Metadata: %s, %d, for task %d\n", key, value, taskid);
+    OMNITRACE_VERBOSE_F(4, "Adding Metadata: %s, %d, for task %d\n", key, value, taskid);
 }
 
 bool
@@ -508,7 +572,7 @@ bool
 check_timestamps(unsigned long long last_timestamp, unsigned long long current_timestamp,
                  const char* debug_str, int taskid)
 {
-    OMNITRACE_VERBOSE_F(0,
+    OMNITRACE_VERBOSE_F(4,
                         "Taskid<%d>: check_timestamps: Checking last_timestamp = %llu, "
                         "current_timestamp = %llu at %s\n",
                         taskid, last_timestamp, current_timestamp, debug_str);
@@ -551,7 +615,7 @@ publish_event(RocmEvent event)
     metric_set_synchronized_gpu_timestamp(
         event.taskid, ((double) timestamp / 1e3));  // convert to microseconds
     // OMNITRACE_START_TASK(event.name.c_str(), event.taskid);
-    OMNITRACE_VERBOSE_F(0, "Started event %s on task %d timestamp = %llu \n",
+    OMNITRACE_VERBOSE_F(4, "Started event %s on task %d timestamp = %llu \n",
                         event.name.c_str(), event.taskid, timestamp);
 
     // then the exit
@@ -560,7 +624,7 @@ publish_event(RocmEvent event)
     metric_set_synchronized_gpu_timestamp(
         event.taskid, ((double) timestamp / 1e3));  // convert to microseconds
     // OMNITRACE_STOP_TASK(event.name.c_str(), event.taskid);
-    OMNITRACE_VERBOSE_F(0, "Stopped event %s on task %d timestamp = %llu \n",
+    OMNITRACE_VERBOSE_F(4, "Stopped event %s on task %d timestamp = %llu \n",
                         event.name.c_str(), event.taskid, timestamp);
 }
 
@@ -621,7 +685,7 @@ flush_rocm_events_if_necessary(int thread_id)
             // RtsLayer::LockDB();
             if(get_initialized_queues(i) != -1)
             {  // contention. Is it still -1?
-                OMNITRACE_VERBOSE_F(0, "Closing thread id: %d last timestamp = %llu\n",
+                OMNITRACE_VERBOSE_F(4, "Closing thread id: %d last timestamp = %llu\n",
                                     get_initialized_queues(i), last_timestamp_ns);
                 metric_set_synchronized_gpu_timestamp(
                     i,

@@ -24,6 +24,8 @@
 
 #include "library/defines.hpp"
 
+#include <timemory/backends/hardware_counters.hpp>
+
 #include <atomic>
 #include <cstring>
 #include <dlfcn.h>
@@ -53,7 +55,7 @@ namespace omnitrace
 namespace rocprofiler
 {
 using metric_type  = unsigned long long;
-using info_entry_t = std::tuple<std::string, std::string, std::string>;
+using info_entry_t = ::tim::hardware_counters::info;
 
 struct RocmCounter
 {
@@ -140,7 +142,7 @@ get_last_timestamp_ns(void);
 extern void
 set_last_timestamp_ns(metric_type timestamp);
 
-std::map<unsigned, std::vector<info_entry_t>>
+std::vector<info_entry_t>
 rocm_metrics();
 
 uint64_t

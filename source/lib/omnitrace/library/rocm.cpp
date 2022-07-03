@@ -79,7 +79,7 @@ extern "C"
 #if defined(OMNITRACE_USE_ROCPROFILER) && OMNITRACE_USE_ROCPROFILER > 0
     void OnUnloadTool()
     {
-        OMNITRACE_THROW("Inside OnUnloadTool\n");
+        OMNITRACE_BASIC_VERBOSE(2, "Inside %s\n", __FUNCTION__);
 
         rocm::lock_t _lk{ rocm::rocm_mutex, std::defer_lock };
         if(!_lk.owns_lock()) _lk.lock();
@@ -96,8 +96,7 @@ extern "C"
 
     void OnLoadToolProp(rocprofiler_settings_t* settings)
     {
-        OMNITRACE_VERBOSE_F(0, "Inside OnLoadToolProp\n");
-        // init_initializeTAU();
+        OMNITRACE_BASIC_VERBOSE(2, "Inside %s\n", __FUNCTION__);
 
         rocm::lock_t _lk{ rocm::rocm_mutex, std::defer_lock };
         if(!_lk.owns_lock()) _lk.lock();
@@ -119,12 +118,14 @@ extern "C"
     bool OnLoad(HsaApiTable* table, uint64_t runtime_version, uint64_t failed_tool_count,
                 const char* const* failed_tool_names)
     {
+        OMNITRACE_BASIC_VERBOSE(2, "Inside %s\n", __FUNCTION__);
+
         if(!tim::get_env("OMNITRACE_INIT_TOOLING", true)) return true;
         if(!tim::settings::enabled()) return true;
 
         roctracer_is_init() = true;
         pthread_gotcha::push_enable_sampling_on_child_threads(false);
-        OMNITRACE_BASIC_VERBOSE_F(0, "\n");
+        OMNITRACE_BASIC_VERBOSE_F(1, "\n");
 
         tim::consume_parameters(table, runtime_version, failed_tool_count,
                                 failed_tool_names);
@@ -217,8 +218,17 @@ extern "C"
         rocm_smi::set_state(State::Active);
         comp::roctracer::setup();
 
+#if defined(OMNITRACE_USE_ROCPROFILER) && OMNITRACE_USE_ROCPROFILER > 0
+        bool _force_rocprofiler_init =
+            tim::get_env("OMNITRACE_FORCE_ROCPROFILE_INIT", false, false);
+#else
+        bool _force_rocprofiler_init = false;
+#endif
+
         bool _success = true;
-        if(get_use_rocprofiler())
+        bool _is_empty =
+            (config::settings_are_configured() && config::get_rocm_events().empty());
+        if(_force_rocprofiler_init || (get_use_rocprofiler() && !_is_empty))
         {
             auto _rocprof =
                 dynamic_library{ "OMNITRACE_ROCPROFILER_LIBRARY", "librocprofiler64.so",
@@ -227,8 +237,15 @@ extern "C"
             on_load_t _rocprof_load = nullptr;
             _success = _rocprof.invoke("OnLoad", _rocprof_load, table, runtime_version,
                                        failed_tool_count, failed_tool_names);
+            OMNITRACE_CONDITIONAL_PRINT_F(!_success,
+                                          "Warning! Invoking rocprofiler's OnLoad "
+                                          "failed! OMNITRACE_ROCPROFILER_LIBRARY=%s\n",
+                                          _rocprof.filename.c_str());
+            OMNITRACE_CI_THROW(!_success,
+                               "Warning! Invoking rocprofiler's OnLoad "
+                               "failed! OMNITRACE_ROCPROFILER_LIBRARY=%s\n",
+                               _rocprof.filename.c_str());
         }
-
         pthread_gotcha::pop_enable_sampling_on_child_threads();
         return _success;
     }
@@ -236,7 +253,7 @@ extern "C"
     // HSA-runtime on-unload method
     void OnUnload()
     {
-        OMNITRACE_DEBUG_F("\n");
+        OMNITRACE_BASIC_VERBOSE(2, "Inside %s\n", __FUNCTION__);
         rocm_smi::set_state(State::Finalized);
         comp::roctracer::shutdown();
         omnitrace_finalize_hidden();
