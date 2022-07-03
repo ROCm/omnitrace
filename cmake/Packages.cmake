@@ -53,6 +53,14 @@ target_link_libraries(omnitrace-headers INTERFACE omnitrace::omnitrace-threading
 # ensure the env overrides the appending /opt/rocm later
 string(REPLACE ":" ";" CMAKE_PREFIX_PATH "$ENV{CMAKE_PREFIX_PATH};${CMAKE_PREFIX_PATH}")
 
+set(OMNITRACE_DEFAULT_ROCM_PATH
+    /opt/rocm
+    CACHE PATH "Default search path for ROCM")
+if(EXISTS ${OMNITRACE_DEFAULT_ROCM_PATH})
+    get_filename_component(OMNITRACE_DEFAULT_ROCM_PATH "${OMNITRACE_DEFAULT_ROCM_PATH}"
+                           REALPATH)
+endif()
+
 # ----------------------------------------------------------------------------------------#
 #
 # Threading
@@ -92,7 +100,7 @@ endforeach()
 # ----------------------------------------------------------------------------------------#
 
 if(OMNITRACE_USE_HIP)
-    list(APPEND CMAKE_PREFIX_PATH /opt/rocm)
+    list(APPEND CMAKE_PREFIX_PATH ${OMNITRACE_DEFAULT_ROCM_PATH})
     find_package(hip ${omnitrace_FIND_QUIETLY} REQUIRED)
     omnitrace_target_compile_definitions(omnitrace-hip INTERFACE OMNITRACE_USE_HIP)
     target_link_libraries(omnitrace-hip INTERFACE hip::host)
@@ -105,7 +113,7 @@ endif()
 # ----------------------------------------------------------------------------------------#
 
 if(OMNITRACE_USE_ROCTRACER)
-    list(APPEND CMAKE_PREFIX_PATH /opt/rocm)
+    list(APPEND CMAKE_PREFIX_PATH ${OMNITRACE_DEFAULT_ROCM_PATH})
     find_package(roctracer ${omnitrace_FIND_QUIETLY} REQUIRED)
     omnitrace_target_compile_definitions(omnitrace-roctracer
                                          INTERFACE OMNITRACE_USE_ROCTRACER)
@@ -120,7 +128,7 @@ endif()
 #
 # ----------------------------------------------------------------------------------------#
 if(OMNITRACE_USE_ROCPROFILER)
-    list(APPEND CMAKE_PREFIX_PATH /opt/rocm)
+    list(APPEND CMAKE_PREFIX_PATH ${OMNITRACE_DEFAULT_ROCM_PATH})
     find_package(rocprofiler ${omnitrace_FIND_QUIETLY} REQUIRED)
     omnitrace_target_compile_definitions(omnitrace-rocprofiler
                                          INTERFACE OMNITRACE_USE_ROCPROFILER)
@@ -135,7 +143,7 @@ endif()
 # ----------------------------------------------------------------------------------------#
 
 if(OMNITRACE_USE_ROCM_SMI)
-    list(APPEND CMAKE_PREFIX_PATH /opt/rocm)
+    list(APPEND CMAKE_PREFIX_PATH ${OMNITRACE_DEFAULT_ROCM_PATH})
     find_package(rocm-smi ${omnitrace_FIND_QUIETLY} REQUIRED)
     omnitrace_target_compile_definitions(omnitrace-rocm-smi
                                          INTERFACE OMNITRACE_USE_ROCM_SMI)

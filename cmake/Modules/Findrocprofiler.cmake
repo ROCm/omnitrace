@@ -11,7 +11,7 @@ endif()
 
 foreach(_DIR ${ROCM_PATH} /opt/rocm /opt/rocm/rocprofiler)
     if(EXISTS ${_DIR})
-        get_filename_component(_ABS_DIR "${_DIR}" ABSOLUTE)
+        get_filename_component(_ABS_DIR "${_DIR}" REALPATH)
         list(APPEND _ROCM_ROCPROFILER_PATHS ${_ABS_DIR})
     endif()
 endforeach()
@@ -52,9 +52,12 @@ mark_as_advanced(rocprofiler_hsa_INCLUDE_DIR)
 find_library(
     rocprofiler_LIBRARY
     NAMES rocprofiler64 rocprofiler
-    HINTS ${rocprofiler_ROOT_DIR} ${_ROCM_ROCPROFILER_PATHS}
-    PATHS ${rocprofiler_ROOT_DIR} ${_ROCM_ROCPROFILER_PATHS}
-    PATH_SUFFIXES lib lib64)
+    HINTS ${rocprofiler_ROOT_DIR}/rocprofiler ${rocprofiler_ROOT_DIR}
+          ${_ROCM_ROCPROFILER_PATHS}
+    PATHS ${rocprofiler_ROOT_DIR}/rocprofiler ${rocprofiler_ROOT_DIR}
+          ${_ROCM_ROCPROFILER_PATHS}
+    PATH_SUFFIXES lib lib64
+    NO_DEFAULT_PATH)
 
 find_library(
     rocprofiler_hsa-runtime_LIBRARY
@@ -70,7 +73,6 @@ endif()
 mark_as_advanced(rocprofiler_LIBRARY rocprofiler_hsa-runtime_LIBRARY)
 
 # ----------------------------------------------------------------------------------------#
-
 find_package_handle_standard_args(
     rocprofiler DEFAULT_MSG rocprofiler_ROOT_DIR rocprofiler_INCLUDE_DIR
     rocprofiler_hsa_INCLUDE_DIR rocprofiler_LIBRARY rocprofiler_hsa-runtime_LIBRARY)

@@ -11,7 +11,7 @@ endif()
 
 foreach(_DIR ${ROCM_PATH} /opt/rocm /opt/rocm/roctracer)
     if(EXISTS ${_DIR})
-        get_filename_component(_ABS_DIR "${_DIR}" ABSOLUTE)
+        get_filename_component(_ABS_DIR "${_DIR}" REALPATH)
         list(APPEND _ROCM_ROCTRACER_PATHS ${_ABS_DIR})
     endif()
 endforeach()
