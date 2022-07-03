@@ -101,6 +101,13 @@ ensure_finalization(bool _static_init = false)
         tim::set_env("ROCP_HSA_INTERCEPT", "1", 0);
         tim::set_env("ROCP_METRICS", _rocp_metrics, 0);
         tim::set_env("HSA_TOOLS_REPORT_LOAD_FAILURE", "1", 0);
+        if(getenv("ROCM_PATH"))
+        {
+            tim::set_env("OMNITRACE_ROCPROFILER_LIBRARY",
+                         JOIN('/', tim::get_env<std::string>("ROCM_PATH"),
+                              "rocprofiler/lib/librocprofiler64.so"),
+                         0);
+        }
 #endif
     }
     return scope::destructor{ []() { omnitrace_finalize_hidden(); } };
