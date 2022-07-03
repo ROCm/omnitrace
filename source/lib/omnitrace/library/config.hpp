@@ -279,6 +279,9 @@ get_trace_thread_locks();
 
 bool
 get_trace_thread_rwlocks();
+
+std::string
+get_rocm_events();
 }  // namespace config
 
 //

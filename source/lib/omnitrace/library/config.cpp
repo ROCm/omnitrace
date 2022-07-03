@@ -349,6 +349,13 @@ configure_settings(bool _init)
     OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_ROCTRACER_HSA_API_TYPES",
                              "HSA API type to collect", "", "roctracer", "rocm");
 
+    OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_ROCM_EVENTS",
+        "ROCm hardware counters. Use ':device=N' syntax to specify collection on device "
+        "number N, e.g. ':device=0'. If no device specification is provided, the event "
+        "is collected on every available device",
+        "", "rocprofiler", "rocm", "hardware_counters");
+
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_CRITICAL_TRACE_DEBUG",
                              "Enable debugging for critical trace", _omnitrace_debug,
                              "debugging", "critical_trace");
@@ -1469,6 +1476,13 @@ get_trace_thread_locks()
 {
     static auto _v = get_config()->find("OMNITRACE_TRACE_THREAD_LOCKS");
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
+}
+
+std::string
+get_rocm_events()
+{
+    static auto _v = get_config()->find("OMNITRACE_ROCM_EVENTS");
+    return static_cast<tim::tsettings<std::string>&>(*_v->second).get();
 }
 
 bool
