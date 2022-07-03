@@ -321,7 +321,8 @@ process_categories(parser_t& p, const str_set_t& _category_options)
 
         if(_category_options.count(itr) == 0)
         {
-            if(!_is_shorthand("component") && !_is_shorthand("settings"))
+            if(!_is_shorthand("component") && !_is_shorthand("settings") &&
+               !_is_shorthand("hw_counters"))
                 throw std::runtime_error(
                     itr + " is not a valid category. Use --list-categories to view "
                           "valid categories");
