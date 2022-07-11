@@ -67,7 +67,7 @@ struct mpi_gotcha : comp::base<mpi_gotcha, void>
 
     static bool      update();
     static uintptr_t null_comm() { return std::numeric_limits<uintptr_t>::max(); }
-    static void disable_comm_intercept();
+    static void      disable_comm_intercept();
 
 private:
     int       m_rank     = 0;

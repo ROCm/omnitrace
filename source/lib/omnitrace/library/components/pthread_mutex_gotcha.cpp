@@ -99,19 +99,24 @@ pthread_mutex_gotcha::configure()
         if(config::get_trace_thread_rwlocks())
         {
             pthread_mutex_gotcha_t::configure(
-                comp::gotcha_config<4, int, pthread_rwlock_t*>{ "pthread_rwlock_rdlock" });
+                comp::gotcha_config<4, int, pthread_rwlock_t*>{
+                    "pthread_rwlock_rdlock" });
 
             pthread_mutex_gotcha_t::configure(
-                comp::gotcha_config<5, int, pthread_rwlock_t*>{ "pthread_rwlock_wrlock" });
+                comp::gotcha_config<5, int, pthread_rwlock_t*>{
+                    "pthread_rwlock_wrlock" });
 
             pthread_mutex_gotcha_t::configure(
-                comp::gotcha_config<6, int, pthread_rwlock_t*>{ "pthread_rwlock_tryrdlock" });
+                comp::gotcha_config<6, int, pthread_rwlock_t*>{
+                    "pthread_rwlock_tryrdlock" });
 
             pthread_mutex_gotcha_t::configure(
-                comp::gotcha_config<7, int, pthread_rwlock_t*>{ "pthread_rwlock_trywrlock" });
+                comp::gotcha_config<7, int, pthread_rwlock_t*>{
+                    "pthread_rwlock_trywrlock" });
 
             pthread_mutex_gotcha_t::configure(
-                comp::gotcha_config<8, int, pthread_rwlock_t*>{ "pthread_rwlock_unlock" });
+                comp::gotcha_config<8, int, pthread_rwlock_t*>{
+                    "pthread_rwlock_unlock" });
         }
 
         pthread_mutex_gotcha_t::configure(

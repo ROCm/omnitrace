@@ -330,8 +330,7 @@ mpi_gotcha::audit(const gotcha_data_t& _data, audit::outgoing, int _retval)
             if(_comm_entry.updated())
             {
                 static thread_local int _num_updates = 0;
-                if(update() && ++_num_updates >= 4)
-                    disable_comm_intercept();
+                if(update() && ++_num_updates >= 4) disable_comm_intercept();
             }
         }
     }
