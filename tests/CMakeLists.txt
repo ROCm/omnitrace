@@ -445,7 +445,7 @@ endfunction()
 file(
     WRITE ${CMAKE_CURRENT_BINARY_DIR}/invalid.cfg
     "
-OMNITRACE_CONFIG_FILE = 
+OMNITRACE_CONFIG_FILE =
 FOOBAR = ON
 ")
 
