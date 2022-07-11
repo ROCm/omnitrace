@@ -330,7 +330,9 @@ mpi_gotcha::audit(const gotcha_data_t& _data, audit::outgoing, int _retval)
             if(_comm_entry.updated())
             {
                 static thread_local int _num_updates = 0;
-                if(update() && ++_num_updates >= 4) disable_comm_intercept();
+                static int              _disable_after =
+                    tim::get_env<int>("OMNITRACE_MPI_MAX_COMM_UPDATES", 4);
+                if(update() && ++_num_updates >= _disable_after) disable_comm_intercept();
             }
         }
     }
