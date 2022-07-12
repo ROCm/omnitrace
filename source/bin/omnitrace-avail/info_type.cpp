@@ -30,6 +30,7 @@
 #include "library/components/mpi_gotcha.hpp"
 #include "library/components/omnitrace.hpp"
 #include "library/components/pthread_gotcha.hpp"
+#include "library/components/rocprofiler.hpp"
 #include "library/components/roctracer.hpp"
 #include "library/components/user_region.hpp"
 
