@@ -38,6 +38,7 @@
 #include "library/ompt.hpp"
 #include "library/process_sampler.hpp"
 #include "library/ptl.hpp"
+#include "library/rocprofiler.hpp"
 #include "library/sampling.hpp"
 #include "library/thread_data.hpp"
 #include "library/timemory.hpp"
@@ -887,6 +888,13 @@ omnitrace_finalize_hidden(void)
         // join extra thread(s) used by roctracer
         OMNITRACE_VERBOSE_F(1, "Waiting on roctracer tasks...\n");
         tasking::join();
+    }
+
+    if(get_use_rocprofiler())
+    {
+        OMNITRACE_VERBOSE_F(1, "Shutting down rocprofiler...\n");
+        rocprofiler::post_process();
+        rocprofiler::rocm_cleanup();
     }
 
     if(dmp::rank() == 0) fprintf(stderr, "\n");

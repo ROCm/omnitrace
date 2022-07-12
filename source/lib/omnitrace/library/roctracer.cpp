@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "library/components/roctracer_callbacks.hpp"
+#include "library/roctracer.hpp"
 #include "library.hpp"
 #include "library/config.hpp"
 #include "library/critical_trace.hpp"
@@ -228,6 +228,15 @@ hsa_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void*
 
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
 
+    static thread_local std::once_flag _once{};
+    std::call_once(_once, []() {
+        if(threading::get_id() != 0)
+        {
+            sampling::block_signals();
+            threading::set_thread_name("roctracer.hsa");
+        }
+    });
+
     (void) arg;
     const hsa_api_data_t* data = reinterpret_cast<const hsa_api_data_t*>(callback_data);
     OMNITRACE_CONDITIONAL_PRINT_F(
@@ -344,7 +353,7 @@ hsa_activity_callback(uint32_t op, activity_record_t* record, void* arg)
     static thread_local std::once_flag _once{};
     std::call_once(_once, []() {
         sampling::block_signals();
-        threading::set_thread_name("omni.roctracer");
+        threading::set_thread_name("roctracer.hsa");
     });
 
     auto&& _protect = comp::roctracer::protect_flush_activity();
@@ -700,7 +709,7 @@ hip_activity_callback(const char* begin, const char* end, void*)
     static thread_local std::once_flag _once{};
     std::call_once(_once, []() {
         sampling::block_signals();
-        threading::set_thread_name("omni.roctracer");
+        threading::set_thread_name("roctracer.hip");
     });
 
     auto&& _protect = comp::roctracer::protect_flush_activity();
