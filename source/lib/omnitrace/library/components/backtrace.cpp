@@ -29,6 +29,7 @@
 #include "library/perfetto.hpp"
 #include "library/ptl.hpp"
 #include "library/sampling.hpp"
+#include "library/tracing.hpp"
 
 #include <timemory/backends/papi.hpp>
 #include <timemory/backends/threading.hpp>
@@ -69,6 +70,11 @@
 
 #include <pthread.h>
 #include <signal.h>
+
+namespace tracing
+{
+using namespace ::omnitrace::tracing;
+}
 
 namespace
 {
@@ -478,9 +484,12 @@ backtrace::post_process(int64_t _tid)
         {
             for(auto& itr : _hw_cnt_labels)
             {
+                std::string _desc = tim::papi::get_event_info(itr).short_descr;
+                if(_desc.empty()) _desc = itr;
+                OMNITRACE_CI_THROW(_desc.empty(), "Empty description for %s\n",
+                                   itr.c_str());
                 perfetto_counter_track<hw_counters>::emplace(
-                    _tid, JOIN(' ', "Thread", tim::papi::get_event_info(itr).short_descr,
-                               _tid_name, "(S)"));
+                    _tid, JOIN(' ', "Thread", _desc, _tid_name, "(S)"));
             }
         }
 
@@ -560,12 +569,13 @@ backtrace::post_process(int64_t _tid)
                                  bool                                    _rename) {
         if(_rename)
             threading::set_thread_name(TIMEMORY_JOIN(" ", "Thread", _tid, "(S)").c_str());
-        auto _last_wall_ts = _init->get_timestamp();
 
-        uint64_t _beg_ns = pthread_create_gotcha::get_execution_time(_tid)->first;
-        uint64_t _end_ns = pthread_create_gotcha::get_execution_time(_tid)->second;
-        TRACE_EVENT_BEGIN("sampling", perfetto::StaticString{ "samples [omnitrace]" },
-                          _beg_ns, "begin_ns", _beg_ns);
+        uint64_t _beg_ns       = pthread_create_gotcha::get_execution_time(_tid)->first;
+        uint64_t _end_ns       = pthread_create_gotcha::get_execution_time(_tid)->second;
+        uint64_t _last_wall_ts = _init->get_timestamp();
+
+        tracing::push_perfetto_ts(category::sampling{}, "samples [omnitrace]", _beg_ns,
+                                  "begin_ns", _beg_ns);
 
         for(const auto& ditr : _data)
         {
@@ -579,19 +589,23 @@ backtrace::post_process(int64_t _tid)
                 auto _use  = _use_label(_name);
                 if(_use == -1) break;
                 if(_use == 0) continue;
-                auto sitr = _static_strings.emplace(_name);
-                auto _ts  = _bt->m_ts;
-                if(!pthread_create_gotcha::is_valid_execution_time(_tid, _ts)) continue;
+                auto     sitr = _static_strings.emplace(_name);
+                uint64_t _beg = _last_wall_ts;
+                uint64_t _end = _bt->m_ts;
+                if(_end <= _beg) continue;
+                if(!pthread_create_gotcha::is_valid_execution_time(_tid, _beg)) continue;
+                if(!pthread_create_gotcha::is_valid_execution_time(_tid, _end)) continue;
 
-                TRACE_EVENT_BEGIN("hardware_counter",
-                                  perfetto::StaticString{ sitr.first->c_str() },
-                                  _last_wall_ts, "begin_ns", _last_wall_ts);
-                TRACE_EVENT_END("hardware_counter", _ts, "end_ns", _ts);
+                tracing::push_perfetto_ts(category::sampling{}, sitr.first->c_str(), _beg,
+                                          "begin_ns", _beg);
+                tracing::pop_perfetto_ts(category::sampling{}, sitr.first->c_str(), _end,
+                                         "end_ns", _end);
             }
             _last_wall_ts = _bt->m_ts;
         }
 
-        TRACE_EVENT_END("sampling", _end_ns, "end_ns", _end_ns);
+        tracing::pop_perfetto_ts(category::sampling{}, "samples [omnitrace]", _end_ns,
+                                 "end_ns", _end_ns);
     };
 
     auto _raw_data = _sampler->get_allocator().get_data();
