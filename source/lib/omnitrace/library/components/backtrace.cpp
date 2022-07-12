@@ -331,7 +331,7 @@ backtrace::configure(bool _setup, int64_t _tid)
             if(get_papi_vector(_tid)) get_papi_vector(_tid)->start();
         }
 
-        auto _alrm_freq = 1.0 / get_sampling_freq();
+        auto _alrm_freq = 1.0 / std::min<double>(get_sampling_freq(), 20.0);
         auto _prof_freq = 1.0 / get_sampling_freq();
         auto _delay     = std::max<double>(1.0e-3, get_sampling_delay());
 
