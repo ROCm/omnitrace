@@ -24,6 +24,7 @@
 #include "library/common.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
+#include "library/gpu.hpp"
 #include "library/perfetto.hpp"
 #include "library/rocm.hpp"
 #include "library/rocprofiler/hsa_rsrc_factory.hpp"
@@ -134,33 +135,38 @@ get_event_names()
     return _v;
 }
 }  // namespace
-// Tool is unloaded
-volatile bool is_loaded = false;
-// Profiling features
-// rocprofiler_feature_t* features = nullptr;
-// unsigned feature_count = 0;
 
 // Error handler
 void
 fatal(const std::string& msg)
 {
-    fflush(stdout);
-    fprintf(stderr, "%s\n\n", msg.c_str());
-    fflush(stderr);
+    OMNITRACE_PRINT_F("\n");
+    OMNITRACE_PRINT_F("%s\n", msg.c_str());
     abort();
 }
 
 // Check returned HSA API status
-void
-rocm_check_status(hsa_status_t status)
+const char*
+rocm_error_string(hsa_status_t _status)
 {
-    if(status != HSA_STATUS_SUCCESS)
+    const char* _err_string = nullptr;
+    if(_status != HSA_STATUS_SUCCESS) rocprofiler_error_string(&_err_string);
+    return _err_string;
+}
+
+// Check returned HSA API status
+bool
+rocm_check_status(hsa_status_t _status, const std::set<hsa_status_t>& _nonfatal = {})
+{
+    if(_status != HSA_STATUS_SUCCESS)
     {
-        const char* error_string = nullptr;
-        rocprofiler_error_string(&error_string);
-        OMNITRACE_PRINT_F("ERROR: %s\n", error_string);
-        abort();
+        if(_nonfatal.count(_status) == 0)
+            fatal(JOIN(" :: ", "ERROR", rocm_error_string(_status)));
+
+        OMNITRACE_PRINT_F("Warning! %s\n", rocm_error_string(_status));
+        return false;
     }
+    return true;
 }
 
 // Context stored entry type
@@ -483,6 +489,15 @@ std::vector<info_entry_t>
 rocm_metrics()
 {
     std::vector<info_entry_t> _data = {};
+    try
+    {
+        (void) HsaRsrcFactory::Instance();
+    } catch(std::runtime_error& _e)
+    {
+        OMNITRACE_VERBOSE_F(0, "%s\n", _e.what());
+        return _data;
+    }
+
     // Available GPU agents
     const unsigned gpu_count = HsaRsrcFactory::Instance().GetCountOfGpuAgents();
 
@@ -494,9 +509,11 @@ rocm_metrics()
         HsaRsrcFactory::Instance().GetGpuAgentInfo(i, _agent_p);
 
         auto _v = info_data{ _agent, &_data };
-        rocm_check_status(
-            rocprofiler_iterate_info(&_agent->dev_id, ROCPROFILER_INFO_KIND_METRIC,
-                                     info_data_callback, reinterpret_cast<void*>(&_v)));
+        if(!rocm_check_status(
+               rocprofiler_iterate_info(&_agent->dev_id, ROCPROFILER_INFO_KIND_METRIC,
+                                        info_data_callback, reinterpret_cast<void*>(&_v)),
+               { HSA_STATUS_ERROR_NOT_INITIALIZED }))
+            return _data;
     }
 
     auto _settings = tim::settings::shared_instance();

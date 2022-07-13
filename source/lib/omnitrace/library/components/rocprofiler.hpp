@@ -93,7 +93,6 @@ rocprofiler::is_setup()
 
 #if !defined(OMNITRACE_USE_ROCTRACER)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::rocprofiler_data, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::rocprofiler, false_type)
 #endif
 
 TIMEMORY_SET_COMPONENT_API(component::rocprofiler_data, project::timemory,

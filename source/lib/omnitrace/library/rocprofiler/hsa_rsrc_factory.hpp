@@ -45,6 +45,7 @@
 #define HSA_ARGUMENT_ALIGN_BYTES 16
 #define HSA_QUEUE_ALIGN_BYTES    64
 #define HSA_PACKET_ALIGN_BYTES   64
+#define HSA_MESSAGE_LENGTH       4096
 
 #define CHECK_STATUS(msg, status)                                                        \
     do                                                                                   \
@@ -53,8 +54,10 @@
         {                                                                                \
             const char* emsg = 0;                                                        \
             hsa_status_string(status, &emsg);                                            \
-            printf("%s: %s\n", msg, emsg ? emsg : "<unknown error>");                    \
-            abort();                                                                     \
+            char _buffer[HSA_MESSAGE_LENGTH];                                            \
+            snprintf(_buffer, HSA_MESSAGE_LENGTH - 1, "%s: %s", msg,                     \
+                     emsg ? emsg : "<unknown error>");                                   \
+            throw std::runtime_error(_buffer);                                           \
         }                                                                                \
     } while(0)
 
@@ -65,8 +68,10 @@
         {                                                                                \
             const char* emsg = 0;                                                        \
             hsa_status_string(status, &emsg);                                            \
-            printf("%s: %s\n", msg, emsg ? emsg : "<unknown error>");                    \
-            abort();                                                                     \
+            char _buffer[HSA_MESSAGE_LENGTH];                                            \
+            snprintf(_buffer, HSA_MESSAGE_LENGTH - 1, "%s: %s", msg,                     \
+                     emsg ? emsg : "<unknown error>");                                   \
+            throw std::runtime_error(_buffer);                                           \
         }                                                                                \
     } while(0)
 

@@ -188,7 +188,16 @@ HsaRsrcFactory::~HsaRsrcFactory()
     if(initialize_hsa_)
     {
         hsa_status_t status = hsa_api_.hsa_shut_down();
-        CHECK_STATUS("Error in hsa_shut_down", status);
+        try
+        {
+            CHECK_STATUS("Error in hsa_shut_down", status);
+        } catch(std::runtime_error& _e)
+        {
+            fflush(stderr);
+            fprintf(stderr, "%s\n", _e.what());
+            fflush(stderr);
+            abort();
+        }
     }
 }
 
