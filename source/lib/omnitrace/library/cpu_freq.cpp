@@ -54,21 +54,21 @@ using type_list = tim::type_list<Tp...>;
 
 namespace
 {
-struct cpu_freq
+struct cpu_freq  // cpu frequency
 {};
-struct cpu_page
+struct cpu_page  // amount of memory allocated in pages
 {};
-struct cpu_virt
+struct cpu_virt  // virtual memory usage
 {};
-struct cpu_peak
+struct cpu_peak  // memory high-water mark
 {};
 struct cpu_context_switch
 {};
 struct cpu_page_fault
 {};
-struct cpu_user_mode_time
+struct cpu_user_mode_time  // cpu time spent in userspace
 {};
-struct cpu_kernel_mode_time
+struct cpu_kernel_mode_time  // cpu time spent in kernelspace
 {};
 using cpu_data_tuple_t = std::tuple<size_t, int64_t, int64_t, int64_t, int64_t, int64_t,
                                     int64_t, int64_t, std::vector<double>>;
@@ -89,6 +89,7 @@ void init_perfetto_counter_tracks(type_list<Types...>)
 TIMEMORY_DEFINE_NAME_TRAIT("cpu_freq", omnitrace::cpu_freq::cpu_freq);
 TIMEMORY_DEFINE_NAME_TRAIT("process_page_fault", omnitrace::cpu_freq::cpu_page);
 TIMEMORY_DEFINE_NAME_TRAIT("process_virtual_memory", omnitrace::cpu_freq::cpu_virt);
+TIMEMORY_DEFINE_NAME_TRAIT("process_memory_hwm", omnitrace::cpu_freq::cpu_peak);
 TIMEMORY_DEFINE_NAME_TRAIT("process_context_switch",
                            omnitrace::cpu_freq::cpu_context_switch);
 TIMEMORY_DEFINE_NAME_TRAIT("process_page_fault", omnitrace::cpu_freq::cpu_page_fault);
