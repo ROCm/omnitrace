@@ -131,6 +131,16 @@ rocm_metrics();
 inline void
 post_process()
 {}
+
+inline void
+rocm_cleanup()
+{}
+
+inline std::vector<info_entry_t>
+rocm_metrics()
+{
+    return std::vector<info_entry_t>{};
+}
 #endif
 
 }  // namespace rocprofiler
