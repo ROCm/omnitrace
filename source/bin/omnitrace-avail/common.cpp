@@ -38,7 +38,6 @@ bool              alphabetical        = false;
 bool              available_only      = false;
 bool              all_info            = false;
 bool              force_brief         = false;
-bool              debug_msg           = false;
 bool              case_insensitive    = false;
 bool              regex_hl            = false;
 bool              expand_keys         = false;
@@ -51,6 +50,10 @@ str_vec_t         regex_keys          = {};
 str_vec_t         category_regex_keys = {};
 str_set_t         category_view       = {};
 std::stringstream lerr                = {};
+
+bool    debug_msg = tim::get_env<bool>("OMNITRACE_DEBUG_AVAIL", settings::debug());
+int32_t verbose_level =
+    tim::get_env<int32_t>("OMNITRACE_VERBOSE_AVAIL", settings::verbose());
 
 // explicit setting names to exclude
 std::set<std::string> settings_exclude = {
