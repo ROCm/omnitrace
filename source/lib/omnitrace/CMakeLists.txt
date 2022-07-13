@@ -99,6 +99,8 @@ set(library_headers
     ${CMAKE_CURRENT_LIST_DIR}/library/perfetto.hpp
     ${CMAKE_CURRENT_LIST_DIR}/library/process_sampler.hpp
     ${CMAKE_CURRENT_LIST_DIR}/library/ptl.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/library/rocm.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/library/rocprofiler.hpp
     ${CMAKE_CURRENT_LIST_DIR}/library/roctracer.hpp
     ${CMAKE_CURRENT_LIST_DIR}/library/runtime.hpp
     ${CMAKE_CURRENT_LIST_DIR}/library/sampling.hpp
@@ -115,6 +117,7 @@ set(library_headers
     ${CMAKE_CURRENT_LIST_DIR}/library/components/mpi_gotcha.hpp
     ${CMAKE_CURRENT_LIST_DIR}/library/components/omnitrace.hpp
     ${CMAKE_CURRENT_LIST_DIR}/library/components/rocm_smi.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/library/components/rocprofiler.hpp
     ${CMAKE_CURRENT_LIST_DIR}/library/components/roctracer.hpp
     ${CMAKE_CURRENT_LIST_DIR}/library/components/pthread_gotcha.hpp
     ${CMAKE_CURRENT_LIST_DIR}/library/components/pthread_create_gotcha.hpp
@@ -125,8 +128,9 @@ target_sources(omnitrace-object-library PRIVATE ${library_sources} ${library_hea
 
 if(OMNITRACE_USE_ROCTRACER OR OMNITRACE_USE_ROCPROFILER)
     target_sources(
-        omnitrace-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/library/rocm.cpp
-                                         ${CMAKE_CURRENT_LIST_DIR}/library/rocm.hpp)
+        omnitrace-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/library/rocprofiler.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/library/rocm.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/library/components/rocprofiler.cpp)
 endif()
 
 if(OMNITRACE_USE_ROCTRACER)

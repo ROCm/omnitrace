@@ -29,6 +29,7 @@
 #include "library/components/pthread_create_gotcha.hpp"
 #include "library/components/pthread_gotcha.hpp"
 #include "library/components/pthread_mutex_gotcha.hpp"
+#include "library/components/rocprofiler.hpp"
 #include "library/config.hpp"
 #include "library/coverage.hpp"
 #include "library/critical_trace.hpp"
@@ -94,7 +95,11 @@ ensure_finalization(bool _static_init = false)
         tim::set_env("HSA_TOOLS_LIB", "libomnitrace.so", 0);
 #endif
 #if defined(OMNITRACE_USE_ROCPROFILER) && OMNITRACE_USE_ROCPROFILER > 0
-        auto _rocm_path    = tim::get_env<std::string>("ROCM_PATH", "/opt/rocm");
+        auto _default_rocm_path =
+            JOIN("", "/opt/rocm-", OMNITRACE_HIP_VERSION_MAJOR, '.',
+                 OMNITRACE_HIP_VERSION_MINOR, '.', OMNITRACE_HIP_VERSION_PATCH);
+        auto _rocm_path    = tim::get_env("OMNITRACE_ROCM_PATH",
+                                       tim::get_env("ROCM_PATH", _default_rocm_path));
         auto _rocp_metrics = JOIN('/', _rocm_path, "rocprofiler/lib/metrics.xml");
         tim::set_env("HSA_TOOLS_LIB", "libomnitrace.so", 0);
         tim::set_env("ROCP_TOOL_LIB", "libomnitrace.so", 0);

@@ -23,6 +23,8 @@
 #include "library/rocm.hpp"
 #include "library.hpp"
 #include "library/components/rocm_smi.hpp"
+#include "library/components/rocprofiler.hpp"
+#include "library/components/roctracer.hpp"
 #include "library/config.hpp"
 #include "library/critical_trace.hpp"
 #include "library/debug.hpp"
@@ -256,6 +258,7 @@ extern "C"
         OMNITRACE_BASIC_VERBOSE(2, "Inside %s\n", __FUNCTION__);
         rocm_smi::set_state(State::Finalized);
         comp::roctracer::shutdown();
+        comp::rocprofiler::shutdown();
         omnitrace_finalize_hidden();
     }
 }

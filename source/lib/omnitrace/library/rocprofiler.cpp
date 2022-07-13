@@ -1,24 +1,24 @@
-/******************************************************************************
-Copyright (c) 2018 Advanced Micro Devices, Inc. All rights reserved.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*******************************************************************************/
+// MIT License
+//
+// Copyright (c) 2022 Advanced Micro Devices, Inc. All Rights Reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "library/rocprofiler.hpp"
 #include "library/common.hpp"
@@ -44,6 +44,8 @@ THE SOFTWARE.
 #include <mutex>
 #include <sstream>
 #include <string.h>
+#include <string_view>
+#include <type_traits>
 #include <unistd.h>
 #include <vector>
 
@@ -123,6 +125,15 @@ namespace omnitrace
 {
 namespace rocprofiler
 {
+namespace
+{
+auto&
+get_event_names()
+{
+    static auto _v = std::map<uint32_t, std::vector<rocprofiler_feature_t>>{};
+    return _v;
+}
+}  // namespace
 // Tool is unloaded
 volatile bool is_loaded = false;
 // Profiling features
@@ -237,6 +248,26 @@ rocm_event::as_string() const
         std::visit(_as_string, feature_values.at(i));
     }
     return _ss.str();
+}
+
+bool&
+is_setup()
+{
+    static bool _v = false;
+    return _v;
+}
+
+std::map<uint32_t, std::vector<std::string_view>>
+get_data_labels()
+{
+    auto _v = std::map<uint32_t, std::vector<std::string_view>>{};
+    for(const auto& itr : get_event_names())
+    {
+        _v[itr.first] = {};
+        for(auto vitr : itr.second)
+            _v[itr.first].emplace_back(std::string_view{ vitr.name });
+    }
+    return _v;
 }
 
 // Dump stored context entry
@@ -505,10 +536,16 @@ rocm_initialize()
     for(unsigned gpu_id = 0; gpu_id < gpu_count; gpu_id++)
     {
         // Getting profiling features
-        rocprofiler_feature_t* features = nullptr;
-        // TAU doesn't support features or metrics yet! SSS
-        unsigned feature_count = metrics_input(gpu_id, &features);
-        // unsigned feature_count = 0;
+        rocprofiler_feature_t* features      = nullptr;
+        unsigned               feature_count = metrics_input(gpu_id, &features);
+
+        if(features)
+        {
+            get_event_names()[gpu_id].clear();
+            get_event_names()[gpu_id].reserve(feature_count);
+            for(unsigned i = 0; i < feature_count; ++i)
+                get_event_names().at(gpu_id).emplace_back(features[i]);
+        }
 
         // Handler arg
         handler_arg_t* handler_arg = new handler_arg_t{};
@@ -542,6 +579,8 @@ rocm_initialize()
     callbacks_ptrs.dispatch = rocm_dispatch_callback;
     int err = rocprofiler_set_queue_callbacks(callbacks_ptrs, callbacks_arg);
     OMNITRACE_VERBOSE_F(3, "err=%d, rocprofiler_set_queue_callbacks\n", err);
+
+    is_setup() = true;
 }
 
 void

@@ -25,11 +25,11 @@
 #include "library/defines.hpp"
 #include "library/thread_data.hpp"
 #include "library/timemory.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/mpl/macros.hpp"
 
 #include <timemory/backends/hardware_counters.hpp>
+#include <timemory/macros.hpp>
 #include <timemory/mpl/concepts.hpp>
+#include <timemory/mpl/macros.hpp>
 
 #include <array>
 #include <atomic>
@@ -73,6 +73,8 @@ struct rocm_counter
 
 struct rocm_event
 {
+    using value_type = feature_value_t;
+
     uint32_t                      device_id      = 0;
     uint32_t                      thread_id      = 0;
     uint32_t                      queue_id       = 0;
@@ -107,11 +109,17 @@ using rocm_data_tracker = comp::data_tracker<feature_value_t, rocm_event>;
 unique_ptr_t<rocm_data_t>&
 rocm_data(int64_t _tid = threading::get_id());
 
+std::map<uint32_t, std::vector<std::string_view>>
+get_data_labels();
+
 void
 rocm_initialize();
 
 void
 rocm_cleanup();
+
+bool&
+is_setup();
 
 void
 post_process();
@@ -123,12 +131,6 @@ rocm_metrics();
 inline void
 post_process()
 {}
-
-inline std::map<unsigned, std::vector<info_entry_t>>
-rocm_metrics()
-{
-    return std::map<unsigned, std::vector<info_entry_t>>{};
-}
 #endif
 
 }  // namespace rocprofiler
