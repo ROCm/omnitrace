@@ -128,9 +128,10 @@ target_sources(omnitrace-object-library PRIVATE ${library_sources} ${library_hea
 
 if(OMNITRACE_USE_ROCTRACER OR OMNITRACE_USE_ROCPROFILER)
     target_sources(
-        omnitrace-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/library/rocprofiler.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/library/rocm.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/library/components/rocprofiler.cpp)
+        omnitrace-object-library
+        PRIVATE ${CMAKE_CURRENT_LIST_DIR}/library/rocprofiler.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/library/rocm.cpp
+                ${CMAKE_CURRENT_LIST_DIR}/library/components/rocprofiler.cpp)
 endif()
 
 if(OMNITRACE_USE_ROCTRACER)
