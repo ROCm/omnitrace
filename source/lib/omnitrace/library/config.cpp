@@ -130,6 +130,14 @@ _settings_are_configured()
 }
 }  // namespace
 
+void
+finalize()
+{
+    OMNITRACE_DEBUG("[omnitrace_finalize] Disabling signal handling...\n");
+    tim::disable_signal_detection();
+    _settings_are_configured() = false;
+}
+
 bool
 settings_are_configured()
 {

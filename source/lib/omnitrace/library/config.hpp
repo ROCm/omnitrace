@@ -58,6 +58,9 @@ void
 configure_disabled_settings();
 
 void
+finalize();
+
+void
 handle_deprecated_setting(const std::string& _old, const std::string& _new,
                           int _verbose = 0);
 

@@ -1138,8 +1138,7 @@ omnitrace_finalize_hidden(void)
                       _push_count, "vs. popped:", _pop_count)
             .c_str());
 
-    OMNITRACE_DEBUG_F("Disabling signal handling...\n");
-    tim::disable_signal_detection();
+    config::finalize();
 
     OMNITRACE_VERBOSE_F(0, "Finalized\n");
 }
