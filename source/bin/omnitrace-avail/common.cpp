@@ -49,7 +49,7 @@ int32_t           padding             = 4;
 str_vec_t         regex_keys          = {};
 str_vec_t         category_regex_keys = {};
 str_set_t         category_view       = {};
-std::stringstream lerr                = {};
+std::stringstream lerr{};
 
 bool    debug_msg = tim::get_env<bool>("OMNITRACE_DEBUG_AVAIL", settings::debug());
 int32_t verbose_level =
