@@ -27,9 +27,9 @@
 #include "library/components/fwd.hpp"
 #include "library/defines.hpp"
 #include "library/timemory.hpp"
-#include "timemory/components/macros.hpp"
 
 #include <timemory/api/macros.hpp>
+#include <timemory/components/macros.hpp>
 
 #include <rccl/rccl.h>
 

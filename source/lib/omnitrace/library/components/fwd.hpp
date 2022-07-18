@@ -24,7 +24,6 @@
 
 #include "library/common.hpp"
 #include "library/defines.hpp"
-#include "timemory/mpl/types.hpp"
 
 #include <timemory/api.hpp>
 #include <timemory/api/macros.hpp>
@@ -34,6 +33,7 @@
 #include <timemory/enum.h>
 #include <timemory/mpl/concepts.hpp>
 #include <timemory/mpl/type_traits.hpp>
+#include <timemory/mpl/types.hpp>
 
 #include <type_traits>
 
