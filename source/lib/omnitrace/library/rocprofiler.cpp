@@ -50,78 +50,6 @@
 #include <unistd.h>
 #include <vector>
 
-#define PUBLIC_API      __attribute__((visibility("default")))
-#define CONSTRUCTOR_API __attribute__((constructor))
-#define DESTRUCTOR_API  __attribute__((destructor))
-
-std::ostream&
-operator<<(std::ostream& _os, tim::null_type)
-{
-    return _os;
-}
-
-TIMEMORY_STATISTICS_TYPE(omnitrace::rocprofiler::rocm_data_tracker,
-                         omnitrace::rocprofiler::feature_value_t)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(report_units, omnitrace::rocprofiler::rocm_data_tracker,
-                               false_type)
-
-namespace tim
-{
-namespace operation
-{
-template <>
-struct set_storage<omnitrace::rocprofiler::rocm_data_tracker>
-{
-    using T                             = omnitrace::rocprofiler::rocm_data_tracker;
-    static constexpr size_t max_threads = 4096;
-    using type                          = T;
-    using storage_array_t               = std::array<storage<type>*, max_threads>;
-    friend struct get_storage<omnitrace::rocprofiler::rocm_data_tracker>;
-
-    TIMEMORY_DEFAULT_OBJECT(set_storage)
-
-    TIMEMORY_INLINE auto operator()(storage<type>*, size_t) const {}
-
-    TIMEMORY_INLINE auto operator()(type&, size_t) const {}
-
-    TIMEMORY_INLINE auto operator()(storage<type>* _v) const { get().fill(_v); }
-
-private:
-    static storage_array_t& get()
-    {
-        static storage_array_t _v = { nullptr };
-        return _v;
-    }
-};
-
-template <>
-struct get_storage<omnitrace::rocprofiler::rocm_data_tracker>
-{
-    using type = omnitrace::rocprofiler::rocm_data_tracker;
-
-    TIMEMORY_DEFAULT_OBJECT(get_storage)
-
-    TIMEMORY_INLINE auto operator()(const type&) const
-    {
-        return operation::set_storage<type>::get().at(0);
-    }
-
-    TIMEMORY_INLINE auto operator()() const
-    {
-        type _obj{};
-        return (*this)(_obj);
-    }
-
-    TIMEMORY_INLINE auto operator()(size_t _idx) const
-    {
-        return operation::set_storage<type>::get().at(_idx);
-    }
-
-    TIMEMORY_INLINE auto operator()(type&, size_t _idx) const { return (*this)(_idx); }
-};
-}  // namespace operation
-}  // namespace tim
-
 namespace omnitrace
 {
 namespace rocprofiler
@@ -191,71 +119,6 @@ struct handler_arg_t
     unsigned               feature_count;
 };
 
-unique_ptr_t<rocm_data_t>&
-rocm_data(int64_t _tid)
-{
-    using thread_data_t = thread_data<rocm_data_t, rocm_event>;
-    static auto& _v     = thread_data_t::instances(thread_data_t::construct_on_init{});
-    return _v.at(_tid);
-}
-
-rocm_event::rocm_event(uint32_t _dev, uint32_t _thr, uint32_t _queue,
-                       std::string _event_name, metric_type _begin, metric_type _end,
-                       uint32_t _feature_count, void* _features_v)
-: device_id{ _dev }
-, thread_id{ _thr }
-, queue_id{ _queue }
-, entry{ _begin }
-, exit{ _end }
-, name(std::move(_event_name))
-{
-    feature_values.reserve(_feature_count);
-    feature_names.reserve(_feature_count);
-    auto* _features = static_cast<rocprofiler_feature_t*>(_features_v);
-    for(uint32_t i = 0; i < _feature_count; ++i)
-    {
-        const rocprofiler_feature_t* p = &_features[i];
-        feature_names.emplace_back(p->name);
-        switch(p->data.kind)
-        {
-            // Output metrics results
-            case ROCPROFILER_DATA_KIND_UNINIT: break;
-            case ROCPROFILER_DATA_KIND_BYTES:
-                feature_values.emplace_back(feature_value_t{ p->data.result_bytes.size });
-                break;
-            case ROCPROFILER_DATA_KIND_INT32:
-                feature_values.emplace_back(feature_value_t{ p->data.result_int32 });
-                break;
-            case ROCPROFILER_DATA_KIND_FLOAT:
-                feature_values.emplace_back(feature_value_t{ p->data.result_float });
-                break;
-            case ROCPROFILER_DATA_KIND_DOUBLE:
-                feature_values.emplace_back(feature_value_t{ p->data.result_double });
-                break;
-            case ROCPROFILER_DATA_KIND_INT64:
-                feature_values.emplace_back(feature_value_t{ p->data.result_int64 });
-                break;
-        }
-    }
-}
-
-std::string
-rocm_event::as_string() const
-{
-    std::stringstream _ss{};
-    _ss << name << ", device: " << device_id << ", queue: " << queue_id
-        << ", thread: " << thread_id << ", entry: " << entry << ", exit = " << exit;
-    _ss.precision(3);
-    _ss << std::fixed;
-    for(size_t i = 0; i < feature_names.size(); ++i)
-    {
-        _ss << ", " << feature_names.at(i) << " = ";
-        auto _as_string = [&_ss](auto&& itr) { _ss << std::setw(4) << itr; };
-        std::visit(_as_string, feature_values.at(i));
-    }
-    return _ss.str();
-}
-
 bool&
 is_setup()
 {
@@ -281,7 +144,7 @@ void
 rocm_dump_context_entry(context_entry_t* entry, rocprofiler_feature_t* features,
                         unsigned feature_count)
 {
-    // static metric_type last_timestamp = get_last_timestamp_ns();
+    // static rocm_metric_type last_timestamp = get_last_timestamp_ns();
 
     volatile std::atomic<bool>* valid =
         reinterpret_cast<std::atomic<bool>*>(&entry->valid);
@@ -311,10 +174,10 @@ rocm_dump_context_entry(context_entry_t* entry, rocprofiler_feature_t* features,
         rocm_check_status(rocprofiler_get_metrics(group.context));
     }
 
-    auto _evt = rocm_event{ _dev_id,       _thread_id,  _queue_id,     _kernel_name,
-                            record->begin, record->end, feature_count, features };
+    auto _evt = comp::rocm_event{ _dev_id,       _thread_id,  _queue_id,     _kernel_name,
+                                  record->begin, record->end, feature_count, features };
 
-    rocm_data()->emplace_back(_evt);
+    comp::rocm_data()->emplace_back(_evt);
 }
 
 // Profiling completion handler
@@ -412,8 +275,8 @@ metrics_input(unsigned _device, rocprofiler_feature_t** ret)
 
 struct info_data
 {
-    const AgentInfo*           agent = nullptr;
-    std::vector<info_entry_t>* data  = nullptr;
+    const AgentInfo*                    agent = nullptr;
+    std::vector<comp::rocm_info_entry>* data  = nullptr;
 };
 
 hsa_status_t
@@ -441,10 +304,10 @@ info_data_callback(const rocprofiler_info_data_t info, void* arg)
             {
                 auto _sym        = JOIN("", info.metric.name, _device_qualifier_sym);
                 auto _short_desc = JOIN("", "Derived counter: ", info.metric.expr);
-                _data->emplace_back(info_entry_t(true, tim::hardware_counters::api::rocm,
-                                                 _data->size(), 0, _sym, _pysym,
-                                                 _short_desc, _long_desc, _units,
-                                                 qualifier_vec_t{ _device_qualifier }));
+                _data->emplace_back(comp::rocm_info_entry(
+                    true, tim::hardware_counters::api::rocm, _data->size(), 0, _sym,
+                    _pysym, _short_desc, _long_desc, _units,
+                    qualifier_vec_t{ _device_qualifier }));
             }
             else
             {
@@ -453,7 +316,7 @@ info_data_callback(const rocprofiler_info_data_t info, void* arg)
                     auto _sym = JOIN("", info.metric.name, _device_qualifier_sym);
                     auto _short_desc =
                         JOIN("", info.metric.name, " on device ", _agent->dev_index);
-                    _data->emplace_back(info_entry_t(
+                    _data->emplace_back(comp::rocm_info_entry(
                         true, tim::hardware_counters::api::rocm, _data->size(), 0, _sym,
                         _pysym, _short_desc, _long_desc, _units,
                         qualifier_vec_t{ _device_qualifier }));
@@ -471,7 +334,7 @@ info_data_callback(const rocprofiler_info_data_t info, void* arg)
                                          _device_qualifier_sym);
                         auto _short_desc = JOIN("", info.metric.name, " instance ", i,
                                                 " on device ", _agent->dev_index);
-                        _data->emplace_back(info_entry_t(
+                        _data->emplace_back(comp::rocm_info_entry(
                             true, tim::hardware_counters::api::rocm, _data->size(), 0,
                             _sym, _pysym, _short_desc, _long_desc, _units,
                             qualifier_vec_t{ _device_qualifier, _instance_qualifier }));
@@ -485,10 +348,10 @@ info_data_callback(const rocprofiler_info_data_t info, void* arg)
     return HSA_STATUS_SUCCESS;
 }
 
-std::vector<info_entry_t>
+std::vector<comp::rocm_info_entry>
 rocm_metrics()
 {
-    std::vector<info_entry_t> _data = {};
+    std::vector<comp::rocm_info_entry> _data = {};
     try
     {
         (void) HsaRsrcFactory::Instance();
@@ -612,6 +475,12 @@ rocm_cleanup()
 
 namespace
 {
+using rocm_event         = comp::rocm_event;
+using rocm_data_t        = comp::rocm_data_t;
+using rocm_metric_type   = comp::rocm_metric_type;
+using rocm_feature_value = comp::rocm_feature_value;
+using rocm_data_tracker  = comp::rocm_data_tracker;
+
 void
 post_process_perfetto()
 {
@@ -623,11 +492,11 @@ post_process_perfetto()
     auto _data          = rocm_data_t{};
     auto _device_data   = std::map<uint32_t, std::vector<rocm_event*>>{};
     auto _device_fields = std::map<uint32_t, std::vector<std::string_view>>{};
-    auto _device_range  = std::map<uint32_t, std::set<metric_type>>{};
+    auto _device_range  = std::map<uint32_t, std::set<rocm_metric_type>>{};
 
     for(size_t i = 0; i < OMNITRACE_MAX_THREADS; ++i)
     {
-        auto& _v = rocm_data(i);
+        auto& _v = comp::rocm_data(i);
         if(_v)
         {
             _data.reserve(_data.size() + _v->size());
@@ -641,7 +510,7 @@ post_process_perfetto()
 
     std::sort(_data.begin(), _data.end());
 
-    auto _get_events = [](std::vector<rocm_event*>& _inp, metric_type _ts) {
+    auto _get_events = [](std::vector<rocm_event*>& _inp, rocm_metric_type _ts) {
         auto _v = std::vector<rocm_event*>{};
         for(const auto& itr : _inp)
         {
@@ -651,7 +520,7 @@ post_process_perfetto()
     };
 
     {
-        auto _device_time = std::map<uint32_t, std::set<metric_type>>{};
+        auto _device_time = std::map<uint32_t, std::set<rocm_metric_type>>{};
         for(auto& itr : _data)
         {
             _device_data[itr.device_id].emplace_back(&itr);
@@ -682,7 +551,7 @@ post_process_perfetto()
     for(auto& ditr : _device_range)
     {
         auto _dev_id = ditr.first;
-        auto _values = std::vector<feature_value_t>{};
+        auto _values = std::vector<rocm_feature_value>{};
         for(const auto& itr : ditr.second)
         {
             auto     _v  = _get_events(_device_data[_dev_id], itr);
@@ -729,11 +598,11 @@ post_process_timemory()
     auto _data          = rocm_data_t{};
     auto _device_data   = std::map<uint32_t, std::vector<rocm_event*>>{};
     auto _device_fields = std::map<uint32_t, std::vector<std::string_view>>{};
-    auto _device_range  = std::map<uint32_t, std::set<metric_type>>{};
+    auto _device_range  = std::map<uint32_t, std::set<rocm_metric_type>>{};
 
     for(size_t i = 0; i < OMNITRACE_MAX_THREADS; ++i)
     {
-        auto& _v = rocm_data(i);
+        auto& _v = comp::rocm_data(i);
         if(_v)
         {
             _data.reserve(_data.size() + _v->size());
@@ -838,7 +707,7 @@ post_process_timemory()
                 _metric_name, std::regex{ "(.*)\\[([0-9]+)\\]" }, "$1_$2");
             storage = std::make_unique<storage_type>(
                 tim::standalone_storage{}, index,
-                JOIN('-', "rocprof", _metric_name, "device", _devid));
+                JOIN('-', "rocprof", "device", _devid, _metric_name));
         }
 
         void operator()(const local_event& _event, scope::config _scope) const

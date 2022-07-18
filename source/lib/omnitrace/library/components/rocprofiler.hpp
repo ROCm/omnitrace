@@ -24,23 +24,93 @@
 
 #include "library/components/fwd.hpp"
 #include "library/defines.hpp"
-#include "library/rocprofiler.hpp"
+#include "library/thread_data.hpp"
 
 #include <timemory/api.hpp>
+#include <timemory/backends/hardware_counters.hpp>
 #include <timemory/components/base.hpp>
 #include <timemory/components/data_tracker/components.hpp>
 #include <timemory/components/macros.hpp>
 #include <timemory/enum.h>
+#include <timemory/macros.hpp>
 #include <timemory/macros/os.hpp>
+#include <timemory/mpl/concepts.hpp>
+#include <timemory/mpl/macros.hpp>
 #include <timemory/mpl/type_traits.hpp>
 #include <timemory/mpl/types.hpp>
 #include <timemory/utility/transient_function.hpp>
+
+#include <array>
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <variant>
+#include <vector>
+
+#if !defined(OMNITRACE_MAX_COUNTERS)
+#    define OMNITRACE_MAX_COUNTERS 25
+#endif
+
+#if !defined(OMNITRACE_ROCM_LOOK_AHEAD)
+#    define OMNITRACE_ROCM_LOOK_AHEAD 128
+#endif
+
+#if !defined(OMNITRACE_MAX_ROCM_QUEUES)
+#    define OMNITRACE_MAX_ROCM_QUEUES OMNITRACE_MAX_THREADS
+#endif
 
 namespace tim
 {
 namespace component
 {
-using rocprofiler_value = typename omnitrace::rocprofiler::rocm_event::value_type;
+using rocm_metric_type   = unsigned long long;
+using rocm_info_entry    = ::tim::hardware_counters::info;
+using rocm_feature_value = std::variant<uint32_t, float, uint64_t, double>;
+
+struct rocm_counter
+{
+    std::array<rocm_metric_type, OMNITRACE_MAX_COUNTERS> counters;
+};
+
+struct rocm_event
+{
+    using value_type = rocm_feature_value;
+
+    uint32_t                        device_id      = 0;
+    uint32_t                        thread_id      = 0;
+    uint32_t                        queue_id       = 0;
+    rocm_metric_type                entry          = 0;
+    rocm_metric_type                exit           = 0;
+    std::string                     name           = {};
+    std::vector<std::string_view>   feature_names  = {};
+    std::vector<rocm_feature_value> feature_values = {};
+
+    rocm_event() = default;
+    rocm_event(uint32_t _dev, uint32_t _thr, uint32_t _queue, std::string _event_name,
+               rocm_metric_type begin, rocm_metric_type end, uint32_t _feature_count,
+               void* _features);
+
+    std::string as_string() const;
+
+    friend std::ostream& operator<<(std::ostream& _os, const rocm_event& _v)
+    {
+        return (_os << _v.as_string());
+    }
+
+    friend bool operator<(const rocm_event& _lhs, const rocm_event& _rhs)
+    {
+        return std::tie(_lhs.device_id, _lhs.queue_id, _lhs.entry, _lhs.thread_id) <
+               std::tie(_rhs.device_id, _rhs.queue_id, _rhs.entry, _rhs.thread_id);
+    }
+};
+
+using rocm_data_t       = std::vector<rocm_event>;
+using rocm_data_tracker = data_tracker<rocm_feature_value, rocm_event>;
+
+omnitrace::unique_ptr_t<rocm_data_t>&
+rocm_data(int64_t _tid = threading::get_id());
+
+using rocprofiler_value = typename rocm_event::value_type;
 using rocprofiler_data  = data_tracker<rocprofiler_value, rocprofiler>;
 
 struct rocprofiler
@@ -89,6 +159,58 @@ rocprofiler::is_setup()
 }
 #endif
 }  // namespace component
+
+namespace operation
+{
+template <>
+struct set_storage<component::rocm_data_tracker>
+{
+    using T                             = component::rocm_data_tracker;
+    static constexpr size_t max_threads = 4096;
+    using type                          = T;
+    using storage_array_t               = std::array<storage<type>*, max_threads>;
+    friend struct get_storage<component::rocm_data_tracker>;
+
+    TIMEMORY_DEFAULT_OBJECT(set_storage)
+
+    auto operator()(storage<type>*, size_t) const {}
+    auto operator()(type&, size_t) const {}
+    auto operator()(storage<type>* _v) const { get().fill(_v); }
+
+private:
+    static storage_array_t& get()
+    {
+        static storage_array_t _v = { nullptr };
+        return _v;
+    }
+};
+
+template <>
+struct get_storage<component::rocm_data_tracker>
+{
+    using type = component::rocm_data_tracker;
+
+    TIMEMORY_DEFAULT_OBJECT(get_storage)
+
+    auto operator()(const type&) const
+    {
+        return operation::set_storage<type>::get().at(0);
+    }
+
+    auto operator()() const
+    {
+        type _obj{};
+        return (*this)(_obj);
+    }
+
+    auto operator()(size_t _idx) const
+    {
+        return operation::set_storage<type>::get().at(_idx);
+    }
+
+    auto operator()(type&, size_t _idx) const { return (*this)(_idx); }
+};
+}  // namespace operation
 }  // namespace tim
 
 #if !defined(OMNITRACE_USE_ROCTRACER)

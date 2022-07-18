@@ -34,17 +34,19 @@
 #include "library/sampling.hpp"
 #include "library/thread_data.hpp"
 
-#include "timemory/storage/types.hpp"
-#include "timemory/utility/types.hpp"
-#include "timemory/variadic/functional.hpp"
-#include "timemory/variadic/lightweight_tuple.hpp"
+#include <timemory/storage/types.hpp>
+#include <timemory/utility/types.hpp>
+#include <timemory/variadic/functional.hpp>
+#include <timemory/variadic/lightweight_tuple.hpp>
 
-#include <bits/stdint-intn.h>
-#include <bits/stdint-uintn.h>
+#include <rocprofiler.h>
+
+#include <cstdint>
 #include <string_view>
 #include <type_traits>
 
-using namespace omnitrace;
+TIMEMORY_STATISTICS_TYPE(component::rocm_data_tracker, component::rocm_feature_value)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_units, component::rocm_data_tracker, false_type)
 
 namespace tim
 {
@@ -59,6 +61,72 @@ rocprofiler_activity_count()
     return _v;
 }
 }  // namespace
+
+omnitrace::unique_ptr_t<rocm_data_t>&
+rocm_data(int64_t _tid)
+{
+    using thread_data_t = omnitrace::thread_data<rocm_data_t, rocm_event>;
+    static auto& _v     = thread_data_t::instances(thread_data_t::construct_on_init{});
+    return _v.at(_tid);
+}
+
+rocm_event::rocm_event(uint32_t _dev, uint32_t _thr, uint32_t _queue,
+                       std::string _event_name, rocm_metric_type _begin,
+                       rocm_metric_type _end, uint32_t _feature_count, void* _features_v)
+: device_id{ _dev }
+, thread_id{ _thr }
+, queue_id{ _queue }
+, entry{ _begin }
+, exit{ _end }
+, name(std::move(_event_name))
+{
+    feature_values.reserve(_feature_count);
+    feature_names.reserve(_feature_count);
+    auto* _features = static_cast<rocprofiler_feature_t*>(_features_v);
+    for(uint32_t i = 0; i < _feature_count; ++i)
+    {
+        const rocprofiler_feature_t* p = &_features[i];
+        feature_names.emplace_back(p->name);
+        switch(p->data.kind)
+        {
+            // Output metrics results
+            case ROCPROFILER_DATA_KIND_UNINIT: break;
+            case ROCPROFILER_DATA_KIND_BYTES:
+                feature_values.emplace_back(
+                    rocm_feature_value{ p->data.result_bytes.size });
+                break;
+            case ROCPROFILER_DATA_KIND_INT32:
+                feature_values.emplace_back(rocm_feature_value{ p->data.result_int32 });
+                break;
+            case ROCPROFILER_DATA_KIND_FLOAT:
+                feature_values.emplace_back(rocm_feature_value{ p->data.result_float });
+                break;
+            case ROCPROFILER_DATA_KIND_DOUBLE:
+                feature_values.emplace_back(rocm_feature_value{ p->data.result_double });
+                break;
+            case ROCPROFILER_DATA_KIND_INT64:
+                feature_values.emplace_back(rocm_feature_value{ p->data.result_int64 });
+                break;
+        }
+    }
+}
+
+std::string
+rocm_event::as_string() const
+{
+    std::stringstream _ss{};
+    _ss << name << ", device: " << device_id << ", queue: " << queue_id
+        << ", thread: " << thread_id << ", entry: " << entry << ", exit = " << exit;
+    _ss.precision(3);
+    _ss << std::fixed;
+    for(size_t i = 0; i < feature_names.size(); ++i)
+    {
+        _ss << ", " << feature_names.at(i) << " = ";
+        auto _as_string = [&_ss](auto&& itr) { _ss << std::setw(4) << itr; };
+        std::visit(_as_string, feature_values.at(i));
+    }
+    return _ss.str();
+}
 
 void
 rocprofiler::preinit()
