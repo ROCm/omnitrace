@@ -38,5 +38,20 @@ setup();
 
 void
 shutdown();
+
+#if !defined(OMNITRACE_USE_RCCL) ||                                                      \
+    (defined(OMNITRACE_USE_RCCL) && OMNITRACE_USE_RCCL == 0)
+inline void
+configure()
+{}
+
+inline void
+setup()
+{}
+
+inline void
+shutdown()
+{}
+#endif
 }  // namespace rcclp
 }  // namespace omnitrace
