@@ -176,7 +176,14 @@ jobs:
     strategy:
       matrix:
         compiler: ['g++']
-        rocm_version: ['4.3', '4.5', 'debian']
+        rocm_version: ['4.3', '4.5', '5.0']
+        mpi_headers: ['OFF']
+        build_jobs: ['4']
+        include:
+          - compiler: 'g++'
+            rocm_version: 'debian'
+            mpi_headers: 'ON'
+            build_jobs: '2'
 
     env:
       BUILD_TYPE: MinSizeRel
@@ -194,18 +201,23 @@ jobs:
         wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | apt-key add - &&
         echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{ matrix.rocm_version }}/ ubuntu main" | tee /etc/apt/sources.list.d/rocm.list &&
         apt-get update &&
-        apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev ${{ matrix.compiler }} libudev-dev libnuma-dev rocm-dev rocm-utils rocm-smi-lib roctracer-dev rocprofiler-dev rccl-dev hip-base hsa-amd-aqlprofile hsa-rocr-dev hsakmt-roct-dev libpapi-dev libopenmpi-dev curl &&
+        apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev ${{ matrix.compiler }} libudev-dev libnuma-dev rocm-dev rocm-utils rocm-smi-lib roctracer-dev rocprofiler-dev hip-base hsa-amd-aqlprofile hsa-rocr-dev hsakmt-roct-dev libpapi-dev libopenmpi-dev curl &&
         python3 -m pip install --upgrade pip &&
         python3 -m pip install 'cmake==3.16.3' &&
-        for i in 6 7 8 9; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done
+        for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done
+
+    - name: Install RCCL
+      if: ${{ matrix.rocm_version != '4.3' }}
+      timeout-minutes: 5
+      run:
+        apt-get install -y rccl-dev
 
     - name: Configure Env
       run:
         echo "CC=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')" >> $GITHUB_ENV &&
         echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV &&
         echo "CMAKE_PREFIX_PATH=/opt/dyninst:/opt/elfutils:${CMAKE_PREFIX_PATH}" >> $GITHUB_ENV &&
-        echo "/opt/omnitrace/bin:/opt/dyninst/bin:/opt/elfutils/bin:${HOME}/.local/bin" >> $GITHUB_PATH &&
-        echo "LD_LIBRARY_PATH=/opt/omnitrace/lib:/opt/dyninst/lib:/opt/elfutils/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=/opt/dyninst/lib:/opt/elfutils/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
 
     - name: Configure CMake
       timeout-minutes: 10
@@ -217,7 +229,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
           -DCMAKE_INSTALL_PREFIX=/opt/omnitrace
-          -DOMNITRACE_BUILD_TESTING=OFF
+          -DOMNITRACE_BUILD_TESTING=ON
           -DOMNITRACE_BUILD_DEVELOPER=ON
           -DOMNITRACE_BUILD_EXTRA_OPTIMIZATIONS=OFF
           -DOMNITRACE_BUILD_LTO=OFF
@@ -225,14 +237,19 @@ jobs:
           -DOMNITRACE_USE_MPI_HEADERS=ON
           -DOMNITRACE_USE_HIP=ON
           -DOMNITRACE_MAX_THREADS=32
-          -DOMNITRACE_USE_SANITIZER=OFF
           -DOMNITRACE_USE_PAPI=OFF
+          -DOMNITRACE_USE_OMPT=OFF
+          -DOMNITRACE_USE_PYTHON=ON
+          -DOMNITRACE_USE_MPI_HEADERS=${{ matrix.mpi_headers }}
+          -DOMNITRACE_USE_SANITIZER=OFF
           -DOMNITRACE_INSTALL_PERFETTO_TOOLS=ON
+          -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
+          -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
 
     - name: Build
       timeout-minutes: 60
       run:
-        cmake --build build --target all --parallel 2 -- VERBOSE=1
+        cmake --build build --target all --parallel ${{ matrix.build_jobs }} -- VERBOSE=1
 
     - name: Install
       run:
@@ -258,6 +275,8 @@ jobs:
         ldd $(which omnitrace-avail)
         omnitrace-avail --help
         omnitrace-avail -a
+        which omnitrace-python
+        omnitrace-python --help
         which omnitrace-critical-trace
         ldd $(which omnitrace-critical-trace)
         which omnitrace
