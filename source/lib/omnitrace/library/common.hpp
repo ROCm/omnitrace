@@ -47,6 +47,7 @@
 TIMEMORY_DEFINE_NS_API(api, omnitrace)
 TIMEMORY_DEFINE_NS_API(api, sampling)
 TIMEMORY_DEFINE_NS_API(api, rocm_smi)
+TIMEMORY_DEFINE_NS_API(api, rccl)
 
 namespace omnitrace
 {

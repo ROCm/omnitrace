@@ -22,7 +22,9 @@
 
 #pragma once
 
+#include "library/common.hpp"
 #include "library/defines.hpp"
+#include "timemory/mpl/types.hpp"
 
 #include <timemory/api.hpp>
 #include <timemory/api/macros.hpp>
@@ -40,6 +42,10 @@ TIMEMORY_DEFINE_NS_API(category, process_sampling)
 
 TIMEMORY_DECLARE_COMPONENT(roctracer)
 TIMEMORY_DECLARE_COMPONENT(rocprofiler)
+TIMEMORY_DECLARE_COMPONENT(rccl_comm_data)
+TIMEMORY_DECLARE_COMPONENT(rcclp_handle)
+TIMEMORY_COMPONENT_ALIAS(rccl_api_t, api::rccl)
+TIMEMORY_COMPONENT_ALIAS(rccl_data_tracker_t, data_tracker<float, rccl_api_t>)
 
 /// \struct tim::trait::name
 /// \brief provides a constexpr string in ::value
@@ -150,6 +156,13 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::roctracer, false_type)
 
 #if !defined(OMNITRACE_USE_ROCPROFILER)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::rocprofiler, false_type)
+#endif
+
+#if !defined(OMNITRACE_USE_RCCL)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, api::rccl, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::rccl_comm_data, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::rccl_data_tracker_t, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::rcclp_handle, false_type)
 #endif
 
 #if !defined(TIMEMORY_USE_LIBUNWIND)

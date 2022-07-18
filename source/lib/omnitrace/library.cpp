@@ -47,7 +47,6 @@
 #include "library/thread_data.hpp"
 #include "library/timemory.hpp"
 #include "library/tracing.hpp"
-#include "library/rcclp.hpp"
 
 #include <timemory/utility/procfs/maps.hpp>
 
