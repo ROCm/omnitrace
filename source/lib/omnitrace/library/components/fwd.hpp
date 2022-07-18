@@ -74,6 +74,7 @@ TIMEMORY_DEFINE_NS_API(category, pthread)
 TIMEMORY_DEFINE_NS_API(category, kokkos)
 TIMEMORY_DEFINE_NS_API(category, mpi)
 TIMEMORY_DEFINE_NS_API(category, ompt)
+TIMEMORY_DEFINE_NS_API(category, rccl)
 TIMEMORY_DEFINE_NS_API(category, critical_trace)
 TIMEMORY_DEFINE_NS_API(category, host_critical_trace)
 TIMEMORY_DEFINE_NS_API(category, device_critical_trace)
@@ -93,6 +94,7 @@ TIMEMORY_DEFINE_NAME_TRAIT("pthread", category::pthread);
 TIMEMORY_DEFINE_NAME_TRAIT("kokkos", category::kokkos);
 TIMEMORY_DEFINE_NAME_TRAIT("mpi", category::mpi);
 TIMEMORY_DEFINE_NAME_TRAIT("ompt", category::ompt);
+TIMEMORY_DEFINE_NAME_TRAIT("rccl", category::rccl);
 TIMEMORY_DEFINE_NAME_TRAIT("critical-trace", category::critical_trace);
 TIMEMORY_DEFINE_NAME_TRAIT("host-critical-trace", category::host_critical_trace);
 TIMEMORY_DEFINE_NAME_TRAIT("device-critical-trace", category::device_critical_trace);

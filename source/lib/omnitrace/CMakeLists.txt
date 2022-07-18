@@ -143,6 +143,11 @@ if(OMNITRACE_USE_ROCTRACER)
                 ${CMAKE_CURRENT_LIST_DIR}/library/roctracer.cpp)
 endif()
 
+if(OMNITRACE_USE_RCCL)
+    target_sources(omnitrace-object-library
+                   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/library/rcclp.cpp)
+endif()
+
 if(OMNITRACE_USE_ROCPROFILER)
     target_sources(
         omnitrace-object-library

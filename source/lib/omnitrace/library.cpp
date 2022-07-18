@@ -46,6 +46,7 @@
 #include "library/thread_data.hpp"
 #include "library/timemory.hpp"
 #include "library/tracing.hpp"
+#include "library/rcclp.hpp"
 
 #include <timemory/utility/procfs/maps.hpp>
 
@@ -647,6 +648,9 @@ omnitrace_init_tooling_hidden()
         ompt::setup();
     }
 
+    //if(get_use_rccl())
+    rcclp::setup();
+
     if(get_use_perfetto() && !is_system_backend())
     {
 #if defined(CUSTOM_DATA_SOURCE)
@@ -839,6 +843,8 @@ omnitrace_finalize_hidden(void)
                 _azero->emplace(itr.first, itr.second);
         }
     }
+
+    rcclp::shutdown();
 
     if(get_use_ompt())
     {
