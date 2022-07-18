@@ -217,6 +217,9 @@ int
 get_sampling_rtoffset();
 
 bool
+get_use_rcclp();
+
+bool
 get_timeline_sampling();
 
 bool
@@ -291,6 +294,9 @@ get_process_sampling_freq();
 
 std::string
 get_sampling_gpus();
+
+bool
+get_sampling_keep_internal();
 
 int64_t
 get_critical_trace_per_row();

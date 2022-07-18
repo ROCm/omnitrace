@@ -270,6 +270,11 @@ configure_settings(bool _init)
                              "Enable support for Kokkos Tools", false, "kokkos",
                              "backend");
 
+    OMNITRACE_CONFIG_SETTING(
+        bool, "OMNITRACE_USE_RCCLP",
+        "Enable support for ROCm Communication Collectives Library (RCCL) Performance",
+        false, "rocm", "rccl", "backend");
+
     OMNITRACE_CONFIG_CL_SETTING(
         bool, "OMNITRACE_KOKKOS_KERNEL_LOGGER", "Enables kernel logging", false,
         "--omnitrace-kokkos-kernel-logger", "kokkos", "debugging");
@@ -322,6 +327,13 @@ configure_settings(bool _init)
         "commas and can be explicit or ranges, e.g. 0,1,5-8. An empty value implies "
         "'all' and 'none' suppresses all GPU sampling",
         std::string{ "all" }, "rocm_smi", "rocm", "process_sampling");
+
+    OMNITRACE_CONFIG_SETTING(
+        bool, "OMNITRACE_SAMPLING_KEEP_INTERNAL",
+        "Configure whether the statistical samples should include call-stack entries "
+        "from internal routines in omnitrace. E.g. when ON, the call-stack will show "
+        "functions like omnitrace_push_trace",
+        true, "sampling", "thread_sampling", "data");
 
     auto _backend = tim::get_env_choice<std::string>(
         "OMNITRACE_PERFETTO_BACKEND",
@@ -666,6 +678,7 @@ configure_mode_settings()
         _set("OMNITRACE_USE_ROCTRACER", false);
         _set("OMNITRACE_USE_ROCPROFILER", false);
         _set("OMNITRACE_USE_KOKKOSP", false);
+        _set("OMNITRACE_USE_RCCLP", false);
         _set("OMNITRACE_USE_OMPT", false);
         _set("OMNITRACE_USE_SAMPLING", false);
         _set("OMNITRACE_USE_PROCESS_SAMPLING", false);
@@ -721,6 +734,7 @@ configure_mode_settings()
         _set("OMNITRACE_USE_ROCTRACER", false);
         _set("OMNITRACE_USE_ROCPROFILER", false);
         _set("OMNITRACE_USE_KOKKOSP", false);
+        _set("OMNITRACE_USE_RCCLP", false);
         _set("OMNITRACE_USE_OMPT", false);
         _set("OMNITRACE_USE_SAMPLING", false);
         _set("OMNITRACE_USE_PROCESS_SAMPLING", false);
@@ -817,6 +831,7 @@ configure_disabled_settings()
     _handle_use_option("OMNITRACE_USE_PERFETTO", "perfetto");
     _handle_use_option("OMNITRACE_USE_TIMEMORY", "timemory");
     _handle_use_option("OMNITRACE_USE_OMPT", "ompt");
+    _handle_use_option("OMNITRACE_USE_RCCLP", "rcclp");
     _handle_use_option("OMNITRACE_USE_ROCM_SMI", "rocm_smi");
     _handle_use_option("OMNITRACE_USE_ROCTRACER", "roctracer");
     _handle_use_option("OMNITRACE_USE_ROCPROFILER", "rocprofiler");
@@ -1356,6 +1371,13 @@ get_use_code_coverage()
 }
 
 bool
+get_use_rcclp()
+{
+    static auto _v = get_config()->find("OMNITRACE_USE_RCCLP");
+    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
+}
+
+bool
 get_critical_trace_debug()
 {
     static auto _v = get_config()->find("OMNITRACE_CRITICAL_TRACE_DEBUG");
@@ -1605,6 +1627,13 @@ get_sampling_gpus()
 #else
     return std::string{};
 #endif
+}
+
+bool
+get_sampling_keep_internal()
+{
+    static auto _v = get_config()->find("OMNITRACE_SAMPLING_KEEP_INTERNAL");
+    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
 bool
