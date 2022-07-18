@@ -864,15 +864,16 @@ omnitrace_finalize_hidden(void)
         sampling::block_signals();
     }
 
-    OMNITRACE_VERBOSE_F(1, "Shutting down miscellaneous gotchas...\n");
     // stop the gotcha bundle
     if(get_gotcha_bundle())
     {
+        OMNITRACE_VERBOSE_F(1, "Shutting down miscellaneous gotchas...\n");
         get_gotcha_bundle()->stop();
         get_gotcha_bundle().reset();
+        mpi_gotcha::shutdown();
     }
 
-    OMNITRACE_VERBOSE_F(1, "Shutting down pthread gotcha...\n");
+    OMNITRACE_VERBOSE_F(1, "Shutting down pthread gotchas...\n");
     pthread_gotcha::shutdown();
 
     if(get_use_process_sampling())
@@ -1030,26 +1031,23 @@ omnitrace_finalize_hidden(void)
 #if defined(TIMEMORY_USE_MPI) && TIMEMORY_USE_MPI > 0
         if(get_perfetto_combined_traces())
         {
-            namespace operation = tim::operation;
-            auto _trace_data    = tracing_session->ReadTraceBlocking();
-            auto _rank_data     = std::vector<char_vec_t>{};
-            auto _mpi_get       = operation::finalize::mpi_get<char_vec_t, true>{ false };
+            using perfetto_mpi_get_t =
+                tim::operation::finalize::mpi_get<char_vec_t, true>;
 
-            _mpi_get(_rank_data, _trace_data);
+            char_vec_t              _trace_data{ tracing_session->ReadTraceBlocking() };
+            std::vector<char_vec_t> _rank_data = {};
+            auto _combine = [](char_vec_t& _dst, const char_vec_t& _src) -> char_vec_t& {
+                _dst.reserve(_dst.size() + _src.size());
+                for(auto&& itr : _src)
+                    _dst.emplace_back(itr);
+                return _dst;
+            };
 
-            if(tim::mpi::rank() == 0)
-            {
-                for(auto& itr : _rank_data)
-                {
-                    if(trace_data.empty())
-                        std::swap(trace_data, itr);
-                    else
-                        trace_data.insert(trace_data.end(),
-                                          std::make_move_iterator(itr.begin()),
-                                          std::make_move_iterator(itr.end()));
-                    itr.clear();
-                }
-            }
+            perfetto_mpi_get_t{ get_perfetto_combined_traces(), settings::node_count() }(
+                _rank_data, _trace_data, _combine);
+            for(auto& itr : _rank_data)
+                trace_data =
+                    (trace_data.empty()) ? std::move(itr) : _combine(trace_data, itr);
         }
         else
         {
