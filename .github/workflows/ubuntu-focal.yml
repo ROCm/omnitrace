@@ -266,6 +266,11 @@ jobs:
         ctest -V ${{ matrix.ctest_exclude }} -N -O omnitrace-ctest-${{ github.job }}-commands.log &&
         ctest -V ${{ matrix.ctest_exclude }} --output-log omnitrace-ctest-${{ github.job }}.log --stop-on-failure
 
+    - name: Configure Install Env
+      run:
+        echo "/opt/omnitrace/bin" >> $GITHUB_PATH &&
+        echo "LD_LIBRARY_PATH=/opt/omnitrace/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
+
     - name: Test Install
       timeout-minutes: 10
       run: |
