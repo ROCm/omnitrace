@@ -80,7 +80,7 @@ module_function::module_function(module_t* mod, procedure_t* proc)
     function_name = fname;
     signature     = get_func_file_line_info(module, function);
 
-    if(!function->isInstrumentable())
+    if(!function->isInstrumentable() && !simulate && !include_uninstr)
     {
         verbprintf(0,
                    "Warning! module function generated for un-instrumentable "
@@ -201,7 +201,7 @@ module_function::should_instrument(bool coverage) const
 bool
 module_function::is_instrumentable() const
 {
-    if(!function->isInstrumentable())
+    if(!function->isInstrumentable() && !simulate && !include_uninstr)
     {
         messages.emplace_back(2, "Skipping", "module", "not-instrumentable", module_name);
         return false;
@@ -574,6 +574,7 @@ module_function::can_instrument_entry() const
 
     if(_num_points == 0)
     {
+        if(simulate && include_uninstr) return true;
         messages.emplace_back(3, "Skipping", "function", "no-instrumentable-entry-point",
                               function_name);
         return false;
@@ -592,6 +593,7 @@ module_function::can_instrument_exit() const
 
     if(_num_points == 0)
     {
+        if(simulate && include_uninstr) return true;
         messages.emplace_back(3, "Skipping", "function", "no-instrumentable-exit-point",
                               function_name);
         return false;

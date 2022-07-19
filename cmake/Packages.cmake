@@ -276,7 +276,8 @@ if(OMNITRACE_BUILD_DYNINST)
         endif()
     endforeach()
 
-    omnitrace_install_tpl(dyninstAPI_RT omnitrace-rt "${PROJECT_BINARY_DIR}")
+    omnitrace_install_tpl(dyninstAPI_RT omnitrace-rt
+                          "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
 
     # for packaging
     install(

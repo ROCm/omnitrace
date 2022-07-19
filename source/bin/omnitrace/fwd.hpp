@@ -47,6 +47,8 @@
 #include <BPatch_snippet.h>
 #include <BPatch_statement.h>
 #include <Instruction.h>
+#include <Symtab.h>
+#include <SymtabReader.h>
 #include <dyntypes.h>
 
 #include <climits>
@@ -165,6 +167,11 @@ extern bool werror;
 extern bool debug_print;
 extern bool instr_print;
 extern int  verbose_level;
+//
+//  instrumentation settings
+//
+extern bool simulate;
+extern bool include_uninstr;
 //
 //  string settings
 //

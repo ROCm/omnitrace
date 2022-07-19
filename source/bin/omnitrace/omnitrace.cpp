@@ -23,19 +23,23 @@
 #include "omnitrace.hpp"
 #include "fwd.hpp"
 
-#include <cstring>
-#include <iterator>
 #include <timemory/config.hpp>
 #include <timemory/hash.hpp>
 #include <timemory/manager.hpp>
 #include <timemory/settings.hpp>
+#include <timemory/utility/console.hpp>
+#include <timemory/utility/demangle.hpp>
 
 #include <algorithm>
 #include <chrono>
 #include <csignal>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <iomanip>
+#include <iterator>
 #include <map>
 #include <regex>
 #include <stdexcept>
@@ -43,6 +47,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <thread>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -70,6 +75,8 @@ size_t   min_loop_instructions   = (1 << 6);  // 64
 bool     werror                  = false;
 bool     debug_print             = false;
 bool     instr_print             = false;
+bool     simulate                = false;
+bool     include_uninstr         = false;
 int      verbose_level           = tim::get_env<int>("OMNITRACE_VERBOSE_INSTRUMENT", 0);
 string_t main_fname              = "main";
 string_t argv0                   = {};
@@ -103,8 +110,6 @@ bool                                       binary_rewrite       = false;
 bool                                       is_attached          = false;
 bool                                       use_mpi              = false;
 bool                                       is_static_exe        = false;
-bool                                       simulate             = false;
-bool                                       include_uninstr      = false;
 size_t                                     batch_size           = 50;
 strset_t                                   extra_libs           = {};
 std::vector<std::pair<uint64_t, string_t>> hash_ids             = {};
@@ -126,6 +131,8 @@ string_t                                   print_excluded       = {};
 string_t                                   print_available      = {};
 string_t                                   print_overlapping    = {};
 strset_t                                   print_formats        = { "txt", "json" };
+strvec_t                                   libname_suffixes     = {};
+strvec_t                                   libname_fallbacks    = {};
 std::string                                modfunc_dump_dir     = {};
 auto regex_opts = std::regex_constants::egrep | std::regex_constants::optimize;
 
@@ -824,6 +831,65 @@ main(int argc, char** argv)
                        !parser.exists("min-instructions") &&
                            !parser.exists("min-address-range-loop"));
 
+    auto _omnitrace_exe_path = tim::dirname(::get_realpath("/proc/self/exe"));
+    verbprintf(4, "omnitrace exe path: %s\n", _omnitrace_exe_path.c_str());
+
+    if(strcmp(::basename(_omnitrace_exe_path.c_str()), "bin") == 0)
+    {
+        libname_suffixes.emplace_back("omnitrace");
+        libname_suffixes.emplace_back("../lib");
+        libname_suffixes.emplace_back("../lib64");
+        libname_suffixes.emplace_back("../lib/omnitrace");
+        libname_suffixes.emplace_back("../lib64/omnitrace");
+        libname_suffixes.emplace_back("lib");
+        libname_suffixes.emplace_back("lib64");
+        libname_suffixes.emplace_back("lib/omnitrace");
+        libname_suffixes.emplace_back("lib64/omnitrace");
+        libname_fallbacks.emplace_back(_omnitrace_exe_path);
+    }
+    else
+    {
+        libname_suffixes.emplace_back("lib");
+        libname_suffixes.emplace_back("lib64");
+        libname_suffixes.emplace_back("lib/omnitrace");
+        libname_suffixes.emplace_back("lib64/omnitrace");
+        libname_fallbacks.emplace_back(tim::get_env<std::string>("PWD", "."));
+    }
+
+    if(_cmdv && _cmdv[0] && strlen(_cmdv[0]) > 0)
+    {
+        auto _is_executable = omnitrace_get_is_executable(_cmdv[0], binary_rewrite);
+        if(!_is_executable && !binary_rewrite)
+        {
+            fflush(stdout);
+            std::stringstream _separator{};
+            // 18 is approximate length of '[omnitrace][exe] '
+            // 32 is approximate length of 'Warning! "" is not executable!'
+            size_t _width =
+                std::min<size_t>(std::get<0>(tim::utility::console::get_columns()) - 18,
+                                 strlen(_cmdv[0]) + 32);
+            _separator.fill('=');
+            _separator << "#" << std::setw(_width - 2) << ""
+                       << "#";
+            verbprintf(0, "%s\n", _separator.str().c_str());
+            verbprintf(0, "\n");
+            verbprintf(0, "Warning! '%s' is not executable!\n", _cmdv[0]);
+            verbprintf(0, "Runtime instrumentation is not possible!\n");
+            verbprintf(0, "Switching to binary rewrite mode and assuming '--simulate "
+                          "--all-functions'\n");
+            verbprintf(
+                0, "(which will provide an approximation for runtime instrumentation)\n");
+            verbprintf(0, "\n");
+            verbprintf(0, "%s\n", _separator.str().c_str());
+            verbprintf(0, "\n");
+            fflush(stdout);
+            std::this_thread::sleep_for(std::chrono::milliseconds{ 500 });
+            binary_rewrite  = true;
+            simulate        = true;
+            include_uninstr = true;
+        }
+    }
+
     if(binary_rewrite && outfile.empty())
     {
         auto _is_local = (get_realpath(cmdv0) ==
@@ -1020,6 +1086,23 @@ main(int argc, char** argv)
         errprintf(-1, "address space for dynamic instrumentation was not created\n");
     }
 
+    if(dynamic_cast<binary_edit_t*>(addr_space) != nullptr &&
+       dynamic_cast<process_t*>(addr_space) != nullptr)
+    {
+        errprintf(-1, "address space statisfied dynamic_cast<%s> and dynamic_cast<%s>.\n",
+                  tim::demangle<binary_edit_t*>().c_str(),
+                  tim::demangle<process_t*>().c_str());
+    }
+
+    auto _rewrite = (dynamic_cast<binary_edit_t*>(addr_space) != nullptr &&
+                     dynamic_cast<process_t*>(addr_space) == nullptr);
+    if(_rewrite != binary_rewrite)
+    {
+        verbprintf(0, "Warning! binary rewrite was %s but has been deduced to be %s\n",
+                   (binary_rewrite) ? "ON" : "OFF", (_rewrite) ? "ON" : "OFF");
+        binary_rewrite = _rewrite;
+    }
+
     process_t*     app_thread = nullptr;
     binary_edit_t* app_binary = nullptr;
 
@@ -1043,7 +1126,7 @@ main(int argc, char** argv)
     };
 
     auto _add_overlapping = [](module_t* mitr, procedure_t* pitr) {
-        if(!pitr->isInstrumentable()) return;
+        if(!pitr->isInstrumentable() && !simulate && !include_uninstr) return;
         std::vector<procedure_t*> _overlapping{};
         if(pitr->findOverlapping(_overlapping))
         {
@@ -1051,7 +1134,7 @@ main(int argc, char** argv)
                                     module_function{ mitr, pitr });
             for(auto* oitr : _overlapping)
             {
-                if(!oitr->isInstrumentable()) continue;
+                if(!oitr->isInstrumentable() && !simulate && !include_uninstr) continue;
                 _insert_module_function(overlapping_module_functions,
                                         module_function{ oitr->getModule(), oitr });
             }
@@ -1072,7 +1155,8 @@ main(int argc, char** argv)
             {
                 for(auto* pitr : *procedures)
                 {
-                    if(!pitr->isInstrumentable()) continue;
+                    if(!pitr->isInstrumentable() && !simulate && !include_uninstr)
+                        continue;
                     auto _modfn = module_function{ itr, pitr };
                     module_names.insert(_modfn.module_name);
                     _insert_module_function(available_module_functions, _modfn);
@@ -1096,7 +1180,7 @@ main(int argc, char** argv)
         for(auto* itr : functions)
         {
             module_t* mod = itr->getModule();
-            if(mod && itr->isInstrumentable())
+            if(mod && (itr->isInstrumentable() || (simulate && include_uninstr)))
             {
                 auto _modfn = module_function{ mod, itr };
                 module_names.insert(_modfn.module_name);
@@ -1535,7 +1619,7 @@ main(int argc, char** argv)
         if(_libname.empty()) _libname = get_absolute_lib_filepath(itr, "LIBRARY_PATH");
         if(_libname.empty()) _libname = get_absolute_lib_filepath(itr, "LD_LIBRARY_PATH");
     }
-    if(_libname.empty()) _libname = "libomnitrace.so";
+    if(_libname.empty()) _libname = "libomnitrace-dl.so";
 
     // prioritize the user environment arguments
     auto env_vars = parser.get<strvec_t>("env");
@@ -1899,22 +1983,18 @@ main(int argc, char** argv)
         {
             for(const auto& itr : _modset)
             {
-                std::stringstream _ss{};
-                _ss << std::boolalpha;
-                _ss << "" << itr.module_name << "] --> [" << itr.function_name << "]["
-                    << itr.num_instructions << "]";
-                _insert(itr.module_name, _ss.str());
+                _insert(itr.module_name, TIMEMORY_JOIN("", "[", itr.module_name,
+                                                       "] --> [", itr.function_name, "][",
+                                                       itr.num_instructions, "]"));
             }
         }
         else if(_mode == "pair+")
         {
             for(const auto& itr : _modset)
             {
-                std::stringstream _ss{};
-                _ss << std::boolalpha;
-                _ss << "[" << itr.module_name << "] --> [" << itr.signature.get() << "]["
-                    << itr.num_instructions << "]";
-                _insert(itr.module_name, _ss.str());
+                _insert(itr.module_name, TIMEMORY_JOIN("", "[", itr.module_name,
+                                                       "] --> [", itr.signature.get(),
+                                                       "][", itr.num_instructions, "]"));
             }
         }
         else
@@ -2246,6 +2326,9 @@ get_absolute_lib_filepath(std::string lib_name, const std::string& env_path,
                           std::vector<std::string> suffixes,
                           std::vector<std::string> fallbacks)
 {
+    if(suffixes.empty()) suffixes = libname_suffixes;
+    if(fallbacks.empty()) fallbacks = libname_fallbacks;
+
     if(!lib_name.empty() && (!file_exists(lib_name) ||
                              std::regex_match(lib_name, std::regex("^[A-Za-z0-9].*"))))
     {
@@ -2273,6 +2356,7 @@ get_absolute_lib_filepath(std::string lib_name, const std::string& env_path,
                     break;
                 }
             }
+            if(file_exists(lib_name)) break;
         }
 
         if(!file_exists(lib_name))
@@ -2295,6 +2379,7 @@ bool
 file_exists(const std::string& name)
 {
     struct stat buffer;
+    verbprintf(4, "querying whether file '%s' exists...\n", name.c_str());
     return (stat(name.c_str(), &buffer) == 0);
 }
 
@@ -2322,22 +2407,8 @@ using tim::dirname;
 void
 find_dyn_api_rt()
 {
-    auto _exe_path = dirname(::get_realpath("/proc/self/exe"));
-
-    strvec_t _suffixes  = {};
-    strvec_t _fallbacks = {};
-
-    if(strcmp(::basename(_exe_path.c_str()), "bin") == 0)
-    {
-        _suffixes.emplace_back("omnitrace");
-        _suffixes.emplace_back("../lib");
-        _suffixes.emplace_back("../lib/omnitrace");
-        _fallbacks.emplace_back(_exe_path);
-    }
-    else
-    {
-        _fallbacks.emplace_back(tim::get_env<std::string>("PWD", "."));
-    }
+    strvec_t _suffixes  = libname_suffixes;
+    strvec_t _fallbacks = libname_fallbacks;
 
     std::copy(_dyn_api_rt_paths.begin(), _dyn_api_rt_paths.end(),
               std::back_inserter(_fallbacks));
