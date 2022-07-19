@@ -8,6 +8,9 @@ function(OMNITRACE_ADD_BIN_TEST)
         # value args
         ${ARGN})
 
+    if(NOT TEST_WORKING_DIRECTORY)
+        set(TEST_WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    endif()
     if(NOT OMNITRACE_DYNINST_API_RT_DIR AND OMNITRACE_DYNINST_API_RT)
         get_filename_component(OMNITRACE_DYNINST_API_RT_DIR "${OMNITRACE_DYNINST_API_RT}"
                                DIRECTORY)
@@ -29,9 +32,17 @@ function(OMNITRACE_ADD_BIN_TEST)
             )
     endif()
 
+    # common
     list(APPEND TEST_ENVIRONMENT "OMNITRACE_CI=ON"
-         "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output"
-         "OMNITRACE_OUTPUT_PREFIX=${TEST_NAME}/")
+         "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output")
+    # copy for inverse
+    set(TEST_ENVIRONMENT_INV "${TEST_ENVIRONMENT}")
+
+    # different for regular test and inverse test
+    list(APPEND TEST_ENVIRONMENT
+        "OMNITRACE_OUTPUT_PREFIX=${TEST_NAME}/")
+    list(APPEND TEST_ENVIRONMENT_INV
+        "OMNITRACE_OUTPUT_PREFIX=${TEST_NAME}-inverse/")
 
     if(TEST_COMMAND)
         add_test(
@@ -65,7 +76,7 @@ function(OMNITRACE_ADD_BIN_TEST)
             set_tests_properties(
                 ${TEST_NAME}-inverse
                 PROPERTIES ENVIRONMENT
-                           "${TEST_ENVIRONMENT}"
+                           "${TEST_ENVIRONMENT_INV}"
                            TIMEOUT
                            ${TEST_TIMEOUT}
                            DEPENDS
@@ -86,7 +97,7 @@ function(OMNITRACE_ADD_BIN_TEST)
         add_test(
             NAME ${TEST_NAME}
             COMMAND $<TARGET_FILE:${TEST_TARGET}> ${TEST_ARGS}
-            WORKING_DIRECTORY $<TARGET_FILE_DIR:${TEST_TARGET}>)
+            WORKING_DIRECTORY ${TEST_WORKING_DIRECTORY})
 
         set_tests_properties(
             ${TEST_NAME}
@@ -109,12 +120,12 @@ function(OMNITRACE_ADD_BIN_TEST)
             add_test(
                 NAME ${TEST_NAME}-inverse
                 COMMAND $<TARGET_FILE:${TEST_TARGET}> ${TEST_ARGS}
-                WORKING_DIRECTORY $<TARGET_FILE_DIR:${TEST_TARGET}>)
+                WORKING_DIRECTORY ${TEST_WORKING_DIRECTORY})
 
             set_tests_properties(
                 ${TEST_NAME}-inverse
                 PROPERTIES ENVIRONMENT
-                           "${TEST_ENVIRONMENT}"
+                           "${TEST_ENVIRONMENT_INV}"
                            TIMEOUT
                            ${TEST_TIMEOUT}
                            DEPENDS
@@ -165,9 +176,7 @@ omnitrace_add_bin_test(
 omnitrace_add_bin_test(
     NAME omnitrace-exe-simulate-ls-check
     DEPENDS omnitrace-exe-simulate-ls
-    COMMAND ls
-    WORKING_DIRECTORY
-        ${PROJECT_BINARY_DIR}/omnitrace-tests-output/omnitrace-exe-simulate-ls
+    COMMAND ls omnitrace-tests-output/omnitrace-exe-simulate-ls
     TIMEOUT 60
     PASS_REGEX
         ".*available-instr.json.*available-instr.txt.*available-instr.xml.*excluded-instr.json.*excluded-instr.txt.*excluded-instr.xml.*instrumented-instr.json.*instrumented-instr.txt.*instrumented-instr.xml.*overlapping-instr.json.*overlapping-instr.txt.*overlapping-instr.xml.*"
