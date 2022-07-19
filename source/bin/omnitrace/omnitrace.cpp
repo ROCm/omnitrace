@@ -1147,7 +1147,7 @@ main(int argc, char** argv)
     };
 
     auto _add_overlapping = [](module_t* mitr, procedure_t* pitr) {
-        if(!pitr->isInstrumentable() && !simulate && !include_uninstr) return;
+        if(!pitr->isInstrumentable()) return;
         std::vector<procedure_t*> _overlapping{};
         if(pitr->findOverlapping(_overlapping))
         {
@@ -1155,7 +1155,7 @@ main(int argc, char** argv)
                                     module_function{ mitr, pitr });
             for(auto* oitr : _overlapping)
             {
-                if(!oitr->isInstrumentable() && !simulate && !include_uninstr) continue;
+                if(!oitr->isInstrumentable()) continue;
                 _insert_module_function(overlapping_module_functions,
                                         module_function{ oitr->getModule(), oitr });
             }

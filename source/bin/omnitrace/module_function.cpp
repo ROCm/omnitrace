@@ -56,6 +56,29 @@ module_function::module_function(module_t* mod, procedure_t* proc)
 , function{ proc }
 , flow_graph{ proc->getCFG() }
 {
+    char modname[FUNCNAMELEN];
+    char fname[FUNCNAMELEN];
+    module->getFullName(modname, FUNCNAMELEN);
+    function->getName(fname, FUNCNAMELEN);
+    module_name   = modname;
+    function_name = fname;
+
+    if(!function->isInstrumentable())
+    {
+        verbprintf(0,
+                   "Warning! module function generated for un-instrumentable "
+                   "function: %s [%s]\n",
+                   function_name.c_str(), module_name.c_str());
+    }
+
+    signature   = get_func_file_line_info(module, function);
+    auto _range = std::pair<address_t, address_t>{};
+    if(function->getAddressRange(_range.first, _range.second))
+    {
+        start_address = _range.first;
+        address_range = _range.second - _range.first;
+    }
+
     if(flow_graph)
     {
         flow_graph->getAllBasicBlocks(basic_blocks);
@@ -70,28 +93,6 @@ module_function::module_function(module_t* mod, procedure_t* proc)
         num_instructions += _instructions.size();
         if(debug_print || verbose_level > 3 || instr_print)
             instructions.emplace_back(std::move(_instructions));
-    }
-
-    char modname[FUNCNAMELEN];
-    char fname[FUNCNAMELEN];
-    module->getFullName(modname, FUNCNAMELEN);
-    function->getName(fname, FUNCNAMELEN);
-    module_name   = modname;
-    function_name = fname;
-    signature     = get_func_file_line_info(module, function);
-
-    if(!function->isInstrumentable() && !simulate && !include_uninstr)
-    {
-        verbprintf(0,
-                   "Warning! module function generated for un-instrumentable "
-                   "function: %s [%s]\n",
-                   function_name.c_str(), module_name.c_str());
-    }
-    std::pair<address_t, address_t> _range{};
-    if(function->getAddressRange(_range.first, _range.second))
-    {
-        start_address = _range.first;
-        address_range = _range.second - _range.first;
     }
 }
 
@@ -201,7 +202,7 @@ module_function::should_instrument(bool coverage) const
 bool
 module_function::is_instrumentable() const
 {
-    if(!function->isInstrumentable() && !simulate && !include_uninstr)
+    if(!function->isInstrumentable())
     {
         messages.emplace_back(2, "Skipping", "module", "not-instrumentable", module_name);
         return false;
@@ -574,7 +575,6 @@ module_function::can_instrument_entry() const
 
     if(_num_points == 0)
     {
-        if(simulate && include_uninstr) return true;
         messages.emplace_back(3, "Skipping", "function", "no-instrumentable-entry-point",
                               function_name);
         return false;
@@ -593,7 +593,6 @@ module_function::can_instrument_exit() const
 
     if(_num_points == 0)
     {
-        if(simulate && include_uninstr) return true;
         messages.emplace_back(3, "Skipping", "function", "no-instrumentable-exit-point",
                               function_name);
         return false;
