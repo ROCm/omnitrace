@@ -179,11 +179,13 @@ jobs:
         rocm_version: ['4.3', '4.5', '5.0']
         mpi_headers: ['OFF']
         build_jobs: ['4']
+        ctest_exclude: ['-LE "mpi-example|transpose"']
         include:
           - compiler: 'g++'
             rocm_version: 'debian'
             mpi_headers: 'ON'
             build_jobs: '2'
+            ctest_exclude: '-LE transpose'
 
     env:
       BUILD_TYPE: MinSizeRel
@@ -261,8 +263,8 @@ jobs:
         cd build &&
         ldd ./bin/omnitrace &&
         ./bin/omnitrace --help &&
-        ctest -V -N -O omnitrace-ctest-${{ github.job }}-commands.log &&
-        ctest -V --output-log omnitrace-ctest-${{ github.job }}.log --stop-on-failure
+        ctest -V ${{ matrix.ctest_exclude }} -N -O omnitrace-ctest-${{ github.job }}-commands.log &&
+        ctest -V ${{ matrix.ctest_exclude }} --output-log omnitrace-ctest-${{ github.job }}.log --stop-on-failure
 
     - name: Test Install
       timeout-minutes: 10
