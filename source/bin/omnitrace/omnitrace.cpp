@@ -871,10 +871,11 @@ main(int argc, char** argv)
     {
         auto _is_executable    = omnitrace_get_is_executable(_cmdv[0], binary_rewrite);
         std::string _cmdv_base = ::basename(_cmdv[0]);
-        auto        _has_lib_suffix = _cmdv_base.find(".so.") != std::string::npos ||
-                               _cmdv_base.find(".so") == (_cmdv_base.length() - 3) ||
-                               _cmdv_base.find(".a") == (_cmdv_base.length() - 2);
-        auto _has_lib_prefix = _cmdv_base.find("lib") == 0;
+        auto        _has_lib_suffix = _cmdv_base.length() > 3 &&
+                               (_cmdv_base.find(".so.") != std::string::npos ||
+                                _cmdv_base.find(".so") == (_cmdv_base.length() - 3) ||
+                                _cmdv_base.find(".a") == (_cmdv_base.length() - 2));
+        auto _has_lib_prefix = _cmdv_base.length() > 3 && _cmdv_base.find("lib") == 0;
         if(!force_config && !_is_executable && !binary_rewrite &&
            (_has_lib_prefix || _has_lib_suffix))
         {
