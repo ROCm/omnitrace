@@ -110,6 +110,7 @@ bool                                       binary_rewrite       = false;
 bool                                       is_attached          = false;
 bool                                       use_mpi              = false;
 bool                                       is_static_exe        = false;
+bool                                       force_config         = false;
 size_t                                     batch_size           = 50;
 strset_t                                   extra_libs           = {};
 std::vector<std::pair<uint64_t, string_t>> hash_ids             = {};
@@ -413,6 +414,16 @@ main(int argc, char** argv)
             if(instr_mode == "coverage" && !p.exists("coverage"))
                 coverage_mode = CODECOV_FUNCTION;
         });
+    parser
+        .add_argument(
+            { "-f", "--force" },
+            "Force the command-line argument configuration, i.e. don't get cute. Useful "
+            "for forcing runtime instrumentation of an executable that [A] Dyninst "
+            "thinks is a library after reading ELF and [B] whose name makes it look like "
+            "a library (e.g. starts with 'lib' and/or ends in '.so', '.so.*', or '.a')")
+        .max_count(1)
+        .action([](parser_t& p) { force_config = p.get<bool>("force"); });
+
     if(_cmdc == 0)
     {
         parser
@@ -858,8 +869,14 @@ main(int argc, char** argv)
 
     if(_cmdv && _cmdv[0] && strlen(_cmdv[0]) > 0)
     {
-        auto _is_executable = omnitrace_get_is_executable(_cmdv[0], binary_rewrite);
-        if(!_is_executable && !binary_rewrite)
+        auto _is_executable    = omnitrace_get_is_executable(_cmdv[0], binary_rewrite);
+        std::string _cmdv_base = ::basename(_cmdv[0]);
+        auto        _has_lib_suffix = _cmdv_base.find(".so.") != std::string::npos ||
+                               _cmdv_base.find(".so") == (_cmdv_base.length() - 3) ||
+                               _cmdv_base.find(".a") == (_cmdv_base.length() - 2);
+        auto _has_lib_prefix = _cmdv_base.find("lib") == 0;
+        if(!force_config && !_is_executable && !binary_rewrite &&
+           (_has_lib_prefix || _has_lib_suffix))
         {
             fflush(stdout);
             std::stringstream _separator{};
@@ -879,6 +896,9 @@ main(int argc, char** argv)
                           "--all-functions'\n");
             verbprintf(
                 0, "(which will provide an approximation for runtime instrumentation)\n");
+            verbprintf(1, "%s :: (^lib)=%s, (.so$|.a$|.so.*)=%s\n", _cmdv_base.c_str(),
+                       (_has_lib_prefix) ? "true" : "false",
+                       (_has_lib_suffix) ? "true" : "false");
             verbprintf(0, "\n");
             verbprintf(0, "%s\n", _separator.str().c_str());
             verbprintf(0, "\n");

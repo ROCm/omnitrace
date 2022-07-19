@@ -2,7 +2,7 @@
 function(OMNITRACE_ADD_BIN_TEST)
     cmake_parse_arguments(
         TEST
-        "" # options
+        "ADD_INVERSE" # options
         "NAME;TARGET;TIMEOUT;WORKING_DIRECTORY" # single value args
         "ARGS;ENVIRONMENT;LABELS;PROPERTIES;PASS_REGEX;FAIL_REGEX;SKIP_REGEX;DEPENDS;COMMAND" # multiple
         # value args
@@ -56,6 +56,32 @@ function(OMNITRACE_ADD_BIN_TEST)
                        SKIP_REGULAR_EXPRESSION
                        "${TEST_SKIP_REGEX}"
                        ${TEST_PROPERTIES})
+        if(TEST_ADD_INVERSE)
+            add_test(
+                NAME ${TEST_NAME}-inverse
+                COMMAND ${TEST_COMMAND} ${TEST_ARGS}
+                WORKING_DIRECTORY ${TEST_WORKING_DIRECTORY})
+
+            set_tests_properties(
+                ${TEST_NAME}-inverse
+                PROPERTIES ENVIRONMENT
+                           "${TEST_ENVIRONMENT}"
+                           TIMEOUT
+                           ${TEST_TIMEOUT}
+                           DEPENDS
+                           "${TEST_DEPENDS}"
+                           LABELS
+                           "omnitrace-bin;${TEST_LABELS}"
+                           PASS_REGULAR_EXPRESSION
+                           "${TEST_FAIL_REGEX}"
+                           FAIL_REGULAR_EXPRESSION
+                           "${TEST_PASS_REGEX}"
+                           SKIP_REGULAR_EXPRESSION
+                           "${TEST_SKIP_REGEX}"
+                           WILL_FAIL
+                           ON
+                           ${TEST_PROPERTIES})
+        endif()
     elseif(TARGET ${TEST_TARGET})
         add_test(
             NAME ${TEST_NAME}
@@ -79,6 +105,32 @@ function(OMNITRACE_ADD_BIN_TEST)
                        SKIP_REGULAR_EXPRESSION
                        "${TEST_SKIP_REGEX}"
                        ${TEST_PROPERTIES})
+        if(TEST_ADD_INVERSE)
+            add_test(
+                NAME ${TEST_NAME}-inverse
+                COMMAND $<TARGET_FILE:${TEST_TARGET}> ${TEST_ARGS}
+                WORKING_DIRECTORY $<TARGET_FILE_DIR:${TEST_TARGET}>)
+
+            set_tests_properties(
+                ${TEST_NAME}-inverse
+                PROPERTIES ENVIRONMENT
+                           "${TEST_ENVIRONMENT}"
+                           TIMEOUT
+                           ${TEST_TIMEOUT}
+                           DEPENDS
+                           "${TEST_DEPENDS}"
+                           LABELS
+                           "omnitrace-bin;${TEST_LABELS}"
+                           PASS_REGULAR_EXPRESSION
+                           "${TEST_FAIL_REGEX}"
+                           FAIL_REGULAR_EXPRESSION
+                           "${TEST_PASS_REGEX}"
+                           SKIP_REGULAR_EXPRESSION
+                           "${TEST_SKIP_REGEX}"
+                           WILL_FAIL
+                           ON
+                           ${TEST_PROPERTIES})
+        endif()
     elseif(OMNITRACE_BUILD_TESTING)
         message(FATAL_ERROR "Error! ${TEST_TARGET} does not exist")
     endif()
@@ -119,6 +171,17 @@ omnitrace_add_bin_test(
     TIMEOUT 60
     PASS_REGEX
         ".*available-instr.json.*available-instr.txt.*available-instr.xml.*excluded-instr.json.*excluded-instr.txt.*excluded-instr.xml.*instrumented-instr.json.*instrumented-instr.txt.*instrumented-instr.xml.*overlapping-instr.json.*overlapping-instr.txt.*overlapping-instr.xml.*"
+    )
+
+omnitrace_add_bin_test(
+    ADD_INVERSE
+    NAME omnitrace-exe-simulate-lib
+    TARGET omnitrace-exe
+    ARGS --print-available functions -v 0 -- $<TARGET_FILE:omnitrace-user-library>
+    LABELS "simulate"
+    TIMEOUT 120
+    PASS_REGEX
+        "\\\[omnitrace\\\]\\\[exe\\\] Runtime instrumentation is not possible!(.*)\n(.*)\\\[omnitrace\\\]\\\[exe\\\] Switching to binary rewrite mode and assuming '--simulate --all-functions'"
     )
 
 omnitrace_add_bin_test(
