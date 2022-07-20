@@ -66,6 +66,13 @@ module_function::module_function(module_t* mod, procedure_t* proc)
                    function_name.c_str(), module_name.c_str());
     }
 
+    auto _range = std::pair<address_t, address_t>{};
+    if(function->getAddressRange(_range.first, _range.second))
+    {
+        start_address = _range.first;
+        address_range = _range.second - _range.first;
+    }
+
     signature = get_func_file_line_info(module, function);
 
     if(function->isInstrumentable())
@@ -74,13 +81,6 @@ module_function::module_function(module_t* mod, procedure_t* proc)
         // appears to be the cause of a segfault in testing
         // so only attempt to extract it for instrumentable
         // functions
-        auto _range = std::pair<address_t, address_t>{};
-        if(function->getAddressRange(_range.first, _range.second))
-        {
-            start_address = _range.first;
-            address_range = _range.second - _range.first;
-        }
-
         if(flow_graph)
         {
             flow_graph->getAllBasicBlocks(basic_blocks);
@@ -96,12 +96,6 @@ module_function::module_function(module_t* mod, procedure_t* proc)
             if(debug_print || verbose_level > 3 || instr_print)
                 instructions.emplace_back(std::move(_instructions));
         }
-    }
-
-    if(!function->isInstrumentable())
-    {
-        verbprintf(2, "Completed construction of uninstrumentable function: %s [%s]\n",
-                   function_name.c_str(), module_name.c_str());
     }
 }
 

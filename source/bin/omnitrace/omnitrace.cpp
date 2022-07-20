@@ -1357,8 +1357,6 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    auto* main_init       = find_function(app_image, "_init");
-    auto* main_fini       = find_function(app_image, "_fini");
     auto* main_func       = find_function(app_image, main_fname.c_str());
     auto* user_start_func = find_function(app_image, "omnitrace_user_start_trace",
                                           { "omnitrace_user_start_thread_trace" });
@@ -1519,30 +1517,6 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    if(!main_func)
-    {
-        if(!main_init && !main_fini)
-        {
-            errprintf(-1, "could not find '%s', '_init' or '_fini', aborting...\n",
-                      main_fname.c_str());
-        }
-        else if(!main_init)
-        {
-            errprintf(-1, "could not find '%s' or '_init', aborting...\n",
-                      main_fname.c_str());
-        }
-        else if(!main_fini)
-        {
-            errprintf(-1, "could not find '%s' or '_fini', aborting...\n",
-                      main_fname.c_str());
-        }
-        else
-        {
-            verbprintf(0, "using '%s' and '%s' in lieu of '%s'...\n", "_init", "_fini",
-                       main_fname.c_str());
-        }
-    }
-
     using pair_t = std::pair<procedure_t*, string_t>;
 
     for(const auto& itr :
@@ -1574,16 +1548,6 @@ main(int argc, char** argv)
         verbprintf(2, "Finding main function entry/exit... ");
         main_entr_points = main_func->findPoint(BPatch_entry);
         main_exit_points = main_func->findPoint(BPatch_exit);
-        verbprintf(2, "Done\n");
-    }
-    else
-    {
-        verbprintf(2, "Finding init entry... ");
-        main_entr_points = main_init->findPoint(BPatch_entry);
-        verbprintf(2, "Done\n");
-
-        verbprintf(2, "Finding fini exit... ");
-        main_exit_points = main_fini->findPoint(BPatch_exit);
         verbprintf(2, "Done\n");
     }
 
@@ -1750,13 +1714,10 @@ main(int argc, char** argv)
     }
     else
     {
-        // in sampling mode, we instrument either main or init + fini
-        for(auto&& itr : { main_func, main_init, main_fini })
-        {
-            if(itr)
-                _insert_module_function(instrumented_module_functions,
-                                        module_function{ itr->getModule(), itr });
-        }
+        // in sampling mode, we instrument either main or add init and fini callbacks
+        if(main_func)
+            _insert_module_function(instrumented_module_functions,
+                                    module_function{ main_func->getModule(), main_func });
 
         for(const auto& itr : available_module_functions)
         {
@@ -1778,6 +1739,11 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
+    auto _objs = std::vector<object_t*>{};
+    addr_space->getImage()->getObjects(_objs);
+    auto _init_sequence = sequence_t{ init_names };
+    auto _fini_sequence = sequence_t{ fini_names };
+
     if(app_thread && is_attached)
     {
         assert(app_thread != nullptr);
@@ -1790,16 +1756,26 @@ main(int argc, char** argv)
         if(main_entr_points)
         {
             verbprintf(1, "Adding main entry snippets...\n");
-            addr_space->insertSnippet(BPatch_sequence(init_names), *main_entr_points,
+            addr_space->insertSnippet(_init_sequence, *main_entr_points,
                                       BPatch_callBefore, BPatch_firstSnippet);
+        }
+        else
+        {
+            for(auto* itr : _objs)
+                itr->insertInitCallback(_init_sequence);
         }
     }
 
     if(main_exit_points)
     {
         verbprintf(1, "Adding main exit snippets...\n");
-        addr_space->insertSnippet(BPatch_sequence(fini_names), *main_exit_points,
-                                  BPatch_callAfter, BPatch_firstSnippet);
+        addr_space->insertSnippet(_fini_sequence, *main_exit_points, BPatch_callAfter,
+                                  BPatch_firstSnippet);
+    }
+    else
+    {
+        for(auto* itr : _objs)
+            itr->insertFiniCallback(_fini_sequence);
     }
 
     //----------------------------------------------------------------------------------//
@@ -1832,13 +1808,11 @@ main(int argc, char** argv)
 
     if(instr_mode != "coverage")
     {
-        std::map<std::string, std::pair<size_t, size_t>> _pass_info{};
-        const int                                        _pass_verbose_lvl = 0;
+        auto      _pass_info        = std::map<std::string, std::pair<size_t, size_t>>{};
+        const int _pass_verbose_lvl = 0;
         for(const auto& itr : instrumented_module_functions)
         {
-            bool _is_main = itr.function == main_func || itr.function == main_init ||
-                            itr.function == main_fini;
-            if(_is_main) continue;
+            if(itr.function == main_func) continue;
             auto _count = itr(addr_space, entr_trace, exit_trace);
             _pass_info[itr.module_name].first += _count.first;
             _pass_info[itr.module_name].second += _count.second;
@@ -1872,9 +1846,7 @@ main(int argc, char** argv)
         const int                                        _covr_verbose_lvl = 1;
         for(const auto& itr : coverage_module_functions)
         {
-            bool _is_main = itr.function == main_func || itr.function == main_init ||
-                            itr.function == main_fini;
-            if(_is_main) continue;
+            if(itr.function == main_func) continue;
             itr.register_source(addr_space, reg_src_func, *main_entr_points);
             auto _count = itr.register_coverage(addr_space, reg_cov_func);
             _covr_info[itr.module_name].first += _count.first;

@@ -42,6 +42,7 @@
 #include <BPatch_callbacks.h>
 #include <BPatch_function.h>
 #include <BPatch_instruction.h>
+#include <BPatch_object.h>
 #include <BPatch_point.h>
 #include <BPatch_process.h>
 #include <BPatch_snippet.h>
@@ -114,9 +115,12 @@ using basic_block_t         = BPatch_basicBlock;
 using basic_loop_t          = BPatch_basicBlockLoop;
 using procedure_loc_t       = BPatch_procedureLocation;
 using point_t               = BPatch_point;
+using object_t              = BPatch_object;
 using local_var_t           = BPatch_localVar;
+using sequence_t            = BPatch_sequence;
 using const_expr_t          = BPatch_constExpr;
 using error_level_t         = BPatchErrorLevel;
+using snippet_handle_t      = BPatchSnippetHandle;
 using patch_pointer_t       = std::shared_ptr<patch_t>;
 using snippet_pointer_t     = std::shared_ptr<snippet_t>;
 using call_expr_pointer_t   = std::shared_ptr<call_expr_t>;

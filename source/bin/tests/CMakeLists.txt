@@ -164,7 +164,7 @@ omnitrace_add_bin_test(
          txt
          xml
          -v
-         1
+         2
          --all-functions
          --
          ls
@@ -184,7 +184,7 @@ omnitrace_add_bin_test(
     ADD_INVERSE
     NAME omnitrace-exe-simulate-lib
     TARGET omnitrace-exe
-    ARGS --print-available functions -v 0 -- $<TARGET_FILE:omnitrace-user-library>
+    ARGS --print-available functions -v 2 -- $<TARGET_FILE:omnitrace-user-library>
     LABELS "simulate"
     TIMEOUT 120
     PASS_REGEX
