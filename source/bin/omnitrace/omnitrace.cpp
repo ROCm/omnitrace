@@ -111,6 +111,7 @@ bool                                       is_attached          = false;
 bool                                       use_mpi              = false;
 bool                                       is_static_exe        = false;
 bool                                       force_config         = false;
+bool                                       parse_all_modules    = false;
 size_t                                     batch_size           = 50;
 strset_t                                   extra_libs           = {};
 std::vector<std::pair<uint64_t, string_t>> hash_ids             = {};
@@ -279,12 +280,6 @@ main(int argc, char** argv)
     parser.add_argument({ "" }, "");
     parser.add_argument({ "[DEBUG OPTIONS]" }, "");
     parser.add_argument({ "" }, "");
-    parser.add_argument({ "--debug" }, "Debug output")
-        .max_count(1)
-        .action([](parser_t& p) {
-            debug_print = p.get<bool>("debug");
-            if(debug_print && !p.exists("verbose")) verbose_level = 256;
-        });
     parser.add_argument({ "-v", "--verbose" }, "Verbose output")
         .max_count(1)
         .action([](parser_t& p) {
@@ -297,6 +292,12 @@ main(int argc, char** argv)
         .dtype("boolean")
         .max_count(1)
         .action([](parser_t& p) { werror = p.get<bool>("error"); });
+    parser.add_argument({ "--debug" }, "Debug output")
+        .max_count(1)
+        .action([](parser_t& p) {
+            debug_print = p.get<bool>("debug");
+            if(debug_print && !p.exists("verbose")) verbose_level = 256;
+        });
     parser
         .add_argument({ "--simulate" },
                       "Exit after outputting diagnostic "
@@ -635,6 +636,14 @@ main(int argc, char** argv)
         .action(
             [](parser_t& p) { min_instructions = p.get<size_t>("min-instructions"); });
     parser
+        .add_argument({ "-r", "--min-address-range" },
+                      "If the address range of a function is less than this value, "
+                      "exclude it from instrumentation")
+        .count(1)
+        .dtype("int")
+        .action(
+            [](parser_t& p) { min_address_range = p.get<size_t>("min-address-range"); });
+    parser
         .add_argument({ "--min-instructions-loop" },
                       "If the number of instructions in a function containing a loop is "
                       "less than this value, exclude it from instrumentation")
@@ -644,14 +653,6 @@ main(int argc, char** argv)
             min_loop_instructions = p.get<size_t>("min-instructions-loop");
         });
     parser
-        .add_argument({ "-r", "--min-address-range" },
-                      "If the address range of a function is less than this value, "
-                      "exclude it from instrumentation")
-        .count(1)
-        .dtype("int")
-        .action(
-            [](parser_t& p) { min_address_range = p.get<size_t>("min-address-range"); });
-    parser
         .add_argument({ "--min-address-range-loop" },
                       "If the address range of a function containing a loop is less than "
                       "this value, exclude it from instrumentation")
@@ -660,7 +661,13 @@ main(int argc, char** argv)
         .action([](parser_t& p) {
             min_loop_address_range = p.get<size_t>("min-address-range-loop");
         });
-    parser.add_argument({ "--coverage" }, "Enable recording the code coverage")
+    parser
+        .add_argument(
+            { "--coverage" },
+            "Enable recording the code coverage. If instrumenting in coverage mode ('-M "
+            "converage'), this simply specifies the granularity. If instrumenting in "
+            "trace or sampling mode, this enables recording code-coverage in addition to "
+            "the instrumentation of that mode (if any).")
         .max_count(1)
         .choices({ "none", "function", "basic_block" })
         .action([](parser_t& p) {
@@ -709,8 +716,20 @@ main(int argc, char** argv)
             "Allow dyninst to instrument either multiple functions which overlap (share "
             "part of same function body) or single functions with multiple entry points. "
             "For more info, see Section 2 of the DyninstAPI documentation.")
-        .count(0)
-        .action([](parser_t&) { allow_overlapping = true; });
+        .max_count(1)
+        .action(
+            [](parser_t& p) { allow_overlapping = p.get<bool>("allow-overlapping"); });
+    parser
+        .add_argument(
+            { "--parse-all-modules" },
+            "By default, omnitrace simply requests Dyninst to provide all the procedures "
+            "in the application image. If this option is enabled, omnitrace will iterate "
+            "over all the modules and extract the functions. Theoretically, it should be "
+            "the same but the data is slightly different, possibly due to weak binding "
+            "scopes. In general, enabling option will probably have no visible effect")
+        .max_count(1)
+        .action(
+            [](parser_t& p) { parse_all_modules = p.get<bool>("parse-all-modules"); });
 
     parser.add_argument({ "" }, "");
     parser.add_argument({ "[DYNINST OPTIONS]" }, "");
@@ -1119,9 +1138,8 @@ main(int argc, char** argv)
                      dynamic_cast<process_t*>(addr_space) == nullptr);
     if(_rewrite != binary_rewrite)
     {
-        verbprintf(0, "Warning! binary rewrite was %s but has been deduced to be %s\n",
-                   (binary_rewrite) ? "ON" : "OFF", (_rewrite) ? "ON" : "OFF");
-        binary_rewrite = _rewrite;
+        errprintf(-1, "binary rewrite was %s but has been deduced to be %s\n",
+                  (binary_rewrite) ? "ON" : "OFF", (_rewrite) ? "ON" : "OFF");
     }
 
     process_t*     app_thread = nullptr;
@@ -1132,8 +1150,8 @@ main(int argc, char** argv)
     image_t*                  app_image     = addr_space->getImage();
     bpvector_t<module_t*>*    app_modules   = app_image->getModules();
     bpvector_t<procedure_t*>* app_functions = app_image->getProcedures(include_uninstr);
-    bpvector_t<module_t*>     modules;
-    bpvector_t<procedure_t*>  functions;
+    std::set<module_t*>       modules       = {};
+    std::set<procedure_t*>    functions     = {};
 
     //----------------------------------------------------------------------------------//
     //
@@ -1162,48 +1180,24 @@ main(int argc, char** argv)
         }
     };
 
-    if(app_modules && !app_modules->empty())
-    {
-        modules.reserve(app_modules->size());
-        for(auto* itr : *app_modules)
-        {
-            if(!itr->isSystemLib()) modules.emplace_back(itr);
-        }
-        for(auto* itr : modules)
-        {
-            auto* procedures = itr->getProcedures(include_uninstr);
-            if(procedures)
-            {
-                for(auto* pitr : *procedures)
-                {
-                    if(!pitr->isInstrumentable() && !simulate && !include_uninstr)
-                        continue;
-                    auto _modfn = module_function{ itr, pitr };
-                    module_names.insert(_modfn.module_name);
-                    _insert_module_function(available_module_functions, _modfn);
-                    _add_overlapping(itr, pitr);
-                }
-            }
-        }
-    }
-    else
-    {
-        verbprintf(0, "Warning! No modules in application...\n");
-    }
-
     if(app_functions && !app_functions->empty())
     {
-        functions.reserve(app_functions->size());
         for(auto* itr : *app_functions)
         {
-            if(!itr->getModule()->isSystemLib()) functions.emplace_back(itr);
+            if(itr->getModule() && !itr->getModule()->isSystemLib())
+            {
+                functions.emplace(itr);
+                modules.emplace(itr->getModule());
+            }
         }
+        verbprintf(2, "Adding %zu procedures found in the app image...\n",
+                   functions.size());
         for(auto* itr : functions)
         {
-            module_t* mod = itr->getModule();
-            if(mod && (itr->isInstrumentable() || (simulate && include_uninstr)))
+            if(itr->isInstrumentable() || (simulate && include_uninstr))
             {
-                auto _modfn = module_function{ mod, itr };
+                module_t* mod    = itr->getModule();
+                auto      _modfn = module_function{ mod, itr };
                 module_names.insert(_modfn.module_name);
                 _insert_module_function(available_module_functions, _modfn);
                 _add_overlapping(mod, itr);
@@ -1212,11 +1206,48 @@ main(int argc, char** argv)
     }
     else
     {
-        verbprintf(0, "Warning! No functions in application...\n");
+        verbprintf(
+            0, "Warning! No functions in application. Enabling parsing all modules...\n");
+        parse_all_modules = true;
     }
 
-    verbprintf(1, "Module size before loading instrumentation library: %lu\n",
-               (long unsigned) modules.size());
+    if(parse_all_modules && app_modules && !app_modules->empty())
+    {
+        for(auto* itr : *app_modules)
+        {
+            if(!itr->isSystemLib()) modules.emplace(itr);
+        }
+        verbprintf(2,
+                   "Adding the procedures from %zu modules found in the app image...\n",
+                   modules.size());
+        for(auto* itr : modules)
+        {
+            auto* procedures = itr->getProcedures(include_uninstr);
+            if(procedures)
+            {
+                verbprintf(2, "Processing %zu procedures found in the %s module...\n",
+                           procedures->size(), get_name(itr).data());
+                for(auto* pitr : *procedures)
+                {
+                    if(!pitr->isInstrumentable() && !simulate && !include_uninstr)
+                        continue;
+                    functions.emplace(pitr);
+                    auto _modfn = module_function{ itr, pitr };
+                    module_names.insert(_modfn.module_name);
+                    _insert_module_function(available_module_functions, _modfn);
+                    _add_overlapping(itr, pitr);
+                }
+            }
+        }
+    }
+    else if(parse_all_modules)
+    {
+        verbprintf(0, "Warning! No modules in application...\n");
+    }
+
+    verbprintf(1, "\n");
+    verbprintf(1, "Found %zu functions in %zu modules in instrumentation target\n",
+               functions.size(), modules.size());
 
     if(debug_print || verbose_level > 2)
     {
@@ -1527,26 +1558,6 @@ main(int argc, char** argv)
                       itr.second.c_str());
         }
     }
-
-    auto check_for_debug_info = [](bool& _has_debug_info, auto* _func) {
-        // This heuristic guesses that debugging info is available if function
-        // is not defined in the DEFAULT_MODULE
-        if(_func && !_has_debug_info)
-        {
-            module_t* _module = _func->getModule();
-            if(_module)
-            {
-                char moduleName[FUNCNAMELEN];
-                _module->getFullName(moduleName, FUNCNAMELEN);
-                if(strcmp(moduleName, "DEFAULT_MODULE") != 0) _has_debug_info = true;
-            }
-        }
-    };
-
-    bool has_debug_info = false;
-    check_for_debug_info(has_debug_info, main_func);
-    check_for_debug_info(has_debug_info, main_init);
-    check_for_debug_info(has_debug_info, main_fini);
 
     //----------------------------------------------------------------------------------//
     //

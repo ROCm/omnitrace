@@ -55,17 +55,12 @@ module_function::module_function(module_t* mod, procedure_t* proc)
 : module{ mod }
 , function{ proc }
 , flow_graph{ proc->getCFG() }
+, module_name{ get_name(module) }
+, function_name{ get_name(function) }
 {
-    char modname[FUNCNAMELEN];
-    char fname[FUNCNAMELEN];
-    module->getFullName(modname, FUNCNAMELEN);
-    function->getName(fname, FUNCNAMELEN);
-    module_name   = modname;
-    function_name = fname;
-
     if(!function->isInstrumentable())
     {
-        verbprintf(0,
+        verbprintf(1,
                    "Warning! module function generated for un-instrumentable "
                    "function: %s [%s]\n",
                    function_name.c_str(), module_name.c_str());
@@ -79,20 +74,33 @@ module_function::module_function(module_t* mod, procedure_t* proc)
         address_range = _range.second - _range.first;
     }
 
-    if(flow_graph)
+    if(function->isInstrumentable())
     {
-        flow_graph->getAllBasicBlocks(basic_blocks);
-        flow_graph->getOuterLoops(loop_blocks);
+        // this information is potentially not available and
+        // appears to be the cause of a segfault in testing
+        // so only attempt to extract it for instrumentable
+        // functions
+        if(flow_graph)
+        {
+            flow_graph->getAllBasicBlocks(basic_blocks);
+            flow_graph->getOuterLoops(loop_blocks);
+        }
+
+        instructions.reserve(basic_blocks.size());
+        for(const auto& itr : basic_blocks)
+        {
+            std::vector<instruction_t> _instructions{};
+            itr->getInstructions(_instructions);
+            num_instructions += _instructions.size();
+            if(debug_print || verbose_level > 3 || instr_print)
+                instructions.emplace_back(std::move(_instructions));
+        }
     }
 
-    instructions.reserve(basic_blocks.size());
-    for(const auto& itr : basic_blocks)
+    if(!function->isInstrumentable())
     {
-        std::vector<instruction_t> _instructions{};
-        itr->getInstructions(_instructions);
-        num_instructions += _instructions.size();
-        if(debug_print || verbose_level > 3 || instr_print)
-            instructions.emplace_back(std::move(_instructions));
+        verbprintf(2, "Completed construction of uninstrumentable function: %s [%s]\n",
+                   function_name.c_str(), module_name.c_str());
     }
 }
 

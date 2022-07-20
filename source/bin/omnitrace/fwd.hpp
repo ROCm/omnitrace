@@ -68,6 +68,7 @@
 #include <string>
 #include <string_view>
 #include <unistd.h>
+#include <unordered_map>
 #include <vector>
 
 #define MUTNAMELEN       1024
@@ -304,3 +305,9 @@ error_func_real(error_level_t level, int num, const char* const* params);
 
 void
 error_func_fake(error_level_t level, int num, const char* const* params);
+
+std::string_view
+get_name(procedure_t* _module);
+
+std::string_view
+get_name(module_t* _module);
