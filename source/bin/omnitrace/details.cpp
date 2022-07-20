@@ -625,7 +625,6 @@ get_loop_file_line_info(module_t* module, procedure_t* func, flow_graph_t*,
     bool info1 = module->getSourceLines(base_addr, lines);
 
     auto filename = mname;
-    ;
 
     if(info1)
     {
@@ -697,12 +696,7 @@ get_func_file_line_info(module_t* module, procedure_t* func)
     auto mname     = get_name(module);
     auto fname     = get_name(func);
 
-    address_t base_addr{};
-    address_t last_addr{};
-    func->getAddressRange(base_addr, last_addr);
-
     auto* _return_type = func->getReturnType();
-
     if(_return_type) type_name = _return_type->getName();
 
     auto*                    params  = func->getParams();
@@ -718,11 +712,18 @@ get_func_file_line_info(module_t* module, procedure_t* func)
         }
     }
 
+    if(!func->isInstrumentable())
+        return function_signature(type_name, fname, mname, _params, { 0, 0 }, { 0, 0 },
+                                  false, false, false);
+
+    address_t base_addr{};
+    address_t last_addr{};
+    func->getAddressRange(base_addr, last_addr);
+
     bpvector_t<BPatch_statement> lines = {};
     bool                         info  = module->getSourceLines(base_addr, lines);
 
     auto filename = mname;
-    ;
 
     if(info && !lines.empty())
     {
@@ -786,7 +787,6 @@ get_basic_block_file_line_info(module_t* module, procedure_t* func)
         bpvector_t<BPatch_statement> linesEnd{};
 
         auto filename = mname;
-        ;
 
         if(module->getSourceLines(base_addr, linesBeg) && !linesBeg.empty())
         {
