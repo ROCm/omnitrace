@@ -295,7 +295,7 @@ pthread_create_gotcha::operator()(pthread_t* thread, const pthread_attr_t* attr,
 
     // block the signals in entire process
     OMNITRACE_DEBUG("blocking signals...\n");
-    tim::sampling::block_signals({ SIGALRM, SIGPROF },
+    tim::sampling::block_signals({ SIGRTMIN, SIGPROF },
                                  tim::sampling::sigmask_scope::process);
 
     start_bundle(_bundle);
@@ -316,7 +316,7 @@ pthread_create_gotcha::operator()(pthread_t* thread, const pthread_attr_t* attr,
 
     // unblock the signals in the entire process
     OMNITRACE_DEBUG("unblocking signals...\n");
-    tim::sampling::unblock_signals({ SIGALRM, SIGPROF },
+    tim::sampling::unblock_signals({ SIGRTMIN, SIGPROF },
                                    tim::sampling::sigmask_scope::process);
 
     OMNITRACE_DEBUG("returning success...\n");

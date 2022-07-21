@@ -67,6 +67,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <vector>
 
 #include <pthread.h>
 #include <signal.h>
@@ -117,11 +118,20 @@ using signal_type_instances     = thread_data<std::set<int>, api::sampling>;
 using backtrace_init_instances  = thread_data<backtrace, api::sampling>;
 using sampler_running_instances = thread_data<bool, api::sampling>;
 using papi_vector_instances     = thread_data<hw_counters, api::sampling>;
+using papi_label_instances      = thread_data<std::vector<std::string>, api::sampling>;
 
 namespace
 {
 struct perfetto_rusage
 {};
+
+unique_ptr_t<std::vector<std::string>>&
+get_papi_labels(int64_t _tid)
+{
+    static auto& _v =
+        papi_label_instances::instances(papi_label_instances::construct_on_init{});
+    return _v.at(_tid);
+}
 
 unique_ptr_t<hw_counters>&
 get_papi_vector(int64_t _tid)
@@ -332,7 +342,12 @@ backtrace::configure(bool _setup, int64_t _tid)
         {
             perfetto_counter_track<hw_counters>::init();
             OMNITRACE_DEBUG("HW COUNTER: starting...\n");
-            if(get_papi_vector(_tid)) get_papi_vector(_tid)->start();
+            if(get_papi_vector(_tid))
+            {
+                using common_type_t = typename hw_counters::common_type;
+                get_papi_vector(_tid)->start();
+                *get_papi_labels(_tid) = comp::papi_common::get_events<common_type_t>();
+            }
         }
 
         auto _alrm_freq = 1.0 / std::min<double>(get_sampling_freq(), 20.0);
@@ -345,8 +360,8 @@ backtrace::configure(bool _setup, int64_t _tid)
         _sampler->set_flags(SA_RESTART);
         _sampler->set_delay(_delay);
         _sampler->set_verbose(std::min<size_t>(_sampler->get_verbose(), 2));
-        if(_signal_types->count(SIGALRM) > 0)
-            _sampler->set_frequency(_alrm_freq, { SIGALRM });
+        if(_signal_types->count(SIGRTMIN) > 0)
+            _sampler->set_frequency(_alrm_freq, { SIGRTMIN });
         if(_signal_types->count(SIGPROF) > 0)
             _sampler->set_frequency(_prof_freq, { SIGPROF });
 
@@ -481,10 +496,7 @@ backtrace::post_process(int64_t _tid)
         return std::string{ _lbl }.replace(_pos, _dyninst.length(), "");
     };
 
-    using common_type_t = typename hw_counters::common_type;
-    auto _hw_cnt_labels = (get_papi_vector(_tid))
-                              ? comp::papi_common::get_events<common_type_t>()
-                              : std::vector<std::string>{};
+    auto _hw_cnt_labels = *get_papi_labels(_tid);
 
     auto _process_perfetto_counters = [&](const std::vector<sampling::bundle_t*>& _data) {
         auto _tid_name = JOIN("", '[', _tid, ']');

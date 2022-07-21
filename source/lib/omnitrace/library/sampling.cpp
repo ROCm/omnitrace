@@ -124,9 +124,9 @@ unique_ptr_t<std::set<int>>&
 get_signal_types(int64_t _tid)
 {
     static auto& _v = signal_type_instances::instances();
-    // on the main thread, use both SIGALRM and SIGPROF.
+    // on the main thread, use both SIGRTMIN and SIGPROF.
     // on secondary threads, only use SIGPROF.
-    signal_type_instances::construct((_tid == 0) ? std::set<int>{ SIGALRM, SIGPROF }
+    signal_type_instances::construct((_tid == 0) ? std::set<int>{ SIGRTMIN, SIGPROF }
                                                  : std::set<int>{ SIGPROF });
     return _v.at(_tid);
 }

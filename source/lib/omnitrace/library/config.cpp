@@ -694,7 +694,7 @@ configure_signal_handler()
         using sys_signal      = tim::sys_signal;
         tim::disable_signal_detection();
         auto _exit_action = [](int nsig) {
-            tim::sampling::block_signals({ SIGPROF, SIGALRM },
+            tim::sampling::block_signals({ SIGPROF, SIGRTMIN },
                                          tim::sampling::sigmask_scope::process);
             OMNITRACE_BASIC_PRINT(
                 "Finalizing afer signal %i :: %s\n", nsig,
