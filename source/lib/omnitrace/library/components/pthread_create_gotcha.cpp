@@ -324,7 +324,7 @@ int
 pthread_create_gotcha::operator()(pthread_t* thread, const pthread_attr_t* attr,
                                   void* (*start_routine)(void*), void*     arg) const
 {
-    // auto _initial_thread_state = get_thread_state();
+    auto _initial_thread_state = get_thread_state();
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
     bundle_t _bundle{ "pthread_create" };
     auto     _enable_sampling = pthread_gotcha::sampling_enabled_on_child_threads();
@@ -344,14 +344,14 @@ pthread_create_gotcha::operator()(pthread_t* thread, const pthread_attr_t* attr,
     if(!get_use_sampling() || !_enable_sampling)
     {
         auto* _obj = new wrapper(start_routine, arg, _enable_sampling, _tid, nullptr);
-        // if(_active && !_coverage && _enable_sampling &&
-        //   _initial_thread_state == ThreadState::Enabled)
-        //    start_bundle(_bundle, audit::incoming{}, thread, attr, start_routine, arg);
+        if(_active && !_coverage && _enable_sampling &&
+           _initial_thread_state == ThreadState::Enabled)
+            start_bundle(_bundle, audit::incoming{}, thread, attr, start_routine, arg);
         // create the thread
         auto _ret = (*m_wrappee)(thread, attr, &wrapper::wrap, static_cast<void*>(_obj));
-        // if(_active && !_coverage && _enable_sampling &&
-        //   _initial_thread_state == ThreadState::Enabled)
-        //    stop_bundle(_bundle, _tid, audit::outgoing{}, _ret);
+        if(_active && !_coverage && _enable_sampling &&
+           _initial_thread_state == ThreadState::Enabled)
+            stop_bundle(_bundle, _tid, audit::outgoing{}, _ret);
         return _ret;
     }
 
