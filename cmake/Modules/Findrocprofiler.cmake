@@ -51,8 +51,10 @@ mark_as_advanced(rocprofiler_hsa_INCLUDE_DIR)
 find_library(
     rocprofiler_LIBRARY
     NAMES rocprofiler64 rocprofiler
-    HINTS ${rocprofiler_ROOT_DIR} ${_ROCM_ROCPROFILER_PATHS}
-    PATHS ${rocprofiler_ROOT_DIR} ${_ROCM_ROCPROFILER_PATHS}
+    HINTS ${rocprofiler_ROOT_DIR}/rocprofiler ${rocprofiler_ROOT_DIR}
+          ${_ROCM_ROCPROFILER_PATHS}
+    PATHS ${rocprofiler_ROOT_DIR}/rocprofiler ${rocprofiler_ROOT_DIR}
+          ${_ROCM_ROCPROFILER_PATHS}
     PATH_SUFFIXES lib lib64
     NO_DEFAULT_PATH)
 
