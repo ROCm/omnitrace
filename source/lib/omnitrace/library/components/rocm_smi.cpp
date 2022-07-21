@@ -30,11 +30,11 @@
 #    undef NDEBUG
 #endif
 
+#include "library/components/rocm_smi.hpp"
 #include "library/common.hpp"
 #include "library/components/fwd.hpp"
 #include "library/components/pthread_create_gotcha.hpp"
 #include "library/components/pthread_gotcha.hpp"
-#include "library/components/rocm_smi.hpp"
 #include "library/config.hpp"
 #include "library/critical_trace.hpp"
 #include "library/debug.hpp"
