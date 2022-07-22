@@ -19,8 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["18.04", "20.04"]
-        rocm-version: ["4.5", "5.0", "5.1"]
-        extensions: ["--rocm +python --core +python"]
+        rocm-version: ["0.0", "4.5", "5.0", "5.1", "5.2"]
 
     steps:
       - uses: actions/checkout@v3
@@ -28,6 +27,15 @@ jobs:
           submodules: recursive
 
       - name: Build Base Container
+        if: ${{ matrix.rocm-version == 0 }}
+        timeout-minutes: 20
+        run: |
+          pushd docker
+          ./build-docker.sh --distro ubuntu --versions ${{ matrix.os }} --rocm-versions 5.0
+          popd
+
+      - name: Build Base Container
+        if: ${{ matrix.rocm-version > 0 }}
         timeout-minutes: 20
         run: |
           pushd docker
@@ -35,10 +43,19 @@ jobs:
           popd
 
       - name: Build Release
+        if: ${{ matrix.rocm-version == 0 }}
         timeout-minutes: 150
         run: |
           pushd docker
-          ./build-docker-release.sh --distro ubuntu --versions ${{ matrix.os }} --rocm-versions ${{ matrix.rocm-version }} -- ${{ matrix.extensions }}
+          ./build-docker-release.sh --distro ubuntu --versions ${{ matrix.os }} --rocm-versions ${{ matrix.rocm-version }} -- --core +python
+          popd
+
+      - name: Build Release
+        if: ${{ matrix.rocm-version > 0 }}
+        timeout-minutes: 150
+        run: |
+          pushd docker
+          ./build-docker-release.sh --distro ubuntu --versions ${{ matrix.os }} --rocm-versions ${{ matrix.rocm-version }} -- --rocm +python
           popd
 
       - name: List Files
