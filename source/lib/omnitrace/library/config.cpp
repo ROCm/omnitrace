@@ -328,13 +328,6 @@ configure_settings(bool _init)
         "'all' and 'none' suppresses all GPU sampling",
         std::string{ "all" }, "rocm_smi", "rocm", "process_sampling");
 
-    OMNITRACE_CONFIG_SETTING(
-        bool, "OMNITRACE_SAMPLING_KEEP_INTERNAL",
-        "Configure whether the statistical samples should include call-stack entries "
-        "from internal routines in omnitrace. E.g. when ON, the call-stack will show "
-        "functions like omnitrace_push_trace",
-        true, "sampling", "thread_sampling", "data");
-
     auto _backend = tim::get_env_choice<std::string>(
         "OMNITRACE_PERFETTO_BACKEND",
         (_system_backend) ? "system"      // if OMNITRACE_PERFETTO_BACKEND_SYSTEM is true,
@@ -1627,13 +1620,6 @@ get_sampling_gpus()
 #else
     return std::string{};
 #endif
-}
-
-bool
-get_sampling_keep_internal()
-{
-    static auto _v = get_config()->find("OMNITRACE_SAMPLING_KEEP_INTERNAL");
-    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
 bool

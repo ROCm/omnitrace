@@ -295,9 +295,6 @@ get_process_sampling_freq();
 std::string
 get_sampling_gpus();
 
-bool
-get_sampling_keep_internal();
-
 int64_t
 get_critical_trace_per_row();
 
