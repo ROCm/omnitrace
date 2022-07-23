@@ -2,7 +2,7 @@ name: cpack-ubuntu
 
 on:
   push:
-    branches: [releases/**]
+    branches: [main, releases/**]
     tags: []
 
 concurrency:

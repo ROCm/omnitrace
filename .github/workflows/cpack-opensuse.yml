@@ -2,7 +2,7 @@ name: cpack-opensuse
 
 on:
   push:
-    branches: [releases/**]
+    branches: [main, releases/**]
     tags: []
 
 concurrency:

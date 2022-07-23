@@ -1,4 +1,4 @@
-name: Containers
+name: ci-containers
 
 # nightly build
 on:
@@ -6,6 +6,13 @@ on:
     - cron: 0 3 * * *
   push:
     branches: []
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GIT_DISCOVERY_ACROSS_FILESYSTEM: 1
 
 jobs:
   omnitrace-ci:
@@ -30,6 +37,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
