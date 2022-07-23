@@ -31,7 +31,11 @@
 #include <timemory/api/macros.hpp>
 #include <timemory/components/macros.hpp>
 
-#include <rccl/rccl.h>
+#if OMNITRACE_HIP_VERSION >= 50200
+#    include <rccl/rccl.h>
+#else
+#    include <rccl.h>
+#endif
 
 #include <atomic>
 #include <functional>

@@ -45,15 +45,32 @@ else()
         CACHE PATH "Path to RCCL headers")
 endif()
 
-if(NOT EXISTS "${RCCL-Headers_INCLUDE_DIR}/rccl/rccl.h")
+# because of the annoying warning starting with v5.2.0, we've got to do this crap
+if(ROCmVersion_NUMERIC_VERSION)
+    if(ROCmVersion_NUMERIC_VERSION LESS 50200)
+        set(_RCCL-Headers_FILE "rccl.h")
+        set(_RCCL-Headers_DIR "/rccl")
+    else()
+        set(_RCCL-Headers_FILE "rccl/rccl.h")
+        set(_RCCL-Headers_DIR "")
+    endif()
+else()
+    set(_RCCL-Headers_FILE "rccl/rccl.h")
+    set(_RCCL-Headers_DIR "")
+endif()
+
+if(NOT EXISTS "${RCCL-Headers_INCLUDE_DIR}/${_RCCL-Headers_FILE}")
     omnitrace_message(
         AUTHOR_WARNING
-        "RCCL header (${RCCL-Headers_INCLUDE_DIR}/rccl/rccl.h) does not exist! Setting RCCL-Headers_INCLUDE_DIR to internal RCCL include directory: ${RCCL-Headers_INCLUDE_DIR_INTERNAL}"
+        "RCCL header (${RCCL-Headers_INCLUDE_DIR}/${_RCCL-Headers_FILE}) does not exist! Setting RCCL-Headers_INCLUDE_DIR to internal RCCL include directory: ${RCCL-Headers_INCLUDE_DIR_INTERNAL}"
         )
     set(RCCL-Headers_INCLUDE_DIR
-        "${RCCL-Headers_INCLUDE_DIR_INTERNAL}"
+        "${RCCL-Headers_INCLUDE_DIR_INTERNAL}${_RCCL-Headers_DIR}"
         CACHE PATH "Path to RCCL headers" FORCE)
 endif()
+
+unset(_RCCL-Headers_FILE)
+unset(_RCCL-Headers_DIR)
 
 mark_as_advanced(RCCL-Headers_INCLUDE_DIR)
 
