@@ -193,7 +193,17 @@ Visit [ui.perfetto.dev](https://ui.perfetto.dev) in your browser and open up the
 
 ![omnitrace-user-api](source/docs/images/omnitrace-user-api.png)
 
-## Use Perfetto tracing with System Backend
+## Using Perfetto tracing with System Backend
+
+Perfetto tracing with the system backend supports multiple processes writing to the same
+output file. Thus, it is a useful technique if Omnitrace is built with partial MPI support
+because all the perfetto output will be coalesced into a single file. The
+installation docs for perfetto can be found [here](https://perfetto.dev/docs/contributing/build-instructions).
+If you are building omnitrace from source, you can configure CMake with `OMNITRACE_INSTALL_PERFETTO_TOOLS=ON`
+and the `perfetto` and `traced` applications will be installed as part of the build process. However,
+it should be noted that to prevent this option from accidentally overwriting an existing perfetto install,
+all the perfetto executables installed by omnitrace are prefixed with `omnitrace-perfetto-`, except for the `perfetto`
+executable, which is just renamed `omnitrace-perfetto`.
 
 Enable `traced` and `perfetto` in the background:
 
@@ -202,6 +212,9 @@ pkill traced
 traced --background
 perfetto --out ./omnitrace-perfetto.proto --txt -c ${OMNITRACE_ROOT}/share/omnitrace.cfg --background
 ```
+
+> ***NOTE: if the perfetto tools were installed by omnitrace, replace `traced` with `omnitrace-perfetto-traced` and***
+> ***`perfetto` with `omnitrace-perfetto`.***
 
 Configure omnitrace to use the perfetto system backend:
 
