@@ -42,7 +42,7 @@ jobs:
             lto: 'OFF'
             strip: 'ON'
             python: 'ON'
-            build-type: 'RelWithDebInfo'
+            build-type: 'Release'
             mpi-headers: 'ON'
             static-libgcc: 'ON'
             static-libstdcxx: 'OFF'
