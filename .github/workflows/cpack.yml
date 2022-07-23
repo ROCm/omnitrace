@@ -31,13 +31,13 @@ jobs:
         if: ${{ matrix.rocm-version == 0 }}
         run: |
           echo "CI_ROCM_VERSION=${{ matrix.default-rocm }}" >> $GITHUB_ENV
-          echo "CI_SCRIPT_ARGS='--core +python'" >> $GITHUB_ENV
+          echo "CI_SCRIPT_ARGS=--core +python" >> $GITHUB_ENV
 
       - name: Configure ROCm Version
         if: ${{ matrix.rocm-version > 0 }}
         run: |
           echo "CI_ROCM_VERSION=${{ matrix.rocm-version }}" >> $GITHUB_ENV
-          echo "CI_SCRIPT_ARGS='--rocm +python'" >> $GITHUB_ENV
+          echo "CI_SCRIPT_ARGS=--rocm +python" >> $GITHUB_ENV
 
       - name: Build Base Container
         timeout-minutes: 20
@@ -127,13 +127,13 @@ jobs:
         if: ${{ matrix.rocm-version == 0 }}
         run: |
           echo "CI_ROCM_VERSION=${{ matrix.default-rocm }}" >> $GITHUB_ENV
-          echo "CI_SCRIPT_ARGS='--core +python'" >> $GITHUB_ENV
+          echo "CI_SCRIPT_ARGS=--core +python" >> $GITHUB_ENV
 
       - name: Configure ROCm Version
         if: ${{ matrix.rocm-version > 0 }}
         run: |
           echo "CI_ROCM_VERSION=${{ matrix.rocm-version }}" >> $GITHUB_ENV
-          echo "CI_SCRIPT_ARGS='--rocm +python'" >> $GITHUB_ENV
+          echo "CI_SCRIPT_ARGS=--rocm +python" >> $GITHUB_ENV
 
       - name: Build Base Container
         timeout-minutes: 20
