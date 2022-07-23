@@ -262,11 +262,6 @@ configure_file(
     @ONLY)
 
 install(
-    PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/omnitrace-merge.jl
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-    OPTIONAL)
-
-install(
     FILES ${PROJECT_SOURCE_DIR}/omnitrace.cfg
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}
     OPTIONAL)
