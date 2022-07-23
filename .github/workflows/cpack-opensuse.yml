@@ -20,6 +20,7 @@ jobs:
       matrix:
         os: ["15.2", "15.3"]
         rocm-version: ["0.0", "4.5", "5.0", "5.1", "5.2"]
+        default-rocm: ["5.0"]
         exclude:
           - os: "15.2"
             rocm-version: "5.1"
@@ -36,7 +37,7 @@ jobs:
         timeout-minutes: 20
         run: |
           pushd docker
-          ./build-docker.sh --distro opensuse --versions ${{ matrix.os }} --rocm-versions 5.0
+          ./build-docker.sh --distro opensuse --versions ${{ matrix.os }} --rocm-versions ${{ matrix.default-rocm }}
           popd
 
       - name: Build Base Container
@@ -52,7 +53,7 @@ jobs:
         timeout-minutes: 150
         run: |
           pushd docker
-          ./build-docker-release.sh --distro opensuse --versions ${{ matrix.os }} --rocm-versions ${{ matrix.rocm-version }} -- --core +python
+          ./build-docker-release.sh --distro opensuse --versions ${{ matrix.os }} --rocm-versions ${{ matrix.default-rocm }} -- --core +python
           popd
 
       - name: Build Release

@@ -18,7 +18,7 @@ jobs:
   ubuntu-focal-external:
     runs-on: ubuntu-20.04
     container:
-      image: jrmadsen/omnitrace-ci:ubuntu-20.04
+      image: jrmadsen/omnitrace:ci-base-ubuntu-20.04
     strategy:
       matrix:
         compiler: ['g++-7', 'g++-8']
@@ -171,7 +171,7 @@ jobs:
   ubuntu-focal-external-rocm:
     runs-on: ubuntu-20.04
     container:
-      image: jrmadsen/omnitrace-ci:ubuntu-20.04
+      image: jrmadsen/omnitrace:ci-base-ubuntu-20.04
     strategy:
       matrix:
         compiler: ['g++']
