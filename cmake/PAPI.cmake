@@ -195,15 +195,17 @@ externalproject_add(
         ${OMNITRACE_PAPI_EXTRA_ENV} <SOURCE_DIR>/configure
         --prefix=${OMNITRACE_PAPI_INSTALL_DIR} --with-static-lib=yes --with-shared-lib=no
         --with-perf-events --with-tests=no --with-components=${_OMNITRACE_PAPI_COMPONENTS}
-    BUILD_COMMAND ${CMAKE_COMMAND} -E env CFLAGS=-fPIC\ -O3\ -g
-                  ${OMNITRACE_PAPI_EXTRA_ENV} ${MAKE_EXECUTABLE} static install
+    BUILD_COMMAND
+        ${CMAKE_COMMAND} -E env CFLAGS=-fPIC\ -O3\ -g ${OMNITRACE_PAPI_EXTRA_ENV}
+        ${MAKE_EXECUTABLE} static utils install install-utils
     INSTALL_COMMAND "")
 
 # target for re-executing the installation
 add_custom_target(
     omnitrace-papi-install
-    COMMAND ${CMAKE_COMMAND} -E env CFLAGS=-fPIC\ -O3\ -g\ -Wno-stringop-truncation
-            ${OMNITRACE_PAPI_EXTRA_ENV} ${MAKE_EXECUTABLE} static install
+    COMMAND
+        ${CMAKE_COMMAND} -E env CFLAGS=-fPIC\ -O3\ -g\ -Wno-stringop-truncation
+        ${OMNITRACE_PAPI_EXTRA_ENV} ${MAKE_EXECUTABLE} static utils install install-utils
     WORKING_DIRECTORY ${OMNITRACE_PAPI_SOURCE_DIR}/src
     COMMENT "Installing PAPI...")
 
@@ -246,5 +248,32 @@ omnitrace_target_compile_definitions(omnitrace-papi INTERFACE OMNITRACE_USE_PAPI
 install(
     DIRECTORY ${OMNITRACE_PAPI_INSTALL_DIR}/lib/
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/omnitrace
+    COMPONENT papi
     FILES_MATCHING
     PATTERN "*.so*")
+
+foreach(
+    _UTIL_EXE
+    papi_avail
+    papi_clockres
+    papi_command_line
+    papi_component_avail
+    papi_cost
+    papi_decode
+    papi_error_codes
+    papi_event_chooser
+    papi_hardware_avail
+    papi_hl_output_writer.py
+    papi_mem_info
+    papi_multiplex_cost
+    papi_native_avail
+    papi_version
+    papi_xml_event_info)
+    string(REPLACE "_" "-" _UTIL_EXE_INSTALL_NAME "omnitrace-${_UTIL_EXE}")
+    install(
+        PROGRAMS ${OMNITRACE_PAPI_INSTALL_DIR}/bin/${_UTIL_EXE}
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+        COMPONENT papi
+        RENAME ${_UTIL_EXE_INSTALL_NAME}
+        OPTIONAL)
+endforeach()

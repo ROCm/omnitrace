@@ -245,6 +245,8 @@ endif()
 #
 # ------------------------------------------------------------------------------#
 
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME core)
+
 add_subdirectory(source)
 
 # ------------------------------------------------------------------------------#
@@ -264,17 +266,20 @@ configure_file(
 install(
     FILES ${PROJECT_SOURCE_DIR}/omnitrace.cfg
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}
+    COMPONENT setup
     OPTIONAL)
 
 install(
     FILES ${PROJECT_BINARY_DIR}/install-tree/setup-env.sh
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}
+    COMPONENT setup
     OPTIONAL)
 
 install(
     FILES
         ${PROJECT_BINARY_DIR}/install-tree/modulefiles/${PROJECT_NAME}/${OMNITRACE_VERSION}
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PROJECT_NAME}
+    COMPONENT setup
     OPTIONAL)
 
 # ------------------------------------------------------------------------------#
@@ -303,6 +308,7 @@ endif()
 #
 # ------------------------------------------------------------------------------#
 
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME core)
 include(ConfigInstall)
 include(ConfigCPack)
 
