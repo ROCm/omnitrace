@@ -4,8 +4,6 @@ name: ci-containers
 on:
   schedule:
     - cron: 0 3 * * *
-  push:
-    branches: []
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
