@@ -195,10 +195,33 @@ externalproject_add(
         ${OMNITRACE_PAPI_EXTRA_ENV} <SOURCE_DIR>/configure
         --prefix=${OMNITRACE_PAPI_INSTALL_DIR} --with-static-lib=yes --with-shared-lib=no
         --with-perf-events --with-tests=no --with-components=${_OMNITRACE_PAPI_COMPONENTS}
-    BUILD_COMMAND
-        ${CMAKE_COMMAND} -E env CFLAGS=-fPIC\ -O3\ -g ${OMNITRACE_PAPI_EXTRA_ENV}
-        ${MAKE_EXECUTABLE} static utils install install-utils
+    BUILD_COMMAND ${CMAKE_COMMAND} -E env CFLAGS=-fPIC\ -O3\ -g
+                  ${OMNITRACE_PAPI_EXTRA_ENV} ${MAKE_EXECUTABLE} static install
     INSTALL_COMMAND "")
+
+file(
+    WRITE ${PROJECT_BINARY_DIR}/external/papi/build-utils.cmake
+    "
+cmake_minimum_required(VERSION ${CMAKE_VERSION} FATAL_ERROR)
+
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E env CFLAGS=-fPIC\\\ -O3\\\ -g ${OMNITRACE_PAPI_EXTRA_ENV}
+            ${MAKE_EXECUTABLE} utils install-utils
+    WORKING_DIRECTORY ${OMNITRACE_PAPI_SOURCE_DIR}/src
+    RESULT_VARIABLE _RET
+    OUTPUT_VARIABLE _OUT
+    ERROR_VARIABLE _ERR)
+
+if(NOT \${_RET} EQUAL 0)
+    message(\"\${_OUT}\")
+    message(FATAL_ERROR \"\${_ERR}\")
+endif()
+")
+
+add_custom_command(
+    TARGET omnitrace-papi-build
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -P ${PROJECT_BINARY_DIR}/external/papi/build-utils.cmake)
 
 # target for re-executing the installation
 add_custom_target(
