@@ -28,6 +28,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <future>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
@@ -38,7 +39,10 @@
 #include <unistd.h>
 #include <vector>
 
-std::string _name = {};
+namespace
+{
+auto _name = std::string{};
+}  // namespace
 
 template <typename Tp, size_t N>
 void
@@ -258,7 +262,16 @@ main(int argc, char** argv)
     int _mpi_thread_provided;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &_mpi_thread_provided);
 
-    std::thread{ run_main, argc, argv }.join();
+    auto _prom = std::promise<void>{};
+    auto _fut  = _prom.get_future();
+
+    std::thread _thr{ [&]() {
+        run_main(argc, argv);
+        _prom.set_value();
+    } };
+
+    _fut.wait();
+    _thr.join();
 
     MPI_Finalize();
     return EXIT_SUCCESS;

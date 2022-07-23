@@ -39,8 +39,9 @@ set(_flat_environment
     "OMNITRACE_USE_PERFETTO=ON"
     "OMNITRACE_USE_TIMEMORY=ON"
     "OMNITRACE_TIME_OUTPUT=OFF"
-    "OMNITRACE_FLAT_PROFILE=ON"
     "OMNITRACE_COUT_OUTPUT=ON"
+    "OMNITRACE_FLAT_PROFILE=ON"
+    "OMNITRACE_TIMELINE_PROFILE=OFF"
     "OMNITRACE_COLLAPSE_PROCESSES=ON"
     "OMNITRACE_COLLAPSE_THREADS=ON"
     "OMNITRACE_TIMEMORY_COMPONENTS=wall_clock,trip_count"
@@ -620,32 +621,10 @@ omnitrace_add_test(
         args
         --min-instructions
         0
-    ENVIRONMENT "${_base_environment}"
+    ENVIRONMENT "${_base_environment};GOTCHA_DEBUG=1"
     REWRITE_RUN_PASS_REGEX
         "(/[A-Za-z-]+/perfetto-trace-0.proto).*(/[A-Za-z-]+/wall_clock-0.txt')"
     REWRITE_RUN_FAIL_REGEX "-[0-9][0-9]+.(json|txt|proto)")
-
-omnitrace_add_test(
-    SKIP_RUNTIME SKIP_SAMPLING
-    NAME "mpi-flat"
-    TARGET mpi-example
-    MPI ON
-    NUM_PROCS 4
-    REWRITE_ARGS
-        -e
-        -v
-        2
-        --label
-        file
-        line
-        return
-        args
-        --min-instructions
-        0
-    ENVIRONMENT "${_flat_environment};OMNITRACE_USE_SAMPLING=OFF"
-    REWRITE_RUN_PASS_REGEX
-        ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall(.*\n.*)>>> MPI_Comm_dup(.*\n.*)>>> MPI_Comm_group(.*\n.*)>>> MPI_Group_incl(.*\n.*)>>> pthread_join"
-    )
 
 omnitrace_add_test(
     SKIP_RUNTIME SKIP_SAMPLING
@@ -653,6 +632,7 @@ omnitrace_add_test(
     TARGET mpi-example
     MPI ON
     NUM_PROCS 4
+    LABELS "mpip"
     REWRITE_ARGS
         -e
         -v
@@ -666,7 +646,30 @@ omnitrace_add_test(
         0
     ENVIRONMENT "${_flat_environment};OMNITRACE_USE_SAMPLING=OFF;OMNITRACE_USE_MPIP=ON"
     REWRITE_RUN_PASS_REGEX
-        ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall(.*\n.*)>>> MPI_Comm_dup(.*\n.*)>>> MPI_Comm_group(.*\n.*)>>> MPI_Group_incl(.*\n.*)>>> pthread_join"
+        ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall(.*\n.*)>>> pthread_join"
+    )
+
+omnitrace_add_test(
+    SKIP_RUNTIME SKIP_SAMPLING
+    NAME "mpi-flat"
+    TARGET mpi-example
+    MPI ON
+    NUM_PROCS 4
+    LABELS "mpip"
+    REWRITE_ARGS
+        -e
+        -v
+        2
+        --label
+        file
+        line
+        return
+        args
+        --min-instructions
+        0
+    ENVIRONMENT "${_flat_environment};OMNITRACE_USE_SAMPLING=OFF"
+    REWRITE_RUN_PASS_REGEX
+        ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall(.*\n.*)>>> pthread_join"
     )
 
 omnitrace_add_test(
