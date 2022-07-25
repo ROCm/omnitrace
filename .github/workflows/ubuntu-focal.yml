@@ -181,17 +181,17 @@ jobs:
         mpi_headers: ['OFF']
         build_jobs: ['4']
         ctest_exclude: ['-LE "mpi-example|transpose"']
+        perfetto-tools: ['ON']
         include:
           - compiler: 'g++'
             rocm_version: 'debian'
             mpi_headers: 'ON'
             build_jobs: '2'
             ctest_exclude: '-LE transpose'
+            perfetto-tools: 'OFF'
 
     env:
       BUILD_TYPE: MinSizeRel
-      OMNITRACE_OUTPUT_PATH: omnitrace-tests-output
-      OMNITRACE_OUTPUT_PREFIX: "%argt%/"
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
@@ -208,7 +208,7 @@ jobs:
         apt-get update &&
         apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev ${{ matrix.compiler }} libudev-dev libnuma-dev rocm-dev rocm-utils rocm-smi-lib roctracer-dev rocprofiler-dev hip-base hsa-amd-aqlprofile hsa-rocr-dev hsakmt-roct-dev libpapi-dev curl libopenmpi-dev openmpi-bin libfabric-dev &&
         python3 -m pip install --upgrade pip &&
-        python3 -m pip install 'cmake==3.16.3' &&
+        python3 -m pip install 'cmake==3.21.4' &&
         for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done
 
     - name: Install RCCL
@@ -223,6 +223,24 @@ jobs:
         echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV &&
         echo "CMAKE_PREFIX_PATH=/opt/dyninst:/opt/elfutils:${CMAKE_PREFIX_PATH}" >> $GITHUB_ENV &&
         echo "LD_LIBRARY_PATH=/opt/dyninst/lib:/opt/elfutils/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
+        cat << EOF > test-install.cfg
+        OMNITRACE_USE_TIMEMORY          = ON
+        OMNITRACE_USE_PERFETTO          = ON
+        OMNITRACE_USE_PID               = OFF
+        OMNITRACE_USE_SAMPLING          = OFF
+        OMNITRACE_USE_PROCESS_SAMPLING  = OFF
+        OMNITRACE_COUT_OUTPUT           = ON
+        OMNITRACE_TIME_OUTPUT           = OFF
+        OMNITRACE_TIMEMORY_COMPONENTS   = cpu_clock cpu_util current_peak_rss kernel_mode_time monotonic_clock monotonic_raw_clock network_stats num_io_in num_io_out num_major_page_faults num_minor_page_faults page_rss peak_rss priority_context_switch process_cpu_clock process_cpu_util read_bytes read_char system_clock thread_cpu_clock thread_cpu_util timestamp trip_count user_clock user_mode_time virtual_memory voluntary_context_switch wall_clock written_bytes written_char
+        OMNITRACE_OUTPUT_PATH           = omnitrace-tests-output
+        OMNITRACE_OUTPUT_PREFIX         = %tag%/
+        OMNITRACE_DEBUG                 = OFF
+        OMNITRACE_VERBOSE               = 3
+        OMNITRACE_DL_VERBOSE            = 3
+        OMNITRACE_PERFETTO_BACKEND      = system
+        EOF
+        realpath test-install.cfg
+        cat test-install.cfg
 
     - name: Configure CMake
       timeout-minutes: 10
@@ -239,7 +257,6 @@ jobs:
           -DOMNITRACE_BUILD_EXTRA_OPTIMIZATIONS=OFF
           -DOMNITRACE_BUILD_LTO=OFF
           -DOMNITRACE_USE_MPI=OFF
-          -DOMNITRACE_USE_MPI_HEADERS=ON
           -DOMNITRACE_USE_HIP=ON
           -DOMNITRACE_MAX_THREADS=32
           -DOMNITRACE_USE_PAPI=OFF
@@ -247,7 +264,7 @@ jobs:
           -DOMNITRACE_USE_PYTHON=ON
           -DOMNITRACE_USE_MPI_HEADERS=${{ matrix.mpi_headers }}
           -DOMNITRACE_USE_SANITIZER=OFF
-          -DOMNITRACE_INSTALL_PERFETTO_TOOLS=ON
+          -DOMNITRACE_INSTALL_PERFETTO_TOOLS=${{ matrix.perfetto-tools }}
           -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
           -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
           -DOMNITRACE_CI_MPI_RUN_AS_ROOT=${{ matrix.mpi_headers }}
@@ -271,17 +288,18 @@ jobs:
         ctest -V ${{ matrix.ctest_exclude }} --output-log omnitrace-ctest-${{ github.job }}.log --stop-on-failure
 
     - name: Configure Install Env
-      run:
-        echo "/opt/omnitrace/bin" >> $GITHUB_PATH &&
+      run: |
+        echo "/opt/omnitrace/bin" >> $GITHUB_PATH
         echo "LD_LIBRARY_PATH=/opt/omnitrace/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
+        echo "OMNITRACE_CONFIG_FILE=test-install.cfg" >> $GITHUB_ENV
 
     - name: Test Install
       timeout-minutes: 10
+      if: ${{ matrix.perfetto-tools == 'ON' }}
       run: |
         set -v
+        cat ${OMNITRACE_CONFIG_FILE}
         omnitrace-perfetto-traced --background
-        export OMNITRACE_DEBUG=ON
-        export OMNITRACE_PERFETTO_BACKEND=system
         which omnitrace-avail
         ldd $(which omnitrace-avail)
         omnitrace-avail --help
@@ -301,6 +319,31 @@ jobs:
         omnitrace -e -v 1 -- ls
         du -m ls-perfetto-trace.proto
         /opt/conda/envs/py3.8/bin/python ./tests/validate-perfetto-proto.py -p -i ./ls-perfetto-trace.proto
+
+    - name: Test Install
+      timeout-minutes: 10
+      if: ${{ matrix.perfetto-tools == 'OFF' }}
+      run: |
+        set -v
+        cat ${OMNITRACE_CONFIG_FILE}
+        which omnitrace-avail
+        ldd $(which omnitrace-avail)
+        omnitrace-avail --help
+        omnitrace-avail -a
+        which omnitrace-python
+        omnitrace-python --help
+        which omnitrace-critical-trace
+        ldd $(which omnitrace-critical-trace)
+        which omnitrace
+        ldd $(which omnitrace)
+        omnitrace --help
+        omnitrace -e -v 1 -o sleep.inst --simulate -- sleep
+        omnitrace -e -v 1 --simulate -- sleep
+        omnitrace -e -v 1 -o sleep.inst -- sleep
+        ./sleep.inst 5
+        omnitrace -e -v 1 -- sleep 5
+        cat omnitrace-tests-output/sleep.inst/wall_clock.txt
+        cat omnitrace-tests-output/sleep/wall_clock.txt
 
     - name: Test User API
       timeout-minutes: 10
