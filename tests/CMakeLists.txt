@@ -190,11 +190,12 @@ endif()
 # -------------------------------------------------------------------------------------- #
 
 function(OMNITRACE_WRITE_TEST_CONFIG _FILE _ENV)
+    set(_ENV_ONLY "OMNITRACE_(USE_MPIP|DEBUG_SETTINGS)=")
     set(_FILE_CONTENTS)
     set(_ENV_CONTENTS)
 
     foreach(_VAL ${${_ENV}})
-        if("${_VAL}" MATCHES "^OMNITRACE_")
+        if("${_VAL}" MATCHES "^OMNITRACE_" AND NOT "${_VAL}" MATCHES "${_ENV_ONLY}")
             set(_FILE_CONTENTS "${_FILE_CONTENTS}${_VAL}\n")
         else()
             list(APPEND _ENV_CONTENTS "${_VAL}")
@@ -221,6 +222,7 @@ OMNITRACE_ROCTRACER_HSA_ACTIVITY = ON
 ${_FILE_CONTENTS}
 ")
     list(APPEND _ENV_CONTENTS "OMNITRACE_CONFIG_FILE=${_CONFIG_FILE}")
+    list(APPEND _ENV_CONTENTS "OMNITRACE_DEBUG_SETTINGS=1")
     set(${_ENV}
         "${_ENV_CONTENTS}"
         PARENT_SCOPE)

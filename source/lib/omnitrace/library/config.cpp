@@ -24,6 +24,7 @@
 #include "library/debug.hpp"
 #include "library/defines.hpp"
 #include "library/gpu.hpp"
+#include "library/mproc.hpp"
 #include "library/perfetto.hpp"
 #include "library/runtime.hpp"
 
@@ -46,9 +47,11 @@
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
+#include <fstream>
 #include <limits>
 #include <numeric>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <unistd.h>
 
@@ -587,12 +590,28 @@ configure_settings(bool _init)
     }
     if(!_found_sep && _cmd.size() > 1) _cmd.insert(_cmd.begin() + 1, "--");
 
+    auto _pid  = getpid();
+    auto _ppid = getppid();
+    auto _proc = mproc::get_concurrent_processes(_ppid);
+    bool _main_proc = (_proc.size() < 2 || *_proc.begin() == _pid);
+
     for(auto&& itr :
         tim::delimit(_config->get<std::string>("OMNITRACE_CONFIG_FILE"), ";:"))
     {
         if(_config->get_suppress_config()) continue;
         OMNITRACE_BASIC_VERBOSE(1, "Reading config file %s\n", itr.c_str());
         _config->read(itr);
+        if(_config->get<bool>("OMNITRACE_CI") && _main_proc)
+        {
+            std::ifstream _in{ itr };
+            std::stringstream _iss{};
+            while (_in) {
+                std::string _s{};
+                getline(_in, _s);
+                _iss << _s << "\n";
+            }
+            OMNITRACE_BASIC_PRINT("config file '%s':\n%s\n", itr.c_str(), _iss.str().c_str());
+        }
     }
 
     settings::suppress_config() = true;
