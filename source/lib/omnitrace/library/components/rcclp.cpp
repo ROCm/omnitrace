@@ -97,12 +97,12 @@ configure_rcclp(const std::set<std::string>& permit, const std::set<std::string>
     {
         // generate the gotcha wrappers
         rcclp_gotcha_t::get_initializer() = []() {
-            TIMEMORY_C_GOTCHA(rcclp_gotcha_t, 0, ncclGetVersion);
+            // TIMEMORY_C_GOTCHA(rcclp_gotcha_t, 0, ncclGetVersion);
             // TIMEMORY_C_GOTCHA(rcclp_gotcha_t, 1, ncclGetUniqueId);
             TIMEMORY_C_GOTCHA(rcclp_gotcha_t, 2, ncclCommInitRank);
             TIMEMORY_C_GOTCHA(rcclp_gotcha_t, 3, ncclCommInitAll);
             TIMEMORY_C_GOTCHA(rcclp_gotcha_t, 4, ncclCommDestroy);
-            // TIMEMORY_C_GOTCHA(rcclp_gotcha_t, 5, ncclCommCount);
+            TIMEMORY_C_GOTCHA(rcclp_gotcha_t, 5, ncclCommCount);
             TIMEMORY_C_GOTCHA(rcclp_gotcha_t, 6, ncclCommCuDevice);
             TIMEMORY_C_GOTCHA(rcclp_gotcha_t, 7, ncclCommUserRank);
             TIMEMORY_C_GOTCHA(rcclp_gotcha_t, 8, ncclReduce);

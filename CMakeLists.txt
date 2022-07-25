@@ -126,7 +126,7 @@ omnitrace_add_option(OMNITRACE_USE_ROCPROFILER "Enable rocprofiler support"
 omnitrace_add_option(
     OMNITRACE_USE_ROCM_SMI "Enable rocm-smi support for power/temp/etc. sampling"
     ${OMNITRACE_USE_HIP})
-omnitrace_add_option(OMNITRACE_USE_RCCL "Enable RCCL support" ${OMNITRACE_USE_HIP})
+omnitrace_add_option(OMNITRACE_USE_RCCL "Enable RCCL support" ON)
 omnitrace_add_option(OMNITRACE_USE_MPI_HEADERS
                      "Enable wrapping MPI functions w/o enabling MPI dependency" ON)
 omnitrace_add_option(OMNITRACE_USE_OMPT "Enable OpenMP tools support" ON)

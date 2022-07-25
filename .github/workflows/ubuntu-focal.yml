@@ -166,6 +166,7 @@ jobs:
       with:
         name: data-${{ github.job }}-files
         path: |
+          build/omnitrace-tests-config/*.cfg
           build/omnitrace-tests-output/**/*.txt
           build/omnitrace-tests-output/**/*-instr*.json
 
@@ -322,6 +323,7 @@ jobs:
         name: data-${{ github.job }}-files
         path: |
           omnitrace-tests-output/**/*.txt
+          build/omnitrace-tests-config/*.cfg
           build/omnitrace-tests-output/**/*.txt
           build/omnitrace-tests-output/**/*-instr*.json
 
@@ -474,5 +476,6 @@ jobs:
       with:
         name: data-${{ github.job }}-files
         path: |
+          ${{ github.workspace }}/build/omnitrace-tests-config/*.cfg
           ${{ github.workspace }}/build/omnitrace-tests-output/**/*.txt
           ${{ github.workspace }}/build/omnitrace-tests-output/**/*-instr*.json
