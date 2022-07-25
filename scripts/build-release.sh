@@ -289,7 +289,6 @@ if [ -d /opt/conda/bin ]; then
     source activate
 fi
 
-python3 -m pip install 'cmake==3.21.4'
 if [ "${IS_DOCKER}" -ne 0 ]; then git config --global --add safe.directory ${PWD}; fi
 
 build-and-package ${WITH_CORE} ${DISTRO}-core -DOMNITRACE_USE_HIP=OFF
