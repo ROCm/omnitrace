@@ -30,7 +30,7 @@
 
 #include <timemory/timemory.hpp>
 
-#if OMNITRACE_HIP_VERSION >= 50200
+#if OMNITRACE_HIP_VERSION == 0 || OMNITRACE_HIP_VERSION >= 50200
 #    include <rccl/rccl.h>
 #else
 #    include <rccl.h>
