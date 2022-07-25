@@ -218,10 +218,10 @@ jobs:
         apt-get install -y rccl-dev
 
     - name: Configure Env
-      run:
-        echo "CC=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')" >> $GITHUB_ENV &&
-        echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV &&
-        echo "CMAKE_PREFIX_PATH=/opt/dyninst:/opt/elfutils:${CMAKE_PREFIX_PATH}" >> $GITHUB_ENV &&
+      run: |
+        echo "CC=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')" >> $GITHUB_ENV
+        echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
+        echo "CMAKE_PREFIX_PATH=/opt/dyninst:/opt/elfutils:${CMAKE_PREFIX_PATH}" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=/opt/dyninst/lib:/opt/elfutils/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
         cat << EOF > test-install.cfg
         OMNITRACE_USE_TIMEMORY          = ON
