@@ -47,6 +47,7 @@ set(_flat_environment
     "OMNITRACE_TIMELINE_PROFILE=OFF"
     "OMNITRACE_COLLAPSE_PROCESSES=ON"
     "OMNITRACE_COLLAPSE_THREADS=ON"
+    "OMNITRACE_TIMEMORY_COMPONENTS=wall_clock,trip_count"
     "${_test_openmp_env}"
     "${_test_library_path}")
 
