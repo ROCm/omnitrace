@@ -104,7 +104,11 @@ extern "C"
         rocm::lock_t _lk{ rocm::rocm_mutex, std::defer_lock };
         if(!_lk.owns_lock()) _lk.lock();
 
-        if(rocm::is_loaded) return;
+        if(rocm::is_loaded)
+        {
+            OMNITRACE_BASIC_VERBOSE_F(1, "rocprofiler is already loaded\n");
+            return;
+        }
         rocm::is_loaded = true;
 
         _lk.unlock();
