@@ -123,11 +123,23 @@ roctracer::setup()
 
     OMNITRACE_VERBOSE_F(1, "setting up roctracer...\n");
 
-    dynamic_library _amdhip64{ "OMNITRACE_ROCTRACER_LIBAMDHIP64", "libamdhip64.so" };
+    dynamic_library _amdaql64{ "OMNITRACE_ROCTRACER_LIBAMDAQLPROFILE",
+                               find_library_path("libhsa-amd-aqlprofile64.so",
+                                                 { "OMNITRACE_ROCM_PATH", "ROCM_PATH" },
+                                                 { OMNITRACE_DEFAULT_ROCM_PATH }) };
+
+    dynamic_library _amdhip64{ "OMNITRACE_ROCTRACER_LIBAMDHIP64",
+                               find_library_path("libamdhip64.so",
+                                                 { "OMNITRACE_ROCM_PATH", "ROCM_PATH" },
+                                                 { OMNITRACE_DEFAULT_ROCM_PATH }) };
 
 #if OMNITRACE_HIP_VERSION_MAJOR == 4 && OMNITRACE_HIP_VERSION_MINOR < 4
-    dynamic_library _kfdwrapper{ "OMNITRACE_ROCTRACER_LIBKFDWRAPPER",
-                                 OMNITRACE_ROCTRACER_LIBKFDWRAPPER };
+    dynamic_library _kfdwrapper
+    { "OMNITRACE_ROCTRACER_LIBKFDWRAPPER",
+                               find_library_path("libkfdwrapper64.so",
+                                                 { "OMNITRACE_ROCM_PATH", "ROCM_PATH" },
+                                                 { OMNITRACE_DEFAULT_ROCM_PATH },
+                                                 { "roctracer/lib", "roctracer/lib64", "lib", "lib64") };
 #endif
 
     ROCTRACER_CALL(roctracer_set_properties(ACTIVITY_DOMAIN_HIP_API, nullptr));
@@ -152,8 +164,8 @@ roctracer::setup()
                                                     hip_api_callback, nullptr));
     if(get_use_roctx())
     {
-        ROCTRACER_CALL(roctracer_enable_domain_callback(ACTIVITY_DOMAIN_ROCTX,
-                                                        roctx_api_callback, nullptr));
+            ROCTRACER_CALL(roctracer_enable_domain_callback(ACTIVITY_DOMAIN_ROCTX,
+                                                            roctx_api_callback, nullptr));
     }
     // Enable HIP activity tracing
     ROCTRACER_CALL(roctracer_enable_domain_activity(ACTIVITY_DOMAIN_HIP_OPS));
@@ -163,75 +175,76 @@ roctracer::setup()
         itr.second();
 
     OMNITRACE_VERBOSE_F(1, "roctracer is setup\n");
-}
-
-void
-roctracer::shutdown()
-{
-    auto_lock_t _lk{ type_mutex<roctracer>() };
-    if(!roctracer_is_setup())
-    {
-        if(!roctracer_is_init() && tim::storage<comp::roctracer_data>::instance())
-            tim::storage<comp::roctracer_data>::instance()->reset();
-        return;
     }
-    roctracer_is_setup() = false;
 
-    OMNITRACE_VERBOSE_F(1, "shutting down roctracer...\n");
+    void roctracer::shutdown()
+    {
+        auto_lock_t _lk{ type_mutex<roctracer>() };
+        if(!roctracer_is_setup())
+        {
+            if(!roctracer_is_init() && tim::storage<comp::roctracer_data>::instance())
+                tim::storage<comp::roctracer_data>::instance()->reset();
+            return;
+        }
+        roctracer_is_setup() = false;
 
-    OMNITRACE_VERBOSE_F(2, "executing hip_exec_activity_callbacks(0..%zu)\n",
-                        max_supported_threads);
-    // make sure all async operations are executed
-    for(size_t i = 0; i < max_supported_threads; ++i)
-        hip_exec_activity_callbacks(i);
+        OMNITRACE_VERBOSE_F(1, "shutting down roctracer...\n");
 
-    // callback for hsa
-    OMNITRACE_VERBOSE_F(2, "executing %zu roctracer_shutdown_routines...\n",
-                        roctracer_shutdown_routines().size());
-    for(auto& itr : roctracer_shutdown_routines())
-        itr.second();
+        OMNITRACE_VERBOSE_F(2, "executing hip_exec_activity_callbacks(0..%zu)\n",
+                            max_supported_threads);
+        // make sure all async operations are executed
+        for(size_t i = 0; i < max_supported_threads; ++i)
+            hip_exec_activity_callbacks(i);
+
+        // callback for hsa
+        OMNITRACE_VERBOSE_F(2, "executing %zu roctracer_shutdown_routines...\n",
+                            roctracer_shutdown_routines().size());
+        for(auto& itr : roctracer_shutdown_routines())
+            itr.second();
 
 #if OMNITRACE_HIP_VERSION_MAJOR == 4 && OMNITRACE_HIP_VERSION_MINOR >= 4
-    OMNITRACE_DEBUG_F("redirecting roctracer warnings\n");
-    // HIP 4.5.0 has an invalid warning
-    redirect _rd{
-        std::cerr, "roctracer_disable_callback(), get_op_end(), invalid domain ID(4)  "
-                   "in: roctracer_disable_callback()roctracer_disable_activity(), "
-                   "get_op_end(), invalid domain ID(4)  in: roctracer_disable_activity()"
-    };
+        OMNITRACE_DEBUG_F("redirecting roctracer warnings\n");
+        // HIP 4.5.0 has an invalid warning
+        redirect _rd{
+            std::cerr,
+            "roctracer_disable_callback(), get_op_end(), invalid domain ID(4)  "
+            "in: roctracer_disable_callback()roctracer_disable_activity(), "
+            "get_op_end(), invalid domain ID(4)  in: roctracer_disable_activity()"
+        };
 #endif
 
-    // ROCTRACER_CALL(roctracer_disable_domain_callback(ACTIVITY_DOMAIN_ROCTX));
-    OMNITRACE_VERBOSE_F(
-        2, "executing roctracer_disable_domain_callback(ACTIVITY_DOMAIN_HIP_API)...\n");
-    ROCTRACER_CALL(roctracer_disable_domain_callback(ACTIVITY_DOMAIN_HIP_API));
+        // ROCTRACER_CALL(roctracer_disable_domain_callback(ACTIVITY_DOMAIN_ROCTX));
+        OMNITRACE_VERBOSE_F(
+            2,
+            "executing roctracer_disable_domain_callback(ACTIVITY_DOMAIN_HIP_API)...\n");
+        ROCTRACER_CALL(roctracer_disable_domain_callback(ACTIVITY_DOMAIN_HIP_API));
 
-    OMNITRACE_VERBOSE_F(
-        2, "executing roctracer_disable_domain_activity(ACTIVITY_DOMAIN_HIP_OPS)...\n");
-    ROCTRACER_CALL(roctracer_disable_domain_activity(ACTIVITY_DOMAIN_HIP_OPS));
+        OMNITRACE_VERBOSE_F(
+            2,
+            "executing roctracer_disable_domain_activity(ACTIVITY_DOMAIN_HIP_OPS)...\n");
+        ROCTRACER_CALL(roctracer_disable_domain_activity(ACTIVITY_DOMAIN_HIP_OPS));
 
-    if(roctracer_activity_count() == 0)
-    {
-        OMNITRACE_VERBOSE_F(2, "executing roctracer_flush_activity()...\n");
-        ROCTRACER_CALL(roctracer_flush_activity());
+        if(roctracer_activity_count() == 0)
+        {
+            OMNITRACE_VERBOSE_F(2, "executing roctracer_flush_activity()...\n");
+            ROCTRACER_CALL(roctracer_flush_activity());
+        }
+        else
+        {
+            OMNITRACE_CI_FAIL(true,
+                              "roctracer_activity_count() != 0 (== %li). "
+                              "roctracer::shutdown() most likely called during abort",
+                              roctracer_activity_count().load());
+        }
+
+        OMNITRACE_VERBOSE_F(1, "roctracer is shutdown\n");
     }
-    else
+
+    scope::transient_destructor roctracer::protect_flush_activity()
     {
-        OMNITRACE_CI_FAIL(true,
-                          "roctracer_activity_count() != 0 (== %li). "
-                          "roctracer::shutdown() most likely called during abort",
-                          roctracer_activity_count().load());
+        return scope::transient_destructor([]() { --roctracer_activity_count(); },
+                                           []() { ++roctracer_activity_count(); });
     }
-
-    OMNITRACE_VERBOSE_F(1, "roctracer is shutdown\n");
-}
-
-scope::transient_destructor
-roctracer::protect_flush_activity()
-{
-    return scope::transient_destructor([]() { --roctracer_activity_count(); },
-                                       []() { ++roctracer_activity_count(); });
-}
 }  // namespace component
 }  // namespace tim
 
