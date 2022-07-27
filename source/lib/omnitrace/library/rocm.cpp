@@ -228,9 +228,8 @@ extern "C"
         comp::roctracer::setup();
 
 #if defined(OMNITRACE_USE_ROCPROFILER) && OMNITRACE_USE_ROCPROFILER > 0
-        bool _force_rocprofiler_init = tim::get_env(
-            "OMNITRACE_FORCE_ROCPROFILER_INIT",
-            get_is_continuous_integration() && omnitrace::gpu::device_count() > 0, false);
+        bool _force_rocprofiler_init =
+            tim::get_env("OMNITRACE_FORCE_ROCPROFILER_INIT", false, false);
 #else
         bool _force_rocprofiler_init = false;
 #endif
