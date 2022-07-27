@@ -159,7 +159,8 @@ setup_environ(int _verbose, const std::string& _search_paths = {},
     }
     // default path
     setenv("ROCP_METRICS",
-           common::join('/', OMNITRACE_DEFAULT_ROCM_PATH, "rocprofiler/lib/metrics.xml")
+           common::join('/', OMNITRACE_DEFAULT_ROCM_PATH, ROCPROFILER_METRICS_DIR,
+                        "metrics.xml")
                .c_str(),
            0);
 #endif
