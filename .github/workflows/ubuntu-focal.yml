@@ -125,7 +125,7 @@ jobs:
         ctest -V --output-log omnitrace-ctest-${{ github.job }}.log --stop-on-failure
 
     - name: Test Install
-      timeout-minutes: 10
+      timeout-minutes: 15
       run: |
         set -v
         export OMNITRACE_DEBUG=ON
@@ -296,63 +296,10 @@ jobs:
         ctest -V ${{ matrix.ctest_exclude }} -N -O omnitrace-ctest-${{ github.job }}-commands.log &&
         ctest -V ${{ matrix.ctest_exclude }} --output-log omnitrace-ctest-${{ github.job }}.log --stop-on-failure
 
-    - name: Configure Install Env
-      run: |
-        echo "/opt/omnitrace/bin" >> $GITHUB_PATH
-        echo "LD_LIBRARY_PATH=/opt/omnitrace/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
-        echo "OMNITRACE_CONFIG_FILE=test-install.cfg" >> $GITHUB_ENV
-
     - name: Test Install
-      timeout-minutes: 10
-      if: ${{ matrix.perfetto-tools == 'ON' }}
+      timeout-minutes: 15
       run: |
-        set -v
-        cat ${OMNITRACE_CONFIG_FILE}
-        omnitrace-perfetto-traced --background
-        which omnitrace-avail
-        ldd $(which omnitrace-avail)
-        omnitrace-avail --help
-        omnitrace-avail -a
-        which omnitrace-python
-        omnitrace-python --help
-        which omnitrace-critical-trace
-        ldd $(which omnitrace-critical-trace)
-        which omnitrace
-        ldd $(which omnitrace)
-        omnitrace --help
-        omnitrace -e -v 1 -o ls.inst --simulate -- ls
-        omnitrace -e -v 1 --simulate -- ls
-        omnitrace -e -v 1 -o ls.inst -- ls
-        omnitrace-perfetto --out ls-perfetto-trace.proto --txt -c omnitrace.cfg
-        ./ls.inst
-        omnitrace -e -v 1 -- ls
-        du -m ls-perfetto-trace.proto
-        /opt/conda/envs/py3.8/bin/python ./tests/validate-perfetto-proto.py -p -i ./ls-perfetto-trace.proto
-
-    - name: Test Install
-      timeout-minutes: 10
-      if: ${{ matrix.perfetto-tools == 'OFF' }}
-      run: |
-        set -v
-        cat ${OMNITRACE_CONFIG_FILE}
-        which omnitrace-avail
-        ldd $(which omnitrace-avail)
-        omnitrace-avail --help
-        omnitrace-avail -a
-        which omnitrace-python
-        omnitrace-python --help
-        which omnitrace-critical-trace
-        ldd $(which omnitrace-critical-trace)
-        which omnitrace
-        ldd $(which omnitrace)
-        omnitrace --help
-        omnitrace -e -v 1 -o sleep.inst --simulate -- sleep
-        omnitrace -e -v 1 --simulate -- sleep
-        omnitrace -e -v 1 -o sleep.inst -- sleep
-        ./sleep.inst 5
-        omnitrace -e -v 1 -- sleep 5
-        cat omnitrace-tests-output/sleep.inst/wall_clock.txt
-        cat omnitrace-tests-output/sleep/wall_clock.txt
+        ./scripts/test-install.sh --install-dir /opt/omnitrace
 
     - name: Test User API
       timeout-minutes: 10

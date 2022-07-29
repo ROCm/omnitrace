@@ -18,7 +18,7 @@ jobs:
   ubuntu-jammy-external:
     runs-on: ubuntu-20.04
     container:
-      image: jrmadsen/omnitrace-ci:ubuntu-22.04
+      image: jrmadsen/omnitrace:ci-base-ubuntu-22.04
     strategy:
       matrix:
         compiler: ['g++-11', 'g++-12']
@@ -45,18 +45,24 @@ jobs:
         add-apt-repository -y ppa:ubuntu-toolchain-r/test &&
         apt-get update &&
         apt-get upgrade -y &&
-        apt-get install -y build-essential m4 autoconf libtool python3-pip libiberty-dev clang libomp-dev ${{ matrix.compiler }} &&
+        apt-get install -y build-essential m4 autoconf libtool python3-pip libiberty-dev clang libomp-dev libopenmpi-dev libfabric-dev openmpi-bin ${{ matrix.compiler }} &&
         python3 -m pip install --upgrade pip &&
         python3 -m pip install numpy &&
-        python3 -m pip install 'cmake==3.16.3' &&
+        python3 -m pip install 'cmake==3.21.4' &&
         for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy; done
 
     - name: Configure Env
-      run:
-        echo "CC=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')" >> $GITHUB_ENV &&
-        echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV &&
-        echo "/opt/omnitrace/bin:${HOME}/.local/bin" >> $GITHUB_PATH &&
-        echo "LD_LIBRARY_PATH=/opt/omnitrace/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
+      run: |
+        echo "CC=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')" >> $GITHUB_ENV
+        echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
+
+    - name: Rebuild Dyninst
+      run: |
+        git submodule update --init external/dyninst
+        pushd external/dyninst
+        CMAKE_PREFIX_PATH=/usr/local/lib/dyninst-tpls cmake -B build -DCMAKE_BUILD_TYPE=Release ${PWD}
+        cmake --build build --target all --parallel 2
+        cmake --build build --target install --parallel 2
 
     - name: Configure CMake
       timeout-minutes: 10
@@ -102,26 +108,9 @@ jobs:
         ctest -V --output-log omnitrace-ctest-${{ github.job }}.log --stop-on-failure
 
     - name: Test Install
-      timeout-minutes: 10
+      timeout-minutes: 15
       run: |
-        set -v
-        export OMNITRACE_DEBUG=ON
-        which omnitrace-avail
-        ldd $(which omnitrace-avail)
-        omnitrace-avail --help
-        omnitrace-avail -a
-        which omnitrace-critical-trace
-        ldd $(which omnitrace-critical-trace)
-        which omnitrace
-        ldd $(which omnitrace)
-        omnitrace --help
-        omnitrace -e -v 1 -o ls.inst --simulate -- ls
-        for i in omnitrace-ls.inst-output/*; do echo -e "\n\n --> ${i} \n\n"; cat ${i}; done
-        omnitrace -e -v 1 -o ls.inst -- ls
-        ./ls.inst
-        omnitrace -e -v 1 --simulate -- ls
-        for i in omnitrace-ls-output/*; do echo -e "\n\n --> ${i} \n\n"; cat ${i}; done
-        omnitrace -e -v 1 -- ls
+        ./scripts/test-install.sh --install-dir /opt/omnitrace
 
     - name: Test User API
       timeout-minutes: 10
@@ -143,5 +132,6 @@ jobs:
       with:
         name: data-${{ github.job }}-files
         path: |
+          build/omnitrace-tests-config/*.cfg
           build/omnitrace-tests-output/**/*.txt
           build/omnitrace-tests-output/**/*-instr*.json
