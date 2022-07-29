@@ -53,7 +53,7 @@ jobs:
         python3 -m pip install --upgrade pip &&
         python3 -m pip install numpy &&
         python3 -m pip install 'cmake==3.21.4' &&
-        for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy; done
+        for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done
 
     - name: Configure Env
       run: |
@@ -108,7 +108,7 @@ jobs:
       run:
         cd build &&
         ctest -V -N -O omnitrace-ctest-${{ github.job }}-commands.log &&
-        ctest -V --output-log omnitrace-ctest-${{ github.job }}.log --stop-on-failure
+        ctest -V --output-log omnitrace-ctest-${{ github.job }}.log
 
     - name: Test Install
       timeout-minutes: 15
