@@ -58,6 +58,7 @@ jobs:
 
     - name: Rebuild Dyninst
       run: |
+        git config --global --add safe.directory ${PWD}
         git submodule update --init external/dyninst
         pushd external/dyninst
         CMAKE_PREFIX_PATH=/usr/local/lib/dyninst-tpls cmake -B build -DCMAKE_BUILD_TYPE=Release ${PWD}
