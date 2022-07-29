@@ -18,7 +18,7 @@ jobs:
   ubuntu-jammy-external:
     runs-on: ubuntu-20.04
     container:
-      image: jrmadsen/omnitrace:ci-base-ubuntu-22.04
+      image: jrmadsen/omnitrace-ci:ubuntu-22.04
     strategy:
       matrix:
         compiler: ['g++-11', 'g++-12']
