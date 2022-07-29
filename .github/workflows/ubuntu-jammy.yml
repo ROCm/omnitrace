@@ -18,7 +18,7 @@ jobs:
   ubuntu-jammy-external:
     runs-on: ubuntu-20.04
     container:
-      image: jrmadsen/omnitrace-ci:ubuntu-22.04
+      image: jrmadsen/omnitrace:ci-base-ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -59,15 +59,6 @@ jobs:
       run: |
         echo "CC=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')" >> $GITHUB_ENV
         echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
-
-    - name: Rebuild Dyninst
-      run: |
-        git config --global --add safe.directory ${PWD}
-        git submodule update --init external/dyninst
-        cd external/dyninst
-        CMAKE_PREFIX_PATH=/usr/local/lib/dyninst-tpls cmake -B build -DCMAKE_BUILD_TYPE=Release ${PWD}
-        cmake --build build --target all --parallel 4
-        cmake --build build --target install --parallel 2
 
     - name: Configure CMake
       timeout-minutes: 10
