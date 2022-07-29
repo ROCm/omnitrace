@@ -62,7 +62,7 @@ jobs:
         git submodule update --init external/dyninst
         cd external/dyninst
         CMAKE_PREFIX_PATH=/usr/local/lib/dyninst-tpls cmake -B build -DCMAKE_BUILD_TYPE=Release ${PWD}
-        cmake --build build --target all --parallel 2
+        cmake --build build --target all --parallel 4
         cmake --build build --target install --parallel 2
 
     - name: Configure CMake
@@ -103,8 +103,6 @@ jobs:
       timeout-minutes: 45
       run:
         cd build &&
-        ldd ./omnitrace &&
-        ./omnitrace --help &&
         ctest -V -N -O omnitrace-ctest-${{ github.job }}-commands.log &&
         ctest -V --output-log omnitrace-ctest-${{ github.job }}.log --stop-on-failure
 
