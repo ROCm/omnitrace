@@ -2271,10 +2271,10 @@ main(int argc, char** argv)
 
     // cleanup
     for(int i = 0; i < argc; ++i)
-        delete[] _argv[i];
+        free(_argv[i]);
     delete[] _argv;
     for(int i = 0; i < _cmdc; ++i)
-        delete[] _cmdv[i];
+        free(_cmdv[i]);
     delete[] _cmdv;
 
     verbprintf(0, "End of omnitrace\n");
