@@ -20,6 +20,7 @@ jobs:
     container:
       image: jrmadsen/omnitrace-ci:ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
         compiler: ['g++-11', 'g++-12']
         hip: ['OFF']
@@ -29,6 +30,7 @@ jobs:
         python: ['ON']
         lto: ['OFF']
         strip: ['OFF']
+        hidden: ['ON', 'OFF']
         build-type: ['Release']
         mpi-headers: ['ON', 'OFF']
         static-libgcc: ['OFF']
@@ -46,8 +48,6 @@ jobs:
       run:
         apt-get update &&
         apt-get install -y software-properties-common &&
-        add-apt-repository -y ppa:ubuntu-toolchain-r/test &&
-        apt-get update &&
         apt-get upgrade -y &&
         apt-get install -y build-essential m4 autoconf libtool python3-pip libiberty-dev clang libomp-dev libopenmpi-dev libfabric-dev openmpi-bin ${{ matrix.compiler }} &&
         python3 -m pip install --upgrade pip &&
@@ -88,6 +88,7 @@ jobs:
           -DOMNITRACE_USE_MPI_HEADERS=${{ matrix.mpi-headers }}
           -DOMNITRACE_STRIP_LIBRARIES=${{ matrix.strip }}
           -DOMNITRACE_BUILD_LTO=${{ matrix.lto }}
+          -DOMNITRACE_BUILD_HIDDEN_VISIBILITY=${{ matrix.hidden }}
           -DOMNITRACE_BUILD_STATIC_LIBGCC=${{ matrix.static-libgcc }}
           -DOMNITRACE_BUILD_STATIC_LIBSTDCXX=${{ matrix.static-libstdcxx }}
           -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
