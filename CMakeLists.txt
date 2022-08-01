@@ -269,8 +269,8 @@ if(OMNITRACE_BUILD_HIDDEN_VISIBILITY)
 endif()
 
 if(OMNITRACE_BUILD_TESTING OR "$ENV{OMNITRACE_CI}" MATCHES "[1-9]+|ON|on|y|yes")
-    include(CTest)
     enable_testing()
+    include(CTest)
 endif()
 
 # ------------------------------------------------------------------------------#

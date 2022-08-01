@@ -87,12 +87,15 @@ jobs:
         echo "CC=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')" >> $GITHUB_ENV &&
         echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
 
-    - name: Configure CMake
-      timeout-minutes: 10
+    - name: Configure, Build, and Test
+      timeout-minutes: 115
       run:
         git config --global --add safe.directory ${PWD} &&
         cmake --version &&
-        cmake -B build
+        ./scripts/run-ci.sh -B build
+          --name ubuntu-focal-${{ matrix.compiler }}
+          --site GitHub
+          --cmake-args
           -DCMAKE_C_COMPILER=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
@@ -111,11 +114,6 @@ jobs:
           -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
           -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
           -DOMNITRACE_MAX_THREADS=32
-
-    - name: Build
-      timeout-minutes: 60
-      run:
-        cmake --build build --target all --parallel 2 -- VERBOSE=1
 
     - name: Install
       timeout-minutes: 10
