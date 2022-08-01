@@ -198,6 +198,8 @@ ctest_start(${DASHBOARD_MODE})
 ctest_update(SOURCE "${SOURCE_DIR}")
 ctest_submit(PARTS Start Update RETURN_VALUE _submit_ret)
 
+handle_error("Submit" _submit_ret)
+
 ctest_configure(BUILD "${BINARY_DIR}" RETURN_VALUE _configure_ret)
 ctest_submit(PARTS Configure RETURN_VALUE _submit_ret)
 
