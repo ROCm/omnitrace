@@ -56,9 +56,6 @@ jobs:
             static-libgcc: 'ON'
             static-libstdcxx: 'OFF'
 
-    env:
-      SUBMIT_URL: ${{ secrets.SUBMIT_URL }}
-
     steps:
     - uses: actions/checkout@v3
 
