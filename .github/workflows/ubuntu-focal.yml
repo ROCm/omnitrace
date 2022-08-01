@@ -95,6 +95,7 @@ jobs:
         ./scripts/run-ci.sh -B build
           --name ubuntu-focal-${{ matrix.compiler }}
           --site GitHub
+          --submit-url ${{ secrets.SUBMIT_URL }}
           --cmake-args
           -DCMAKE_C_COMPILER=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
