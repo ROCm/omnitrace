@@ -1360,18 +1360,18 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
              ${python_source_depth})
 
     set(python_builtin_labels
-        run
-        fib
-        fib
-        fib
-        fib
-        fib
-        fib
-        fib
-        fib
-        fib
-        fib
-        inefficient)
+        [run][builtin.py:28]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [inefficient][builtin.py:14])
     set(python_builtin_count
         5
         5
@@ -1407,6 +1407,7 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
         PERFETTO_FILE "perfetto-trace.proto"
         ARGS -l ${python_builtin_labels} -c ${python_builtin_count} -d
              ${python_builtin_depth})
+
     set(python_external_labels
         run
         fib
@@ -1449,8 +1450,6 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
 
     omnitrace_add_python_validation_test(
         NAME python-external
-        TIMEMORY_METRIC "trip_count"
-        TIMEMORY_FILE "trip_count.json"
         PERFETTO_METRIC "host;user"
         PERFETTO_FILE "perfetto-trace.proto"
         ARGS -l ${python_external_labels} -c ${python_external_count} -d
@@ -1495,8 +1494,6 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
 
     omnitrace_add_python_validation_test(
         NAME python-external-exclude-inefficient
-        TIMEMORY_METRIC "trip_count"
-        TIMEMORY_FILE "trip_count.json"
         PERFETTO_METRIC "host;user"
         PERFETTO_FILE "perfetto-trace.proto"
         ARGS -l ${python_external_exclude_inefficient_labels} -c
