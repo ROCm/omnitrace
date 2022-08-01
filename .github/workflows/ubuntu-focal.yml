@@ -56,6 +56,9 @@ jobs:
             static-libgcc: 'ON'
             static-libstdcxx: 'OFF'
 
+    env:
+      SUBMIT_URL: cdash.jonathan-madsen.info/submit.php?project=Omnitrace
+
     steps:
     - uses: actions/checkout@v3
 
@@ -95,7 +98,6 @@ jobs:
         ./scripts/run-ci.sh -B build
           --name ubuntu-focal-${{ matrix.compiler }}
           --site GitHub
-          --submit-url ${{ secrets.SUBMIT_URL }}
           --cmake-args
           -DCMAKE_C_COMPILER=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
