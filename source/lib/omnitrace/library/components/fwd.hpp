@@ -163,6 +163,11 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, api::rccl, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::rcclp_handle, false_type)
 #endif
 
+#if !defined(OMNITRACE_USE_RCCL) && !defined(OMNITRACE_USE_MPI)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::comm_data_tracker_t, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::comm_data, false_type)
+#endif
+
 #if !defined(TIMEMORY_USE_LIBUNWIND)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, omnitrace::api::sampling, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, omnitrace::component::backtrace, false_type)

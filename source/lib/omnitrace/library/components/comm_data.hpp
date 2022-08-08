@@ -39,7 +39,7 @@
 #    endif
 #endif
 
-#if defined(OMNITRACE_USE_MPI) || defined(OMNITRACE_USE_MPI_HEADERS)
+#if defined(OMNITRACE_USE_MPI)
 #    include <mpi.h>
 #endif
 
@@ -72,7 +72,14 @@ struct comm_data : base<comm_data, void>
     static void start() {}
     static void stop() {}
 
-#if defined(OMNITRACE_USE_MPI) || defined(OMNITRACE_USE_MPI_HEADERS)
+#if defined(OMNITRACE_USE_MPI)
+    static int mpi_type_size(MPI_Datatype _datatype)
+    {
+        int _size = 0;
+        PMPI_Type_size(_datatype, &_size);
+        return _size;
+    }
+
     // MPI_Send
     static void audit(const gotcha_data& _data, audit::incoming, const void*, int count,
                       MPI_Datatype datatype, int dst, int tag, MPI_Comm);
