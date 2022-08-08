@@ -22,9 +22,9 @@
 
 #include "library/components/comm_data.hpp"
 #include "library/components/fwd.hpp"
-#include "timemory/units.hpp"
 
 #include <timemory/manager.hpp>
+#include <timemory/units.hpp>
 
 namespace tim
 {

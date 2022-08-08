@@ -28,10 +28,10 @@
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/mproc.hpp"
-#include "timemory/mpl/types.hpp"
 
 #include <timemory/backends/mpi.hpp>
 #include <timemory/backends/process.hpp>
+#include <timemory/mpl/types.hpp>
 #include <timemory/utility/locking.hpp>
 
 #include <cstdint>
