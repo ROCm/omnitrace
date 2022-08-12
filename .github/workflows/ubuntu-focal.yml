@@ -174,7 +174,8 @@ jobs:
       if: success() || failure()
       continue-on-error: True
       run: |
-        killall trace_processor_shell
+        RUNNING_PROCS=$(pgrep trace_processor_shell)
+        if [ -n "${RUNNING_PROCS}" ]; then kill -s 9 ${RUNNING_PROCS}; fi
 
   ubuntu-focal-external-rocm:
     runs-on: ubuntu-20.04
@@ -381,7 +382,8 @@ jobs:
       if: success() || failure()
       continue-on-error: True
       run: |
-        killall trace_processor_shell
+        RUNNING_PROCS=$(pgrep trace_processor_shell)
+        if [ -n "${RUNNING_PROCS}" ]; then kill -s 9 ${RUNNING_PROCS}; fi
 
   ubuntu-focal:
     runs-on: ubuntu-20.04
@@ -540,4 +542,5 @@ jobs:
       if: success() || failure()
       continue-on-error: True
       run: |
-        killall trace_processor_shell
+        RUNNING_PROCS=$(pgrep trace_processor_shell)
+        if [ -n "${RUNNING_PROCS}" ]; then kill -s 9 ${RUNNING_PROCS}; fi
