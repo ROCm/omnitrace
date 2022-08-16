@@ -19,7 +19,7 @@ env:
 
 jobs:
   ubuntu-bionic:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     container:
       image: jrmadsen/omnitrace:ci-base-ubuntu-18.04
     strategy:
@@ -158,5 +158,6 @@ jobs:
       if: success() || failure()
       continue-on-error: True
       run: |
+        set +e
         RUNNING_PROCS=$(pgrep trace_processor_shell)
         if [ -n "${RUNNING_PROCS}" ]; then kill -s 9 ${RUNNING_PROCS}; fi
