@@ -22,6 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "common/join.hpp"
 #include "library/common.hpp"
 #include "library/components/category_region.hpp"
 #include "library/components/fwd.hpp"
@@ -30,6 +31,10 @@
 
 #include <timemory/api/macros.hpp>
 #include <timemory/components/macros.hpp>
+#include <timemory/operations/types/set.hpp>
+#include <timemory/utility/types.hpp>
+
+#include <optional>
 
 #if defined(OMNITRACE_USE_RCCL)
 #    if OMNITRACE_HIP_VERSION == 0 || OMNITRACE_HIP_VERSION >= 50200
@@ -63,6 +68,30 @@ struct comm_data : base<comm_data, void>
     using base_type  = base<this_type, value_type>;
     using tracker_t  = tim::auto_tuple<comm_data_tracker_t>;
     using data_type  = float;
+
+    struct mpi_recv
+    {
+        static constexpr auto value = "comm_data";
+        static constexpr auto label = "MPI Comm Recv";
+    };
+
+    struct mpi_send
+    {
+        static constexpr auto value = "comm_data";
+        static constexpr auto label = "MPI Comm Send";
+    };
+
+    struct rccl_recv
+    {
+        static constexpr auto value = "comm_data";
+        static constexpr auto label = "RCCL Comm Recv";
+    };
+
+    struct rccl_send
+    {
+        static constexpr auto value = "comm_data";
+        static constexpr auto label = "RCCL Comm Send";
+    };
 
     TIMEMORY_DEFAULT_OBJECT(comm_data)
 
@@ -141,78 +170,64 @@ struct comm_data : base<comm_data, void>
     }
 
     // ncclReduce
-    static void audit(const gotcha_data& _data, audit::incoming, const void*, void*,
+    static void audit(const gotcha_data& _data, audit::incoming, const void*, const void*,
                       size_t count, ncclDataType_t datatype, ncclRedOp_t, int root,
                       ncclComm_t, hipStream_t);
 
     // ncclSend
+    // ncclGather
+    // ncclBcast
+    // ncclRecv
     static void audit(const gotcha_data& _data, audit::incoming, const void*,
                       size_t count, ncclDataType_t datatype, int peer, ncclComm_t,
                       hipStream_t);
 
-    // ncclBcast
-    // ncclRecv
-    static void audit(const gotcha_data& _data, audit::incoming, void*, size_t count,
-                      ncclDataType_t datatype, int root, ncclComm_t, hipStream_t);
-
     // ncclBroadcast
-    static void audit(const gotcha_data& _data, audit::incoming, const void*, void*,
+    static void audit(const gotcha_data& _data, audit::incoming, const void*, const void*,
                       size_t count, ncclDataType_t datatype, int root, ncclComm_t,
                       hipStream_t);
 
     // ncclAllReduce
     // ncclReduceScatter
-    static void audit(const gotcha_data& _data, audit::incoming, const void*, void*,
+    static void audit(const gotcha_data& _data, audit::incoming, const void*, const void*,
                       size_t count, ncclDataType_t datatype, ncclRedOp_t, ncclComm_t,
                       hipStream_t);
 
     // ncclAllGather
-    static void audit(const gotcha_data& _data, audit::incoming, const void*, void*,
+    // ncclAlltoAll
+    static void audit(const gotcha_data& _data, audit::incoming, const void*, const void*,
                       size_t count, ncclDataType_t datatype, ncclComm_t, hipStream_t);
+
 #endif
 
 private:
-    template <typename... Args>
-    static void add(tracker_t& _t, data_type value, Args&&... args)
+    static auto& add(tracker_t& _t, data_type value)
     {
+        if(omnitrace::get_state() != omnitrace::State::Active)
+        {
+            _t.invoke<operation::set_is_invalid>(true);
+            return _t;
+        }
         _t.store(std::plus<data_type>{}, value);
-        TIMEMORY_FOLD_EXPRESSION(add_secondary(_t, std::forward<Args>(args), value));
+        return _t;
     }
 
-    template <typename... Args>
-    static void add(const gotcha_data& _data, data_type value, Args&&... args)
+    static auto&& add(const gotcha_data& _data, data_type value)
     {
         tracker_t _t{ std::string_view{ _data.tool_id.c_str() } };
-        add(_t, value, std::forward<Args>(args)...);
+        return add(_t, value);
     }
 
-    template <typename... Args>
-    static void add_secondary(tracker_t&, const gotcha_data& _data, data_type value,
-                              Args&&... args)
-    {
-        // if(tim::settings::add_secondary())
-        {
-            tracker_t _s{ std::string_view{ _data.tool_id.c_str() } };
-            add(_s, _data, value, std::forward<Args>(args)...);
-        }
-    }
-
-    template <typename... Args>
-    static void add(std::string_view _name, data_type value, Args&&... args)
+    static auto&& add(std::string&& _name, data_type value)
     {
         tracker_t _t{ _name };
-        add(_t, value, std::forward<Args>(args)...);
+        return add(_t, value);
     }
 
-    template <typename... Args>
-    static void add_secondary(tracker_t&, std::string_view _name, data_type value,
-                              Args&&... args)
+    static auto&& add(std::string_view _name, data_type value)
     {
-        // if(tim::settings::add_secondary())
-        {
-            tracker_t _s{ _name };
-            add(_s, value, std::forward<Args>(args)...);
-        }
+        tracker_t _t{ _name };
+        return add(_t, value);
     }
 };
 }  // namespace component
