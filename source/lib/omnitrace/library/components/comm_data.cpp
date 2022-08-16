@@ -25,11 +25,11 @@
 #include "library/config.hpp"
 #include "library/perfetto.hpp"
 #include "library/tracing.hpp"
-#include "timemory/utility/locking.hpp"
 
 #include <timemory/backends/mpi.hpp>
 #include <timemory/manager.hpp>
 #include <timemory/units.hpp>
+#include <timemory/utility/locking.hpp>
 
 namespace tim
 {
