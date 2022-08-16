@@ -513,21 +513,21 @@ generate(py::module& _pymod)
         get_config().records.clear();
     };
 
-    static auto _sys        = py::module::import("sys");
-    static auto _setprofile = _sys.attr("setprofile");
+    auto _sys        = py::module::import("sys");
+    auto _setprofile = _sys.attr("setprofile");
 
     _prof.def("profiler_function", &profiler_function, "Profiling function");
     _prof.def("profiler_init", _init, "Initialize the profiler");
     _prof.def("profiler_finalize", _fini, "Finalize the profiler");
     _prof.def(
         "profiler_pause",
-        []() {
+        [_setprofile]() {
             if(++get_paused() == 1) _setprofile(nullptr);
         },
         "Pause the profiler");
     _prof.def(
         "profiler_resume",
-        []() {
+        [_setprofile]() {
             if(--get_paused() == 0) _setprofile(py::cpp_function{ profiler_function });
         },
         "Resume the profiler");
