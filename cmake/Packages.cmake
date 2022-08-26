@@ -502,12 +502,17 @@ endif()
 #
 # ----------------------------------------------------------------------------------------#
 
-target_compile_definitions(omnitrace-timemory-config INTERFACE TIMEMORY_PAPI_ARRAY_SIZE=16
+target_compile_definitions(omnitrace-timemory-config INTERFACE TIMEMORY_PAPI_ARRAY_SIZE=12
                                                                TIMEMORY_USE_ROOFLINE=0)
 
 if(OMNITRACE_BUILD_STACK_PROTECTOR)
     add_target_flag_if_avail(omnitrace-timemory-config "-fstack-protector-strong"
                              "-Wstack-protector")
+endif()
+
+if(OMNITRACE_BUILD_DEBUG)
+    add_target_flag_if_avail(omnitrace-timemory-config "-fno-omit-frame-pointer" "-g"
+                             "-gdwarf-3")
 endif()
 
 set(TIMEMORY_EXTERNAL_INTERFACE_LIBRARY
@@ -563,6 +568,9 @@ set(TIMEMORY_USE_PAPI
 set(TIMEMORY_USE_LIBUNWIND
     ON
     CACHE BOOL "Enable libunwind support in timemory")
+set(TIMEMORY_USE_VISIBILITY
+    OFF
+    CACHE BOOL "Enable/disable using visibility decorations")
 
 if(DEFINED TIMEMORY_BUILD_GOTCHA AND NOT TIMEMORY_BUILD_GOTCHA)
     omnitrace_message(
@@ -581,6 +589,9 @@ set(TIMEMORY_BUILD_LIBUNWIND
 set(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     ${OMNITRACE_BUILD_EXTRA_OPTIMIZATIONS}
     CACHE BOOL "Enable building GOTCHA library from submodule" FORCE)
+set(TIMEMORY_BUILD_ERT
+    OFF
+    CACHE BOOL "Disable building ERT support" FORCE)
 
 # timemory build settings
 set(TIMEMORY_TLS_MODEL
@@ -595,6 +606,10 @@ set(TIMEMORY_SETTINGS_PREFIX
 set(TIMEMORY_PROJECT_NAME
     "omnitrace"
     CACHE STRING "Name for configuration")
+set(TIMEMORY_CXX_LIBRARY_EXCLUDE
+    "kokkosp.cpp;pthread.cpp;timemory_c.cpp;trace.cpp;weak.cpp;library.cpp"
+    CACHE STRING "Timemory C++ library implementation files to exclude from compiling")
+
 mark_as_advanced(TIMEMORY_SETTINGS_PREFIX)
 mark_as_advanced(TIMEMORY_PROJECT_NAME)
 
