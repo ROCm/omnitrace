@@ -27,6 +27,7 @@
 #include "library/mproc.hpp"
 #include "library/perfetto.hpp"
 #include "library/runtime.hpp"
+#include "timemory/log/logger.hpp"
 
 #include <timemory/backends/dmp.hpp>
 #include <timemory/backends/mpi.hpp>
@@ -174,7 +175,7 @@ configure_settings(bool _init)
 
     if(get_state() < State::Init)
     {
-        ::tim::print_demangled_backtrace<64>();
+        timemory_print_demangled_backtrace<64>();
         OMNITRACE_THROW("config::configure_settings() called before "
                         "omnitrace_init_library. state = %s",
                         std::to_string(get_state()).c_str());
@@ -878,7 +879,7 @@ configure_signal_handler()
                     "signal %s (%i) ignored (OMNITRACE_IGNORE_DYNINST_TRAMPOLINE=ON)\n",
                     std::get<0>(_info).c_str(), _v);
                 if(get_verbose_env() > 1 || get_debug_env())
-                    ::tim::print_demangled_backtrace<64>();
+                    timemory_print_demangled_backtrace<64>();
                 if(_old_handler) _old_handler(_v);
             }
         };
@@ -1071,7 +1072,8 @@ print_banner(std::ostream& _os)
      \______/  |__|  |__| |__| \__| |__|     |__|     | _| `._____/__/     \__\ \______||_______|
 
     )banner";
-    _os << _banner << std::endl;
+    tim::log::stream(_os, tim::log::color::info()) << _banner;
+    _os << std::endl;
 }
 
 void
@@ -1174,9 +1176,11 @@ print_settings(
         }
         _os << ((_md) ? "\n" : "  #\n");
     }
+
     _os << _spacer.str() << "\n";
 
-    _ros << _os.str() << std::flush;
+    tim::log::stream(_ros, tim::log::color::info()) << _os.str();
+    _ros << std::flush;
 }
 
 void
@@ -1191,9 +1195,11 @@ print_settings(bool _include_env)
 
     if(_include_env)
     {
+        std::cerr << tim::log::info;
         tim::print_env(std::cerr, [_is_omnitrace_option](const std::string& _v) {
             return _is_omnitrace_option(_v, std::set<std::string>{});
         });
+        std::cerr << tim::log::flush;
     }
 
     print_settings(std::cerr, _is_omnitrace_option);
