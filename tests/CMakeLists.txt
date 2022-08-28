@@ -1230,6 +1230,15 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
         ENVIRONMENT "${_python_environment}")
 
     omnitrace_add_python_test(
+        NAME python-builtin-noprofile
+        PYTHON_EXECUTABLE ${_PYTHON_EXECUTABLE}
+        PYTHON_VERSION ${_VERSION}
+        FILE ${CMAKE_SOURCE_DIR}/examples/python/noprofile.py
+        PROFILE_ARGS "-b" "--label" "file"
+        RUN_ARGS -v 15 -n 5
+        ENVIRONMENT "${_python_environment}")
+
+    omnitrace_add_python_test(
         STANDALONE
         NAME python-source
         PYTHON_EXECUTABLE ${_PYTHON_EXECUTABLE}
@@ -1281,6 +1290,16 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
             FILE omnitrace-tests-output/python-builtin/${_VERSION}/trip_count.txt
             PASS_REGEX "\\\[inefficient\\\]\\\[builtin.py:14\\\]"
             DEPENDS python-builtin-${_VERSION}
+            ENVIRONMENT "${_python_environment}")
+
+        omnitrace_add_python_test(
+            NAME python-builtin-noprofile-check
+            COMMAND ${OMNITRACE_CAT_COMMAND}
+            PYTHON_VERSION ${_VERSION}
+            FILE omnitrace-tests-output/python-builtin-noprofile/${_VERSION}/trip_count.txt
+            PASS_REGEX ".(run)..(noprofile.py)."
+            FAIL_REGEX ".(fib|inefficient)..(noprofile.py)."
+            DEPENDS python-builtin-noprofile-${_VERSION}
             ENVIRONMENT "${_python_environment}")
     else()
         omnitrace_message(
@@ -1359,5 +1378,53 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
         ARGS -l ${python_source_labels} -c ${python_source_count} -d
              ${python_source_depth})
 
+    set(python_builtin_labels
+        [run][builtin.py:28]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [fib][builtin.py:10]
+        [inefficient][builtin.py:14])
+    set(python_builtin_count
+        5
+        5
+        10
+        20
+        40
+        80
+        160
+        260
+        220
+        80
+        10
+        5)
+    set(python_builtin_depth
+        0
+        1
+        2
+        3
+        4
+        5
+        6
+        7
+        8
+        9
+        10
+        1)
+
+    omnitrace_add_python_validation_test(
+        NAME python-builtin
+        TIMEMORY_METRIC "trip_count"
+        TIMEMORY_FILE "trip_count.json"
+        PERFETTO_METRIC "host;user"
+        PERFETTO_FILE "perfetto-trace.proto"
+        ARGS -l ${python_builtin_labels} -c ${python_builtin_count} -d
+             ${python_builtin_depth})
     math(EXPR _INDEX "${_INDEX} + 1")
 endforeach()
