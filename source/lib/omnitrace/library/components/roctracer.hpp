@@ -100,12 +100,14 @@ TIMEMORY_SET_COMPONENT_API(omnitrace::component::roctracer_data, project::timemo
 OMNITRACE_DEFINE_CONCRETE_TRAIT(is_timing_category, component::roctracer_data, true_type)
 OMNITRACE_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::roctracer_data, true_type)
 
-#if !defined(OMNITRACE_EXTERN_COMPONENTS) ||                                             \
-    (defined(OMNITRACE_EXTERN_COMPONENTS) && OMNITRACE_EXTERN_COMPONENTS > 0)
+#if defined(OMNITRACE_USE_ROCTRACER) && OMNITRACE_USE_ROCTRACER > 0
+#    if !defined(OMNITRACE_EXTERN_COMPONENTS) ||                                         \
+        (defined(OMNITRACE_EXTERN_COMPONENTS) && OMNITRACE_EXTERN_COMPONENTS > 0)
 
-#    include <timemory/operations.hpp>
+#        include <timemory/operations.hpp>
 
 OMNITRACE_DECLARE_EXTERN_COMPONENT(roctracer, false, void)
 OMNITRACE_DECLARE_EXTERN_COMPONENT(roctracer_data, true, double)
 
+#    endif
 #endif
