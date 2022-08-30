@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "library/causal/data.hpp"
 #include "library/config.hpp"
 #include "library/critical_trace.hpp"
 #include "library/defines.hpp"
@@ -120,6 +121,10 @@ category_region<CategoryT>::start(std::string_view name, Args&&... args)
         (sizeof...(OptsT) == 0 ||
          tim::is_one_of<quirk::perfetto, tim::type_list<OptsT...>>::value);
 
+    constexpr bool _ct_use_causal =
+        (sizeof...(OptsT) == 0 ||
+         tim::is_one_of<quirk::causal, tim::type_list<OptsT...>>::value);
+
     OMNITRACE_CONDITIONAL_PRINT(tracing::debug_push,
                                 "[%s][PID=%i][state=%s] omnitrace_push_region(%s)\n",
                                 category_name, process::get_id(),
@@ -128,6 +133,14 @@ category_region<CategoryT>::start(std::string_view name, Args&&... args)
     if constexpr(tim::is_one_of<CategoryT, tim::type_list<category::host>>::value)
     {
         ++tracing::push_count();
+    }
+
+    if constexpr(_ct_use_causal)
+    {
+        if(get_use_causal())
+            causal::push_progress_stack(causal::progress_stack{
+                name, tim::get_unw_backtrace_raw<causal::unwind_depth,
+                                                 causal::unwind_offset, false>() });
     }
 
     if constexpr(_ct_use_perfetto)
@@ -185,6 +198,10 @@ category_region<CategoryT>::stop(std::string_view name, Args&&... args)
         (sizeof...(OptsT) == 0 ||
          tim::is_one_of<quirk::perfetto, tim::type_list<OptsT...>>::value);
 
+    constexpr bool _ct_use_causal =
+        (sizeof...(OptsT) == 0 ||
+         tim::is_one_of<quirk::causal, tim::type_list<OptsT...>>::value);
+
     OMNITRACE_CONDITIONAL_PRINT(tracing::debug_pop,
                                 "[%s][PID=%i][state=%s] omnitrace_pop_region(%s)\n",
                                 category_name, process::get_id(),
@@ -214,6 +231,12 @@ category_region<CategoryT>::stop(std::string_view name, Args&&... args)
                 tracing::pop_perfetto(CategoryT{}, name.data(),
                                       std::forward<Args>(args)...);
             }
+        }
+
+        if constexpr(_ct_use_causal)
+        {
+            if(get_use_causal())
+                causal::pop_progress_stack();
         }
 
         if constexpr(tim::is_one_of<CategoryT, tim::type_list<category::host>>::value)

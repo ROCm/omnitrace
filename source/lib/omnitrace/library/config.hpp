@@ -166,6 +166,9 @@ get_use_perfetto() OMNITRACE_HOT;
 bool&
 get_use_timemory() OMNITRACE_HOT;
 
+bool&
+get_use_causal() OMNITRACE_HOT;
+
 bool
 get_use_roctracer() OMNITRACE_HOT;
 

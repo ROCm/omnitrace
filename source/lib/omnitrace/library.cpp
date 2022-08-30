@@ -26,6 +26,7 @@
 
 #include "api.hpp"
 #include "common/setup.hpp"
+#include "library/causal/data.hpp"
 #include "library/components/exit_gotcha.hpp"
 #include "library/components/fork_gotcha.hpp"
 #include "library/components/fwd.hpp"

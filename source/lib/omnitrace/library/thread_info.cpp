@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include "library/thread_info.hpp"
+#include "library/causal/delay.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/runtime.hpp"
@@ -90,6 +91,7 @@ thread_info::init(bool _offset)
         _info                 = thread_info{};
         _info->is_offset      = threading::offset_this_id();
         _info->index_data     = init_index_data(_tid, _info->is_offset);
+        _info->causal_count   = &causal::delay::get_local();
         _info->lifetime.first = tim::get_clock_real_now<uint64_t, std::nano>();
         if(_info->is_offset) set_thread_state(ThreadState::Disabled);
     }

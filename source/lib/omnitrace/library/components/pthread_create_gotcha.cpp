@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include "library/components/pthread_create_gotcha.hpp"
+#include "library/causal/delay.hpp"
 #include "library/components/category_region.hpp"
 #include "library/components/roctracer.hpp"
 #include "library/config.hpp"
@@ -163,7 +164,7 @@ pthread_create_gotcha::wrapper::operator()() const
     auto    _bundle      = std::shared_ptr<bundle_t>{};
     auto    _signals     = std::set<int>{};
     auto    _coverage    = (get_mode() == Mode::Coverage);
-    // const auto& _parent_info = thread_info::get(m_parent_tid, InternalTID);
+    const auto& _parent_info = thread_info::get(m_parent_tid, InternalTID);
     auto _dtor = [&]() {
         set_thread_state(ThreadState::Internal);
         if(_is_sampling)
@@ -213,6 +214,10 @@ pthread_create_gotcha::wrapper::operator()() const
         get_cpu_cid_stack(_tid, m_parent_tid);
         if(m_enable_sampling)
         {
+            // children inherit the parent delay data
+            if(_parent_info && _parent_info->index_data)
+                causal::delay::get_local(_tid) =
+                    causal::delay::get_local(_parent_info->index_data->internal_value);
             _is_sampling = true;
             OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
             _signals = sampling::setup();
@@ -408,6 +413,9 @@ pthread_create_gotcha::operator()(pthread_t* thread, const pthread_attr_t* attr,
         _bundle = bundle_t{ "pthread_create" };
         start_bundle(*_bundle, audit::incoming{}, thread, attr, func, arg);
     }
+
+    // threads must process their delays before creating a new thread
+    // causal::delay::process();
 
     // create the thread
     auto _ret = (*m_wrappee)(thread, attr, &wrapper::wrap, static_cast<void*>(_wrap));

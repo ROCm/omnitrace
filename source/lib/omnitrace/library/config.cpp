@@ -314,6 +314,10 @@ configure_settings(bool _init)
                              !_config->get<bool>("OMNITRACE_USE_PERFETTO"), "backend",
                              "timemory");
 
+    OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_CAUSAL",
+                             "Enable causal profiling analysis", true, "backend",
+                             "causal", "analysis");
+
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_ROCTRACER",
                              "Enable ROCm API and kernel tracing", true, "backend",
                              "roctracer", "rocm");
@@ -1561,6 +1565,13 @@ bool&
 get_use_timemory()
 {
     static auto _v = get_config()->find("OMNITRACE_USE_TIMEMORY");
+    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
+}
+
+bool&
+get_use_causal()
+{
+    static auto _v = get_config()->find("OMNITRACE_USE_CAUSAL");
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
