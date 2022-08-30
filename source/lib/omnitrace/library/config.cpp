@@ -1206,7 +1206,9 @@ print_settings(bool _include_env)
     {
         std::cerr << tim::log::info;
         tim::print_env(std::cerr, [_is_omnitrace_option](const std::string& _v) {
-            return _is_omnitrace_option(_v, std::set<std::string>{});
+            auto _is_omni_opt = _is_omnitrace_option(_v, std::set<std::string>{});
+            if(settings::verbose() >= 2 || settings::debug()) return _is_omni_opt;
+            return (_is_omni_opt && _v.find("OMNITRACE_SIGNAL_") != 0);
         });
         std::cerr << tim::log::flush;
     }
