@@ -265,8 +265,21 @@ if(OMNITRACE_BUILD_DYNINST)
         OFF
         CACHE BOOL "Enable LTO for dyninst libraries")
 
-    omnitrace_save_variables(PIC VARIABLES CMAKE_POSITION_INDEPENDENT_CODE)
+    if(NOT DEFINED CMAKE_INSTALL_RPATH)
+        set(CMAKE_INSTALL_RPATH "")
+    endif()
+
+    if(NOT DEFINED CMAKE_BUILD_RPATH)
+        set(CMAKE_BUILD_RPATH "")
+    endif()
+
+    omnitrace_save_variables(
+        PIC VARIABLES CMAKE_POSITION_INDEPENDENT_CODE CMAKE_INSTALL_RPATH
+                      CMAKE_BUILD_RPATH CMAKE_INSTALL_RPATH_USE_LINK_PATH)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH OFF)
+    set(CMAKE_BUILD_RPATH "\$ORIGIN:\$ORIGIN/omnitrace")
+    set(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/omnitrace")
     set(DYNINST_TPL_INSTALL_PREFIX
         "omnitrace"
         CACHE PATH "Third-party library install-tree install prefix" FORCE)
@@ -274,7 +287,9 @@ if(OMNITRACE_BUILD_DYNINST)
         "omnitrace"
         CACHE PATH "Third-party library install-tree install library prefix" FORCE)
     add_subdirectory(external/dyninst EXCLUDE_FROM_ALL)
-    omnitrace_restore_variables(PIC VARIABLES CMAKE_POSITION_INDEPENDENT_CODE)
+    omnitrace_restore_variables(
+        PIC VARIABLES CMAKE_POSITION_INDEPENDENT_CODE CMAKE_INSTALL_RPATH
+                      CMAKE_BUILD_RPATH CMAKE_INSTALL_RPATH_USE_LINK_PATH)
 
     add_library(Dyninst::Dyninst INTERFACE IMPORTED)
     foreach(_LIB common dyninstAPI parseAPI instructionAPI symtabAPI stackwalk)
@@ -299,7 +314,8 @@ if(OMNITRACE_BUILD_DYNINST)
                 TARGETS ${_LIB}
                 DESTINATION ${CMAKE_INSTALL_LIBDIR}/omnitrace
                 COMPONENT dyninst
-                PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_LIBDIR}/omnitrace/include)
+                PUBLIC_HEADER DESTINATION ${PROJECT_BINARY_DIR}/.discard/omnitrace/include
+                )
         endif()
     endforeach()
 
