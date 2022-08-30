@@ -241,14 +241,14 @@ data::post_process(uint32_t _dev_id)
 
     if(device_count < _dev_id) return;
 
-    auto& _rocm_smi_v = sampler_instances::instances().at(_dev_id);
-    auto  _rocm_smi   = (_rocm_smi_v) ? *_rocm_smi_v : std::deque<rocm_smi::data>{};
+    auto&       _rocm_smi_v = sampler_instances::instances().at(_dev_id);
+    auto        _rocm_smi   = (_rocm_smi_v) ? *_rocm_smi_v : std::deque<rocm_smi::data>{};
+    const auto& _thread_info = thread_info::get(0, LookupTID);
+
+    OMNITRACE_CI_THROW(!_thread_info, "Missing thread info for thread 0");
+    if(!_thread_info) return;
 
     auto _process_perfetto = [&]() {
-        const auto& _thread_info = thread_info::get(0, LookupTID);
-        OMNITRACE_CI_THROW(!_thread_info, "Missing thread info for thread 0");
-        if(!_thread_info) return;
-
         for(auto& itr : _rocm_smi)
         {
             using counter_track = perfetto_counter_track<data>;

@@ -928,7 +928,7 @@ omnitrace_add_test(
         "${_timemory_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=OFF"
     REWRITE_FAIL_REGEX "0 instrumented loops in procedure")
 
-if(OMNITRACE_OPENMP_USING_LIBOMP_LIBRARY)
+if(OMNITRACE_OPENMP_USING_LIBOMP_LIBRARY AND OMNITRACE_USE_OMPT)
     set(_OMPT_PASS_REGEX "\\|_ompt_")
 else()
     set(_OMPT_PASS_REGEX "")
