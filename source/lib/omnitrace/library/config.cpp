@@ -27,7 +27,6 @@
 #include "library/mproc.hpp"
 #include "library/perfetto.hpp"
 #include "library/runtime.hpp"
-#include "timemory/log/logger.hpp"
 
 #include <timemory/backends/dmp.hpp>
 #include <timemory/backends/mpi.hpp>
@@ -35,6 +34,8 @@
 #include <timemory/backends/threading.hpp>
 #include <timemory/environment.hpp>
 #include <timemory/environment/types.hpp>
+#include <timemory/log/color.hpp>
+#include <timemory/log/logger.hpp>
 #include <timemory/manager.hpp>
 #include <timemory/sampling/allocator.hpp>
 #include <timemory/settings.hpp>
@@ -220,6 +221,9 @@ configure_settings(bool _init)
                              "Enable some runtime validation checks (typically enabled "
                              "for continuous integration)",
                              false, "debugging", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_COLORIZED_LOG", "Enable colorized logging",
+                             true, "debugging", "advanced");
 
     OMNITRACE_CONFIG_EXT_SETTING(int, "OMNITRACE_DL_VERBOSE",
                                  "Verbosity within the omnitrace-dl library", 0,
@@ -473,6 +477,13 @@ configure_settings(bool _init)
                              "data", "advanced")
         ->set_choices(get_available_perfetto_categories<std::vector<std::string>>());
 
+    OMNITRACE_CONFIG_SETTING(
+        uint64_t, "OMNITRACE_THREAD_POOL_SIZE",
+        "Max number of threads for processing background tasks",
+        std::max<uint64_t>(std::min<uint64_t>(4, std::thread::hardware_concurrency() / 2),
+                           1),
+        "parallelism", "advanced");
+
     OMNITRACE_CONFIG_EXT_SETTING(int64_t, "OMNITRACE_CRITICAL_TRACE_COUNT",
                                  "Number of critical trace to export (0 == all)",
                                  int64_t{ 0 }, "data", "critical_trace",
@@ -482,12 +493,6 @@ configure_settings(bool _init)
                              "Number of critical trace records to store in thread-local "
                              "memory before submitting to shared buffer",
                              uint64_t{ 2000 }, "data", "critical_trace", "advanced");
-
-    OMNITRACE_CONFIG_SETTING(
-        uint64_t, "OMNITRACE_CRITICAL_TRACE_NUM_THREADS",
-        "Number of threads to use when generating the critical trace",
-        std::min<uint64_t>(8, std::thread::hardware_concurrency()), "parallelism",
-        "critical_trace", "advanced");
 
     OMNITRACE_CONFIG_EXT_SETTING(
         int64_t, "OMNITRACE_CRITICAL_TRACE_PER_ROW",
@@ -689,6 +694,9 @@ configure_settings(bool _init)
 
     settings::suppress_config() = true;
 
+    if(!get_env("OMNITRACE_COLORIZED_LOG", _config->get<bool>("OMNITRACE_COLORIZED_LOG")))
+        tim::log::colorized() = false;
+
     if(_init)
     {
         using argparser_t = tim::argparse::argument_parser;
@@ -759,6 +767,7 @@ configure_mode_settings()
         set_default_setting_value("OMNITRACE_USE_CODE_COVERAGE", true);
         _set("OMNITRACE_USE_PERFETTO", false);
         _set("OMNITRACE_USE_TIMEMORY", false);
+        //_set("OMNITRACE_USE_CAUSAL", false);
         _set("OMNITRACE_USE_ROCM_SMI", false);
         _set("OMNITRACE_USE_ROCTRACER", false);
         _set("OMNITRACE_USE_ROCPROFILER", false);
@@ -815,6 +824,7 @@ configure_mode_settings()
     {
         _set("OMNITRACE_USE_PERFETTO", false);
         _set("OMNITRACE_USE_TIMEMORY", false);
+        //_set("OMNITRACE_USE_CAUSAL", false);
         _set("OMNITRACE_USE_ROCM_SMI", false);
         _set("OMNITRACE_USE_ROCTRACER", false);
         _set("OMNITRACE_USE_ROCPROFILER", false);
@@ -1141,7 +1151,6 @@ print_settings(
     _spacer << "#" << std::setw(tot_width + _spacer_extra) << ""
             << "#";
     _os << _spacer.str() << "\n";
-    // _os << "# api::omnitrace settings:" << std::setw(tot_width - 8) << "#" << "\n";
     for(const auto& itr : _data)
     {
         _os << ((_md) ? "| " : "# ");
@@ -1613,10 +1622,9 @@ get_critical_trace_update_freq()
 }
 
 uint64_t
-get_critical_trace_num_threads()
+get_thread_pool_size()
 {
-    static uint64_t _v =
-        get_config()->get<uint64_t>("OMNITRACE_CRITICAL_TRACE_NUM_THREADS");
+    static uint64_t _v = get_config()->get<uint64_t>("OMNITRACE_THREAD_POOL_SIZE");
     return _v;
 }
 

@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 #include "library/coverage.hpp"
-#include "library/api.hpp"
+#include "api.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/impl/coverage.hpp"

@@ -195,7 +195,7 @@ main(int argc, char** argv)
     };
 
     std::set<std::string> dyninst_defs = { "TypeChecking", "SaveFPR", "DelayedParsing",
-                                           "MergeTramp" };
+                                           "DebugParsing", "MergeTramp" };
 
     int _argc = argc;
     int _cmdc = 0;
@@ -1040,7 +1040,7 @@ main(int argc, char** argv)
     bpatch->setTypeChecking(true);
     bpatch->setSaveFPR(true);
     bpatch->setDelayedParsing(true);
-    bpatch->setDebugParsing(false);
+    bpatch->setDebugParsing(true);
     bpatch->setInstrStackFrames(false);
     bpatch->setLivenessAnalysis(false);
     bpatch->setBaseTrampDeletion(false);

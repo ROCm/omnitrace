@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 #include "library/runtime.hpp"
-#include "library/api.hpp"
+#include "api.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/defines.hpp"
@@ -32,6 +32,7 @@
 #include <timemory/backends/mpi.hpp>
 #include <timemory/backends/process.hpp>
 #include <timemory/backends/threading.hpp>
+#include <timemory/components/rusage/backends.hpp>
 #include <timemory/environment.hpp>
 #include <timemory/sampling/allocator.hpp>
 #include <timemory/settings.hpp>
@@ -66,6 +67,8 @@ get_cputime_signal()
 std::set<int>
 get_sampling_signals(int64_t _tid)
 {
+    if(!get_use_sampling()) return std::set<int>{};
+
     auto _sigreal = get_realtime_signal();
     auto _sigprof = get_cputime_signal();
 
@@ -168,7 +171,8 @@ get_cpu_cid_stack_lock(int64_t _tid)
 {
     struct cpu_cid_stack_s
     {};
-    return tim::type_mutex<cpu_cid_stack_s, api::omnitrace, max_supported_threads>(_tid);
+    return tim::type_mutex<cpu_cid_stack_s, project::omnitrace, max_supported_threads>(
+        _tid);
 }
 
 namespace
@@ -183,19 +187,24 @@ setup_gotchas()
     OMNITRACE_BASIC_DEBUG(
         "Configuring gotcha wrapper around fork, MPI_Init, and MPI_Init_thread\n");
 
-    mpi_gotcha::configure();
-    exit_gotcha::configure();
-    fork_gotcha::configure();
-    pthread_gotcha::configure();
+    component::mpi_gotcha::configure();
+    component::exit_gotcha::configure();
+    component::fork_gotcha::configure();
 }
 }  // namespace
 
 std::unique_ptr<main_bundle_t>&
 get_main_bundle()
 {
-    static auto _v =
-        std::make_unique<main_bundle_t>(JOIN('/', "omnitrace/process", process::get_id()),
-                                        quirk::config<quirk::auto_start>{});
+    static auto _v = []() {
+        auto _self = RUSAGE_SELF;
+        std::swap(_self, tim::get_rusage_type());
+        auto _tmp = std::make_unique<main_bundle_t>(
+            JOIN('/', "omnitrace/process", process::get_id()),
+            quirk::config<quirk::auto_start>{});
+        std::swap(_self, tim::get_rusage_type());
+        return _tmp;
+    }();
     return _v;
 }
 
@@ -239,12 +248,16 @@ set_thread_state(ThreadState _n)
 ThreadState
 push_thread_state(ThreadState _v)
 {
+    if(get_thread_state() >= ThreadState::Completed) return get_thread_state();
+
     return get_thread_state_history().emplace_back(set_thread_state(_v));
 }
 
 ThreadState
 pop_thread_state()
 {
+    if(get_thread_state() >= ThreadState::Completed) return get_thread_state();
+
     auto& _hist = get_thread_state_history();
     if(!_hist.empty())
     {
@@ -253,5 +266,4 @@ pop_thread_state()
     }
     return get_thread_state();
 }
-
 }  // namespace omnitrace

@@ -180,18 +180,6 @@ parse:
         PATHS: '*'
         PATH_SUFFIXES: '*'
         DOC: '*'
-    omnitrace_add_child_library:
-      flags:
-        - SHARED
-        - STATIC
-        - OBJECT
-        - MODULE
-        - EXCLUDE_FROM_ALL
-    omnitrace_target_sources:
-      kwargs:
-        PUBLIC: '*'
-        PRIVATE: '*'
-        INTERFACE: '*'
   override_spec: {}
   vartags: []
   proptags: []

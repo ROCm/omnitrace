@@ -53,38 +53,10 @@ target_link_libraries(
 add_library(omnitrace-object-library OBJECT)
 add_library(omnitrace::omnitrace-object-library ALIAS omnitrace-object-library)
 
-target_sources(omnitrace-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/library.cpp
-                                                ${CMAKE_CURRENT_LIST_DIR}/library.hpp)
-
-function(OMNITRACE_ADD_CHILD_LIBRARY _LIBRARY _TYPE)
-    add_library(${_LIBRARY} ${_TYPE})
-    add_library(omnitrace::${_LIBRARY} ALIAS ${_LIBRARY})
-
-    if(NOT "${ARGN}" STREQUAL "")
-        target_sources(${_LIBRARY} ${ARGN})
-    endif()
-
-    target_link_libraries(${_LIBRARY} PRIVATE omnitrace::omnitrace-interface-library)
-
-    if("${_TYPE}" STREQUAL "OBJECT")
-        target_sources(omnitrace-object-library
-                       PUBLIC $<BUILD_INTERFACE:$<TARGET_OBJECTS:${_LIBRARY}>>)
-    endif()
-
-    target_link_libraries(omnitrace-object-library
-                          PUBLIC $<BUILD_INTERFACE:omnitrace::${_LIBRARY}>)
-endfunction()
-
-function(OMNITRACE_TARGET_SOURCES _LIBRARY _MODE)
-    set(_MODE PUBLIC)
-    foreach(_FILE ${ARGN})
-        if("${_FILE}" MATCHES "^(PUBLIC|PRIVATE|INTERFACE)$" AND NOT EXISTS "${_FILE}")
-            set(_MODE ${_FILE})
-        else()
-            target_sources(${_LIBRARY} ${_MODE} $<BUILD_INTERFACE:${_FILE}>)
-        endif()
-    endforeach()
-endfunction()
+target_sources(
+    omnitrace-object-library
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/library.cpp ${CMAKE_CURRENT_LIST_DIR}/api.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/api.hpp)
 
 add_subdirectory(library)
 
