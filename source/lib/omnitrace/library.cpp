@@ -819,8 +819,11 @@ omnitrace_finalize_hidden(void)
     OMNITRACE_VERBOSE_F(1, "Shutting down thread-pools...\n");
     tasking::shutdown();
 
-    OMNITRACE_VERBOSE_F(1, "Post-processing the code coverage...\n");
-    if(get_use_code_coverage()) coverage::post_process();
+    if(get_use_code_coverage())
+    {
+        OMNITRACE_VERBOSE_F(1, "Post-processing the code coverage...\n");
+        coverage::post_process();
+    }
 
     bool _perfetto_output_error = false;
     if(get_use_perfetto() && !is_system_backend())
