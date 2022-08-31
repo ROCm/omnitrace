@@ -775,7 +775,7 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
         ENVIRONMENT
             "${_flat_environment};OMNITRACE_USE_SAMPLING=OFF;OMNITRACE_STRICT_CONFIG=OFF;OMNITRACE_USE_MPIP=ON"
         REWRITE_RUN_PASS_REGEX
-            ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> pthread_create(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall(.*\n.*)>>> pthread_join"
+            ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> pthread_create(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall"
         )
 
     omnitrace_add_test(
@@ -798,7 +798,7 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
             0
         ENVIRONMENT "${_flat_environment};OMNITRACE_USE_SAMPLING=OFF"
         REWRITE_RUN_PASS_REGEX
-            ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> pthread_create(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall(.*\n.*)>>> pthread_join"
+            ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> pthread_create(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall"
         )
 endif()
 
