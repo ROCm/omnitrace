@@ -127,11 +127,11 @@ thread_info::get(int64_t _tid, ThreadIdType _type)
 }
 
 void
-thread_info::set_start(uint64_t _ts)
+thread_info::set_start(uint64_t _ts, bool _force)
 {
     auto& _v = thread_info_data_t::instances().at(utility::get_thread_index());
     if(!_v) init();
-    if(_ts > 0 && (_v->lifetime.first == 0 || _ts < _v->lifetime.first))
+    if(_force || (_ts > 0 && (_v->lifetime.first == 0 || _ts < _v->lifetime.first)))
         _v->lifetime.first = _ts;
 }
 

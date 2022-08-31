@@ -60,7 +60,8 @@ void
 record_thread_start_time()
 {
     static thread_local std::once_flag _once{};
-    std::call_once(_once, []() { thread_info::set_start(comp::wall_clock::record()); });
+    std::call_once(_once,
+                   []() { thread_info::set_start(comp::wall_clock::record(), true); });
 }
 }  // namespace tracing
 }  // namespace omnitrace
