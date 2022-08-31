@@ -337,27 +337,26 @@ omnitrace_init_tooling_hidden()
         if(get_state() > State::Active) return;
         if(get_use_process_sampling())
         {
-            pthread_gotcha::push_enable_sampling_on_child_threads(false);
+            OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
             process_sampler::setup();
-            pthread_gotcha::pop_enable_sampling_on_child_threads();
         }
         if(get_use_sampling())
         {
-            pthread_gotcha::push_enable_sampling_on_child_threads(false);
+            OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
             sampling::setup();
-            pthread_gotcha::pop_enable_sampling_on_child_threads();
-            pthread_gotcha::push_enable_sampling_on_child_threads(get_use_sampling());
+        }
+        if(get_use_sampling())
+        {
+            push_enable_sampling_on_child_threads(get_use_sampling());
             sampling::unblock_signals();
         }
         get_main_bundle()->start();
         set_state(State::Active);  // set to active as very last operation
     } };
 
-    if(get_use_sampling())
-    {
-        pthread_gotcha::push_enable_sampling_on_child_threads(false);
-        sampling::block_signals();
-    }
+    OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
+
+    if(get_use_sampling()) sampling::block_signals();
 
     if(get_use_critical_trace())
     {
@@ -606,8 +605,8 @@ omnitrace_finalize_hidden(void)
 
     set_state(State::Finalized);
 
-    pthread_gotcha::push_enable_sampling_on_child_threads(false);
-    pthread_gotcha::set_sampling_on_all_future_threads(false);
+    push_enable_sampling_on_child_threads(false);
+    set_sampling_on_all_future_threads(false);
 
     auto _debug_init  = get_debug_finalize();
     auto _debug_value = get_debug();

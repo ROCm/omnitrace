@@ -26,7 +26,6 @@
 #include "library/components/backtrace_metrics.hpp"
 #include "library/components/backtrace_timestamp.hpp"
 #include "library/components/fwd.hpp"
-#include "library/components/pthread_gotcha.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/ptl.hpp"
@@ -230,10 +229,9 @@ start_duration_thread()
         OMNITRACE_VERBOSE(1, "Sampling will be disabled after %f seconds...\n",
                           config::get_sampling_duration());
 
-        pthread_gotcha::push_enable_sampling_on_child_threads(false);
+        OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
         get_duration_thread() = std::make_unique<std::thread>(_func);
-        pthread_gotcha::pop_enable_sampling_on_child_threads();
-        _protect = false;
+        _protect              = false;
     }
 }
 
@@ -246,10 +244,24 @@ configure(bool _setup, int64_t _tid = threading::get_id())
     bool        _is_running   = (!_running) ? false : *_running;
     auto&       _signal_types = sampling::get_signal_types(_tid);
 
-    pthread_gotcha::push_enable_sampling_on_child_threads(false);
-    auto _dtor = scope::destructor{ []() {
-        pthread_gotcha::pop_enable_sampling_on_child_threads();
-    } };
+    OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
+
+    auto&& _cpu_tids  = get_sampling_cpu_tids();
+    auto&& _real_tids = get_sampling_real_tids();
+
+    auto _erase_tid_signal = [_tid, &_signal_types](auto& _tids, int _signum) {
+        if(!_tids.empty())
+        {
+            if(_tids.count(_tid) == 0)
+            {
+                OMNITRACE_VERBOSE(3, "Disabling SIG%i from thread %li\n", _signum, _tid);
+                _signal_types->erase(_signum);
+            }
+        }
+    };
+
+    _erase_tid_signal(_cpu_tids, get_cputime_signal());
+    _erase_tid_signal(_real_tids, get_realtime_signal());
 
     if(_setup && !_sampler && !_is_running && !_signal_types->empty())
     {
@@ -623,17 +635,8 @@ post_process_perfetto(int64_t _tid, const bundle_t* _init,
         }
     };
 
-    if(_tid == 0 && config::get_mode() == Mode::Sampling &&
-       config::get_perfetto_fill_policy() == "discard")
-    {
-        _process_perfetto(_data);
-    }
-    else
-    {
-        pthread_gotcha::push_enable_sampling_on_child_threads(false);
-        std::thread{ _process_perfetto_wrapper }.join();
-        pthread_gotcha::pop_enable_sampling_on_child_threads();
-    }
+    OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
+    std::thread{ _process_perfetto_wrapper }.join();
 }
 
 void

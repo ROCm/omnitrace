@@ -21,7 +21,6 @@
 // SOFTWARE.
 
 #include "library/process_sampler.hpp"
-#include "library/components/pthread_gotcha.hpp"
 #include "library/config.hpp"
 #include "library/cpu_freq.hpp"
 #include "library/debug.hpp"
@@ -172,12 +171,12 @@ sampler::setup()
     auto      _fut   = _prom.get_future();
     polling_finished = std::make_unique<promise_t>();
 
+    OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
+
     set_state(State::PreInit);
-    pthread_gotcha::push_enable_sampling_on_child_threads(false);
     get_thread() = std::make_unique<std::thread>(&poll<msec_t>, &get_sampler_state(),
                                                  msec_t{ _msec_freq }, &_prom);
     _fut.wait();
-    pthread_gotcha::pop_enable_sampling_on_child_threads();
 
     set_state(State::Active);
 }

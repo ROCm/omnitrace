@@ -304,6 +304,12 @@ get_sampling_duration();
 std::string
 get_sampling_cpus();
 
+std::set<int64_t>
+get_sampling_cpu_tids();
+
+std::set<int64_t>
+get_sampling_real_tids();
+
 double
 get_process_sampling_freq();
 
