@@ -298,11 +298,17 @@ get_sampling_cpu_delay();
 double
 get_sampling_real_delay();
 
+double
+get_sampling_duration();
+
 std::string
 get_sampling_cpus();
 
 double
 get_process_sampling_freq();
+
+double
+get_process_sampling_duration();
 
 std::string
 get_sampling_gpus();

@@ -334,11 +334,20 @@ configure_settings(bool _init)
         "delivered. Defaults to OMNITRACE_SAMPLING_DELAY when <= 0.0",
         -1.0, "sampling", "advanced");
 
+    OMNITRACE_CONFIG_SETTING(double, "OMNITRACE_SAMPLING_DURATION",
+                             "If > 0.0, time (in seconds) to sample before stopping", 0.0,
+                             "sampling", "process_sampling");
+
     OMNITRACE_CONFIG_SETTING(
         double, "OMNITRACE_PROCESS_SAMPLING_FREQ",
         "Number of measurements per second when OMNITTRACE_USE_PROCESS_SAMPLING=ON. If "
         "set to zero, uses OMNITRACE_SAMPLING_FREQ value",
         0.0, "process_sampling");
+
+    OMNITRACE_CONFIG_SETTING(double, "OMNITRACE_PROCESS_SAMPLING_DURATION",
+                             "If > 0.0, time (in seconds) to sample before stopping. If "
+                             "less than zero, uses OMNITRACE_SAMPLING_DURATION",
+                             -1.0, "sampling", "process_sampling");
 
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_SAMPLING_CPUS",
@@ -480,7 +489,7 @@ configure_settings(bool _init)
 
     OMNITRACE_CONFIG_SETTING(size_t, "OMNITRACE_PERFETTO_BUFFER_SIZE_KB",
                              "Size of perfetto buffer (in KB)", size_t{ 1024000 },
-                             "perfetto", "data", "advanced");
+                             "perfetto", "data");
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_PERFETTO_COMBINE_TRACES",
                              "Combine Perfetto traces. If not explicitly set, it will "
@@ -695,9 +704,13 @@ configure_settings(bool _init)
         tim::delimit(_config->get<std::string>("OMNITRACE_CONFIG_FILE"), ";:"))
     {
         if(_config->get_suppress_config()) continue;
+
         OMNITRACE_BASIC_VERBOSE(1, "Reading config file %s\n", itr.c_str());
         _config->read(itr);
-        if(_config->get<bool>("OMNITRACE_CI") && _main_proc)
+
+        if(_main_proc &&
+           ((_config->get<bool>("OMNITRACE_CI") && settings::verbose() >= 0) ||
+            settings::verbose() >= 1 || settings::debug()))
         {
             std::ifstream     _in{ itr };
             std::stringstream _iss{};
@@ -709,7 +722,7 @@ configure_settings(bool _init)
             }
             if(!_iss.str().empty())
             {
-                OMNITRACE_BASIC_PRINT("config file '%s':\n%s\n", itr.c_str(),
+                OMNITRACE_BASIC_PRINT("config file '%s':\n%s", itr.c_str(),
                                       _iss.str().c_str());
             }
         }
@@ -1753,6 +1766,13 @@ get_sampling_real_delay()
     return _val;
 }
 
+double
+get_sampling_duration()
+{
+    static auto _v = get_config()->find("OMNITRACE_SAMPLING_DURATION");
+    return static_cast<tim::tsettings<double>&>(*_v->second).get();
+}
+
 std::string
 get_sampling_cpus()
 {
@@ -1775,6 +1795,13 @@ get_process_sampling_freq()
         std::min<double>(static_cast<tim::tsettings<double>&>(*_v->second).get(), 1000.0);
     if(_val < 1.0e-9) return get_sampling_freq();
     return _val;
+}
+
+double
+get_process_sampling_duration()
+{
+    static auto _v = get_config()->find("OMNITRACE_PROCESS_SAMPLING_DURATION");
+    return static_cast<tim::tsettings<double>&>(*_v->second).get();
 }
 
 std::string

@@ -60,6 +60,8 @@
 #include <timemory/variadic.hpp>
 
 #include <array>
+#include <chrono>
+#include <condition_variable>
 #include <cstring>
 #include <ctime>
 #include <initializer_list>
@@ -161,6 +163,80 @@ get_sampler_running(int64_t _tid)
     return _v.at(_tid);
 }
 
+auto&
+get_duration_cv()
+{
+    static auto _v = std::condition_variable{};
+    return _v;
+}
+
+auto&
+get_duration_thread()
+{
+    static auto _v = std::unique_ptr<std::thread>{};
+    return _v;
+}
+
+void
+start_duration_thread()
+{
+    static std::mutex            _start_mutex{};
+    std::unique_lock<std::mutex> _start_lk{ _start_mutex, std::defer_lock };
+    if(!_start_lk.owns_lock()) _start_lk.lock();
+
+    if(!get_duration_thread() && config::get_sampling_duration() > 0.0)
+    {
+        // we may need to protect against recursion bc of pthread wrapper
+        static bool _protect = false;
+        if(_protect) return;
+        _protect   = true;
+        auto _now  = std::chrono::steady_clock::now();
+        auto _end  = _now + std::chrono::nanoseconds{ static_cast<uint64_t>(
+                               config::get_sampling_duration() * units::sec) };
+        auto _func = [_end]() {
+            thread_info::init(true);
+            std::mutex _mutex{};
+            bool       _wait = true;
+            while(_wait)
+            {
+                _wait = false;
+                std::unique_lock<std::mutex> _lk{ _mutex };
+                get_duration_cv().wait_until(_lk, _end);
+                auto _premature = (std::chrono::steady_clock::now() < _end);
+                auto _finalized = (get_state() == State::Finalized);
+                if(_premature && !_finalized)
+                {
+                    // protect against spurious wakeups
+                    OMNITRACE_VERBOSE(
+                        2, "%sSpurious wakeup of sampling duration thread...\n",
+                        tim::log::color::warning());
+                    _wait = true;
+                }
+                else if(_finalized)
+                {
+                    break;
+                }
+                else
+                {
+                    OMNITRACE_VERBOSE(1,
+                                      "Sampling duration of %f seconds has elapsed. "
+                                      "Shutting down sampling...\n",
+                                      config::get_sampling_duration());
+                    shutdown();
+                }
+            }
+        };
+
+        OMNITRACE_VERBOSE(1, "Sampling will be disabled after %f seconds...\n",
+                          config::get_sampling_duration());
+
+        pthread_gotcha::push_enable_sampling_on_child_threads(false);
+        get_duration_thread() = std::make_unique<std::thread>(_func);
+        pthread_gotcha::pop_enable_sampling_on_child_threads();
+        _protect = false;
+    }
+}
+
 std::set<int>
 configure(bool _setup, int64_t _tid = threading::get_id())
 {
@@ -253,6 +329,7 @@ configure(bool _setup, int64_t _tid = threading::get_id())
 
         *_running = true;
         sampling::get_sampler_init(_tid)->sample();
+        start_duration_thread();
         _sampler->start();
     }
     else if(!_setup && _sampler && _is_running)
@@ -265,6 +342,7 @@ configure(bool _setup, int64_t _tid = threading::get_id())
             sampling::block_signals(*_signal_types);
         }
 
+        get_duration_cv().notify_one();
         if(_tid == 0)
         {
             // this propagates to all threads
@@ -277,6 +355,12 @@ configure(bool _setup, int64_t _tid = threading::get_id())
                     sampling::get_sampler(i)->reset();
                     *get_sampler_running(i) = false;
                 }
+            }
+
+            if(get_duration_thread())
+            {
+                get_duration_thread()->join();
+                get_duration_thread().reset();
             }
         }
 
@@ -363,8 +447,8 @@ post_process()
     for(size_t i = 0; i < max_supported_threads; ++i)
         backtrace_metrics::configure(false, i);
 
-    OMNITRACE_VERBOSE(1 || get_debug_sampling(), "Post-processing sampling data...\n");
-
+    size_t _total_data    = 0;
+    size_t _total_threads = 0;
     for(size_t i = 0; i < max_supported_threads; ++i)
     {
         auto& _sampler = get_sampler(i);
@@ -398,7 +482,7 @@ post_process()
         _sampler->stop();
         auto& _raw_data = _sampler->get_data();
 
-        OMNITRACE_VERBOSE(0 || get_debug_sampling(),
+        OMNITRACE_VERBOSE(2 || get_debug_sampling(),
                           "Sampler data for thread %lu has %zu initial entries...\n", i,
                           _raw_data.size());
 
@@ -430,23 +514,27 @@ post_process()
             continue;
         }
 
-        OMNITRACE_VERBOSE(0 || get_debug_sampling(),
+        OMNITRACE_VERBOSE(2 || get_debug_sampling(),
                           "Sampler data for thread %lu has %zu valid entries...\n", i,
                           _raw_data.size());
+
+        _total_data += _raw_data.size();
+        _total_threads += 1;
 
         if(get_use_perfetto()) post_process_perfetto(i, _init, _data);
         if(get_use_timemory()) post_process_timemory(i, _init, _data);
     }
 
-    OMNITRACE_VERBOSE(0 || get_debug_sampling(),
-                      "Post-processing sampling entries completed\n");
+    OMNITRACE_VERBOSE(3 || get_debug_sampling(), "Destroying samplers...\n");
 
     for(size_t i = 0; i < max_supported_threads; ++i)
     {
         get_sampler(i).reset();
     }
 
-    OMNITRACE_VERBOSE(0 || get_debug_sampling(), "Post-processing samplers destroyed\n");
+    OMNITRACE_VERBOSE(1 || get_debug_sampling(),
+                      "Collected %zu samples from %zu threads...\n", _total_data,
+                      _total_threads);
 }
 
 namespace
