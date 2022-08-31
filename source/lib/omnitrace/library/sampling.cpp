@@ -198,7 +198,6 @@ configure(bool _setup, int64_t _tid = threading::get_id())
         auto _delay     = std::max<double>(1.0e-3, get_sampling_delay());
         auto _verbose   = std::min<int>(get_verbose() - 2, 2);
         if(get_debug_sampling()) _verbose = 2;
-        if(!get_use_sampling_realtime()) _alrm_freq = std::min<double>(_alrm_freq, 50.0);
 
         OMNITRACE_DEBUG("Configuring sampler for thread %lu...\n", _tid);
         sampling::sampler_instances::construct("omnitrace", _tid, _verbose);

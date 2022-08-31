@@ -64,22 +64,12 @@ get_cputime_signal()
     return SIGPROF;
 }
 
-std::set<int>
-get_sampling_signals(int64_t _tid)
+std::set<int> get_sampling_signals(int64_t)
 {
     if(!get_use_sampling()) return std::set<int>{};
 
     auto _sigreal = get_realtime_signal();
     auto _sigprof = get_cputime_signal();
-
-    // on the main thread, typically use both real-time and cpu-time
-    // on secondary threads, typically use only cpu-time.
-
-    if(_tid < 1)
-    {
-        if(config::get_use_sampling_cputime()) return std::set<int>{ _sigreal, _sigprof };
-        return std::set<int>{ _sigreal };
-    }
 
     if(config::get_use_sampling_realtime() && config::get_use_sampling_cputime())
         return std::set<int>{ _sigreal, _sigprof };
