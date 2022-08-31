@@ -40,6 +40,7 @@
 #include "library/ptl.hpp"
 #include "library/rcclp.hpp"
 #include "library/rocprofiler.hpp"
+#include "library/runtime.hpp"
 #include "library/sampling.hpp"
 #include "library/thread_data.hpp"
 #include "library/thread_info.hpp"
@@ -48,6 +49,7 @@
 
 #include <timemory/hash/types.hpp>
 #include <timemory/operations/types/file_output_message.hpp>
+#include <timemory/sampling/signals.hpp>
 #include <timemory/utility/backtrace.hpp>
 #include <timemory/utility/procfs/maps.hpp>
 
@@ -582,6 +584,9 @@ omnitrace_finalize_hidden(void)
     OMNITRACE_VERBOSE_F(0, "finalizing...\n");
     thread_info::set_stop(comp::wall_clock::record());
 
+    tim::sampling::block_signals(get_sampling_signals(),
+                                 tim::sampling::sigmask_scope::process);
+
     // some functions called during finalization may alter the push/pop count so we need
     // to save them here
     auto _push_count = tracing::push_count().load();
@@ -686,13 +691,6 @@ omnitrace_finalize_hidden(void)
         }
     }
 
-    if(get_use_sampling())
-    {
-        OMNITRACE_VERBOSE_F(1, "Shutting down sampling...\n");
-        sampling::shutdown();
-        sampling::block_signals();
-    }
-
     // stop the gotcha bundle
     if(get_gotcha_bundle())
     {
@@ -726,7 +724,11 @@ omnitrace_finalize_hidden(void)
         rocprofiler::rocm_cleanup();
     }
 
-    if(dmp::rank() == 0) fprintf(stderr, "\n");
+    if(get_use_sampling())
+    {
+        OMNITRACE_VERBOSE_F(1, "Shutting down sampling...\n");
+        sampling::shutdown();
+    }
 
     OMNITRACE_VERBOSE_F(3, "Reporting the process- and thread-level metrics...\n");
     // report the high-level metrics for the process

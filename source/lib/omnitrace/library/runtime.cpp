@@ -66,8 +66,6 @@ get_cputime_signal()
 
 std::set<int> get_sampling_signals(int64_t)
 {
-    if(!get_use_sampling()) return std::set<int>{};
-
     auto _sigreal = get_realtime_signal();
     auto _sigprof = get_cputime_signal();
 
