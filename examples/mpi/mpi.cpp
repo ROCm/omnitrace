@@ -325,17 +325,23 @@ main(int argc, char** argv)
     int _mpi_thread_provided;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &_mpi_thread_provided);
 
-    auto _prom = std::promise<void>{};
+    auto _prom = std::promise<volatile bool>{};
     auto _fut  = _prom.get_future();
 
     std::thread _thr{ [&]() {
         run_main(argc, argv);
-        _prom.set_value();
+        _prom.set_value(true);
     } };
 
+    volatile int _ec = EXIT_SUCCESS;
+
     _fut.wait();
-    _thr.join();
+    volatile auto _success = _fut.get();
+    if(_success)
+        _thr.join();
+    else
+        _ec = EXIT_FAILURE;
 
     MPI_Finalize();
-    return EXIT_SUCCESS;
+    return _ec;
 }
