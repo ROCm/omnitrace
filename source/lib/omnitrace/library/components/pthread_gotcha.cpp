@@ -32,12 +32,35 @@
 #include "library/utility.hpp"
 
 #include <timemory/backends/threading.hpp>
+#include <timemory/utility/macros.hpp>
 #include <timemory/utility/types.hpp>
 
 #include <pthread.h>
 
 #include <array>
 #include <vector>
+
+namespace tim
+{
+namespace operation
+{
+template <>
+struct stop<omnitrace::component::pthread_create_gotcha_t>
+{
+    using type = omnitrace::component::pthread_create_gotcha_t;
+
+    TIMEMORY_DEFAULT_OBJECT(stop)
+
+    template <typename... Args>
+    explicit stop(type&, Args&&...)
+    {}
+
+    template <typename... Args>
+    void operator()(type&, Args&&...)
+    {}
+};
+}  // namespace operation
+}  // namespace tim
 
 namespace omnitrace
 {
@@ -84,7 +107,7 @@ pthread_gotcha::shutdown()
     if(is_configured)
     {
         ::omnitrace::component::pthread_mutex_gotcha::shutdown();
-        ::omnitrace::component::pthread_create_gotcha::shutdown();
+        // ::omnitrace::component::pthread_create_gotcha::shutdown();
         is_configured = false;
     }
 }
@@ -145,7 +168,5 @@ void
 pthread_gotcha::stop()
 {
     get_bundle()->stop();
-    get_bundle().reset();
-    shutdown();
 }
 }  // namespace omnitrace
