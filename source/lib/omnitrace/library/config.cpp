@@ -305,11 +305,34 @@ configure_settings(bool _init)
         "Number of software interrupts per second when OMNITTRACE_USE_SAMPLING=ON", 10.0,
         "sampling", "process_sampling");
 
+    OMNITRACE_CONFIG_SETTING(double, "OMNITRACE_SAMPLING_CPUTIME_FREQ",
+                             "Number of software interrupts per second of CPU-time. "
+                             "Defaults to OMNITRACE_SAMPLING_FREQ when <= 0.0",
+                             -1.0, "sampling", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(
+        double, "OMNITRACE_SAMPLING_REALTIME_FREQ",
+        "Number of software interrupts per second of real (wall) time. "
+        "Defaults to OMNITRACE_SAMPLING_FREQ when <= 0.0",
+        -1.0, "sampling", "advanced");
+
     OMNITRACE_CONFIG_SETTING(
         double, "OMNITRACE_SAMPLING_DELAY",
         "Time (in seconds) to wait before the first sampling signal is delivered, "
         "increasing this value can fix deadlocks during init",
         0.5, "sampling", "process_sampling");
+
+    OMNITRACE_CONFIG_SETTING(double, "OMNITRACE_SAMPLING_CPUTIME_DELAY",
+                             "Time (in seconds) to wait before the first CPU-time "
+                             "sampling signal is delivered. "
+                             "Defaults to OMNITRACE_SAMPLING_DELAY when <= 0.0",
+                             -1.0, "sampling", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(
+        double, "OMNITRACE_SAMPLING_REALTIME_DELAY",
+        "Time (in seconds) to wait before the first real (wall) time sampling signal is "
+        "delivered. Defaults to OMNITRACE_SAMPLING_DELAY when <= 0.0",
+        -1.0, "sampling", "advanced");
 
     OMNITRACE_CONFIG_SETTING(
         double, "OMNITRACE_PROCESS_SAMPLING_FREQ",
@@ -388,7 +411,7 @@ configure_settings(bool _init)
                              "CPU time used by the current process, "
                              "and CPU time expended on behalf of the process by the "
                              "system. This is recommended.",
-                             true, "timemory", "sampling", "advanced");
+                             true, "sampling", "advanced");
 
     auto _sigrt_range = SIGRTMAX - SIGRTMIN;
 
@@ -1687,11 +1710,47 @@ get_sampling_freq()
     return static_cast<tim::tsettings<double>&>(*_v->second).get();
 }
 
-double&
+double
+get_sampling_cpu_freq()
+{
+    static auto _v   = get_config()->find("OMNITRACE_SAMPLING_CPUTIME_FREQ");
+    auto&       _val = static_cast<tim::tsettings<double>&>(*_v->second).get();
+    if(_val <= 0.0) _val = get_sampling_freq();
+    return _val;
+}
+
+double
+get_sampling_real_freq()
+{
+    static auto _v   = get_config()->find("OMNITRACE_SAMPLING_REALTIME_FREQ");
+    auto&       _val = static_cast<tim::tsettings<double>&>(*_v->second).get();
+    if(_val <= 0.0) _val = get_sampling_freq();
+    return _val;
+}
+
+double
 get_sampling_delay()
 {
     static auto _v = get_config()->find("OMNITRACE_SAMPLING_DELAY");
     return static_cast<tim::tsettings<double>&>(*_v->second).get();
+}
+
+double
+get_sampling_cpu_delay()
+{
+    static auto _v   = get_config()->find("OMNITRACE_SAMPLING_CPUTIME_DELAY");
+    auto&       _val = static_cast<tim::tsettings<double>&>(*_v->second).get();
+    if(_val <= 0.0) _val = get_sampling_delay();
+    return _val;
+}
+
+double
+get_sampling_real_delay()
+{
+    static auto _v   = get_config()->find("OMNITRACE_SAMPLING_REALTIME_DELAY");
+    auto&       _val = static_cast<tim::tsettings<double>&>(*_v->second).get();
+    if(_val <= 0.0) _val = get_sampling_delay();
+    return _val;
 }
 
 std::string

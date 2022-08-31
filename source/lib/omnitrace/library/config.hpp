@@ -283,8 +283,20 @@ get_instrumentation_interval();
 double
 get_sampling_freq();
 
-double&
+double
+get_sampling_cpu_freq();
+
+double
+get_sampling_real_freq();
+
+double
 get_sampling_delay();
+
+double
+get_sampling_cpu_delay();
+
+double
+get_sampling_real_delay();
 
 std::string
 get_sampling_cpus();

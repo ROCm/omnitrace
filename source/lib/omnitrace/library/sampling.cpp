@@ -192,11 +192,10 @@ configure(bool _setup, int64_t _tid = threading::get_id())
         if(trait::runtime_enabled<backtrace_metrics>::get())
             backtrace_metrics::configure(_setup, _tid);
 
+        // NOTE: signals need to be unblocked by calling function
         sampling::block_signals(*_signal_types);
-        auto _alrm_freq = get_sampling_freq();
-        auto _prof_freq = get_sampling_freq();
-        auto _delay     = std::max<double>(1.0e-3, get_sampling_delay());
-        auto _verbose   = std::min<int>(get_verbose() - 2, 2);
+
+        auto _verbose = std::min<int>(get_verbose() - 2, 2);
         if(get_debug_sampling()) _verbose = 2;
 
         OMNITRACE_DEBUG("Configuring sampler for thread %lu...\n", _tid);
@@ -208,14 +207,16 @@ configure(bool _setup, int64_t _tid = threading::get_id())
         if(_signal_types->count(get_realtime_signal()) > 0)
         {
             _sampler->configure(timer{ get_realtime_signal(), CLOCK_REALTIME,
-                                       SIGEV_THREAD_ID, _alrm_freq, _delay, _tid,
+                                       SIGEV_THREAD_ID, get_sampling_real_freq(),
+                                       get_sampling_real_delay(), _tid,
                                        threading::get_sys_tid() });
         }
 
         if(_signal_types->count(get_cputime_signal()) > 0)
         {
             _sampler->configure(timer{ get_cputime_signal(), CLOCK_THREAD_CPUTIME_ID,
-                                       SIGEV_THREAD_ID, _prof_freq, _delay, _tid,
+                                       SIGEV_THREAD_ID, get_sampling_cpu_freq(),
+                                       get_sampling_cpu_delay(), _tid,
                                        threading::get_sys_tid() });
         }
 
