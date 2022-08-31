@@ -749,7 +749,7 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
             args
             --min-instructions
             0
-        ENVIRONMENT "${_base_environment};GOTCHA_DEBUG=0"
+        ENVIRONMENT "${_base_environment}"
         REWRITE_RUN_PASS_REGEX
             "(/[A-Za-z-]+/perfetto-trace-0.proto).*(/[A-Za-z-]+/wall_clock-0.txt')"
         REWRITE_RUN_FAIL_REGEX "-[0-9][0-9]+.(json|txt|proto)")
@@ -775,7 +775,7 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
         ENVIRONMENT
             "${_flat_environment};OMNITRACE_USE_SAMPLING=OFF;OMNITRACE_STRICT_CONFIG=OFF;OMNITRACE_USE_MPIP=ON"
         REWRITE_RUN_PASS_REGEX
-            ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall(.*\n.*)>>> pthread_join"
+            ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> pthread_create(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall(.*\n.*)>>> pthread_join"
         )
 
     omnitrace_add_test(
@@ -798,7 +798,7 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
             0
         ENVIRONMENT "${_flat_environment};OMNITRACE_USE_SAMPLING=OFF"
         REWRITE_RUN_PASS_REGEX
-            ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall(.*\n.*)>>> pthread_join"
+            ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> pthread_create(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall(.*\n.*)>>> pthread_join"
         )
 endif()
 
