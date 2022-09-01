@@ -95,9 +95,10 @@ struct thread_info
     static const std::optional<thread_info>& get();
     static const std::optional<thread_info>& get(int64_t _tid, ThreadIdType _type);
 
-    bool            is_offset  = false;
-    index_data_t    index_data = {};
-    lifetime_data_t lifetime   = { 0, 0 };
+    bool            is_offset    = false;
+    const int64_t*  causal_count = nullptr;
+    index_data_t    index_data   = {};
+    lifetime_data_t lifetime     = { 0, 0 };
 
     friend std::ostream& operator<<(std::ostream& _os, const thread_info& _v)
     {

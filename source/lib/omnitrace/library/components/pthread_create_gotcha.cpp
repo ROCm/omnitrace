@@ -158,14 +158,14 @@ pthread_create_gotcha::wrapper::operator()() const
 
     push_thread_state(ThreadState::Internal);
 
-    int64_t _tid         = -1;
-    void*   _ret         = nullptr;
-    auto    _is_sampling = false;
-    auto    _bundle      = std::shared_ptr<bundle_t>{};
-    auto    _signals     = std::set<int>{};
-    auto    _coverage    = (get_mode() == Mode::Coverage);
-    const auto& _parent_info = thread_info::get(m_parent_tid, InternalTID);
-    auto _dtor = [&]() {
+    int64_t     _tid         = -1;
+    void*       _ret         = nullptr;
+    auto        _is_sampling = false;
+    auto        _bundle      = std::shared_ptr<bundle_t>{};
+    auto        _signals     = std::set<int>{};
+    auto        _coverage    = (get_mode() == Mode::Coverage);
+    const auto& _parent_info = thread_info::get(m_parent_tid, LookupTID);
+    auto        _dtor        = [&]() {
         set_thread_state(ThreadState::Internal);
         if(_is_sampling)
         {

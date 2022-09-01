@@ -212,6 +212,7 @@ thread_info::as_string() const
     if(index_data)
         _ss << ", index_data=(" << index_data->internal_value << ", "
             << index_data->system_value << ", " << index_data->sequent_value << ")";
+    if(causal_count) _ss << ", causal count=" << *causal_count;
     _ss << ", lifetime=(" << lifetime.first << ":" << lifetime.second << ")";
     return _ss.str();
 }

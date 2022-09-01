@@ -42,6 +42,9 @@ namespace tim
 {
 namespace quirk
 {
+struct causal : concepts::quirk_type
+{};
+
 struct perfetto : concepts::quirk_type
 {};
 
@@ -235,8 +238,7 @@ category_region<CategoryT>::stop(std::string_view name, Args&&... args)
 
         if constexpr(_ct_use_causal)
         {
-            if(get_use_causal())
-                causal::pop_progress_stack();
+            if(get_use_causal()) causal::pop_progress_stack();
         }
 
         if constexpr(tim::is_one_of<CategoryT, tim::type_list<category::host>>::value)
