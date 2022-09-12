@@ -108,11 +108,9 @@ numa_gotcha::audit(const gotcha_data& _data, audit::incoming, void* start,
                    unsigned long len, int mode, const unsigned long* nmask,
                    unsigned long maxnode, unsigned flags)
 {
-    category_region<category::numa>::start(
-        std::string_view{ _data.tool_id }, "args",
-        JOIN(", ", JOIN('=', "start", start), JOIN('=', "len", len),
-             JOIN('=', "mode", mode), JOIN('=', "nmask", nmask),
-             JOIN('=', "maxnode", maxnode), JOIN('=', "flags", flags)));
+    category_region<category::numa>::start(std::string_view{ _data.tool_id }, "start",
+                                           start, "len", len, "mode", mode, "nmask",
+                                           nmask, "maxnode", maxnode, "flags", flags);
 }
 
 void
@@ -120,10 +118,9 @@ numa_gotcha::audit(const gotcha_data& _data, audit::incoming, int pid,
                    unsigned long maxnode, const unsigned long* frommask,
                    const unsigned long* tomask)
 {
-    category_region<category::numa>::start(
-        std::string_view{ _data.tool_id }, "args",
-        JOIN(", ", JOIN('=', "pid", pid), JOIN('=', "maxnode", maxnode),
-             JOIN('=', "frommask", frommask), JOIN('=', "tomask", tomask)));
+    category_region<category::numa>::start(std::string_view{ _data.tool_id }, "pid", pid,
+                                           "maxnode", maxnode, "frommask", frommask,
+                                           "tomask", tomask);
 }
 
 void
@@ -131,74 +128,69 @@ numa_gotcha::audit(const gotcha_data& _data, audit::incoming, int pid,
                    unsigned long count, void** pages, const int* nodes, int* status,
                    int flags)
 {
-    category_region<category::numa>::start(
-        std::string_view{ _data.tool_id }, "args",
-        JOIN(", ", JOIN('=', "pid", pid), JOIN('=', "count", count),
-             JOIN('=', "pages", pages), JOIN('=', "nodes", nodes),
-             JOIN('=', "status", status), JOIN('=', "flags", flags)));
+    category_region<category::numa>::start(std::string_view{ _data.tool_id }, "pid", pid,
+                                           "count", count, "pages", pages, "nodes", nodes,
+                                           "status", status, "flags", flags);
 }
 
 void
 numa_gotcha::audit(const gotcha_data& _data, audit::incoming, int pid,
                    struct bitmask* from, struct bitmask* to)
 {
-    category_region<category::numa>::start(
-        std::string_view{ _data.tool_id }, "args",
-        JOIN(", ", JOIN('=', "pid", pid), JOIN('=', "from", from), JOIN('=', "to", to)));
+    category_region<category::numa>::start(std::string_view{ _data.tool_id }, "pid", pid,
+                                           "from", JOIN("", from).c_str(), "to",
+                                           JOIN("", to).c_str());
 }
 
 void
 numa_gotcha::audit(const gotcha_data& _data, audit::incoming, size_t _size)
 {
-    category_region<category::numa>::start(std::string_view{ _data.tool_id }, "args",
-                                           JOIN(", ", JOIN('=', "size", _size)));
+    category_region<category::numa>::start(std::string_view{ _data.tool_id }, "size",
+                                           _size);
 }
 
 void
 numa_gotcha::audit(const gotcha_data& _data, audit::incoming, size_t _size, int _node)
 {
-    category_region<category::numa>::start(
-        std::string_view{ _data.tool_id }, "args",
-        JOIN(", ", JOIN('=', "size", _size), JOIN('=', "node", _node)));
+    category_region<category::numa>::start(std::string_view{ _data.tool_id }, "size",
+                                           _size, "node", _node);
 }
 
 void
 numa_gotcha::audit(const gotcha_data& _data, audit::incoming, void* _addr, size_t _size)
 {
-    category_region<category::numa>::start(
-        std::string_view{ _data.tool_id }, "args",
-        JOIN(", ", JOIN('=', "address", _addr), JOIN('=', "size", _size)));
+    category_region<category::numa>::start(std::string_view{ _data.tool_id }, "address",
+                                           _addr, "size", _size);
 }
 
 void
 numa_gotcha::audit(const gotcha_data& _data, audit::incoming, void* _old_addr,
                    size_t _old_size, size_t _new_size)
 {
-    category_region<category::numa>::start(std::string_view{ _data.tool_id }, "args",
-                                           JOIN(", ", JOIN('=', "old_address", _old_addr),
-                                                JOIN('=', "old_size", _old_size),
-                                                JOIN('=', "new_size", _new_size)));
+    category_region<category::numa>::start(std::string_view{ _data.tool_id },
+                                           "old_address", _old_addr, "old_size",
+                                           _old_size, "new_size", _new_size);
 }
 
 void
 numa_gotcha::audit(const gotcha_data& _data, audit::outgoing, int ret)
 {
     category_region<category::numa>::stop(std::string_view{ _data.tool_id }, "return",
-                                          JOIN("", ret));
+                                          ret);
 }
 
 void
 numa_gotcha::audit(const gotcha_data& _data, audit::outgoing, long ret)
 {
     category_region<category::numa>::stop(std::string_view{ _data.tool_id }, "return",
-                                          JOIN("", ret));
+                                          ret);
 }
 
 void
 numa_gotcha::audit(const gotcha_data& _data, audit::outgoing, void* ret)
 {
     category_region<category::numa>::stop(std::string_view{ _data.tool_id }, "return",
-                                          JOIN("", ret));
+                                          ret);
 }
 }  // namespace component
 }  // namespace omnitrace
