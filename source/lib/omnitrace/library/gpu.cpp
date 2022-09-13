@@ -22,6 +22,9 @@
 
 #include "library/gpu.hpp"
 #include "library/debug.hpp"
+#include "library/defines.hpp"
+
+#include <timemory/manager.hpp>
 
 #if defined(OMNITRACE_USE_ROCM_SMI) && OMNITRACE_USE_ROCM_SMI > 0
 #    include "library/rocm_smi.hpp"
