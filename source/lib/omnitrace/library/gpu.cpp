@@ -209,13 +209,14 @@ add_hip_device_metadata(ArchiveT& ar)
 void
 add_hip_device_metadata()
 {
+    if(device_count() == 0) return;
+
     OMNITRACE_METADATA([](auto& ar) {
         try
         {
             add_hip_device_metadata(ar);
         } catch(std::runtime_error& _e)
         {
-            OMNITRACE_CI_THROW(true, "%s", _e.what());
             OMNITRACE_VERBOSE(2, "%s\n", _e.what());
         }
     });
