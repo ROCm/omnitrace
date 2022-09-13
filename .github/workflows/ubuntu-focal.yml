@@ -429,6 +429,13 @@ jobs:
         python3 -m pip install perfetto &&
         python3 -m pip install 'cmake==3.16.3'
 
+    - name: Test Environment Modules
+      timeout-minutes: 15
+      run: |
+        set -v
+        source /usr/share/modules/init/$(basename ${SHELL})
+        module avail
+
     - name: Configure Env
       run:
         echo "CC=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')" >> $GITHUB_ENV &&
@@ -461,6 +468,21 @@ jobs:
           -DDYNINST_ELFUTILS_DOWNLOAD_VERSION=${{ env.ELFUTILS_DOWNLOAD_VERSION }}
           -DOMNITRACE_MAX_THREADS=32
 
+    - name: Test Build-Tree Env
+      timeout-minutes: 60
+      run:
+        source /usr/share/modules/init/$(basename ${SHELL})
+        module use ${{ github.workspace }}/build/share/modulefiles
+        module avail
+        module load omnitrace
+        module list
+        env
+        module unload omnitrace
+        module list
+        env
+        source ${{ github.workspace }}/build/share/omnitrace/setup-env.sh
+        env
+
     - name: Build
       timeout-minutes: 60
       run:
@@ -491,6 +513,7 @@ jobs:
       timeout-minutes: 15
       run: |
         set -v
+        source /usr/share/modules/init/$(basename ${SHELL})
         module use /opt/omnitrace/share/modulefiles
         module load omnitrace
         ${{ github.workspace }}/scripts/test-install.sh --test-omnitrace{,-avail,-python,-rewrite,-runtime,-critical-trace}=1
