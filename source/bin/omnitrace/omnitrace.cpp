@@ -26,9 +26,13 @@
 #include <timemory/config.hpp>
 #include <timemory/hash.hpp>
 #include <timemory/manager.hpp>
+#include <timemory/sampling/signals.hpp>
 #include <timemory/settings.hpp>
 #include <timemory/utility/console.hpp>
 #include <timemory/utility/demangle.hpp>
+#include <timemory/utility/signals.hpp>
+#include <timemory/log/macros.hpp>
+#include <timemory/backends/process.hpp>
 
 #include <algorithm>
 #include <chrono>
@@ -166,6 +170,8 @@ void
 find_dyn_api_rt();
 }  // namespace
 
+namespace process = tim::process;
+
 //======================================================================================//
 //
 // entry point
@@ -175,6 +181,26 @@ find_dyn_api_rt();
 int
 main(int argc, char** argv)
 {
+    //if(_config->get_enable_signal_handler())
+    {
+        using signal_settings = tim::signal_settings;
+        using sys_signal      = tim::sys_signal;
+        tim::disable_signal_detection();
+        auto _exit_action = [](int nsig) {
+	  TIMEMORY_PRINTF_FATAL(stderr,
+                "Finalizing afer signal %i :: %s\n", nsig,
+                signal_settings::str(static_cast<sys_signal>(nsig)).c_str());
+            kill(process::get_id(), nsig);
+        };
+        signal_settings::set_exit_action(_exit_action);
+        signal_settings::check_environment();
+        auto default_signals = signal_settings::get_default();
+        for(const auto& itr : default_signals)
+            signal_settings::enable(itr);
+        auto enabled_signals = signal_settings::get_enabled();
+        tim::enable_signal_detection(enabled_signals);
+    }
+
     argv0 = argv[0];
 
     address_space_t*      addr_space    = nullptr;
