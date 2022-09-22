@@ -338,7 +338,7 @@ configure_settings(bool _init)
 
     OMNITRACE_CONFIG_SETTING(
         double, "OMNITRACE_SAMPLING_FREQ",
-        "Number of software interrupts per second when OMNITTRACE_USE_SAMPLING=ON", 10.0,
+        "Number of software interrupts per second when OMNITTRACE_USE_SAMPLING=ON", 300.0,
         "sampling", "process_sampling");
 
     OMNITRACE_CONFIG_SETTING(double, "OMNITRACE_SAMPLING_CPUTIME_FREQ",
@@ -452,12 +452,12 @@ configure_settings(bool _init)
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_TRACE_THREAD_RW_LOCKS",
                              "Enable tracing calls to pthread_rwlock_* functions. May "
                              "cause deadlocks with ROCm-enabled OpenMPI.",
-                             true, "backend", "parallelism", "gotcha", "advanced");
+                             false, "backend", "parallelism", "gotcha", "advanced");
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_TRACE_THREAD_SPIN_LOCKS",
                              "Enable tracing calls to pthread_spin_* functions. May "
                              "cause deadlocks with MPI distributions.",
-                             true, "backend", "parallelism", "gotcha", "advanced");
+                             false, "backend", "parallelism", "gotcha", "advanced");
 
     OMNITRACE_CONFIG_SETTING(
         bool, "OMNITRACE_SAMPLING_KEEP_INTERNAL",
@@ -690,7 +690,7 @@ configure_settings(bool _init)
         OMNITRACE_BASIC_VERBOSE(0,
                                 "In order to enable PAPI support, run 'echo N | sudo tee "
                                 "/proc/sys/kernel/perf_event_paranoid' where N is < 2\n");
-        tim::trait::runtime_enabled<comp::papi_common>::set(false);
+        tim::trait::runtime_enabled<comp::papi_common<void>>::set(false);
         tim::trait::runtime_enabled<comp::papi_array_t>::set(false);
         tim::trait::runtime_enabled<comp::papi_vector>::set(false);
         tim::trait::runtime_enabled<comp::cpu_roofline_flops>::set(false);
@@ -1500,7 +1500,7 @@ get_use_pid()
 bool&
 get_use_mpip()
 {
-    static bool _v = tim::get_env("OMNITRACE_USE_MPIP", false, false);
+    static bool _v = tim::get_env("OMNITRACE_USE_MPIP", true, false);
     return _v;
 }
 
