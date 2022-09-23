@@ -23,8 +23,8 @@
 #include "library/debug.hpp"
 #include "library/runtime.hpp"
 #include "library/state.hpp"
-#include "timemory/log/color.hpp"
 
+#include <timemory/log/color.hpp>
 #include <timemory/utility/filepath.hpp>
 
 namespace omnitrace
