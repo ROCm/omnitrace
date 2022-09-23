@@ -290,6 +290,8 @@ mpi_gotcha::audit(const gotcha_data_t& _data, audit::outgoing, int _retval)
 {
     OMNITRACE_BASIC_DEBUG_F("%s() returned %i\n", _data.tool_id.c_str(), (int) _retval);
 
+    if(!settings::use_output_suffix()) settings::use_output_suffix() = true;
+
     if(_retval == tim::mpi::success_v && _data.tool_id.find("MPI_Init") == 0)
     {
         omnitrace_mpi_set_attr();

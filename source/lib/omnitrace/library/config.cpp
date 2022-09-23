@@ -235,7 +235,7 @@ configure_settings(bool _init)
                                OMNITRACE_HIP_VERSION_PATCH);
 #endif
 
-    static auto _config = settings::shared_instance();
+    auto _config = settings::shared_instance();
 
     // if using timemory, default to perfetto being off
     auto _default_perfetto_v =
@@ -600,7 +600,7 @@ configure_settings(bool _init)
     _config->get_papi_events()           = "PAPI_TOT_CYC";
 
     // settings native to timemory but critically and/or extensively used by omnitrace
-    auto _add_omnitrace_category = [](auto itr) {
+    auto _add_omnitrace_category = [&_config](auto itr) {
         if(itr != _config->end())
         {
             auto _categories = itr->second->get_categories();
@@ -617,7 +617,7 @@ configure_settings(bool _init)
     _add_omnitrace_category(_config->find("OMNITRACE_OUTPUT_PREFIX"));
     _add_omnitrace_category(_config->find("OMNITRACE_OUTPUT_PATH"));
 
-    auto _add_advanced_category = [](const std::string& _name) {
+    auto _add_advanced_category = [&_config](const std::string& _name) {
         auto itr = _config->find(_name);
         if(itr != _config->end())
         {
