@@ -166,19 +166,13 @@ sampler::setup()
     auto     _freq      = get_process_sampling_freq();
     uint64_t _msec_freq = (1.0 / _freq) * 1.0e3;
 
-    promise_t _prom{};
-    auto      _fut   = _prom.get_future();
     polling_finished = std::make_unique<promise_t>();
 
     OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
 
-    auto _glob_state  = omnitrace::get_state();
-    auto _use_promise = (_glob_state == State::Active);
     set_state(State::PreInit);
     get_thread() = std::make_unique<std::thread>(&poll<msec_t>, &get_sampler_state(),
-                                                 msec_t{ _msec_freq },
-                                                 (_use_promise) ? &_prom : nullptr);
-    if(_use_promise) _fut.wait_for(std::chrono::milliseconds{ 100 });
+                                                 msec_t{ _msec_freq }, nullptr);
 
     set_state(State::Active);
 }
