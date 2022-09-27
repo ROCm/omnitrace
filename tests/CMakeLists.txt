@@ -54,7 +54,7 @@ set(_flat_environment
 set(_lock_environment
     "OMNITRACE_USE_SAMPLING=ON"
     "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
-    "OMNITRACE_SAMPLING_FREQ=250"
+    "OMNITRACE_SAMPLING_FREQ=750"
     "OMNITRACE_CRITICAL_TRACE=ON"
     "OMNITRACE_COLLAPSE_THREADS=ON"
     "OMNITRACE_TRACE_THREAD_LOCKS=ON"
@@ -306,6 +306,12 @@ function(OMNITRACE_ADD_TEST)
                 NAME ${TEST_NAME}-baseline
                 COMMAND ${COMMAND_PREFIX} $<TARGET_FILE:${TEST_TARGET}> ${TEST_RUN_ARGS}
                 WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
+            add_test(
+                NAME ${TEST_NAME}-preload
+                COMMAND ${COMMAND_PREFIX} $<TARGET_FILE:omnitrace-run> --
+                        $<TARGET_FILE:${TEST_TARGET}> ${TEST_RUN_ARGS}
+                WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
         endif()
 
         if(NOT TEST_SKIP_REWRITE)
@@ -370,7 +376,7 @@ function(OMNITRACE_ADD_TEST)
 
         foreach(
             _TEST
-            baseline binary-rewrite binary-rewrite-run binary-rewrite-sampling
+            baseline preload binary-rewrite binary-rewrite-run binary-rewrite-sampling
             binary-rewrite-sampling-run runtime-instrument runtime-instrument-sampling)
             string(REGEX REPLACE "-run(-|/)" "\\1" _prefix "${TEST_NAME}-${_TEST}/")
             set(_environ "${TEST_ENVIRONMENT}")
@@ -404,6 +410,8 @@ function(OMNITRACE_ADD_TEST)
             elseif("${_TEST}" MATCHES "binary-rewrite")
                 set(_REGEX_VAR REWRITE)
             elseif("${_TEST}" MATCHES "baseline")
+                set(_REGEX_VAR BASELINE)
+            elseif("${_TEST}" MATCHES "preload")
                 set(_REGEX_VAR BASELINE)
             else()
                 set(_REGEX_VAR)
@@ -836,7 +844,7 @@ omnitrace_add_test(
         -ME
         [==[lib(gomp|m-)]==]
     LABELS "kokkos;kokkos-profile-library"
-    RUN_ARGS -i 10 -s 20 -p
+    RUN_ARGS -i 25 -s 20 -p
     ENVIRONMENT
         "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;KOKKOS_PROFILE_LIBRARY=libomnitrace-dl.so"
     REWRITE_RUN_PASS_REGEX "\\|_\\[kokkos\\]"
@@ -972,7 +980,7 @@ omnitrace_add_test(
     REWRITE_TIMEOUT 180
     RUNTIME_TIMEOUT 360
     ENVIRONMENT
-        "${_ompt_environment};OMNITRACE_USE_SAMPLING=ON;OMNITRACE_SAMPLING_FREQ=100;OMNITRACE_COUT_OUTPUT=ON"
+        "${_ompt_environment};OMNITRACE_USE_SAMPLING=ON;OMNITRACE_SAMPLING_FREQ=600;OMNITRACE_COUT_OUTPUT=ON"
     REWRITE_RUN_PASS_REGEX "${_OMPT_PASS_REGEX}"
     REWRITE_FAIL_REGEX "0 instrumented loops in procedure")
 

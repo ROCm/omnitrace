@@ -408,6 +408,8 @@ get_indirect() OMNITRACE_HIDDEN_API;
 indirect&
 get_indirect()
 {
+    omnitrace_preinit_library();
+
     static auto  _libomni = get_env("OMNITRACE_LIBRARY", "libomnitrace.so");
     static auto  _libuser = get_env("OMNITRACE_USER_LIBRARY", "libomnitrace-user.so");
     static auto  _libdlib = get_env("OMNITRACE_DL_LIBRARY", "libomnitrace-dl.so");
@@ -503,6 +505,12 @@ namespace dl = omnitrace::dl;
 
 extern "C"
 {
+    void omnitrace_preinit_library(void)
+    {
+        if(!omnitrace::common::get_env("OMNITRACE_COLORIZED_LOG", tim::log::colorized()))
+            tim::log::colorized() = false;
+    }
+
     void omnitrace_init_library(void)
     {
         OMNITRACE_DL_INVOKE(get_indirect().omnitrace_init_library_f);
@@ -913,6 +921,8 @@ omnitrace_preload() OMNITRACE_HIDDEN_API;
 bool
 omnitrace_preload()
 {
+    omnitrace_preinit_library();
+
     auto _preloaded = get_omnitrace_preload();
     auto _enabled   = get_env("OMNITRACE_ENABLED", true);
 
@@ -922,7 +932,7 @@ omnitrace_preload()
 
     if(_preloaded && _enabled)
     {
-        OMNITRACE_DL_LOG(0, "[%s] invoking %s(%s)\n", __FUNCTION__, "omnitrace_init",
+        OMNITRACE_DL_LOG(1, "[%s] invoking %s(%s)\n", __FUNCTION__, "omnitrace_init",
                          ::omnitrace::join(::omnitrace::QuoteStrings{}, ", ", "sampling",
                                            false, "main")
                              .c_str());

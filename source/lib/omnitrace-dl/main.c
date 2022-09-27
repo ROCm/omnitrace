@@ -29,6 +29,9 @@
 #include <string.h>
 #include <stdbool.h>
 
+extern
+void omnitrace_preinit_library(void);
+
 extern void
 omnitrace_finalize(void);
 
@@ -84,6 +87,8 @@ __libc_start_main(int (*_main)(int, char**, char**), int _argc, char** _argv,
                   int (*_init)(int, char**, char**), void (*_fini)(void),
                   void (*_rtld_fini)(void), void* _stack_end)
 {
+    omnitrace_preinit_library();
+
     // prevent re-entry
     static int _reentry = 0;
     if(_reentry > 0) return -1;

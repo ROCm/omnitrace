@@ -812,7 +812,7 @@ configure_settings(bool _init)
     configure_signal_handler();
     configure_disabled_settings();
 
-    OMNITRACE_VERBOSE(1, "configuration complete\n");
+    OMNITRACE_VERBOSE(2, "configuration complete\n");
 }
 
 void
