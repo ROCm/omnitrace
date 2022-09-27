@@ -534,10 +534,10 @@ post_process()
 
         if(_data.empty())
         {
-            OMNITRACE_VERBOSE(
-                3 || get_debug_sampling(),
-                "Sampler data for thread %lu has %zu valid entries... (skipped)\n", i,
-                _raw_data.size());
+            OMNITRACE_VERBOSE(2 || get_debug_sampling(),
+                              "Sampler data for thread %lu has zero valid entries out of "
+                              "%zu... (skipped)\n",
+                              i, _raw_data.size());
             continue;
         }
 
