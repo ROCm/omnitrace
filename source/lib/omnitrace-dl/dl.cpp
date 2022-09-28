@@ -98,9 +98,9 @@ get_omnitrace_dl_env()
 inline bool
 get_omnitrace_preload()
 {
-    auto&& _preload      = get_env("OMNITRACE_PRELOAD", false);
+    auto&& _preload      = get_env("OMNITRACE_PRELOAD", true);
     auto&& _preload_libs = get_env("LD_PRELOAD", std::string{});
-    return (_preload || _preload_libs.find("libomnitrace-dl.so") != std::string::npos);
+    return (_preload && _preload_libs.find("libomnitrace-dl.so") != std::string::npos);
 }
 
 // environment priority:
@@ -509,6 +509,11 @@ extern "C"
     {
         if(!omnitrace::common::get_env("OMNITRACE_COLORIZED_LOG", tim::log::colorized()))
             tim::log::colorized() = false;
+    }
+
+    int omnitrace_preload_library(void)
+    {
+        return (::omnitrace::dl::get_omnitrace_preload()) ? 1 : 0;
     }
 
     void omnitrace_init_library(void)
@@ -921,17 +926,15 @@ omnitrace_preload() OMNITRACE_HIDDEN_API;
 bool
 omnitrace_preload()
 {
-    omnitrace_preinit_library();
-
-    auto _preloaded = get_omnitrace_preload();
-    auto _enabled   = get_env("OMNITRACE_ENABLED", true);
+    auto _preload = get_omnitrace_preload() && get_env("OMNITRACE_ENABLED", true);
 
     static bool _once = false;
-    if(_once) return _preloaded;
+    if(_once) return _preload;
     _once = true;
 
-    if(_preloaded && _enabled)
+    if(_preload)
     {
+        omnitrace_preinit_library();
         OMNITRACE_DL_LOG(1, "[%s] invoking %s(%s)\n", __FUNCTION__, "omnitrace_init",
                          ::omnitrace::join(::omnitrace::QuoteStrings{}, ", ", "sampling",
                                            false, "main")
@@ -940,7 +943,7 @@ omnitrace_preload()
         omnitrace_init_tooling();
     }
 
-    return _preloaded;
+    return _preload;
 }
 
 bool _handle_preload = omnitrace::dl::omnitrace_preload();

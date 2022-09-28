@@ -88,6 +88,7 @@ extern "C"
 
 #if defined(OMNITRACE_DL_SOURCE) && (OMNITRACE_DL_SOURCE > 0)
     void omnitrace_preinit_library(void) OMNITRACE_HIDDEN_API;
+    int  omnitrace_preload_library(void) OMNITRACE_HIDDEN_API;
 
     int omnitrace_user_start_trace_dl(void) OMNITRACE_HIDDEN_API;
     int omnitrace_user_stop_trace_dl(void) OMNITRACE_HIDDEN_API;
