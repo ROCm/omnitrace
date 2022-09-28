@@ -97,10 +97,12 @@ ompt_start_tool(unsigned int omp_version, const char* runtime_version)
     OMNITRACE_METADATA("OMP_VERSION", omp_version);
     OMNITRACE_METADATA("OMP_RUNTIME_VERSION", runtime_version);
 
+    static bool _use_ompt       = omnitrace::config::get_use_ompt();
     static auto ompt_initialize = [](ompt_function_lookup_t lookup,
                                      int                    initial_device_num,
                                      ompt_data_t*           tool_data) -> int {
-        if(omnitrace::config::get_use_ompt())
+        _use_ompt = omnitrace::config::get_use_ompt();
+        if(_use_ompt)
         {
             TIMEMORY_PRINTF(stderr, "OpenMP-tools configuring for initial device %i\n\n",
                             initial_device_num);
@@ -111,7 +113,7 @@ ompt_start_tool(unsigned int omp_version, const char* runtime_version)
     };
 
     static auto ompt_finalize = [](ompt_data_t* tool_data) {
-        if(omnitrace::config::get_use_ompt())
+        if(_use_ompt)
         {
             TIMEMORY_PRINTF(stderr, "OpenMP-tools finalized\n\n");
             tim::consume_parameters(tool_data);
