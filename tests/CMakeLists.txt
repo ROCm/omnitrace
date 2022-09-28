@@ -798,7 +798,6 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
             --label
             file
             line
-            return
             args
             --min-instructions
             0
@@ -822,7 +821,6 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
             --label
             file
             line
-            return
             args
             --min-instructions
             0
