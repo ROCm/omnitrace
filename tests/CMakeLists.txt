@@ -315,7 +315,7 @@ function(OMNITRACE_ADD_TEST)
         if(NOT TEST_SKIP_PRELOAD)
             add_test(
                 NAME ${TEST_NAME}-preload
-                COMMAND ${COMMAND_PREFIX} $<TARGET_FILE:omnitrace-run> --
+                COMMAND ${COMMAND_PREFIX} $<TARGET_FILE:omnitrace-sample> --
                         $<TARGET_FILE:${TEST_TARGET}> ${TEST_RUN_ARGS}
                 WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
         endif()

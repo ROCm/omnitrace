@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "omnitrace-run.hpp"
+#include "omnitrace-sample.hpp"
 
 #include <unistd.h>
 
