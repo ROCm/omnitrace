@@ -381,8 +381,8 @@ public:
 
     // ROCP functions
 #if OMNITRACE_USE_ROCPROFILER > 0
-    void (*rocp_on_load_tool_prop_f)(rocprofiler_settings* settings) = nullptr;
-    void (*rocp_on_unload_tool_f)()                                  = nullptr;
+    void (*rocp_on_load_tool_prop_f)(void* settings) = nullptr;
+    void (*rocp_on_unload_tool_f)()                  = nullptr;
 #endif
 
     // OpenMP functions
@@ -886,9 +886,15 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
 
-#if OMNITRACE_USE_ROCTRACER > 0
-    void OnLoadToolProp(rocprofiler_settings* settings)
+#if OMNITRACE_USE_ROCPROFILER > 0
+    void OnLoadToolProp(void* settings)
     {
+        OMNITRACE_DL_LOG(-16,
+                         "invoking %s(rocprofiler_settings_t*) within omnitrace-dl.so "
+                         "will cause a silent failure for rocprofiler. ROCP_TOOL_LIB "
+                         "should be set to libomnitrace.so\n",
+                         __FUNCTION__);
+        abort();
         return OMNITRACE_DL_INVOKE(get_indirect().rocp_on_load_tool_prop_f, settings);
     }
 

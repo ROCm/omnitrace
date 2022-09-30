@@ -167,8 +167,7 @@ extern "C"
 
 #    if OMNITRACE_USE_ROCPROFILER > 0
     // ROCP
-    struct rocprofiler_settings;
-    void OnLoadToolProp(rocprofiler_settings* settings) OMNITRACE_PUBLIC_API;
+    void OnLoadToolProp(void* settings) OMNITRACE_PUBLIC_API;
     void OnUnloadTool() OMNITRACE_PUBLIC_API;
 #    endif
 #endif
