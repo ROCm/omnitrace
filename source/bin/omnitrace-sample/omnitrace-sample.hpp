@@ -29,15 +29,21 @@
 std::string
 get_command(const char*);
 
+std::string
+get_realpath(const std::string&);
+
 void
 print_command(const std::vector<char*>& _argv);
 
 std::vector<char*>
-get_environment();
+get_initial_environment();
+
+std::string
+get_internal_libpath(const std::string& _lib);
 
 template <typename Tp>
 void
-update_env(std::vector<char*>&, std::string_view, Tp&&);
+update_env(std::vector<char*>&, std::string_view, Tp&&, bool _append = false);
 
 std::vector<char*>
 parse_args(int argc, char** argv, std::vector<char*>&);
