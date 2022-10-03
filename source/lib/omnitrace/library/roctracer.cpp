@@ -42,7 +42,6 @@
 #define HIP_PROF_HIP_API_STRING 1
 
 #include <roctracer_ext.h>
-#include <roctracer_hcc.h>
 #include <roctracer_hip.h>
 #include <roctracer_roctx.h>
 
@@ -59,7 +58,6 @@
 TIMEMORY_DEFINE_API(roctracer)
 namespace omnitrace
 {
-namespace api = tim::api;
 namespace
 {
 std::string
@@ -820,7 +818,7 @@ hip_activity_callback(const char* begin, const char* end, void*)
         assert(record->domain == ACTIVITY_DOMAIN_HIP_OPS);
 
         if(record->domain != ACTIVITY_DOMAIN_HIP_OPS) continue;
-        if(record->op > HIP_OP_ID_BARRIER) continue;
+        if(record->op > HSA_OP_ID_BARRIER) continue;
 
         const char* op_name =
             roctracer_op_string(record->domain, record->op, record->kind);

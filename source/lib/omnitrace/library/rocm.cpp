@@ -49,7 +49,6 @@
 #define HIP_PROF_HIP_API_STRING 1
 
 #include <roctracer_ext.h>
-#include <roctracer_hcc.h>
 #include <roctracer_hip.h>
 
 #define AMD_INTERNAL_BUILD 1
