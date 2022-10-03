@@ -185,9 +185,6 @@ extern "C"
                 OMNITRACE_VERBOSE(1 || rocm::on_load_trace,
                                   "[OnLoad] setting up HSA...\n");
 
-                // const char* output_prefix = getenv("ROCP_OUTPUT_DIR");
-                const char* output_prefix = nullptr;
-
                 bool trace_hsa_api = get_trace_hsa_api();
 
                 // Enable HSA API callbacks/activity
@@ -226,14 +223,24 @@ extern "C"
                 // Enable HSA GPU activity
                 if(trace_hsa_activity)
                 {
+#if OMNITRACE_HIP_VERSION < 50300
                     using namespace roctracer;
                     // initialize HSA tracing
+                    const char*          output_prefix = nullptr;
                     hsa_ops_properties_t ops_properties{
                         table,
                         reinterpret_cast<activity_async_callback_t>(
                             hsa_activity_callback),
                         nullptr, output_prefix
                     };
+#else
+                    hsa_ops_properties_t ops_properties;
+                    ops_properties.table = table;
+                    ops_properties.reserved1[0] =
+                        reinterpret_cast<void*>(&hsa_activity_callback);
+                    ops_properties.reserved1[1] = nullptr;
+                    ops_properties.reserved1[2] = nullptr;
+#endif
                     roctracer_set_properties(ACTIVITY_DOMAIN_HSA_OPS, &ops_properties);
 
                     OMNITRACE_VERBOSE(1 || rocm::on_load_trace,
@@ -258,9 +265,11 @@ extern "C"
                 roctracer_disable_op_activity(ACTIVITY_DOMAIN_HSA_OPS, HSA_OP_ID_COPY));
         };
 
+#if OMNITRACE_HIP_VERSION < 50300
         OMNITRACE_VERBOSE_F(1 || rocm::on_load_trace,
                             "Computing the roctracer clock skew...\n");
         (void) omnitrace::get_clock_skew();
+#endif
 
         comp::roctracer::add_setup("hsa", _setup);
         comp::roctracer::add_shutdown("hsa", _shutdown);
