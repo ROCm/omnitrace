@@ -226,8 +226,9 @@ extern "C"
                 // Enable HSA GPU activity
                 if(trace_hsa_activity)
                 {
+                    using namespace roctracer;
                     // initialize HSA tracing
-                    ::roctracer::hsa_ops_properties_t ops_properties{
+                    hsa_ops_properties_t ops_properties{
                         table,
                         reinterpret_cast<activity_async_callback_t>(
                             hsa_activity_callback),
