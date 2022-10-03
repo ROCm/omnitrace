@@ -206,9 +206,9 @@ extern "C"
                         {
                             uint32_t    cid = HSA_API_ID_NUMBER;
                             const char* api = itr.c_str();
-                            ROCTRACER_CALL(roctracer_op_code(ACTIVITY_DOMAIN_HSA_API, api,
-                                                             &cid, nullptr));
-                            ROCTRACER_CALL(roctracer_enable_op_callback(
+                            OMNITRACE_ROCTRACER_CALL(roctracer_op_code(
+                                ACTIVITY_DOMAIN_HSA_API, api, &cid, nullptr));
+                            OMNITRACE_ROCTRACER_CALL(roctracer_enable_op_callback(
                                 ACTIVITY_DOMAIN_HSA_API, cid, hsa_api_callback, nullptr));
 
                             OMNITRACE_VERBOSE(1 || rocm::on_load_trace,
@@ -218,7 +218,7 @@ extern "C"
                     else
                     {
                         OMNITRACE_VERBOSE(1 || rocm::on_load_trace, "    HSA-trace()\n");
-                        ROCTRACER_CALL(roctracer_enable_domain_callback(
+                        OMNITRACE_ROCTRACER_CALL(roctracer_enable_domain_callback(
                             ACTIVITY_DOMAIN_HSA_API, hsa_api_callback, nullptr));
                     }
                 }
@@ -238,8 +238,8 @@ extern "C"
 
                     OMNITRACE_VERBOSE(1 || rocm::on_load_trace,
                                       "    HSA-activity-trace()\n");
-                    ROCTRACER_CALL(roctracer_enable_op_activity(ACTIVITY_DOMAIN_HSA_OPS,
-                                                                HSA_OP_ID_COPY));
+                    OMNITRACE_ROCTRACER_CALL(roctracer_enable_op_activity(
+                        ACTIVITY_DOMAIN_HSA_OPS, HSA_OP_ID_COPY));
                 }
             } catch(std::exception& _e)
             {
@@ -250,10 +250,11 @@ extern "C"
 
         static auto _shutdown = []() {
             OMNITRACE_DEBUG_F("roctracer_disable_domain_callback\n");
-            ROCTRACER_CALL(roctracer_disable_domain_callback(ACTIVITY_DOMAIN_HSA_API));
+            OMNITRACE_ROCTRACER_CALL(
+                roctracer_disable_domain_callback(ACTIVITY_DOMAIN_HSA_API));
 
             OMNITRACE_DEBUG_F("roctracer_disable_op_activity\n");
-            ROCTRACER_CALL(
+            OMNITRACE_ROCTRACER_CALL(
                 roctracer_disable_op_activity(ACTIVITY_DOMAIN_HSA_OPS, HSA_OP_ID_COPY));
         };
 
