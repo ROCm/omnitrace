@@ -45,6 +45,10 @@
 #include <roctracer_hip.h>
 #include <roctracer_roctx.h>
 
+#if OMNITRACE_HIP_VERSION < 50300
+#    include <roctracer_hcc.h>
+#endif
+
 #define AMD_INTERNAL_BUILD 1
 #include <roctracer_hsa.h>
 
@@ -818,7 +822,7 @@ hip_activity_callback(const char* begin, const char* end, void*)
         assert(record->domain == ACTIVITY_DOMAIN_HIP_OPS);
 
         if(record->domain != ACTIVITY_DOMAIN_HIP_OPS) continue;
-        if(record->op > HSA_OP_ID_BARRIER) continue;
+        if(record->op > HIP_OP_ID_BARRIER) continue;
 
         const char* op_name =
             roctracer_op_string(record->domain, record->op, record->kind);

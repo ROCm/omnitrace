@@ -51,6 +51,10 @@
 #include <roctracer_ext.h>
 #include <roctracer_hip.h>
 
+#if OMNITRACE_HIP_VERSION < 50300
+#    include <roctracer_hcc.h>
+#endif
+
 #define AMD_INTERNAL_BUILD 1
 #include <roctracer_hsa.h>
 
