@@ -299,7 +299,7 @@ jobs:
     - name: Test Install
       timeout-minutes: 15
       run: |
-        ./scripts/test-install.sh --install-dir /opt/omnitrace
+        ./scripts/test-install.sh --test-omnitrace{,-avail,-sample,-python,-rewrite,-runtime,-critical-trace}=1
 
     - name: Test User API
       timeout-minutes: 10
@@ -454,7 +454,7 @@ jobs:
       run: |
         set -v
         source /opt/omnitrace/share/omnitrace/setup-env.sh
-        ${{ github.workspace }}/scripts/test-install.sh --test-omnitrace{,-avail,-python,-rewrite,-runtime,-critical-trace}=1
+        ${{ github.workspace }}/scripts/test-install.sh --test-omnitrace{,-avail,-sample,-python,-rewrite,-runtime,-critical-trace}=1
 
     - name: Test Install with Modulefile
       timeout-minutes: 15
@@ -463,7 +463,7 @@ jobs:
         source /usr/share/modules/init/$(basename ${SHELL})
         module use /opt/omnitrace/share/modulefiles
         module load omnitrace
-        ${{ github.workspace }}/scripts/test-install.sh --test-omnitrace{,-avail,-python,-rewrite,-runtime,-critical-trace}=1
+        ${{ github.workspace }}/scripts/test-install.sh --test-omnitrace{,-avail,-sample,-python,-rewrite,-runtime,-critical-trace}=1
 
     - name: Test User API
       timeout-minutes: 10
