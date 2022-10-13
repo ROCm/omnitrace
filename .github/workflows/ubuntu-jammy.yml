@@ -49,11 +49,18 @@ jobs:
         apt-get update &&
         apt-get install -y software-properties-common &&
         apt-get upgrade -y &&
-        apt-get install -y build-essential m4 autoconf libtool python3-pip libiberty-dev clang libomp-dev libopenmpi-dev libfabric-dev openmpi-bin ${{ matrix.compiler }} &&
+        apt-get install -y build-essential m4 autoconf libtool python3-pip libiberty-dev clang libomp-dev libopenmpi-dev libfabric-dev openmpi-bin environment-modules ${{ matrix.compiler }} &&
         python3 -m pip install --upgrade pip &&
         python3 -m pip install numpy &&
         python3 -m pip install 'cmake==3.21.4' &&
         for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done
+
+    - name: Test Environment Modules
+      timeout-minutes: 15
+      run: |
+        set -v
+        source /usr/share/modules/init/$(basename ${SHELL})
+        module avail
 
     - name: Configure Env
       run: |
@@ -69,7 +76,7 @@ jobs:
           -DCMAKE_C_COMPILER=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
-          -DCMAKE_INSTALL_PREFIX=/opt/omnitrace
+          -DCMAKE_INSTALL_PREFIX=/opt/omnitrace-dev
           -DOMNITRACE_BUILD_TESTING=ON
           -DOMNITRACE_USE_MPI=${{ matrix.mpi }}
           -DOMNITRACE_USE_HIP=${{ matrix.hip }}
@@ -106,6 +113,10 @@ jobs:
     - name: Test Install
       timeout-minutes: 15
       run: |
+        set -v
+        source /usr/share/modules/init/$(basename ${SHELL})
+        module use /opt/omnitrace/share/modulefiles
+        module load omnitrace
         ./scripts/test-install.sh --test-omnitrace=1 --test-omnitrace-avail=1 --test-omnitrace-sample=1 --test-omnitrace-python=1 --test-omnitrace-rewrite=1 --test-omnitrace-runtime=1 --test-omnitrace-critical-trace=1
 
     - name: Test User API
