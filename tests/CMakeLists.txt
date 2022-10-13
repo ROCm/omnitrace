@@ -1008,7 +1008,7 @@ set(_ompt_preload_environ
 
 set(_ompt_preload_samp_regex
     "Sampler for thread 0 will be triggered 1000.0x per second of CPU-time(.*)Sampler for thread 0 will be triggered 500.0x per second of wall-time(.*)Sampling will be disabled after 0.250000 seconds(.*)Sampling duration of 0.250000 seconds has elapsed. Shutting down sampling"
-)
+    )
 set(_ompt_preload_file_regex
     "sampling-duration-preload/sampling_percent.(json|txt)(.*)sampling-duration-preload/sampling_cpu_clock.(json|txt)(.*)sampling-duration-preload/sampling_wall_clock.(json|txt)"
     )
