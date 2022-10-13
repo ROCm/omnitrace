@@ -19,6 +19,16 @@ verbose-run()
     eval $@
 }
 
+toupper()
+{
+    echo "$@" | awk -F '\|~\|' '{print toupper($1)}';
+}
+
+get-bool()
+{
+    echo "${1}" | egrep -i '^(y|on|yes|true|[1-9])$' &> /dev/null && echo 1 || echo 0
+}
+
 if [ -d "$(realpath /tmp)" ]; then
     : ${TMPDIR:=/tmp}
     export TMPDIR
@@ -76,11 +86,12 @@ do
     if [ -z "${VAL}" ]; then
         while [[ $# -gt 0 ]]
         do
-            VAL=${1}
+            VAL=$(get-bool ${1})
             shift
             break
         done
     else
+        VAL=$(get-bool ${VAL})
         ARG="$(echo ${ARG} | sed 's/=/ /1' | awk '{print $1}')"
     fi
 
