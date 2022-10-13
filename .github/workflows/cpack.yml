@@ -34,9 +34,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["18.04", "20.04"]
-        rocm-version: ["0.0", "4.5", "5.0", "5.1", "5.2"]
-        default-rocm: ["5.0"]
+        os-version: ["18.04", "20.04", "22.04"]
+        rocm-version: ["0.0", "4.5", "5.0", "5.1", "5.2", "5.3"]
+        exclude:
+          - os-version: "18.04"
+            rocm-version: "5.3"
+          - os-version: "22.04"
+            rocm-version: "4.5"
+          - os-version: "22.04"
+            rocm-version: "5.0"
+          - os-version: "22.04"
+            rocm-version: "5.1"
 
     steps:
       - uses: actions/checkout@v3
@@ -46,27 +54,25 @@ jobs:
       - name: Configure ROCm Version
         if: ${{ matrix.rocm-version == 0 }}
         run: |
-          echo "CI_ROCM_VERSION=${{ matrix.default-rocm }}" >> $GITHUB_ENV
           echo "CI_SCRIPT_ARGS=--core +python" >> $GITHUB_ENV
 
       - name: Configure ROCm Version
         if: ${{ matrix.rocm-version > 0 }}
         run: |
-          echo "CI_ROCM_VERSION=${{ matrix.rocm-version }}" >> $GITHUB_ENV
           echo "CI_SCRIPT_ARGS=--rocm +python" >> $GITHUB_ENV
 
       - name: Build Base Container
         timeout-minutes: 20
         run: |
           pushd docker
-          ./build-docker.sh --distro ubuntu --versions ${{ matrix.os }} --rocm-versions ${CI_ROCM_VERSION}
+          ./build-docker.sh --distro ubuntu --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }}
           popd
 
       - name: Build Release
         timeout-minutes: 150
         run: |
           pushd docker
-          ./build-docker-release.sh --distro ubuntu --versions ${{ matrix.os }} --rocm-versions ${CI_ROCM_VERSION} -- ${CI_SCRIPT_ARGS}
+          ./build-docker-release.sh --distro ubuntu --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }} -- ${CI_SCRIPT_ARGS}
           popd
 
       - name: List Files
@@ -78,7 +84,7 @@ jobs:
         timeout-minutes: 10
         uses: actions/upload-artifact@v2
         with:
-          name: ubuntu-${{ matrix.os }}-rocm-${{ matrix.rocm-version }}-stgz-installers
+          name: ubuntu-${{ matrix.os-version }}-rocm-${{ matrix.rocm-version }}-stgz-installers
           path: |
             build-release/stgz/*.sh
 
@@ -86,7 +92,7 @@ jobs:
         timeout-minutes: 10
         uses: actions/upload-artifact@v2
         with:
-          name: ubuntu-${{ matrix.os }}-rocm-${{ matrix.rocm-version }}-deb-installers
+          name: ubuntu-${{ matrix.os-version }}-rocm-${{ matrix.rocm-version }}-deb-installers
           path: |
             build-release/deb/*.deb
 
@@ -105,7 +111,7 @@ jobs:
           set -v
           for i in omnitrace-*.sh
           do
-            ./docker/test-docker-release.sh --distro ubuntu --versions ${{ matrix.os }} --rocm-versions ${CI_ROCM_VERSION} -- --stgz ${i}
+            ./docker/test-docker-release.sh --distro ubuntu --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }} -- --stgz ${i}
           done
 
       - name: Upload STGZ Release Assets
@@ -122,7 +128,7 @@ jobs:
           set -v
           for i in omnitrace_*.deb
           do
-            ./docker/test-docker-release.sh --distro ubuntu --versions ${{ matrix.os }} --rocm-versions ${CI_ROCM_VERSION} -- --deb ${i}
+            ./docker/test-docker-release.sh --distro ubuntu --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }} -- --deb ${i}
           done
 
       - name: Upload DEB Release Assets
@@ -138,14 +144,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["15.2", "15.3"]
-        rocm-version: ["0.0", "4.5", "5.0", "5.1", "5.2"]
-        default-rocm: ["5.0"]
+        os-version: ["15.3", "15.4"]
+        rocm-version: ["0.0", "4.5", "5.0", "5.1", "5.2", "5.3"]
         exclude:
-          - os: "15.2"
-            rocm-version: "5.1"
-          - os: "15.2"
-            rocm-version: "5.2"
+          - os-version: "15.4"
+            rocm-version: "4.5"
 
     steps:
       - uses: actions/checkout@v3
@@ -155,27 +158,25 @@ jobs:
       - name: Configure ROCm Version
         if: ${{ matrix.rocm-version == 0 }}
         run: |
-          echo "CI_ROCM_VERSION=${{ matrix.default-rocm }}" >> $GITHUB_ENV
           echo "CI_SCRIPT_ARGS=--core +python" >> $GITHUB_ENV
 
       - name: Configure ROCm Version
         if: ${{ matrix.rocm-version > 0 }}
         run: |
-          echo "CI_ROCM_VERSION=${{ matrix.rocm-version }}" >> $GITHUB_ENV
           echo "CI_SCRIPT_ARGS=--rocm +python" >> $GITHUB_ENV
 
       - name: Build Base Container
         timeout-minutes: 20
         run: |
           pushd docker
-          ./build-docker.sh --distro opensuse --versions ${{ matrix.os }} --rocm-versions ${CI_ROCM_VERSION}
+          ./build-docker.sh --distro opensuse --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }}
           popd
 
       - name: Build Release
         timeout-minutes: 150
         run: |
           pushd docker
-          ./build-docker-release.sh --distro opensuse --versions ${{ matrix.os }} --rocm-versions ${CI_ROCM_VERSION} -- ${CI_SCRIPT_ARGS}
+          ./build-docker-release.sh --distro opensuse --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }} -- ${CI_SCRIPT_ARGS}
           popd
 
       - name: List Files
@@ -187,7 +188,7 @@ jobs:
         timeout-minutes: 10
         uses: actions/upload-artifact@v2
         with:
-          name: opensuse-${{ matrix.os }}-rocm-${{ matrix.rocm-version }}-stgz-installers
+          name: opensuse-${{ matrix.os-version }}-rocm-${{ matrix.rocm-version }}-stgz-installers
           path: |
             build-release/stgz/*.sh
 
@@ -195,7 +196,7 @@ jobs:
         timeout-minutes: 10
         uses: actions/upload-artifact@v2
         with:
-          name: opensuse-${{ matrix.os }}-rocm-${{ matrix.rocm-version }}-rpm-installers
+          name: opensuse-${{ matrix.os-version }}-rocm-${{ matrix.rocm-version }}-rpm-installers
           path: |
             build-release/rpm/*.rpm
 
@@ -214,7 +215,7 @@ jobs:
           set -v
           for i in omnitrace-*.sh
           do
-            ./docker/test-docker-release.sh --distro opensuse --versions ${{ matrix.os }} --rocm-versions ${CI_ROCM_VERSION} -- --stgz ${i}
+            ./docker/test-docker-release.sh --distro opensuse --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }} -- --stgz ${i}
           done
 
       - name: Upload STGZ Release Assets
@@ -231,7 +232,108 @@ jobs:
           set -v
           for i in omnitrace-*.rpm
           do
-            ./docker/test-docker-release.sh --distro opensuse --versions ${{ matrix.os }} --rocm-versions ${CI_ROCM_VERSION} -- --rpm ${i}
+            ./docker/test-docker-release.sh --distro opensuse --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }} -- --rpm ${i}
+          done
+
+      - name: Upload RPM Release Assets
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/') && github.repository == 'AMDResearch/omnitrace'
+        with:
+          fail_on_unmatched_files: True
+          files: |
+            omnitrace-*.rpm
+
+  centos:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os-version: ["7"]
+        rocm-version: ["0.0", "5.1", "5.2", "5.3"]
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Configure ROCm Version
+        if: ${{ matrix.rocm-version == 0 }}
+        run: |
+          echo "CI_SCRIPT_ARGS=--core +python" >> $GITHUB_ENV
+
+      - name: Configure ROCm Version
+        if: ${{ matrix.rocm-version > 0 }}
+        run: |
+          echo "CI_SCRIPT_ARGS=--rocm +python" >> $GITHUB_ENV
+
+      - name: Build Base Container
+        timeout-minutes: 20
+        run: |
+          pushd docker
+          ./build-docker.sh --distro centos --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }}
+          popd
+
+      - name: Build Release
+        timeout-minutes: 150
+        run: |
+          pushd docker
+          ./build-docker-release.sh --distro centos --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }} -- ${CI_SCRIPT_ARGS}
+          popd
+
+      - name: List Files
+        timeout-minutes: 10
+        run: |
+          find build-release -type f | egrep '\.(sh|deb|rpm)$'
+
+      - name: STGZ Artifacts
+        timeout-minutes: 10
+        uses: actions/upload-artifact@v2
+        with:
+          name: centos-${{ matrix.os-version }}-rocm-${{ matrix.rocm-version }}-stgz-installers
+          path: |
+            build-release/stgz/*.sh
+
+      - name: RPM Artifacts
+        timeout-minutes: 10
+        uses: actions/upload-artifact@v2
+        with:
+          name: centos-${{ matrix.os-version }}-rocm-${{ matrix.rocm-version }}-rpm-installers
+          path: |
+            build-release/rpm/*.rpm
+
+      # before testing remove any artifacts of the build
+      - name: Remove Build
+        timeout-minutes: 10
+        run: |
+          mv build-release/stgz/*.sh ./
+          mv build-release/rpm/*.rpm ./
+          sudo rm -rf build-release
+          sudo rm -rf /opt/omnitrace
+
+      - name: Test STGZ Install
+        timeout-minutes: 20
+        run: |
+          set -v
+          for i in omnitrace-*.sh
+          do
+            ./docker/test-docker-release.sh --distro centos --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }} -- --stgz ${i}
+          done
+
+      - name: Upload STGZ Release Assets
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/') && github.repository == 'AMDResearch/omnitrace'
+        with:
+          fail_on_unmatched_files: True
+          files: |
+            omnitrace-*.sh
+
+      - name: Test RPM Install
+        timeout-minutes: 20
+        run: |
+          set -v
+          for i in omnitrace-*.rpm
+          do
+            ./docker/test-docker-release.sh --distro centos --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }} -- --rpm ${i}
           done
 
       - name: Upload RPM Release Assets
