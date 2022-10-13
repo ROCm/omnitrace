@@ -652,10 +652,30 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
             update_env(_env, "HSA_ENABLE_INTERRUPT", p.get<int>("hsa-interrupt"));
         });
 
-    auto  _args = parser.parse_known_args(argc, argv);
-    auto  _cerr = std::get<0>(_args);
-    auto  _cmdc = std::get<1>(_args);
-    auto* _cmdv = std::get<2>(_args);
+    auto _inpv = std::vector<char*>{};
+    auto _outv = std::vector<char*>{};
+    bool _hash = false;
+    for(int i = 0; i < argc; ++i)
+    {
+        if(_hash)
+        {
+            _outv.emplace_back(argv[i]);
+        }
+        else if(std::string_view{ argv[i] } == "--")
+        {
+            _hash = true;
+        }
+        else
+        {
+            _inpv.emplace_back(argv[i]);
+        }
+    }
+
+    auto _cerr = parser.parse_args(_inpv.size(), _inpv.data());
+    if(help_check(parser, argc, argv))
+        help_action(parser);
+    else if(_cerr)
+        throw std::runtime_error(_cerr.what());
 
     if(parser.exists("realtime") && !parser.exists("cputime"))
         update_env(_env, "OMNITRACE_SAMPLING_CPUTIME", false);
@@ -663,14 +683,5 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
         throw std::runtime_error(
             "Error! '--profile' argument conflicts with '--flat-profile' argument");
 
-    if(help_check(parser, _cmdc, _cmdv)) help_action(parser);
-
-    if(_cerr) throw std::runtime_error(_cerr.what());
-
-    std::vector<char*> _argv = {};
-    _argv.reserve(_cmdc);
-    for(int i = 1; i < _cmdc; ++i)
-        _argv.emplace_back(_cmdv[i]);
-
-    return _argv;
+    return _outv;
 }
