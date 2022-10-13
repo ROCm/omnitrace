@@ -162,7 +162,7 @@ test-omnitrace-sample()
     verbose-run which omnitrace-sample
     verbose-run ldd $(which omnitrace-sample)
     verbose-run omnitrace-sample --help
-    verbose-run omnitrace-sample --cputime --realtime -TPH -- python3 ${SOURCE_DIR}/examples/python/external.py -n 5 -v 20
+    verbose-run omnitrace-sample --cputime 100 --realtime 50 --hsa-interrupt 0 -TPH -- python3 ${SOURCE_DIR}/examples/python/external.py -n 5 -v 20
 }
 
 test-omnitrace-python()

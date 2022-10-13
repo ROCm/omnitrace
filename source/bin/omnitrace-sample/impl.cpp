@@ -43,6 +43,14 @@
 #include <unistd.h>
 #include <vector>
 
+#if !defined(OMNITRACE_USE_ROCTRACER)
+#    define OMNITRACE_USE_ROCTRACER 0
+#endif
+
+#if !defined(OMNITRACE_USE_ROCPROFILER)
+#    define OMNITRACE_USE_ROCPROFILER 0
+#endif
+
 namespace color = tim::log::color;
 using tim::log::stream;
 using namespace timemory::join;
@@ -231,8 +239,12 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
 %{INDENT}%    1     do not modify how ROCm is notified about kernel completion)";
 
     auto _realtime_reqs = (get_env("HSA_ENABLE_INTERRUPT", std::string{}, false).empty())
-                              ? std::initializer_list<std::string>{ "hsa-interrupt" }
-                              : std::initializer_list<std::string>{};
+                              ? std::vector<std::string>{ "hsa-interrupt" }
+                              : std::vector<std::string>{};
+
+#if OMNITRACE_USE_ROCTRACER == 0 && OMNITRACE_USE_ROCPROFILER == 0
+    _realtime_reqs.clear();
+#endif
 
     const auto* _trace_policy_desc =
         R"(Policy for new data when the buffer size limit is reached:
@@ -516,7 +528,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
 
     parser.add_argument({ "--realtime" }, _realtime_desc)
         .min_count(0)
-        .requires(_realtime_reqs)
+        .requires(std::move(_realtime_reqs))
         .action([&](parser_t& p) {
             auto _v = p.get<std::deque<std::string>>("realtime");
             update_env(_env, "OMNITRACE_SAMPLING_REALTIME", true);
