@@ -57,6 +57,7 @@ jobs:
 
     - name: Test Environment Modules
       timeout-minutes: 15
+      shell: bash
       run: |
         set -v
         source /usr/share/modules/init/$(basename ${SHELL})
@@ -112,6 +113,7 @@ jobs:
 
     - name: Test Install
       timeout-minutes: 15
+      shell: bash
       run: |
         set -v
         source /usr/share/modules/init/$(basename ${SHELL})
