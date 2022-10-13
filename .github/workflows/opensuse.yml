@@ -26,7 +26,7 @@ jobs:
         os-release: [ '15.2', '15.3' ]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Install Packages
       timeout-minutes: 10
