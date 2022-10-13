@@ -999,7 +999,7 @@ set(_ompt_preload_environ
     "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
     "OMNITRACE_SAMPLING_FREQ=100"
     "OMNITRACE_SAMPLING_DELAY=0.1"
-    "OMNITRACE_SAMPLING_DURATION=0.5"
+    "OMNITRACE_SAMPLING_DURATION=0.25"
     "OMNITRACE_SAMPLING_CPUTIME=ON"
     "OMNITRACE_SAMPLING_REALTIME=ON"
     "OMNITRACE_SAMPLING_CPUTIME_FREQ=1000"
@@ -1007,8 +1007,8 @@ set(_ompt_preload_environ
     "OMNITRACE_COLORIZED_LOG=OFF")
 
 set(_ompt_preload_samp_regex
-    "Sampler for thread 0 will be triggered 1000.0x per second of CPU-time(.*)Sampler for thread 0 will be triggered 500.0x per second of wall-time(.*)Sampling will be disabled after 0.500000 seconds(.*)Sampling duration of 0.500000 seconds has elapsed. Shutting down sampling"
-    )
+    "Sampler for thread 0 will be triggered 1000.0x per second of CPU-time(.*)Sampler for thread 0 will be triggered 500.0x per second of wall-time(.*)Sampling will be disabled after 0.250000 seconds(.*)Sampling duration of 0.250000 seconds has elapsed. Shutting down sampling"
+)
 set(_ompt_preload_file_regex
     "sampling-duration-preload/sampling_percent.(json|txt)(.*)sampling-duration-preload/sampling_cpu_clock.(json|txt)(.*)sampling-duration-preload/sampling_wall_clock.(json|txt)"
     )
