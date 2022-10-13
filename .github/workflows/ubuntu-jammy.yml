@@ -111,13 +111,21 @@ jobs:
         ctest -V -N -O omnitrace-ctest-${{ github.job }}-commands.log &&
         ctest -V --output-log omnitrace-ctest-${{ github.job }}.log
 
-    - name: Test Install
+    - name: CPack and Install
+      run: |
+        cd build
+        cpack -G STGZ
+        mkdir -p /opt/omnitrace
+        ./omnitrace-*.sh --prefix=/opt/omnitrace --exclude-subdir --skip-license
+
+    - name: Test Install with Modulefile
       timeout-minutes: 15
       shell: bash
       run: |
         set -v
         source /usr/share/modules/init/$(basename ${SHELL})
         module use /opt/omnitrace/share/modulefiles
+        module avail
         module load omnitrace
         ./scripts/test-install.sh --test-omnitrace=1 --test-omnitrace-avail=1 --test-omnitrace-sample=1 --test-omnitrace-python=1 --test-omnitrace-rewrite=1 --test-omnitrace-runtime=1 --test-omnitrace-critical-trace=1
 
