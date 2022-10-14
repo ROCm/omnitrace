@@ -37,7 +37,7 @@ RUN if [ "${ROCM_VERSION}" != "0.0" ]; then \
         apt-get dist-upgrade -y && \
         apt-get install -y hsa-amd-aqlprofile hsa-rocr-dev hsakmt-roct-dev && \
         apt-get install -y hip-base hip-runtime-amd hip-dev && \
-        apt-get install -y rocm-llvm rocm-core rocm-smi-lib && \
+        apt-get install -y rocm-llvm rocm-core rocm-smi-lib rocm-device-libs && \
         apt-get install -y roctracer-dev rocprofiler-dev rccl-dev ${EXTRA_PACKAGES} && \
         apt-get autoclean; \
     fi
