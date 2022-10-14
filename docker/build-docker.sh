@@ -131,7 +131,7 @@ do
                 4.1* | 4.0*)
                     ROCM_REPO_DIST="xenial"
                     ;;
-                5.2* | 5.3*)
+                5.3*)
                     case "${VERSION}" in
                         22.04)
                             ROCM_REPO_DIST="jammy"
@@ -155,14 +155,17 @@ do
                 7)
                     RPM_PATH=7.9
                     RPM_TAG=".el7"
+                    TOOLSET_VERSION=9
                     ;;
                 8)
-                    RPM_PATH=8.5
+                    RPM_PATH=8.4
                     RPM_TAG=".el8"
+                    TOOLSET_VERSION=11
                     ;;
                 9)
                     RPM_PATH=9.0
                     RPM_TAG=".el9"
+                    TOOLSET_VERSION=11
                     ;;
                 *)
                     send-error "Invalid centos version ${VERSION}. Supported: 7, 8, 9"
@@ -189,7 +192,7 @@ do
                     send-error "Unsupported combination :: ${DISTRO}-${VERSION} + ROCm ${ROCM_VERSION}"
                     ;;
             esac
-            verbose-run docker build . -f ${DOCKER_FILE} --tag ${CONTAINER} --build-arg DISTRO=${DISTRO} --build-arg VERSION=${VERSION} --build-arg ROCM_VERSION=${ROCM_VERSION} --build-arg AMDGPU_RPM=${ROCM_RPM} --build-arg PYTHON_VERSIONS=\"${PYTHON_VERSIONS}\"
+            verbose-run docker build . -f ${DOCKER_FILE} --tag ${CONTAINER} --build-arg DISTRO=${DISTRO} --build-arg VERSION=${VERSION} --build-arg ROCM_VERSION=${ROCM_VERSION} --build-arg TOOLSET_VERSION=${TOOLSET_VERSION} --build-arg AMDGPU_RPM=${ROCM_RPM} --build-arg PYTHON_VERSIONS=\"${PYTHON_VERSIONS}\"
         elif [ "${DISTRO}" = "opensuse" ]; then
             case "${VERSION}" in
                 15.*)
