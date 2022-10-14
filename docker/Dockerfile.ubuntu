@@ -39,6 +39,7 @@ RUN if [ "${ROCM_VERSION}" != "0.0" ]; then \
         apt-get install -y hip-base hip-runtime-amd hip-dev && \
         apt-get install -y rocm-llvm rocm-core rocm-smi-lib rocm-device-libs && \
         apt-get install -y roctracer-dev rocprofiler-dev rccl-dev ${EXTRA_PACKAGES} && \
+        if [ "$(echo ${ROCM_VERSION} | awk -F '.' '{print $1}')" -lt "5" ]; then apt-get install -y rocm-dev; fi && \
         apt-get autoclean; \
     fi
 
