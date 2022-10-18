@@ -37,21 +37,21 @@ jobs:
         static-libgcc: ['OFF']
         static-libstdcxx: ['OFF']
         rocm-version: ['0.0']
-      include:
-        - compiler: 'g++'
-          hip: 'ON'
-          mpi: 'OFF'
-          ompt: 'OFF'
-          papi: 'OFF'
-          python: 'ON'
-          lto: 'OFF'
-          strip: 'OFF'
-          hidden: 'ON'
-          build-type: 'Release'
-          mpi-headers: 'OFF'
-          static-libgcc: 'OFF'
-          static-libstdcxx: 'OFF'
-          rocm-version: '5.3'
+        include:
+          - compiler: 'g++'
+            hip: 'ON'
+            mpi: 'OFF'
+            ompt: 'OFF'
+            papi: 'OFF'
+            python: 'ON'
+            lto: 'OFF'
+            strip: 'OFF'
+            hidden: 'ON'
+            build-type: 'Release'
+            mpi-headers: 'OFF'
+            static-libgcc: 'OFF'
+            static-libstdcxx: 'OFF'
+            rocm-version: '5.3'
 
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
