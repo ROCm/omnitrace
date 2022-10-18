@@ -78,6 +78,7 @@ jobs:
     - name: Install ROCm Packages
       timeout-minutes: 10
       if: ${{ matrix.rocm-version != '0.0' }}
+      shell: bash
       run: |
         wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | apt-key add -
         echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{ matrix.rocm-version }}/ jammy main" | tee /etc/apt/sources.list.d/rocm.list
