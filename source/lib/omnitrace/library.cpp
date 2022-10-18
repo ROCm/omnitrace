@@ -630,6 +630,8 @@ omnitrace_finalize_hidden(void)
     OMNITRACE_VERBOSE_F(1, "omnitrace_push_trace :: called %zux\n", _push_count);
     OMNITRACE_VERBOSE_F(1, "omnitrace_pop_trace  :: called %zux\n", _pop_count);
 
+    configure_signal_handler({ SIGINT });
+
     OMNITRACE_DEBUG_F("Copying over all timemory hash information to main thread...\n");
     // copy these over so that all hashes are known
     auto& _hzero = tracing::get_timemory_hash_ids(0);
