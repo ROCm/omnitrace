@@ -1,4 +1,5 @@
-name: Ubuntu 22.04 (GCC, Python)
+name: Ubuntu 22.04 (GCC, Python, ROCm)
+run-name: ubuntu-jammy
 
 on:
   push:
@@ -35,10 +36,27 @@ jobs:
         mpi-headers: ['ON', 'OFF']
         static-libgcc: ['OFF']
         static-libstdcxx: ['OFF']
+        rocm-version: ['0.0']
+      include:
+        - compiler: 'g++'
+          hip: 'ON'
+          mpi: 'OFF'
+          ompt: 'OFF'
+          papi: 'OFF'
+          python: 'ON'
+          lto: 'OFF'
+          strip: 'OFF'
+          hidden: 'ON'
+          build-type: 'Release'
+          mpi-headers: 'OFF'
+          static-libgcc: 'OFF'
+          static-libstdcxx: 'OFF'
+          rocm-version: '5.3'
 
     env:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      OMNITRACE_CI: 'ON'
 
     steps:
     - uses: actions/checkout@v3
@@ -54,6 +72,15 @@ jobs:
         python3 -m pip install numpy &&
         python3 -m pip install 'cmake==3.21.4' &&
         for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done
+
+    - name: Install ROCm Packages
+      timeout-minutes: 10
+      if: ${{ matrix.rocm-version != '0.0' }}
+      run: |
+        wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | apt-key add -
+        echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{ matrix.rocm-version }}/ jammy main" | tee /etc/apt/sources.list.d/rocm.list
+        apt-get update
+        apt-get install -y hsa-amd-aqlprofile hsa-rocr-dev hsakmt-roct-dev hip-base hip-runtime-amd hip-dev rocm-llvm rocm-core rocm-smi-lib rocm-device-libs roctracer-dev rocprofiler-dev rccl-dev
 
     - name: Test Environment Modules
       timeout-minutes: 15
