@@ -52,7 +52,7 @@ void
 configure_mode_settings();
 
 void
-configure_signal_handler(std::set<int>&& = {});
+configure_signal_handler();
 
 void
 configure_disabled_settings();

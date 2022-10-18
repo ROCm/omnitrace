@@ -939,7 +939,7 @@ configure_mode_settings()
 }
 
 void
-configure_signal_handler(std::set<int>&& _extra)
+configure_signal_handler()
 {
     auto _config = settings::shared_instance();
     auto _ignore_dyninst_trampoline =
@@ -964,10 +964,8 @@ configure_signal_handler(std::set<int>&& _extra)
         };
         signal_settings::set_exit_action(_exit_action);
         signal_settings::check_environment();
-        auto _signals = signal_settings::get_default();
-        for(auto&& itr : _extra)
-            _signals.emplace(static_cast<sys_signal>(itr));
-        for(const auto& itr : _signals)
+        auto default_signals = signal_settings::get_default();
+        for(const auto& itr : default_signals)
             signal_settings::enable(itr);
         if(_ignore_dyninst_trampoline)
             signal_settings::disable(static_cast<sys_signal>(_dyninst_trampoline_signal));
