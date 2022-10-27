@@ -72,7 +72,7 @@ do
             ;;
         -n|--name)
             shift
-            NAME=${1}
+            NAME=$(echo ${1} | sed 's/g++/gcc/g')
             reset-last
             ;;
         -s|--site)
