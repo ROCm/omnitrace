@@ -20,7 +20,7 @@ toupper()
 : ${BINARY_DIR:=${PWD}/build}
 : ${SITE:=$(hostname)}
 : ${NAME:=""}
-: ${SUBMIT_URL:=""}
+: ${SUBMIT_URL:="my.cdash.org/submit.php?project=Omnitrace"}
 
 usage()
 {
