@@ -291,6 +291,7 @@ jobs:
           -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
           -DOMNITRACE_CI_MPI_RUN_AS_ROOT=${{ matrix.mpi-headers }}
           -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=OFF
+          --ctest-args ${{ matrix.ctest-exclude }}
 
     - name: Install
       run:

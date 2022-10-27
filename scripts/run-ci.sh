@@ -36,6 +36,7 @@ usage()
     print_default_option "binary-dir -B" "<N>" "Build directory" "${BINARY_DIR}"
     print_default_option "build-jobs -j" "<N>" "Number of build jobs" "${CMAKE_BUILD_PARALLEL_LEVEL}"
     print_default_option cmake-args "<ARGS...>" "CMake configuration args" "none"
+    print_default_option ctest-args "<ARGS...>" "CTest command args" "none"
     print_default_option cdash-mode "<ARGS...>" "CDash mode" "${DASHBOARD_MODE}"
     print_default_option cdash-stages "<ARGS...>" "CDash stages" "${DASHBOARD_STAGES}"
     print_default_option submit-url "<URL>" "CDash submission URL" "${SUBMIT_URL}"
@@ -95,27 +96,36 @@ do
             CMAKE_BUILD_PARALLEL_LEVEL=${1}
             reset-last
             ;;
-        "--cmake-args")
-            shift
-            CMAKE_ARGS=${1}
+        --cmake-args)
+            if [ -n "${2}" ]; then
+                shift
+                CMAKE_ARGS=${1}
+            fi
             last() { CMAKE_ARGS="${CMAKE_ARGS} ${1}"; }
             ;;
-        "--cdash-mode")
+        --ctest-args)
+            if [ -n "${2}" ]; then
+                shift
+                CTEST_ARGS=${1}
+            fi
+            last() { CTEST_ARGS="${CTEST_ARGS} ${1}"; }
+            ;;
+        --cdash-mode)
             shift
             DASHBOARD_MODE=${1}
             reset-last
             ;;
-        "--cdash-stages")
+        --cdash-stages)
             shift
             DASHBOARD_STAGES=${1}
             last() { DASHBOARD_STAGES="${DASHBOARD_STAGES} ${1}"; }
             ;;
-        "--submit-url")
+        --submit-url)
             shift
             SUBMIT_URL=${1}
             reset-last
             ;;
-        "--*")
+        --*)
             send-error "Unsupported argument at position $((${n} + 1)) :: ${1}"
             ;;
         *)
@@ -175,10 +185,10 @@ set(CTEST_BUILD_NAME "${NAME}")
 set(CTEST_SOURCE_DIRECTORY ${SOURCE_DIR})
 set(CTEST_BINARY_DIRECTORY ${BINARY_DIR})
 
-set(CTEST_COMMAND ${CTEST_CMD})
 set(CTEST_UPDATE_COMMAND ${GIT_CMD})
 set(CTEST_CONFIGURE_COMMAND "${CMAKE_CMD} -B ${BINARY_DIR} ${SOURCE_DIR} -DOMNITRACE_BUILD_CI=ON ${CMAKE_ARGS}")
 set(CTEST_BUILD_COMMAND "${CMAKE_CMD} --build ${BINARY_DIR} --target all")
+set(CTEST_COMMAND "${CTEST_CMD} ${CTEST_ARGS}")
 EOF
 
 verbose-run cd ${BINARY_DIR}
