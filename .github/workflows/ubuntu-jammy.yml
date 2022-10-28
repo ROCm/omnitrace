@@ -148,8 +148,6 @@ jobs:
           -DOMNITRACE_STRIP_LIBRARIES=${{ matrix.strip }}
           -DOMNITRACE_MAX_THREADS=32
           -DUSE_CLANG_OMP=OFF
-          --ctest-args
-          --stop-on-failure
 
     - name: Install
       timeout-minutes: 10

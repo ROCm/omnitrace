@@ -99,8 +99,6 @@ jobs:
           -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
           -DLULESH_BUILD_KOKKOS=OFF
           -DOMNITRACE_MAX_THREADS=32
-          --ctest-args
-          --stop-on-failure
 
     - name: Install
       run:
