@@ -21,15 +21,18 @@ toupper()
 : ${SITE:=$(hostname)}
 : ${NAME:=""}
 : ${SUBMIT_URL:="my.cdash.org/submit.php?project=Omnitrace"}
+: ${CODECOV:=0}
 
 usage()
 {
     print_option() { printf "    --%-20s %-24s     %s\n" "${1}" "${2}" "${3}"; }
+    print_default_option() { printf "    --%-20s %-24s     %s (default: %s)\n" "${1}" "${2}" "${3}" "$(tolower ${4})"; }
+
     echo "Options:"
     print_option "help -h" "" "This message"
 
     echo ""
-    print_default_option() { printf "    --%-20s %-24s     %s (default: %s)\n" "${1}" "${2}" "${3}" "$(tolower ${4})"; }
+    print_option         "coverage -c" "" "Enable code coverage"
     print_default_option "name -n" "<NAME>" "Job name" ""
     print_default_option "site -s" "<NAME>" "Site name" "${SITE}"
     print_default_option "source-dir -S" "<N>" "Source directory" "${SOURCE_DIR}"
@@ -70,6 +73,10 @@ do
         -h|--help)
             usage
             exit 0
+            ;;
+        -c|--coverage)
+            CODECOV=1
+            reset-last
             ;;
         -n|--name)
             shift
@@ -150,6 +157,11 @@ done
 
 export CMAKE_BUILD_PARALLEL_LEVEL
 
+if [ "${CODECOV}" -gt 0 ]; then
+    GCOV_CMD=$(which gcov)
+    CMAKE_ARGS="${CMAKE_ARGS} -DOMNITRACE_BUILD_CODECOV=ON -DOMNITRACE_STRIP_LIBRARIES=OFF"
+fi
+
 GIT_CMD=$(which git)
 CMAKE_CMD=$(which cmake)
 CTEST_CMD=$(which ctest)
@@ -161,7 +173,7 @@ verbose-run mkdir -p ${BINARY_DIR}
 cat << EOF > ${BINARY_DIR}/CTestCustom.cmake
 
 set(CTEST_PROJECT_NAME "Omnitrace")
-set(CTEST_NIGHTLY_START_TIME "01:00:00 UTC")
+set(CTEST_NIGHTLY_START_TIME "05:00:00 UTC")
 
 set(CTEST_DROP_METHOD "http")
 set(CTEST_DROP_SITE_CDASH TRUE)
@@ -178,6 +190,7 @@ set(CMAKE_CTEST_ARGUMENTS "--verbose")
 set(CTEST_CUSTOM_MAXIMUM_NUMBER_OF_ERRORS "100")
 set(CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS "100")
 set(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE "51200")
+set(CTEST_CUSTOM_COVERAGE_EXCLUDE "/usr/.*;.*external/.*;.*examples/.*")
 
 set(CTEST_SITE "${SITE}")
 set(CTEST_BUILD_NAME "${NAME}")
@@ -189,6 +202,7 @@ set(CTEST_UPDATE_COMMAND ${GIT_CMD})
 set(CTEST_CONFIGURE_COMMAND "${CMAKE_CMD} -B ${BINARY_DIR} ${SOURCE_DIR} -DOMNITRACE_BUILD_CI=ON ${CMAKE_ARGS}")
 set(CTEST_BUILD_COMMAND "${CMAKE_CMD} --build ${BINARY_DIR} --target all")
 set(CTEST_COMMAND "${CTEST_CMD} ${CTEST_ARGS}")
+set(CTEST_COVERAGE_COMMAND ${GCOV_CMD})
 EOF
 
 verbose-run cd ${BINARY_DIR}
@@ -221,9 +235,20 @@ handle_error("Build" _build_ret)
 ctest_test(BUILD "${BINARY_DIR}" RETURN_VALUE _test_ret)
 ctest_submit(PARTS Test RETURN_VALUE _submit_ret)
 
+if("${CODECOV}" GREATER 0)
+    ctest_coverage(
+        BUILD "${BINARY_DIR}"
+        RETURN_VALUE _coverage_ret)
+    ctest_submit(PARTS Coverage RETURN_VALUE _submit_ret)
+
+    handle_error("Coverage" _coverage_ret)
+endif()
+
 handle_error("Testing" _test_ret)
 
 ctest_submit(PARTS Done RETURN_VALUE _submit_ret)
 EOF
 
+verbose-run cat CTestCustom.cmake
+verbose-run cat dashboard.cmake
 verbose-run ctest ${CDASH_ARGS} -S dashboard.cmake -VV
