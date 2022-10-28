@@ -980,7 +980,8 @@ omnitrace_finalize_hidden(void)
             for(auto& itr : _maps)
             {
                 auto&& _path = itr.pathname;
-                if(!_path.empty() && _path.at(0) != '[') _libs.emplace(_path);
+                if(!_path.empty() && _path.at(0) != '[' && filepath::exists(_path))
+                    _libs.emplace(_path);
             }
             ar(tim::cereal::make_nvp("memory_maps_files", _libs),
                tim::cereal::make_nvp("memory_maps", _maps));
