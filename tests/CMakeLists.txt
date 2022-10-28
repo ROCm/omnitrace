@@ -856,6 +856,22 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
             ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> pthread_create(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall"
         )
 
+    set(_mpip_environment
+        "OMNITRACE_USE_PERFETTO=ON"
+        "OMNITRACE_USE_TIMEMORY=ON"
+        "OMNITRACE_USE_SAMPLING=OFF"
+        "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
+        "OMNITRACE_TIME_OUTPUT=OFF"
+        "OMNITRACE_FILE_OUTPUT=ON"
+        "OMNITRACE_USE_MPIP=ON"
+        "OMNITRACE_DEBUG=ON"
+        "OMNITRACE_VERBOSE=3"
+        "OMNITRACE_DL_VERBOSE=3"
+        "OMNITRACE_SAMPLING_DELAY=1"
+        "OMNITRACE_SAMPLING_FREQ=0.001"
+        "${_test_openmp_env}"
+        "${_test_library_path}")
+
     foreach(_EXAMPLE all2all allgather bcast reduce scatter-gather send-recv)
         omnitrace_add_test(
             SKIP_RUNTIME SKIP_SAMPLING
@@ -865,7 +881,8 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
             NUM_PROCS 2
             LABELS "mpip"
             REWRITE_ARGS -e -v 2 --label file line --min-instructions 0
-            ENVIRONMENT "${_base_environment};OMNITRACE_USE_MPIP=ON")
+            RUN_ARGS 30
+            ENVIRONMENT "${_mpip_environment}")
     endforeach()
 endif()
 
