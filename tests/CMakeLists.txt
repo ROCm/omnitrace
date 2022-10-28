@@ -67,9 +67,11 @@ set(_lock_environment
     "${_test_library_path}")
 
 set(_critical_trace_environment
+    "OMNITRACE_VERBOSE=2"
     "OMNITRACE_USE_SAMPLING=OFF"
     "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
     "OMNITRACE_CRITICAL_TRACE=ON"
+    "OMNITRACE_CRITICAL_TRACE_DEBUG=ON"
     "OMNITRACE_TRACE_THREAD_LOCKS=ON"
     "OMNITRACE_TRACE_THREAD_SPIN_LOCKS=ON"
     "OMNITRACE_TRACE_THREAD_RW_LOCKS=ON"
@@ -1239,7 +1241,7 @@ omnitrace_add_test(
     ENVIRONMENT "${_critical_trace_environment}")
 
 add_test(
-    NAME parallel-overhead-critical-trace-run
+    NAME parallel-overhead-process-critical-trace
     COMMAND
         $<TARGET_FILE:omnitrace-critical-trace>
         ${PROJECT_BINARY_DIR}/omnitrace-tests-output/parallel-overhead-critical-trace-binary-rewrite/call-chain.json
@@ -1255,7 +1257,7 @@ set(_parallel_overhead_critical_trace_environ
     "OMNITRACE_TIME_OUTPUT=OFF")
 
 set_tests_properties(
-    parallel-overhead-critical-trace-run
+    parallel-overhead-process-critical-trace
     PROPERTIES
         ENVIRONMENT
         "${_parallel_overhead_critical_trace_environ}"
