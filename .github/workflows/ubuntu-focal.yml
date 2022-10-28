@@ -521,3 +521,53 @@ jobs:
         set +e
         RUNNING_PROCS=$(pgrep trace_processor_shell)
         if [ -n "${RUNNING_PROCS}" ]; then kill -s 9 ${RUNNING_PROCS}; fi
+
+  ubuntu-focal-codecov:
+    runs-on: ubuntu-20.04
+
+    container:
+      image: jrmadsen/omnitrace:ci-base-ubuntu-20.04
+
+    env:
+      OMNITRACE_VERBOSE: 2
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Packages
+      timeout-minutes: 10
+      run:
+        apt-get update &&
+        apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev environment-modules gcc g++ gcov mpich libmpich-dev &&
+        python3 -m pip install --upgrade pip &&
+        python3 -m pip install numpy &&
+        python3 -m pip install 'cmake==3.24.1'
+
+    - name: Configure Env
+      run:
+        echo "CC=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')" >> $GITHUB_ENV &&
+        echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV &&
+        echo "${HOME}/.local/bin" >> $GITHUB_PATH
+
+    - name: Configure, Build, and Test
+      timeout-minutes: 115
+      shell: bash
+      run:
+        cmake --version &&
+        ./scripts/run-ci.sh -B build
+          --name ubuntu-focal-codecov-mpi-python-ompt-papi
+          --build-jobs 2
+          --site GitHub
+          --coverage
+          --cmake-args
+          -DCMAKE_INSTALL_PREFIX=/opt/omnitrace
+          -DOMNITRACE_BUILD_CI=OFF
+          -DOMNITRACE_BUILD_TESTING=ON
+          -DOMNITRACE_BUILD_DYNINST=OFF
+          -DOMNITRACE_USE_MPI=ON
+          -DOMNITRACE_USE_PYTHON=ON
+          -DOMNITRACE_USE_OMPT=ON
+          -DOMNITRACE_USE_PAPI=ON
+          -DOMNITRACE_USE_HIP=OFF
+          -DOMNITRACE_USE_RCCL=OFF
+          -DOMNITRACE_MAX_THREADS=32
