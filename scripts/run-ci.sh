@@ -56,12 +56,12 @@ send-error()
 verbose-run()
 {
     echo -e "\n### Executing \"${@}\"... ###\n"
-    eval $@
+    eval "${@}"
 }
 
 reset-last()
 {
-    last() { send-error "Unsupported argument :: ${1}"; }
+    last() { send-error "Unsupported argument :: \"${1}\""; }
 }
 
 reset-last
@@ -115,7 +115,7 @@ do
                 shift
                 CTEST_ARGS=${1}
             fi
-            last() { CTEST_ARGS="${CTEST_ARGS} ${1}"; }
+            last() { CTEST_ARGS="${CTEST_ARGS} \"${1}\""; }
             ;;
         --cdash-mode)
             shift
@@ -133,7 +133,7 @@ do
             reset-last
             ;;
         --*)
-            send-error "Unsupported argument at position $((${n} + 1)) :: ${1}"
+            send-error "Unsupported argument at position $((${n} + 1)) :: \"${1}\""
             ;;
         *)
             last ${1}
