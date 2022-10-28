@@ -1240,7 +1240,11 @@ add_test(
 set(_parallel_overhead_critical_trace_environ
     "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output"
     "OMNITRACE_OUTPUT_PREFIX=parallel-overhead-critical-trace/"
-    "OMNITRACE_CRITICAL_TRACE_DEBUG=ON" "OMNITRACE_VERBOSE=4" "OMNITRACE_DEBUG=ON")
+    "OMNITRACE_CRITICAL_TRACE_DEBUG=ON"
+    "OMNITRACE_VERBOSE=4"
+    "OMNITRACE_DEBUG=ON"
+    "OMNITRACE_USE_PID=OFF"
+    "OMNITRACE_TIME_OUTPUT=OFF")
 
 set_tests_properties(
     parallel-overhead-critical-trace-run
