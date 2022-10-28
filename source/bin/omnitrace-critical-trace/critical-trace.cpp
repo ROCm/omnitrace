@@ -484,6 +484,7 @@ find_children(PTL::ThreadPool& _tp, call_graph_t& _graph, const call_chain& _cha
         return !_data.empty();
     };
 
+    OMNITRACE_CT_DEBUG_F("Checking index at -1...\n");
     if(!_indexed.at(-1).empty())
     {
         OMNITRACE_CT_DEBUG_F("Setting root (line %i)...\n", __LINE__);
@@ -856,7 +857,7 @@ compute_critical_trace()
 
     OMNITRACE_BASIC_PRINT("\n");
 
-    try
+    // try
     {
         PTL::ThreadPool _tp{ get_thread_pool_size(), []() { copy_hash_ids(); }, []() {} };
         _tp.set_verbose(-1);
@@ -970,11 +971,11 @@ compute_critical_trace()
 
         _tg.join();
         _tp.destroy_threadpool();
-    } catch(std::exception& e)
+    }  // catch(std::exception& e)
     {
-        OMNITRACE_BASIC_PRINT("Thread exited '%s' with exception: %s\n", __FUNCTION__,
-                              e.what());
-        TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(true, 32);
+        // OMNITRACE_BASIC_PRINT("Thread exited '%s' with exception: %s\n", __FUNCTION__,
+        //                      e.what());
+        // TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(true, 32);
     }
 
     _report_perf(_ct_perf, __FUNCTION__, "critical trace computation");
