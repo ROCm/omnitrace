@@ -24,6 +24,7 @@
 
 #include "api.hpp"
 #include "library/config.hpp"
+#include "library/debug.hpp"
 #include "library/perfetto.hpp"
 
 #include <timemory/hash/types.hpp>
@@ -72,8 +73,12 @@ main(int argc, char** argv)
     {
         critical_trace::complete_call_chain = {};
         OMNITRACE_BASIC_PRINT_F("Loading call-chain %s...\n", argv[i]);
-        critical_trace::load_call_chain(argv[i], "call_chain",
-                                        critical_trace::complete_call_chain);
+        if(!critical_trace::load_call_chain(argv[i], "call_chain",
+                                            critical_trace::complete_call_chain))
+        {
+            OMNITRACE_THROW("Error loading '%s'. Data size: %zu\n", argv[i],
+                            critical_trace::complete_call_chain.size());
+        }
         for(const auto& itr : *tim::get_hash_ids())
             critical_trace::complete_hash_ids.emplace(itr.second);
         OMNITRACE_BASIC_PRINT_F("Computing critical trace for %s...\n", argv[i]);
@@ -371,22 +376,28 @@ save_call_chain_json(const std::string& _fname, const std::string& _label,
     }
 }
 
-void
+bool
 load_call_chain(const std::string& _fname, const std::string& _label,
                 call_chain& _call_chain)
 {
+    namespace cereal = tim::cereal;
+
     std::ifstream ifs{};
     ifs.open(_fname);
-    if(ifs && ifs.is_open())
-    {
-        namespace cereal = tim::cereal;
-        auto ar          = tim::policy::input_archive<cereal::JSONInputArchive>::get(ifs);
 
-        ar->setNextName("omnitrace");
-        ar->startNode();
-        (*ar)(cereal::make_nvp(_label.c_str(), _call_chain));
-        ar->finishNode();
-    }
+    OMNITRACE_CONDITIONAL_THROW(!ifs || !ifs.is_open(),
+                                "Error! call-chain file '%s' could not be opened",
+                                _fname.c_str());
+
+    auto ar   = tim::policy::input_archive<cereal::JSONInputArchive>::get(ifs);
+    auto _val = call_chain{};
+    ar->setNextName("omnitrace");
+    ar->startNode();
+    (*ar)(cereal::make_nvp(_label.c_str(), _val));
+    ar->finishNode();
+    auto _success = (_val.empty() == false);
+    if(_success) std::swap(_call_chain, _val);
+    return _success;
 }
 
 auto
