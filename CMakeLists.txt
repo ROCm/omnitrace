@@ -173,6 +173,7 @@ omnitrace_add_option(OMNITRACE_USE_OMPT "Enable OpenMP tools support" ON)
 omnitrace_add_option(OMNITRACE_USE_PYTHON "Enable Python support" OFF)
 omnitrace_add_option(OMNITRACE_BUILD_DYNINST "Build dyninst from submodule" OFF)
 omnitrace_add_option(OMNITRACE_BUILD_LIBUNWIND "Build libunwind from submodule" ON)
+omnitrace_add_option(OMNITRACE_BUILD_CODECOV "Build for code coverage" OFF)
 omnitrace_add_option(OMNITRACE_INSTALL_PERFETTO_TOOLS
                      "Install perfetto tools (i.e. traced, perfetto, etc.)" OFF)
 
@@ -281,7 +282,37 @@ endif()
 
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME core)
 
+if(OMNITRACE_BUILD_CODECOV)
+    omnitrace_save_variables(CODECOV_FLAGS VARIABLES CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+    foreach(_BUILD_TYPE DEBUG MINSIZEREL RELWITHDEBINFO RELEASE)
+        omnitrace_save_variables(CODECOV_FLAGS VARIABLES CMAKE_C_FLAGS_${_BUILD_TYPE}
+                                                         CMAKE_CXX_FLAGS_${_BUILD_TYPE})
+    endforeach()
+
+    foreach(_BUILD_TYPE DEBUG MINSIZEREL RELWITHDEBINFO RELEASE)
+        set(CMAKE_C_FLAGS_${_BUILD_TYPE}
+            "-Og -g3 -fno-omit-frame-pointer -fprofile-abs-path -fprofile-arcs -ftest-coverage"
+            )
+        set(CMAKE_CXX_FLAGS_${_BUILD_TYPE}
+            "-Og -g3 -fno-omit-frame-pointer -fprofile-abs-path -fprofile-arcs -ftest-coverage"
+            )
+    endforeach()
+
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+endif()
+
 add_subdirectory(source)
+
+if(OMNITRACE_BUILD_CODECOV)
+    omnitrace_restore_variables(CODECOV_FLAGS VARIABLES CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+
+    foreach(_BUILD_TYPE DEBUG MINSIZEREL RELWITHDEBINFO RELEASE)
+        omnitrace_restore_variables(
+            CODECOV_FLAGS VARIABLES CMAKE_C_FLAGS_${_BUILD_TYPE}
+                                    CMAKE_CXX_FLAGS_${_BUILD_TYPE})
+    endforeach()
+endif()
 
 # ------------------------------------------------------------------------------#
 #
