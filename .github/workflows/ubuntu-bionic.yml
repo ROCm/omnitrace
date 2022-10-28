@@ -50,8 +50,8 @@ jobs:
         apt-get update &&
         apt-get upgrade -y &&
         apt-get install -y build-essential m4 autoconf libtool python3-pip ${{ matrix.compiler }} &&
-        if [ "${{ matrix.mpi }}" = "mpich" ]; then sudo apt-get install -y libmpich-dev mpich; fi &&
-        if [ "${{ matrix.mpi }}" = "openmpi" ]; then sudo apt-get install -y libopenmpi-dev openmpi-bin libfabric-dev; fi &&
+        if [ "${{ matrix.mpi }}" = "mpich" ]; then apt-get install -y libmpich-dev mpich; fi &&
+        if [ "${{ matrix.mpi }}" = "openmpi" ]; then apt-get install -y libopenmpi-dev openmpi-bin libfabric-dev; fi &&
         python3 -m pip install --upgrade pip &&
         python3 -m pip install numpy &&
         python3 -m pip install perfetto &&

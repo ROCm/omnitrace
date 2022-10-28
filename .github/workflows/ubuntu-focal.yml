@@ -149,9 +149,6 @@ jobs:
       run: |
         cd build
         source ./share/omnitrace/setup-env.sh
-        module use ./share/modulefiles
-        module avail
-        module load omnitrace
         echo $(which omnitrace)
         ldd $(which omnitrace)
         omnitrace --help
@@ -538,7 +535,7 @@ jobs:
       timeout-minutes: 10
       run:
         apt-get update &&
-        apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev environment-modules gcc g++ gcov mpich libmpich-dev &&
+        apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev environment-modules gcc g++ mpich libmpich-dev &&
         python3 -m pip install --upgrade pip &&
         python3 -m pip install numpy &&
         python3 -m pip install 'cmake==3.24.1'
