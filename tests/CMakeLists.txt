@@ -66,6 +66,18 @@ set(_lock_environment
     "OMNITRACE_TIMELINE_PROFILE=OFF"
     "${_test_library_path}")
 
+set(_critical_trace_environment
+    "OMNITRACE_USE_SAMPLING=OFF"
+    "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
+    "OMNITRACE_CRITICAL_TRACE=ON"
+    "OMNITRACE_TRACE_THREAD_LOCKS=ON"
+    "OMNITRACE_TRACE_THREAD_SPIN_LOCKS=ON"
+    "OMNITRACE_TRACE_THREAD_RW_LOCKS=ON"
+    "OMNITRACE_COUT_OUTPUT=ON"
+    "OMNITRACE_TIME_OUTPUT=OFF"
+    "OMNITRACE_TIMELINE_PROFILE=OFF"
+    "${_test_library_path}")
+
 set(_ompt_environment
     "OMNITRACE_USE_PERFETTO=ON"
     "OMNITRACE_USE_TIMEMORY=ON"
@@ -396,11 +408,14 @@ function(OMNITRACE_ADD_TEST)
             baseline preload binary-rewrite binary-rewrite-run binary-rewrite-sampling
             binary-rewrite-sampling-run runtime-instrument runtime-instrument-sampling)
             string(REGEX REPLACE "-run(-|/)" "\\1" _prefix "${TEST_NAME}-${_TEST}/")
-            set(_labels "${TEST_LABELS}" "${_TEST}")
+            set(_labels "${_TEST}")
             string(REPLACE "-run" "" _labels "${_TEST}")
             string(REPLACE "-sampling" ";sampling" _labels "${_labels}")
             if(TEST_TARGET)
                 list(APPEND _labels "${TEST_TARGET}")
+            endif()
+            if(TEST_LABELS)
+                list(APPEND _labels "${TEST_LABELS}")
             endif()
 
             set(_environ
@@ -840,6 +855,18 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
         REWRITE_RUN_PASS_REGEX
             ">>> main(.*\n.*)>>> MPI_Init_thread(.*\n.*)>>> pthread_create(.*\n.*)>>> MPI_Comm_size(.*\n.*)>>> MPI_Comm_rank(.*\n.*)>>> MPI_Barrier(.*\n.*)>>> MPI_Alltoall"
         )
+
+    foreach(_EXAMPLE all2all allgather bcast reduce scatter-gather send-recv)
+        omnitrace_add_test(
+            SKIP_RUNTIME SKIP_SAMPLING
+            NAME "mpi-${_EXAMPLE}"
+            TARGET mpi-${_EXAMPLE}
+            MPI ON
+            NUM_PROCS 2
+            LABELS "mpip"
+            REWRITE_ARGS -e -v 2 --label file line --min-instructions 0
+            ENVIRONMENT "${_base_environment};OMNITRACE_USE_MPIP=ON")
+    endforeach()
 endif()
 
 omnitrace_add_test(
@@ -1169,6 +1196,41 @@ omnitrace_add_test(
     ENVIRONMENT "${_base_environment}"
     RUNTIME_PASS_REGEX "(\\\[[0-9]+\\\]) function coverage ::  66.67%"
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) function coverage ::  66.67%")
+
+# -------------------------------------------------------------------------------------- #
+#
+# critical-trace tests
+#
+# -------------------------------------------------------------------------------------- #
+
+omnitrace_add_test(
+    SKIP_BASELINE SKIP_RUNTIME SKIP_SAMPLING SKIP_PRELOAD
+    NAME parallel-overhead-critical-trace
+    TARGET parallel-overhead
+    LABELS "critical-trace"
+    REWRITE_ARGS -e -i 256
+    RUNTIME_ARGS -e -i 256
+    RUN_ARGS 10 4 100
+    ENVIRONMENT "${_critical_trace_environment}")
+
+add_test(
+    NAME parallel-overhead-critical-trace-run
+    COMMAND
+        $<TARGET_FILE:omnitrace-critical-trace>
+        ${PROJECT_BINARY_DIR}/omnitrace-tests-output/parallel-overhead-critical-trace-binary-rewrite/call-chain.json
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
+set(_parallel_overhead_critical_trace_environ
+    "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output"
+    "OMNITRACE_OUTPUT_PREFIX=parallel-overhead-critical-trace/"
+    "OMNITRACE_CRITICAL_TRACE_DEBUG=ON" "OMNITRACE_VERBOSE=4" "OMNITRACE_DEBUG=ON")
+
+set_tests_properties(
+    parallel-overhead-critical-trace-run
+    PROPERTIES
+        ENVIRONMENT "${_parallel_overhead_critical_trace_environ}" TIMEOUT 300 LABELS
+        "parallel-overhead;critical-trace" PASS_REGULAR_EXPRESSION
+        "Outputting.*(critical-trace-cpu.json).*Outputting.*(critical-trace-any.json)")
 
 # -------------------------------------------------------------------------------------- #
 #
