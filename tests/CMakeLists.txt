@@ -1225,8 +1225,16 @@ omnitrace_add_test(
     NAME parallel-overhead-critical-trace
     TARGET parallel-overhead
     LABELS "critical-trace"
-    REWRITE_ARGS -e -i 256
-    RUNTIME_ARGS -e -i 256
+    REWRITE_ARGS
+        -e
+        -i
+        8
+        -E
+        "^fib"
+        -v
+        2
+        --print-instrumented
+        functions
     RUN_ARGS 10 4 100
     ENVIRONMENT "${_critical_trace_environment}")
 
@@ -1249,9 +1257,16 @@ set(_parallel_overhead_critical_trace_environ
 set_tests_properties(
     parallel-overhead-critical-trace-run
     PROPERTIES
-        ENVIRONMENT "${_parallel_overhead_critical_trace_environ}" TIMEOUT 300 LABELS
-        "parallel-overhead;critical-trace" PASS_REGULAR_EXPRESSION
-        "Outputting.*(critical-trace-cpu.json).*Outputting.*(critical-trace-any.json)")
+        ENVIRONMENT
+        "${_parallel_overhead_critical_trace_environ}"
+        TIMEOUT
+        300
+        LABELS
+        "parallel-overhead;critical-trace"
+        PASS_REGULAR_EXPRESSION
+        "Outputting.*(critical-trace-cpu.json).*Outputting.*(critical-trace-any.json)"
+        DEPENDS
+        parallel-overhead-critical-trace-binary-rewrite-run)
 
 # -------------------------------------------------------------------------------------- #
 #
