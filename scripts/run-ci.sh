@@ -201,7 +201,7 @@ set(CTEST_BINARY_DIRECTORY ${BINARY_DIR})
 set(CTEST_UPDATE_COMMAND ${GIT_CMD})
 set(CTEST_CONFIGURE_COMMAND "${CMAKE_CMD} -B ${BINARY_DIR} ${SOURCE_DIR} -DOMNITRACE_BUILD_CI=ON ${CMAKE_ARGS}")
 set(CTEST_BUILD_COMMAND "${CMAKE_CMD} --build ${BINARY_DIR} --target all")
-set(CTEST_COMMAND "${CTEST_CMD} ${CTEST_ARGS}")
+set(CTEST_COMMAND ${CTEST_CMD})
 set(CTEST_COVERAGE_COMMAND ${GCOV_CMD})
 EOF
 
@@ -251,4 +251,4 @@ EOF
 
 verbose-run cat CTestCustom.cmake
 verbose-run cat dashboard.cmake
-verbose-run ctest ${CDASH_ARGS} -S dashboard.cmake -VV
+verbose-run ctest ${CDASH_ARGS} -S dashboard.cmake -VV ${CTEST_ARGS}
