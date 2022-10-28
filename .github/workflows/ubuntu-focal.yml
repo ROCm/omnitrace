@@ -550,6 +550,7 @@ jobs:
       timeout-minutes: 115
       shell: bash
       run:
+        git config --global --add safe.directory ${PWD} &&
         cmake --version &&
         ./scripts/run-ci.sh -B build
           --name ubuntu-focal-codecov-mpi-python-ompt-papi
