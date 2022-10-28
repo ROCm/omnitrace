@@ -818,7 +818,6 @@ omnitrace_finalize_hidden(void)
     if(get_use_critical_trace() || (get_use_rocm_smi() && get_use_roctracer()))
     {
         OMNITRACE_VERBOSE_F(1, "Generating the critical trace...\n");
-
         for(size_t i = 0; i < max_supported_threads; ++i)
         {
             using critical_trace_hash_data =
@@ -856,10 +855,10 @@ omnitrace_finalize_hidden(void)
     if(get_use_critical_trace())
     {
         // launch compute task
-        OMNITRACE_VERBOSE_F(1, "launching critical trace compute task...\n");
+        OMNITRACE_VERBOSE_F(1, "Launching critical trace compute task...\n");
         critical_trace::compute();
 
-        OMNITRACE_VERBOSE_F(1, "Waiting on critical trace tasks...\n");
+        OMNITRACE_VERBOSE_F(1, "Waiting on critical trace computation...\n");
         tasking::join();
     }
 
