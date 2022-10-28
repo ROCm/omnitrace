@@ -57,6 +57,8 @@ main(int argc, char** argv)
     config::set_setting_value<int64_t>("OMNITRACE_THREAD_POOL_SIZE",
                                        std::thread::hardware_concurrency());
     config::set_setting_value("OMNITRACE_CRITICAL_TRACE_SERIALIZE_NAMES", true);
+    config::set_setting_value("OMNITRACE_USE_PID", false);
+    config::set_setting_value("OMNITRACE_TIME_OUTPUT", false);
 
     if(config::get_verbose() >= 0)
     {
