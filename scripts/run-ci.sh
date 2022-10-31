@@ -185,7 +185,7 @@ set(CTEST_GIT_INIT_SUBMODULES TRUE)
 
 set(CTEST_OUTPUT_ON_FAILURE TRUE)
 set(CTEST_USE_LAUNCHERS TRUE)
-set(CMAKE_CTEST_ARGUMENTS "--verbose")
+set(CMAKE_CTEST_ARGUMENTS --output-on-failure ${CTEST_ARGS})
 
 set(CTEST_CUSTOM_MAXIMUM_NUMBER_OF_ERRORS "100")
 set(CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS "100")
@@ -201,7 +201,6 @@ set(CTEST_BINARY_DIRECTORY ${BINARY_DIR})
 set(CTEST_UPDATE_COMMAND ${GIT_CMD})
 set(CTEST_CONFIGURE_COMMAND "${CMAKE_CMD} -B ${BINARY_DIR} ${SOURCE_DIR} -DOMNITRACE_BUILD_CI=ON ${CMAKE_ARGS}")
 set(CTEST_BUILD_COMMAND "${CMAKE_CMD} --build ${BINARY_DIR} --target all")
-set(CTEST_COMMAND ${CTEST_CMD})
 set(CTEST_COVERAGE_COMMAND ${GCOV_CMD})
 EOF
 
@@ -249,4 +248,4 @@ EOF
 
 verbose-run cat CTestCustom.cmake
 verbose-run cat dashboard.cmake
-verbose-run ctest ${CDASH_ARGS} -S dashboard.cmake -VV ${CTEST_ARGS}
+verbose-run ctest ${CDASH_ARGS} -S dashboard.cmake --output-on-failure ${CTEST_ARGS}
