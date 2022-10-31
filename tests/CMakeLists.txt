@@ -1085,7 +1085,7 @@ omnitrace_add_test(
     PRELOAD_PASS_REGEX "${_ompt_preload_samp_regex}(.*)${_ompt_preload_file_regex}")
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_SAMPLING
+    SKIP_BASELINE SKIP_SAMPLING SKIP_PRELOAD
     NAME code-coverage
     TARGET code-coverage
     REWRITE_ARGS
@@ -1124,7 +1124,7 @@ omnitrace_add_test(
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) code coverage     ::  66.67%")
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_SAMPLING
+    SKIP_BASELINE SKIP_SAMPLING SKIP_PRELOAD
     NAME code-coverage-hybrid
     TARGET code-coverage
     REWRITE_ARGS -e -v 2 --min-instructions=4 -E ^std:: --coverage function
@@ -1151,7 +1151,7 @@ omnitrace_add_test(
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) code coverage     ::  66.67%")
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_SAMPLING
+    SKIP_BASELINE SKIP_SAMPLING SKIP_PRELOAD
     NAME code-coverage-basic-blocks
     TARGET code-coverage
     REWRITE_ARGS
@@ -1190,7 +1190,7 @@ omnitrace_add_test(
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) function coverage ::  66.67%")
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_SAMPLING
+    SKIP_BASELINE SKIP_SAMPLING SKIP_PRELOAD
     NAME code-coverage-basic-blocks-hybrid
     TARGET code-coverage
     REWRITE_ARGS -e -v 2 --min-instructions=4 -E ^std:: --coverage basic_block
@@ -1439,6 +1439,24 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
         PYTHON_VERSION ${_VERSION}
         FILE ${CMAKE_SOURCE_DIR}/examples/python/source.py
         RUN_ARGS -v 5 -n 5 -s 3
+        ENVIRONMENT "${_python_environment}")
+
+    omnitrace_add_python_test(
+        STANDALONE
+        NAME python-code-coverage
+        PYTHON_EXECUTABLE ${_PYTHON_EXECUTABLE}
+        PYTHON_VERSION ${_VERSION}
+        FILE ${CMAKE_SOURCE_DIR}/examples/code-coverage/code-coverage.py
+        RUN_ARGS
+            -i
+            ${PROJECT_BINARY_DIR}/omnitrace-tests-output/code-coverage-basic-blocks-binary-rewrite/coverage.json
+            ${PROJECT_BINARY_DIR}/omnitrace-tests-output/code-coverage-basic-blocks-hybrid-runtime-instrument/coverage.json
+            -o
+            ${PROJECT_BINARY_DIR}/omnitrace-tests-output/code-coverage-basic-blocks-summary/coverage.json
+        DEPENDS code-coverage-basic-blocks-binary-rewrite
+                code-coverage-basic-blocks-binary-rewrite-run
+                code-coverage-basic-blocks-hybrid-runtime-instrument
+        LABELS "code-coverage"
         ENVIRONMENT "${_python_environment}")
 
     # ---------------------------------------------------------------------------------- #
