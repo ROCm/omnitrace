@@ -2021,6 +2021,8 @@ tmp_file::close()
 std::shared_ptr<tmp_file>
 get_tmp_file(std::string _basename, std::string _ext)
 {
+    if(!get_use_tmp_files()) return std::shared_ptr<tmp_file>{};
+
     static auto _existing_files =
         std::unordered_map<std::string, std::shared_ptr<tmp_file>>{};
     static std::mutex            _mutex{};

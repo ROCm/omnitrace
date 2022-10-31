@@ -322,7 +322,9 @@ offload_buffer(int64_t _seq, sampler_buffer_t&& _buf)
 auto
 load_offload_buffer()
 {
-    std::map<int64_t, std::vector<sampler_buffer_t>> _data{};
+    auto _data = std::map<int64_t, std::vector<sampler_buffer_t>>{};
+    if(!get_use_tmp_files()) return _data;
+
     auto  _lk   = std::unique_lock<std::mutex>{ get_offload_mutex() };
     auto& _file = get_offload_file();
     if(!_file) return _data;
@@ -423,8 +425,11 @@ configure(bool _setup, int64_t _tid)
                                        threading::get_sys_tid() });
         }
 
-        auto _file = get_offload_file();
-        if(get_use_tmp_files() && _file && *_file) _sampler->set_offload(&offload_buffer);
+        if(get_use_tmp_files())
+        {
+            auto _file = get_offload_file();
+            if(_file && *_file) _sampler->set_offload(&offload_buffer);
+        }
 
         static_assert(tim::trait::buffer_size<sampling::sampler_t>::value > 0,
                       "Error! Zero buffer size");
