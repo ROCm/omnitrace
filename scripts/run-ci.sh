@@ -237,7 +237,8 @@ ctest_submit(PARTS Test RETURN_VALUE _submit_ret)
 if("${CODECOV}" GREATER 0)
     ctest_coverage(
         BUILD "${BINARY_DIR}"
-        RETURN_VALUE _coverage_ret)
+        RETURN_VALUE _coverage_ret
+        CAPTURE_CMAKE_ERROR _coverage_err)
     ctest_submit(PARTS Coverage RETURN_VALUE _submit_ret)
 endif()
 
