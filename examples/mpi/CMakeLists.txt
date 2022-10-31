@@ -38,7 +38,7 @@ add_executable(mpi-send-recv send-recv.c)
 target_link_libraries(mpi-send-recv PRIVATE mpi-c-interface-library)
 
 add_executable(mpi-allreduce allreduce.c)
-target_link_libraries(mpi-allreduce PRIVATE mpi-c-interface-library)
+target_link_libraries(mpi-allreduce PRIVATE mpi-c-interface-library m)
 
 set(CMAKE_BUILD_TYPE "Release")
 
