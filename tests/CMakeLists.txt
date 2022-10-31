@@ -874,7 +874,7 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
         "${_test_openmp_env}"
         "${_test_library_path}")
 
-    foreach(_EXAMPLE all2all allgather bcast reduce scatter-gather send-recv)
+    foreach(_EXAMPLE all2all allgather allreduce bcast reduce scatter-gather send-recv)
         omnitrace_add_test(
             SKIP_RUNTIME SKIP_SAMPLING
             NAME "mpi-${_EXAMPLE}"
