@@ -240,8 +240,6 @@ if("${CODECOV}" GREATER 0)
         BUILD "${BINARY_DIR}"
         RETURN_VALUE _coverage_ret)
     ctest_submit(PARTS Coverage RETURN_VALUE _submit_ret)
-
-    handle_error("Coverage" _coverage_ret)
 endif()
 
 handle_error("Testing" _test_ret)
