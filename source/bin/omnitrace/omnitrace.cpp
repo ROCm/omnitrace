@@ -2560,9 +2560,12 @@ find_dyn_api_rt()
                 (_file_exists(tim::get_env<string_t>("DYNINSTAPI_RT_LIB", ""))) ? 0 : 1;
             tim::set_env<string_t>("DYNINSTAPI_RT_LIB", _fname, _overwrite);
             _fname = tim::get_env<string_t>("DYNINSTAPI_RT_LIB", _fname);
-            tim::set_env<string_t>("DYNINST_REWRITER_PATHS",
-                                   TIMEMORY_JOIN(':', dirname(_fname), _rewriter_paths),
-                                   1);
+            tim::set_env<string_t>(
+                "DYNINST_REWRITER_PATHS",
+                _rewriter_paths.empty()
+                    ? dirname(_fname)
+                    : TIMEMORY_JOIN(':', dirname(_fname), _rewriter_paths),
+                1);
         };
 
         auto _resolved = [&](std::string _fname) {
