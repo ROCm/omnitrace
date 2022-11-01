@@ -62,10 +62,12 @@ jobs:
           -DOMNITRACE_USE_HIP=OFF
           -DOMNITRACE_USE_OMPT=OFF
           -DOMNITRACE_USE_PYTHON=ON
+          -DOMNITRACE_USE_MPI_HEADERS=ON
           -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
           -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
           -DOMNITRACE_CI_MPI_RUN_AS_ROOT=ON
           -DOMNITRACE_MAX_THREADS=32
+          -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
 
     - name: Install
       timeout-minutes: 10

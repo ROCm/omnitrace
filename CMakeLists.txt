@@ -47,8 +47,7 @@ if(Git_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     execute_process(
         COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
         OUTPUT_VARIABLE OMNITRACE_GIT_REVISION
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET)
+        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 else()
     set(OMNITRACE_GIT_DESCRIBE "v${OMNITRACE_VERSION}")
     set(OMNITRACE_GIT_REVISION "")
@@ -198,7 +197,9 @@ if(OMNITRACE_USE_PYTHON)
 elseif("$ENV{OMNITRACE_CI}" STREQUAL "ON")
     # quiet warnings in dashboard
     if(OMNITRACE_PYTHON_ENVS OR OMNITRACE_PYTHON_PREFIX)
-        omnitrace_message("Ignoring values of OMNITRACE_PYTHON_ENVS and/or OMNITRACE_PYTHON_PREFIX")
+        omnitrace_message(
+            STATUS
+            "Ignoring values of OMNITRACE_PYTHON_ENVS and/or OMNITRACE_PYTHON_PREFIX")
     endif()
 endif()
 

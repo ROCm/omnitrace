@@ -147,6 +147,7 @@ jobs:
           -DOMNITRACE_PYTHON_ENVS="py3.7;py3.8;py3.9;py3.10"
           -DOMNITRACE_STRIP_LIBRARIES=${{ matrix.strip }}
           -DOMNITRACE_MAX_THREADS=32
+          -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
           -DUSE_CLANG_OMP=OFF
 
     - name: Install
