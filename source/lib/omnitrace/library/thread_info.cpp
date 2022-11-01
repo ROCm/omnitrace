@@ -78,7 +78,7 @@ init_index_data(int64_t _tid, bool _offset = false)
         itr       = thread_index_data{};
         int _verb = 2;
         // if thread created using finalization, bump up the minimum verbosity level
-        if(get_state() == State::Finalized && _offset) _verb += 2;
+        if(get_state() >= State::Finalized && _offset) _verb += 2;
         if(!config::settings_are_configured())
         {
             OMNITRACE_BASIC_VERBOSE_F(

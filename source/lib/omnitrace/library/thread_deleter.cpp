@@ -37,7 +37,7 @@ thread_deleter<void>::operator()() const
 {
     component::pthread_create_gotcha::shutdown(threading::get_id());
     set_thread_state(ThreadState::Completed);
-    if(get_state() != State::Finalized && threading::get_id() == 0)
+    if(get_state() < State::Finalized && threading::get_id() == 0)
         omnitrace_finalize_hidden();
 }
 
