@@ -13,7 +13,12 @@ endif()
 
 find_package(MPI)
 if(NOT MPI_FOUND)
-    message(AUTHOR_WARNING "MPI could not be found. Cannot build omnitrace-mpi target")
+    if("${CMAKE_PROJECT_NAME}" STREQUAL "omnitrace" AND "$ENV{OMNITRACE_CI}")
+        set(_MSG_TYPE STATUS) # don't generate warnings during CI
+    else()
+        set(_MSG_TYPE AUTHOR_WARNING)
+    endif()
+    message(${_MSG_TYPE} "MPI could not be found. Cannot build omnitrace-mpi target")
     return()
 endif()
 
