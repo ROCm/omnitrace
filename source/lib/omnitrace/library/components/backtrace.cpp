@@ -79,15 +79,10 @@ backtrace::get() const
     std::vector<entry_type> _v = {};
     if(size() == 0) return _v;
 
-    if(get_sampling_include_inlines())
     {
-        static auto _cache = cache_type{};
+        static auto _cache = cache_type{ get_sampling_include_inlines() };
         auto_lock_t _lk{ type_mutex<backtrace>() };
         _v = m_data.get(&_cache, false);
-    }
-    else
-    {
-        _v = m_data.get(nullptr, false);
     }
 
     // put the bottom of the call-stack on top
@@ -149,6 +144,7 @@ backtrace::filter_and_patch(const std::vector<entry_type>& _data)
     };
 
     auto _ret = std::vector<entry_type>{};
+    _ret.reserve(_data.size());
     for(const auto& itr : _data)
     {
         auto _name = tim::demangle(_patch_label(itr.name));
