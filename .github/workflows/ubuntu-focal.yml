@@ -126,6 +126,7 @@ jobs:
           -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
           -DOMNITRACE_MAX_THREADS=32
           -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
+          -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
 
     - name: Test Build-Tree Module
       timeout-minutes: 45
@@ -308,6 +309,7 @@ jobs:
           -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
           -DOMNITRACE_CI_MPI_RUN_AS_ROOT=${{ matrix.mpi-headers }}
           -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=OFF
+          -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
           --ctest-args
           ${{ matrix.ctest-exclude }}
 
@@ -383,7 +385,6 @@ jobs:
     env:
       ELFUTILS_DOWNLOAD_VERSION: 0.186
       OMNITRACE_VERBOSE: 1
-      OMNITRACE_CI: ON
 
     steps:
     - uses: actions/checkout@v3
@@ -445,6 +446,7 @@ jobs:
           -DDYNINST_ELFUTILS_DOWNLOAD_VERSION=${{ env.ELFUTILS_DOWNLOAD_VERSION }}
           -DOMNITRACE_MAX_THREADS=32
           -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
+          -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
 
     - name: Test Build-Tree Env
       timeout-minutes: 60
@@ -569,3 +571,4 @@ jobs:
           -DOMNITRACE_USE_RCCL=OFF
           -DOMNITRACE_MAX_THREADS=32
           -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
+          -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}

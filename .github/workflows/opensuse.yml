@@ -11,6 +11,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  OMNITRACE_VERBOSE: 1
+  OMNITRACE_CI: ON
+
 jobs:
   opensuse:
     runs-on: ubuntu-20.04
@@ -22,10 +26,6 @@ jobs:
         compiler: ['g++']
         os-release: [ '15.2', '15.3' ]
         build-type: ['Release']
-
-    env:
-      OMNITRACE_VERBOSE: 1
-      OMNITRACE_CI: ON
 
     steps:
     - uses: actions/checkout@v3
@@ -68,6 +68,7 @@ jobs:
           -DOMNITRACE_CI_MPI_RUN_AS_ROOT=ON
           -DOMNITRACE_MAX_THREADS=32
           -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
+          -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
 
     - name: Install
       timeout-minutes: 10

@@ -148,6 +148,7 @@ jobs:
           -DOMNITRACE_STRIP_LIBRARIES=${{ matrix.strip }}
           -DOMNITRACE_MAX_THREADS=32
           -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
+          -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
           -DUSE_CLANG_OMP=OFF
 
     - name: Install
