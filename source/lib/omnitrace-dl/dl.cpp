@@ -538,7 +538,9 @@ bool _omnitrace_dl_fini = (std::atexit([]() {
     {                                                                                    \
         fflush(stderr);                                                                  \
         OMNITRACE_COMMON_LIBRARY_LOG_START                                               \
-        fprintf(stderr, "[omnitrace][" OMNITRACE_COMMON_LIBRARY_NAME "] " __VA_ARGS__);  \
+        fprintf(stderr, "[omnitrace][" OMNITRACE_COMMON_LIBRARY_NAME "][%i] ",           \
+                getpid());                                                               \
+        fprintf(stderr, __VA_ARGS__);                                                    \
         OMNITRACE_COMMON_LIBRARY_LOG_END                                                 \
         fflush(stderr);                                                                  \
     }
@@ -1060,6 +1062,7 @@ bool
 omnitrace_preload()
 {
     auto _preload = get_omnitrace_preload() && get_env("OMNITRACE_ENABLED", true);
+    auto _use_mpi = get_env("OMNITRACE_USE_MPI", get_env("OMNITRACE_USE_MPIP", false));
 
     static bool _once = false;
     if(_once) return _preload;
@@ -1067,7 +1070,7 @@ omnitrace_preload()
 
     if(_preload)
     {
-        // reset_omnitrace_preload();
+        reset_omnitrace_preload();
         omnitrace_preinit_library();
         auto _causal = get_env("OMNITRACE_USE_CAUSAL", false);
         auto _mode   = get_env("OMNITRACE_MODE", (_causal) ? "causal" : "sampling");
@@ -1075,6 +1078,16 @@ omnitrace_preload()
                          ::omnitrace::join(::omnitrace::QuoteStrings{}, ", ", _mode,
                                            false, "omnitrace")
                              .c_str());
+        if(_use_mpi)
+        {
+            // only make this call if true bc otherwise, if
+            // false, it will disable the MPIP component and
+            // we may intercept the MPI init call later.
+            // If _use_mpi defaults to true above, calling this
+            // will override can current env or config value for
+            // OMNITRACE_USE_PID.
+            omnitrace_set_mpi(_use_mpi, false);
+        }
         omnitrace_init(_mode.c_str(), false, nullptr);
         omnitrace_init_tooling();
     }
