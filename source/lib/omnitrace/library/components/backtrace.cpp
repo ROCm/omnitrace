@@ -79,10 +79,15 @@ backtrace::get() const
     std::vector<entry_type> _v = {};
     if(size() == 0) return _v;
 
+    if(get_sampling_include_inlines())
     {
         static auto _cache = cache_type{};
         auto_lock_t _lk{ type_mutex<backtrace>() };
-        _v = m_data.get(&_cache, true);
+        _v = m_data.get(&_cache, false);
+    }
+    else
+    {
+        _v = m_data.get(nullptr, false);
     }
 
     // put the bottom of the call-stack on top
@@ -183,7 +188,7 @@ backtrace::sample(int)
 {
     using namespace tim::backtrace;
     constexpr bool   with_signal_frame = false;
-    constexpr size_t ignore_depth      = 3;
+    constexpr size_t ignore_depth      = 4;
     // ignore depth based on:
     // 1. this frame
     // 2. tim::sampling::sampler<...>::sample(...) [always inline]
