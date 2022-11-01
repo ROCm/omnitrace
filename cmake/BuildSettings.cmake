@@ -236,11 +236,9 @@ endif()
 
 if(OMNITRACE_BUILD_LINKER)
     target_link_options(
-        omnitrace-compile-options
-        INTERFACE
-        $<$<LINK_LANGUAGE:C>:$<$<C_COMPILER_ID:GNU>:-fuse-ld=${OMNITRACE_BUILD_LINKER}>>
-        $<$<LINK_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-fuse-ld=${OMNITRACE_BUILD_LINKER}>>
-        )
+        omnitrace-compile-options INTERFACE
+        $<$<C_COMPILER_ID:GNU>:-fuse-ld=${OMNITRACE_BUILD_LINKER}>
+        $<$<CXX_COMPILER_ID:GNU>:-fuse-ld=${OMNITRACE_BUILD_LINKER}>)
 endif()
 
 # ----------------------------------------------------------------------------------------#
