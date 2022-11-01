@@ -227,19 +227,17 @@ finalize()
 bool
 settings_are_configured()
 {
-    volatile bool _v = _settings_are_configured();
-    return _v;
+    return _settings_are_configured();
 }
 
 void
 configure_settings(bool _init)
 {
-    volatile bool _v = _settings_are_configured();
-    if(_v) return;
-
     static bool _once = false;
     if(_once) return;
     _once = true;
+
+    if(settings_are_configured()) return;
 
     if(get_is_continuous_integration() && get_state() < State::Init)
     {
@@ -1056,11 +1054,6 @@ configure_settings(bool _init)
 
     settings::suppress_parsing()  = true;
     settings::use_output_suffix() = _config->get<bool>("OMNITRACE_USE_PID");
-    if(settings::use_output_suffix())
-        settings::default_process_suffix() = process::get_id();
-#if !defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_MPI_HEADERS)
-    if(tim::dmp::is_initialized()) settings::default_process_suffix() = tim::dmp::rank();
-#endif
 
     auto _dl_verbose = _config->find("OMNITRACE_DL_VERBOSE");
     if(_dl_verbose->second->get_config_updated())
@@ -2192,9 +2185,11 @@ get_perfetto_output_filename()
         _ext = _val.substr(_pos_ext + 1);
         _val = _val.substr(0, _pos_ext);
     }
-    _val = settings::compose_output_filename(_val, _ext, settings::use_output_suffix(),
-                                             settings::default_process_suffix(), false,
-                                             _dir);
+
+    auto _cfg = settings::compose_filename_config{ settings::use_output_suffix(),
+                                                   settings::default_process_suffix(),
+                                                   false, _dir };
+    _val      = settings::compose_output_filename(_val, _ext, _cfg);
     if(!_val.empty() && _val.at(0) != '/')
         return settings::format(JOIN('/', "%env{PWD}%", _val), get_config()->get_tag());
     return _val;
