@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "api.hpp"
+
 #include "library/components/fork_gotcha.hpp"
 #include "core/config.hpp"
 #include "core/debug.hpp"
@@ -46,8 +48,10 @@ void
 fork_gotcha::audit(const gotcha_data_t&, audit::incoming)
 {
     tim::set_env("OMNITRACE_PRELOAD", "0", 1);
-    OMNITRACE_VERBOSE(1, "fork() called on PID %i (rank: %i), TID %li\n",
-                      process::get_id(), dmp::rank(), threading::get_id());
+    tim::set_env("OMNITRACE_ROOT_PROCESS", process::get_id(), 0);
+    omnitrace_reset_preload_hidden();
+    OMNITRACE_BASIC_VERBOSE(0, "fork() called on PID %i (rank: %i), TID %li\n",
+                            process::get_id(), dmp::rank(), threading::get_id());
     OMNITRACE_BASIC_DEBUG(
         "Warning! Calling fork() within an OpenMPI application using libfabric "
         "may result is segmentation fault\n");
@@ -59,9 +63,26 @@ fork_gotcha::audit(const gotcha_data_t&, audit::outgoing, pid_t _pid)
 {
     if(_pid != 0)
     {
-        OMNITRACE_VERBOSE(1, "fork() called on PID %i created PID %i\n", getppid(), _pid);
+        OMNITRACE_BASIC_VERBOSE(0, "fork() called on PID %i created PID %i\n", getppid(),
+                                _pid);
+    }
+    else
+    {
+        tim::set_env("OMNITRACE_CHILD_PROCESS", "1", 1);
+        settings::enabled() = false;
+        settings::verbose() = -127;
+        settings::debug()   = false;
+        set_thread_state(::omnitrace::ThreadState::Disabled);
+    }
+
+    if(!settings::use_output_suffix())
+    {
         settings::use_output_suffix()      = true;
         settings::default_process_suffix() = process::get_id();
+
+        OMNITRACE_BASIC_VERBOSE(
+            0, "call to fork() enables using an output suffix. PID %i will use %i\n",
+            process::get_id(), process::get_id());
     }
 }
 }  // namespace component
