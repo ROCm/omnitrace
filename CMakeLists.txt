@@ -194,7 +194,7 @@ endif()
 if(OMNITRACE_USE_PYTHON)
     omnitrace_add_option(OMNITRACE_BUILD_PYTHON
                          "Build python bindings with internal pybind11" ON)
-elseif("$ENV{OMNITRACE_CI}" STREQUAL "ON")
+elseif("$ENV{OMNITRACE_CI}")
     # quiet warnings in dashboard
     if(OMNITRACE_PYTHON_ENVS OR OMNITRACE_PYTHON_PREFIX)
         omnitrace_message(
