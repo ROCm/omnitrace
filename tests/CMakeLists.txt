@@ -810,6 +810,13 @@ omnitrace_add_validation_test(
          0
          -p)
 
+omnitrace_add_test(
+    NAME fork
+    TARGET fork-example
+    REWRITE_ARGS -e -v 2 --print-instrumented modules
+    RUNTIME_ARGS -e -v 1 --label file
+    ENVIRONMENT "${_base_environment};OMNITRACE_CRITICAL_TRACE=ON")
+
 # -------------------------------------------------------------------------------------- #
 #
 # critical-trace tests
