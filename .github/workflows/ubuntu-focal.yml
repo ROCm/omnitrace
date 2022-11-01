@@ -103,7 +103,7 @@ jobs:
         append-tagname ${{ matrix.static-libstdcxx }} libstdcxx &&
         cmake --version &&
         ./scripts/run-ci.sh -B build
-          --name ubuntu-focal-${{ matrix.compiler }}${TAG}
+          --name ${{ github.repository_owner }}-${{ github.ref_name }}-ubuntu-focal-${{ matrix.compiler }}${TAG}
           --build-jobs 2
           --site GitHub
           --cmake-args
@@ -282,7 +282,7 @@ jobs:
         TAG="-rocm-${{ matrix.rocm-version }}" &&
         TAG="$(echo ${TAG} | sed 's/debian/latest/g')" &&
         ./scripts/run-ci.sh -B build
-          --name ubuntu-focal-rocm-${{ matrix.compiler }}${TAG}
+          --name ${{ github.repository_owner }}-${{ github.ref_name }}-ubuntu-focal-rocm-${{ matrix.compiler }}${TAG}
           --build-jobs 2
           --site GitHub
           --cmake-args
@@ -420,7 +420,7 @@ jobs:
         if [ "${{ matrix.mpi }}" = "nompi" ]; then USE_MPI=OFF; else USE_MPI=ON; fi &&
         if [ -z "${{ matrix.deps }}" ]; then TAG=""; else TAG="-external-deps"; fi &&
         ./scripts/run-ci.sh -B ${{ github.workspace }}/build
-          --name ubuntu-focal-${{ matrix.compiler }}-${{ matrix.mpi }}${TAG}
+          --name ${{ github.repository_owner }}-${{ github.ref_name }}-ubuntu-focal-${{ matrix.compiler }}-${{ matrix.mpi }}${TAG}
           --build-jobs 2
           --site GitHub
           --cmake-args
@@ -550,7 +550,7 @@ jobs:
         git config --global --add safe.directory ${PWD} &&
         cmake --version &&
         ./scripts/run-ci.sh -B build
-          --name ubuntu-focal-codecov-mpi-python-ompt-papi
+          --name ${{ github.repository_owner }}-${{ github.ref_name }}-ubuntu-focal-codecov-mpi-python-ompt-papi
           --build-jobs 2
           --site GitHub
           --coverage

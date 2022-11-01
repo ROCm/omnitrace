@@ -80,7 +80,7 @@ do
             ;;
         -n|--name)
             shift
-            NAME=$(echo ${1} | sed 's/g++/gcc/g')
+            NAME=$(echo ${1} | sed 's/g++/gcc/g' | sed 's/\/merge//1')
             reset-last
             ;;
         -s|--site)

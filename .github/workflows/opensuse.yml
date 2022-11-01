@@ -49,7 +49,7 @@ jobs:
         git config --global --add safe.directory ${PWD} &&
         cmake --version &&
         ./scripts/run-ci.sh -B build
-          --name opensuse-${{ matrix.os-release }}-${{ matrix.compiler }}-nompi-python
+          --name ${{ github.repository_owner }}-${{ github.ref_name }}-opensuse-${{ matrix.os-release }}-${{ matrix.compiler }}-nompi-python
           --build-jobs 2
           --site GitHub
           --cmake-args
