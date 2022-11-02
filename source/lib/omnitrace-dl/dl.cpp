@@ -1042,7 +1042,6 @@ extern "C"
     ompt_start_tool_result_t* ompt_start_tool(unsigned int omp_version,
                                               const char*  runtime_version)
     {
-        if(!omnitrace::common::get_env("OMNITRACE_USE_OMPT", true)) return nullptr;
         return OMNITRACE_DL_INVOKE(get_indirect().ompt_start_tool_f, omp_version,
                                    runtime_version);
     }
