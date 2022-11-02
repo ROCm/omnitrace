@@ -604,7 +604,7 @@ omnitrace_add_test(
         code.coverage
     LABELS "coverage;function-coverage"
     RUN_ARGS 10 ${NUM_THREADS} 1000
-    ENVIRONMENT "${_base_environment}"
+    ENVIRONMENT "${_base_environment};OMNITRACE_DEBUG=ON"
     RUNTIME_PASS_REGEX "(\\\[[0-9]+\\\]) code coverage     ::  66.67%"
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) code coverage     ::  66.67%")
 
@@ -631,7 +631,7 @@ omnitrace_add_test(
         code.coverage
     LABELS "coverage;function-coverage;hybrid-coverage"
     RUN_ARGS 10 ${NUM_THREADS} 1000
-    ENVIRONMENT "${_base_environment}"
+    ENVIRONMENT "${_base_environment};OMNITRACE_DEBUG=ON"
     RUNTIME_PASS_REGEX "(\\\[[0-9]+\\\]) code coverage     ::  66.67%"
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) code coverage     ::  66.67%")
 
@@ -853,7 +853,6 @@ set(_parallel_overhead_critical_trace_environ
     "OMNITRACE_OUTPUT_PREFIX=parallel-overhead-critical-trace/"
     "OMNITRACE_CRITICAL_TRACE_DEBUG=ON"
     "OMNITRACE_VERBOSE=4"
-    "OMNITRACE_DEBUG=ON"
     "OMNITRACE_USE_PID=OFF"
     "OMNITRACE_TIME_OUTPUT=OFF")
 
