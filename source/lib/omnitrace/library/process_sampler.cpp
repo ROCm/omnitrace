@@ -26,7 +26,6 @@
 #include "library/cpu_freq.hpp"
 #include "library/rocm_smi.hpp"
 #include "library/runtime.hpp"
-#include "library/sampling.hpp"
 
 #include <memory>
 #include <vector>

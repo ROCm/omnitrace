@@ -55,6 +55,15 @@
 
 namespace omnitrace
 {
+namespace sampling
+{
+std::set<int>
+setup();
+
+std::set<int>
+shutdown();
+}  // namespace sampling
+
 namespace tracing
 {
 using interval_data_instances = thread_data<std::vector<bool>>;
