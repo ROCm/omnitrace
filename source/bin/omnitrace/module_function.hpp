@@ -112,6 +112,7 @@ private:
     bool is_loop_address_range_constrained() const;  // checks loop addr range constraint
     bool contains_dynamic_callsites() const;
     bool should_instrument(bool _coverage) const;
+    bool contains_user_callsite() const;  // checks user caller regexes
 
 public:
     template <typename ArchiveT>
