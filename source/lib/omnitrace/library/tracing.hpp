@@ -35,6 +35,8 @@
 
 #include <timemory/components/timing/backends.hpp>
 
+#include <perfetto.h>
+
 #include <type_traits>
 
 namespace omnitrace
@@ -302,5 +304,22 @@ pop_perfetto_ts(CategoryT, const char*, uint64_t _ts, Args&&... args)
 {
     TRACE_EVENT_END(trait::name<CategoryT>::value, _ts, std::forward<Args>(args)...);
 }
+
+template <typename CategoryT, typename... Args>
+inline void
+push_perfetto_track(CategoryT, const std::string& name, perfetto::Track _track, uint64_t _ts, Args&&... args)
+{
+    TRACE_EVENT_BEGIN(
+        trait::name<CategoryT>::value, nullptr, _track, _ts, std::forward<Args>(args)...,
+        [&name](perfetto::EventContext ctx) { ctx.event()->set_name(name); });
+}
+
+template <typename CategoryT, typename... Args>
+inline void
+pop_perfetto_track(CategoryT, const char*, perfetto::Track _track, uint64_t _ts, Args&&... args)
+{
+    TRACE_EVENT_END(trait::name<CategoryT>::value, _track, _ts, std::forward<Args>(args)...);
+}
+
 }  // namespace tracing
 }  // namespace omnitrace
