@@ -540,7 +540,7 @@ static std::size_t
 hash_combine(std::size_t i, std::size_t j)
 {
     return i ^ (j + 0x9e3779b97f4a7c17ul + (i << 6) + (i >> 2));
-};
+}
 
 static std::size_t
 queue_uuid(int queue_id)
@@ -548,7 +548,7 @@ queue_uuid(int queue_id)
     // SHA1 of "OMNITRACE_ROCTRACER_HIP_DEVICE_QUEUE"
     static constexpr std::size_t hip_device_queue_namespace = 0x11c9d8a8894b428ul;
     return hash_combine(hip_device_queue_namespace, queue_id);
-};
+}
 
 // HIP API callback function
 void
