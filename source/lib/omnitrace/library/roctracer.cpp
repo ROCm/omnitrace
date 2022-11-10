@@ -34,6 +34,8 @@
 #include <timemory/backends/threading.hpp>
 #include <timemory/utility/types.hpp>
 
+#include <perfetto.h>
+
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -118,7 +120,7 @@ get_roctracer_tid_data()
     return _v;
 }
 
-using cid_tuple_t = std::tuple<uint64_t, uint64_t, uint32_t>;
+using cid_tuple_t = std::tuple<uint64_t, uint64_t, uint32_t, uintptr_t>;
 struct cid_data : cid_tuple_t
 {
     using cid_tuple_t::cid_tuple_t;
@@ -128,10 +130,12 @@ struct cid_data : cid_tuple_t
     auto& cid() { return std::get<0>(*this); }
     auto& pcid() { return std::get<1>(*this); }
     auto& depth() { return std::get<2>(*this); }
+    auto& queue() { return std::get<3>(*this); }
 
     auto cid() const { return std::get<0>(*this); }
     auto pcid() const { return std::get<1>(*this); }
     auto depth() const { return std::get<2>(*this); }
+    auto queue() const { return std::get<3>(*this); }
 };
 
 auto&
@@ -532,6 +536,20 @@ roctx_api_callback(uint32_t domain, uint32_t cid, const void* callback_data,
     }
 }
 
+static std::size_t
+hash_combine(std::size_t i, std::size_t j)
+{
+    return i ^ (j + 0x9e3779b97f4a7c17ul + (i << 6) + (i >> 2));
+};
+
+static std::size_t
+queue_uuid(int queue_id)
+{
+    // SHA1 of "OMNITRACE_ROCTRACER_HIP_DEVICE_QUEUE"
+    static constexpr std::size_t hip_device_queue_namespace = 0x11c9d8a8894b428ul;
+    return hash_combine(hip_device_queue_namespace, queue_id);
+};
+
 // HIP API callback function
 void
 hip_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void* arg)
@@ -653,6 +671,19 @@ hip_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void*
         default: break;
     }
 
+    static thread_local std::unordered_set<uintptr_t> seen_queues;
+    if(seen_queues.find(_queue) == seen_queues.end()) {
+        const auto _queue_track = perfetto::Track(queue_uuid(_queue));
+        auto desc_ = _queue_track.Serialize();
+
+        std::stringstream ss;
+        ss << std::hex << _queue;
+        desc_.set_name("Stream 0x" + ss.str());
+        perfetto::TrackEvent::SetTrackDescriptor(_queue_track, desc_);
+
+        seen_queues.insert(_queue);
+    }
+
     auto& _device_id = get_current_device();
 
     if(data->phase == ACTIVITY_API_PHASE_ENTER)
@@ -761,7 +792,7 @@ hip_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void*
         }
 
         get_roctracer_cid_data(_tid).emplace(_corr_id,
-                                             cid_data{ _cid, _parent_cid, _depth });
+                                             cid_data{ _cid, _parent_cid, _depth, _queue });
 
         hip_exec_activity_callbacks(_tid);
     }
@@ -769,7 +800,8 @@ hip_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void*
     {
         hip_exec_activity_callbacks(_tid);
 
-        std::tie(_cid, _parent_cid, _depth) = get_roctracer_cid_data(_tid).at(_corr_id);
+        std::tie(_cid, _parent_cid, _depth, std::ignore) =
+            get_roctracer_cid_data(_tid).at(_corr_id);
 
         if(get_use_perfetto())
         {
@@ -880,6 +912,7 @@ hip_activity_callback(const char* begin, const char* end, void*)
         uint64_t    _pcid           = 0;                     // parent corr_id
         int32_t     _devid          = record->device_id;     // device id
         int64_t     _queid          = record->queue_id;      // queue id
+        uintptr_t   _queue          = 0;                     // Host queue (stream)
         auto        _laps           = _indexes[_corr_id]++;  // see note #1
         const char* _name           = nullptr;
         bool        _found          = false;
@@ -903,7 +936,7 @@ hip_activity_callback(const char* begin, const char* end, void*)
         {
             auto& _cids = get_roctracer_cid_data(_tid);
             if(_cids.find(_corr_id) != _cids.end())
-                std::tie(_cid, _pcid, _depth) = _cids.at(_corr_id);
+                std::tie(_cid, _pcid, _depth, _queue) = _cids.at(_corr_id);
             else
             {
                 OMNITRACE_VERBOSE_F(3,
@@ -952,13 +985,16 @@ hip_activity_callback(const char* begin, const char* end, void*)
             if(_kernel_names.find(_name) == _kernel_names.end())
                 _kernel_names.emplace(_name, tim::demangle(_name));
 
+            const auto _queue_track = perfetto::Track(queue_uuid(_queue));
+
             assert(_end_ns >= _beg_ns);
-            tracing::push_perfetto_ts(
-                category::device_hip{}, _kernel_names.at(_name).c_str(), _beg_ns,
+            tracing::push_perfetto_track(
+                category::device_hip{}, _kernel_names.at(_name).c_str(), _queue_track, _beg_ns,
                 perfetto::Flow::ProcessScoped(_cid), [&](perfetto::EventContext ctx) {
                     if(config::get_perfetto_annotations())
                     {
                         tracing::add_perfetto_annotation(ctx, "begin_ns", _beg_ns);
+                        tracing::add_perfetto_annotation(ctx, "end_ns", _end_ns);
                         tracing::add_perfetto_annotation(ctx, "corr_id", _corr_id);
                         tracing::add_perfetto_annotation(ctx, "device", _devid);
                         tracing::add_perfetto_annotation(ctx, "queue", _queid);
@@ -967,21 +1003,7 @@ hip_activity_callback(const char* begin, const char* end, void*)
                                                          _op_id_names.at(record->op));
                     }
                 });
-            tracing::pop_perfetto_ts(
-                category::device_hip{}, "", _end_ns, [&](perfetto::EventContext ctx) {
-                    if(config::get_perfetto_annotations())
-                    {
-                        tracing::add_perfetto_annotation(ctx, "end_ns", _end_ns);
-                    }
-                });
-            // for some reason, this is necessary to make sure very last one ends
-            tracing::pop_perfetto_ts(
-                category::device_hip{}, "", _end_ns, [&](perfetto::EventContext ctx) {
-                    if(config::get_perfetto_annotations())
-                    {
-                        tracing::add_perfetto_annotation(ctx, "end_ns", _end_ns);
-                    }
-                });
+            tracing::pop_perfetto_track(category::device_hip{}, "", _queue_track, _end_ns);
         }
 
         if(_critical_trace)
