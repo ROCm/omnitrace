@@ -307,7 +307,8 @@ pop_perfetto_ts(CategoryT, const char*, uint64_t _ts, Args&&... args)
 
 template <typename CategoryT, typename... Args>
 inline void
-push_perfetto_track(CategoryT, const std::string& name, perfetto::Track _track, uint64_t _ts, Args&&... args)
+push_perfetto_track(CategoryT, const std::string& name, perfetto::Track _track,
+                    uint64_t _ts, Args&&... args)
 {
     TRACE_EVENT_BEGIN(
         trait::name<CategoryT>::value, nullptr, _track, _ts, std::forward<Args>(args)...,
@@ -316,9 +317,11 @@ push_perfetto_track(CategoryT, const std::string& name, perfetto::Track _track, 
 
 template <typename CategoryT, typename... Args>
 inline void
-pop_perfetto_track(CategoryT, const char*, perfetto::Track _track, uint64_t _ts, Args&&... args)
+pop_perfetto_track(CategoryT, const char*, perfetto::Track _track, uint64_t _ts,
+                   Args&&... args)
 {
-    TRACE_EVENT_END(trait::name<CategoryT>::value, _track, _ts, std::forward<Args>(args)...);
+    TRACE_EVENT_END(trait::name<CategoryT>::value, _track, _ts,
+                    std::forward<Args>(args)...);
 }
 
 }  // namespace tracing

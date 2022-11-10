@@ -648,9 +648,10 @@ hip_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void*
     }
 
     static thread_local std::unordered_set<uintptr_t> seen_queues;
-    if(seen_queues.find(_queue) == seen_queues.end()) {
+    if(seen_queues.find(_queue) == seen_queues.end())
+    {
         const auto _queue_track = perfetto::Track(queue_uuid(_queue));
-        auto desc_ = _queue_track.Serialize();
+        auto       desc_        = _queue_track.Serialize();
 
         std::stringstream ss;
         ss << std::hex << _queue;
@@ -757,8 +758,8 @@ hip_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void*
                 critical_trace::add_hash_id(op_name), _depth);
         }
 
-        get_roctracer_cid_data(_tid).emplace(_corr_id,
-                                             cid_data{ _cid, _parent_cid, _depth, _queue });
+        get_roctracer_cid_data(_tid).emplace(
+            _corr_id, cid_data{ _cid, _parent_cid, _depth, _queue });
 
         hip_exec_activity_callbacks(_tid);
     }
@@ -950,7 +951,8 @@ hip_activity_callback(const char* begin, const char* end, void*)
 
             assert(_end_ns >= _beg_ns);
             // for some reason, this is necessary to make sure very last one ends
-            tracing::pop_perfetto_track(category::device_hip{}, "", _queue_track, _beg_ns);
+            tracing::pop_perfetto_track(category::device_hip{}, "", _queue_track,
+                                        _beg_ns);
 
             tracing::push_perfetto_track(
                 category::device_hip{}, _kernel_names.at(_name).c_str(), _queue_track,
@@ -959,7 +961,8 @@ hip_activity_callback(const char* begin, const char* end, void*)
                 _queid, "pid", record->process_id, "tid", _tid, "op",
                 _op_id_names.at(record->op));
 
-            tracing::pop_perfetto_track(category::device_hip{}, "", _queue_track, _end_ns);
+            tracing::pop_perfetto_track(category::device_hip{}, "", _queue_track,
+                                        _end_ns);
         }
 
         if(_critical_trace)
