@@ -32,8 +32,12 @@ jobs:
 
     - name: Install Packages
       timeout-minutes: 10
-      run:
-        for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done
+      uses: nick-fields/retry@v2
+      with:
+        timeout_seconds: 30
+        max_attempts: 5
+        command: |
+          for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done
 
     - name: Configure Env
       run:
