@@ -59,7 +59,7 @@ jobs:
           --cmake-args
           -DCMAKE_C_COMPILER=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
           -DCMAKE_INSTALL_PREFIX=/opt/omnitrace
           -DOMNITRACE_BUILD_TESTING=ON
           -DOMNITRACE_USE_MPI=OFF

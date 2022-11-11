@@ -4,7 +4,8 @@ run-name: cpack
 on:
   push:
     branches: [main, releases/**]
-    tags: []
+    tags:
+      - v*
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

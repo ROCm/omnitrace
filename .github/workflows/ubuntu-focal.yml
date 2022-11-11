@@ -560,8 +560,6 @@ jobs:
 
     - name: Configure Env
       run:
-        echo "CC=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')" >> $GITHUB_ENV &&
-        echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV &&
         echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
     - name: Configure, Build, and Test
