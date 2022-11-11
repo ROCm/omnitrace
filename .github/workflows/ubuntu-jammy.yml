@@ -122,7 +122,7 @@ jobs:
         append-tagname ${{ matrix.hidden }} hidden-viz &&
         append-tagname ${{ matrix.static-libgcc }} libgcc &&
         append-tagname ${{ matrix.static-libstdcxx }} libstdcxx &&
-        ./scripts/run-ci.sh -B build
+        python3 ./scripts/run-ci.py -B build
           --name ${{ github.repository_owner }}-${{ github.ref_name }}-ubuntu-jammy-${{ matrix.compiler }}${TAG}
           --build-jobs 2
           --site GitHub

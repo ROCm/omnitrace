@@ -102,11 +102,11 @@ jobs:
         append-tagname ${{ matrix.static-libgcc }} libgcc &&
         append-tagname ${{ matrix.static-libstdcxx }} libstdcxx &&
         cmake --version &&
-        ./scripts/run-ci.sh -B build
+        python3 ./scripts/run-ci.py -B build
           --name ${{ github.repository_owner }}-${{ github.ref_name }}-ubuntu-focal-${{ matrix.compiler }}${TAG}
           --build-jobs 2
           --site GitHub
-          --cmake-args
+          --
           -DCMAKE_C_COMPILER=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
@@ -283,11 +283,11 @@ jobs:
         cmake --version &&
         TAG="-rocm-${{ matrix.rocm-version }}" &&
         TAG="$(echo ${TAG} | sed 's/debian/latest/g')" &&
-        ./scripts/run-ci.sh -B build
+        python3 ./scripts/run-ci.py -B build
           --name ${{ github.repository_owner }}-${{ github.ref_name }}-ubuntu-focal-rocm-${{ matrix.compiler }}${TAG}
           --build-jobs 2
           --site GitHub
-          --cmake-args
+          --
           -DCMAKE_C_COMPILER=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
@@ -311,7 +311,7 @@ jobs:
           -DOMNITRACE_CI_GPU=OFF
           -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=OFF
           -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
-          --ctest-args
+          --
           ${{ matrix.ctest-exclude }}
 
     - name: Install
@@ -422,11 +422,11 @@ jobs:
         cmake --version &&
         if [ "${{ matrix.mpi }}" = "nompi" ]; then USE_MPI=OFF; else USE_MPI=ON; fi &&
         if [ -z "${{ matrix.deps }}" ]; then TAG=""; else TAG="-external-deps"; fi &&
-        ./scripts/run-ci.sh -B ${{ github.workspace }}/build
+        python3 ./scripts/run-ci.py -B ${{ github.workspace }}/build
           --name ${{ github.repository_owner }}-${{ github.ref_name }}-ubuntu-focal-${{ matrix.compiler }}-${{ matrix.mpi }}${TAG}
           --build-jobs 2
           --site GitHub
-          --cmake-args
+          --
           -DCMAKE_C_COMPILER=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
@@ -554,12 +554,12 @@ jobs:
       run:
         git config --global --add safe.directory ${PWD} &&
         cmake --version &&
-        ./scripts/run-ci.sh -B build
+        python3 ./scripts/run-ci.py -B build
           --name ${{ github.repository_owner }}-${{ github.ref_name }}-ubuntu-focal-codecov-mpi-python-ompt-papi
           --build-jobs 2
           --site GitHub
           --coverage
-          --cmake-args
+          --
           -DCMAKE_INSTALL_PREFIX=/opt/omnitrace
           -DOMNITRACE_BUILD_CI=OFF
           -DOMNITRACE_BUILD_TESTING=ON

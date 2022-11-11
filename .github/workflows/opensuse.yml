@@ -48,7 +48,7 @@ jobs:
       run:
         git config --global --add safe.directory ${PWD} &&
         cmake --version &&
-        ./scripts/run-ci.sh -B build
+        python3 ./scripts/run-ci.py -B build
           --name ${{ github.repository_owner }}-${{ github.ref_name }}-opensuse-${{ matrix.os-release }}-${{ matrix.compiler }}-nompi-python
           --build-jobs 2
           --site GitHub
