@@ -11,8 +11,7 @@ if(OMNITRACE_DISABLE_EXAMPLES)
     endif()
 endif()
 
-set(CMAKE_BUILD_TYPE "RelWithDebInfo")
-string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_DEBUG}")
+set(CMAKE_BUILD_TYPE "Debug")
 
 add_executable(rewrite-caller rewrite-caller.cpp)
 target_compile_options(rewrite-caller PRIVATE ${_FLAGS})
