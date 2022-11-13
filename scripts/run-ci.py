@@ -250,6 +250,5 @@ if __name__ == "__main__":
             "-V",
         ]
         + ctest_args,
-        text=True,
         check=True,
     )
