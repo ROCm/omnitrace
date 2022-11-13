@@ -34,7 +34,7 @@ function(OMNITRACE_ADD_BIN_TEST)
 
     # common
     list(APPEND TEST_ENVIRONMENT "OMNITRACE_CI=ON" "OMNITRACE_CONFIG_FILE="
-         "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output")
+         "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output" "TWD=${TEST_WORKING_DIRECTORY}")
     # copy for inverse
     set(TEST_ENVIRONMENT_INV "${TEST_ENVIRONMENT}")
 
@@ -307,11 +307,12 @@ omnitrace_add_bin_test(
 
 string(REPLACE "+" "\\\+" _AVAIL_CFG_PATH
                "${PROJECT_BINARY_DIR}/omnitrace-tests-output/omnitrace-avail/omnitrace-")
+# use of TWD == Test Working Directory (added by function)
 omnitrace_add_bin_test(
     NAME omnitrace-avail-write-config
     TARGET omnitrace-avail
     ARGS -G
-         %env{PWD}%/omnitrace-tests-output/omnitrace-avail/omnitrace-test.cfg
+         %env{TWD}%/omnitrace-tests-output/omnitrace-avail/omnitrace-test.cfg
          -F
          txt
          json
@@ -329,7 +330,7 @@ omnitrace_add_bin_test(
 omnitrace_add_bin_test(
     NAME omnitrace-avail-write-config-tweak
     TARGET omnitrace-avail
-    ARGS -G %env{PWD}%/omnitrace-tests-output/omnitrace-avail/omnitrace-tweak.cfg -F txt
+    ARGS -G %env{TWD}%/omnitrace-tests-output/omnitrace-avail/omnitrace-tweak.cfg -F txt
          json xml --force
     TIMEOUT 45
     LABELS "omnitrace-avail"
