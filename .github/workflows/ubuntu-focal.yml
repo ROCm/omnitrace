@@ -132,6 +132,7 @@ jobs:
           -DOMNITRACE_MAX_THREADS=32
           -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
           -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
+          -DMPI_HEADERS_ALLOW_MPICH=OFF
 
     - name: Test Build-Tree Module
       timeout-minutes: 45
@@ -463,6 +464,7 @@ jobs:
           -DOMNITRACE_MAX_THREADS=32
           -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
           -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
+          -DMPI_HEADERS_ALLOW_MPICH=ON
 
     - name: Test Build-Tree Env
       timeout-minutes: 60
