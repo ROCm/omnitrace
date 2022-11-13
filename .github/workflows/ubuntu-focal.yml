@@ -65,6 +65,7 @@ jobs:
       uses: nick-fields/retry@v2
       with:
         retry_wait_seconds: 30
+        timeout_minutes: 10
         max_attempts: 5
         command: |
           apt-get update &&
@@ -240,6 +241,7 @@ jobs:
       uses: nick-fields/retry@v2
       with:
         retry_wait_seconds: 30
+        timeout_minutes: 10
         max_attempts: 5
         command: |
           apt-get update &&
@@ -403,6 +405,7 @@ jobs:
       uses: nick-fields/retry@v2
       with:
         retry_wait_seconds: 30
+        timeout_minutes: 10
         max_attempts: 5
         command: |
           sudo apt-get update &&
@@ -548,6 +551,7 @@ jobs:
       uses: nick-fields/retry@v2
       with:
         retry_wait_seconds: 30
+        timeout_minutes: 10
         max_attempts: 5
         command: |
           apt-get update &&

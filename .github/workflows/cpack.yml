@@ -135,6 +135,7 @@ jobs:
         uses: nick-fields/retry@v2
         with:
           retry_wait_seconds: 120
+          timeout_minutes: 20
           max_attempts: 5
           command: |
             pushd docker
