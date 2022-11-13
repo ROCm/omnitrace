@@ -226,6 +226,25 @@ omnitrace_add_bin_test(
     TIMEOUT 45)
 
 omnitrace_add_bin_test(
+    NAME omnitrace-avail-all-expand-keys
+    TARGET omnitrace-avail
+    ARGS --all --expand-keys
+    LABELS "omnitrace-avail"
+    TIMEOUT 45
+    FAIL_REGEX "%[a-zA-Z_]%")
+
+omnitrace_add_bin_test(
+    NAME omnitrace-avail-all-only-available-alphabetical
+    TARGET omnitrace-avail
+    ARGS --all --available --alphabetical --debug --output
+         ${CMAKE_CURRENT_BINARY_DIR}/omnitrace-avail-all-only-available-alphabetical.log
+    LABELS "omnitrace-avail"
+    TIMEOUT 45
+    PROPERTIES
+        ATTACHED_FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/omnitrace-avail-all-only-available-alphabetical.log)
+
+omnitrace_add_bin_test(
     NAME omnitrace-avail-all-csv
     TARGET omnitrace-avail
     ARGS --all --csv --csv-separator "#"
@@ -291,8 +310,16 @@ string(REPLACE "+" "\\\+" _AVAIL_CFG_PATH
 omnitrace_add_bin_test(
     NAME omnitrace-avail-write-config
     TARGET omnitrace-avail
-    ARGS -G %env{PWD}%/omnitrace-tests-output/omnitrace-avail/omnitrace-test.cfg -F txt
-         json xml --force --all
+    ARGS -G
+         %env{PWD}%/omnitrace-tests-output/omnitrace-avail/omnitrace-test.cfg
+         -F
+         txt
+         json
+         xml
+         --force
+         --all
+         -c
+         omnitrace
     TIMEOUT 45
     LABELS "omnitrace-avail"
     PASS_REGEX
@@ -309,4 +336,38 @@ omnitrace_add_bin_test(
     ENVIRONMENT "OMNITRACE_USE_PERFETTO=OFF;OMNITRACE_USE_TIMEMORY=ON"
     PASS_REGEX
         "Outputting JSON configuration file '${_AVAIL_CFG_PATH}tweak\\\.json'(.*)Outputting XML configuration file '${_AVAIL_CFG_PATH}tweak\\\.xml'(.*)Outputting text configuration file '${_AVAIL_CFG_PATH}tweak\\\.cfg'(.*)"
+    )
+
+omnitrace_add_bin_test(
+    NAME omnitrace-avail-list-keys
+    TARGET omnitrace-avail
+    ARGS --list-keys --expand-keys
+    TIMEOUT 45
+    LABELS "omnitrace-avail"
+    PASS_REGEX "Output Keys:\n(.*)%argv%(.*)%argv_hash%")
+
+omnitrace_add_bin_test(
+    NAME omnitrace-avail-list-keys-markdown
+    TARGET omnitrace-avail
+    ARGS --list-keys --expand-keys --markdown
+    TIMEOUT 45
+    LABELS "omnitrace-avail;markdown"
+    PASS_REGEX "(.*)`%argv%`(.*)`%argv_hash%`")
+
+omnitrace_add_bin_test(
+    NAME omnitrace-avail-list-categories
+    TARGET omnitrace-avail
+    ARGS --list-categories
+    TIMEOUT 45
+    LABELS "omnitrace-avail"
+    PASS_REGEX " component::(.*) hw_counters::(.*) settings::")
+
+omnitrace_add_bin_test(
+    NAME omnitrace-avail-core-categories
+    TARGET omnitrace-avail
+    ARGS -c core
+    TIMEOUT 45
+    LABELS "omnitrace-avail"
+    PASS_REGEX
+        "OMNITRACE_CONFIG_FILE(.*)OMNITRACE_ENABLED(.*)OMNITRACE_SUPPRESS_CONFIG(.*)OMNITRACE_SUPPRESS_PARSING(.*)OMNITRACE_VERBOSE"
     )
