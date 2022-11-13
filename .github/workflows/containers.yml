@@ -3,6 +3,7 @@ run-name: ci-containers
 
 # nightly build
 on:
+  workflow_dispatch:
   schedule:
     - cron: 0 5 * * *
 
