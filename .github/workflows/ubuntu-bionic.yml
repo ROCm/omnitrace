@@ -48,7 +48,7 @@ jobs:
       timeout-minutes: 10
       uses: nick-fields/retry@v2
       with:
-        timeout_seconds: 30
+        retry_wait_seconds: 30
         max_attempts: 5
         command: |
           apt-get update &&
