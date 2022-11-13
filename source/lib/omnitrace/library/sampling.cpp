@@ -823,7 +823,10 @@ post_process_perfetto(int64_t _tid, const bundle_t* _init,
             _init->get<backtrace_timestamp>()->get_timestamp(), _beg_ns);
 
         tracing::push_perfetto_ts(category::sampling{}, "samples [omnitrace]", _beg_ns,
-                                  "begin_ns", _beg_ns);
+                                  [&](perfetto::EventContext ctx) {
+                                      tracing::add_perfetto_annotation(ctx, "begin_ns",
+                                                                       _beg_ns);
+                                  });
 
         auto _as_hex = [](auto _v) { return JOIN("", "0x", std::hex, _v); };
 
@@ -855,13 +858,24 @@ post_process_perfetto(int64_t _tid, const bundle_t* _init,
                         tracing::push_perfetto_ts(
                             category::sampling{}, _name, _beg,
                             [&](perfetto::EventContext ctx) {
-                                tracing::add_perfetto_annotation(ctx, "begin_ns", _beg);
-                                tracing::add_perfetto_annotation(ctx, "lineinfo", _info);
-                                tracing::add_perfetto_annotation(ctx, "inlined",
-                                                                 (_n++ > 0));
+                                if(config::get_perfetto_annotations())
+                                {
+                                    tracing::add_perfetto_annotation(ctx, "begin_ns",
+                                                                     _beg);
+                                    tracing::add_perfetto_annotation(ctx, "lineinfo",
+                                                                     _info);
+                                    tracing::add_perfetto_annotation(ctx, "inlined",
+                                                                     (_n++ > 0));
+                                }
                             });
-                        tracing::pop_perfetto_ts(category::sampling{}, _name, _end,
-                                                 "end_ns", _end);
+                        tracing::pop_perfetto_ts(
+                            category::sampling{}, _name, _end,
+                            [&](perfetto::EventContext ctx) {
+                                if(config::get_perfetto_annotations())
+                                {
+                                    tracing::add_perfetto_annotation(ctx, "end_ns", _end);
+                                }
+                            });
                     }
                 }
                 else
