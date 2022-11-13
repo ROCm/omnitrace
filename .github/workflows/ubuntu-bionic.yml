@@ -91,7 +91,7 @@ jobs:
           --name ${{ github.repository_owner }}-${{ github.ref_name }}-ubuntu-bionic-${{ matrix.compiler }}-${{ matrix.mpi }}-python
           --build-jobs 2
           --site GitHub
-          --cmake-args
+          --
           -DCMAKE_C_COMPILER=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
