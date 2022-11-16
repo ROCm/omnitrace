@@ -48,8 +48,8 @@ from source.components.roofline import get_roofline
 from source.components.memchart import get_memchart
 from source.utils.causal_parser import parseFile, parseUploadedFile, getSpeedupData
 
-file_timestamp =0
-
+file_timestamp = 0
+data=pd.DataFrame()
 pd.set_option(
     "mode.chained_assignment", None
 )  # ignore SettingWithCopyWarning pandas warning
@@ -430,13 +430,15 @@ def build_causal_layout(
     runs,
     input_filters,
     path_to_dir,
-    data,
+    data_,
     debug=False,
     verbose=False,
 ):
     """
     Build gui layout
     """
+    global data 
+    data =data_
     program_names = sorted(list(set(data.point)))
 
     dropDownMenuItems = [
@@ -481,12 +483,14 @@ def build_causal_layout(
 
     @app.callback(
         Output("container", "children"),
+        Output("nav-wrap", "children"),
         Output("graph_all", "figure"),
         Output("graph_select", "figure"),
-        #Output("checklist_all", "options"),
-        #Output("checklist_select", "options"),
-        #Output("checklist_all", "value"),
-        #Output("checklist_select", "value"),
+        
+        Output("checklist_all", "options"),
+        Output("checklist_select", "options"),
+        Output("checklist_all", "value"),
+        Output("checklist_select", "value"),
         
 
         [Input("Sort by-filt", "value")],
@@ -500,61 +504,81 @@ def build_causal_layout(
         [Input("upload-drag", "contents")],
 
         [State("upload-drag", "filename")],
-        [State('upload-drag', 'last_modified')],
-       # [State("checklist_all", "options")],
-       # [State("checklist_select", "options")],
+        #[State('upload-drag', 'last_modified')],
+        [State("checklist_all", "options")],
+        [State("checklist_select", "options")],
         [State("container", "children")],
         
     )
     def generate_from_filter(
-    sort_filt, kernel_filt, points_filt, checklist_all, checklist_select,
+    sort_filt, kernel_filt, points_filt, checklist_all_values, checklist_select_values,
     workload_path,
     list_of_contents,
-    filename, last_modified, 
-    #checklist_all_options, checklist_select_options, 
-    div_children,):
+    filename,
+    checklist_all_options, checklist_select_options, 
+    div_children,
+    ):
         global file_timestamp
+        global data
         #change to if debug
         if True:
             print("Sort by is ", sort_filt)
             print("kernel-filter is ", kernel_filt)
             print("points is: ", points_filt)
-            print("checklist_all is: ", checklist_all)
-            print("checklist_select is: ", checklist_select)
+            print("checklist_all is: ", checklist_all_values)
+            print("checklist_select is: ", checklist_select_values)
 
         div_children = []
         files = []
-        if workload_path is not None:
+        fig1=None
+        fig2=None
+        global new_data
+        checklist_all_opt = []
+        checklist_select_opt = []
+        checklist_all_val = []
+        checklist_select_val = []
+        if workload_path is not None and exists(os.path.join(workload_path, "profile.coz")):
             profile_path = os.path.join(workload_path, "profile.coz")
-            if exists(profile_path):
-                new_data = parseFile(profile_path)
-                new_data = getSpeedupData(new_data).rename(columns={"speedup": "Line Speedup","progress_speedup": "Program Speedup" })
-                checklist_all = sorted( list(new_data.point.unique()))
-                checklist_select = sorted( list(new_data.point.unique()))
-                #data = new_data
-                fig1, fig2 = update_line_graph(sort_filt, checklist_all, checklist_select, new_data, points_filt)
-                return div_children, fig1, fig2#, checklist_all, checklist_select#, checklist_all, checklist_select
+            #if exists(os.path.join(workload_path, "profile.coz")):
+            new_data = parseFile(profile_path)
+            new_data = getSpeedupData(new_data).rename(columns={"speedup": "Line Speedup","progress_speedup": "Program Speedup" })
+            data = new_data
+            checklist_all_val = sorted( list(new_data.point.unique()))
+            checklist_select_val = checklist_all_val
+            checklist_select_opt = checklist_all_val
+            checklist_all_opt = checklist_select_val
+            fig1, fig2 = update_line_graph(sort_filt, checklist_all_val, checklist_select_val, new_data, points_filt)
         #div_children.append()
-        if list_of_contents is not None:
-            
-            if file_timestamp != last_modified:
-                file_timestamp = last_modified
+        elif list_of_contents is not None:
         #if filename is not None and upload is not None:
-                if ".coz" in filename:
+            if ".coz" in filename:
+                #file_timestamp = last_modified
                 #for name, file_data in zip(filename, list_of_contents):
-                    new_data_file = base64.decodebytes(list_of_contents.encode("utf-8").split(b";base64,")[1]).decode("utf-8") 
-                    new_data = parseUploadedFile(new_data_file)
-                    new_data = getSpeedupData(new_data).rename(columns={"speedup": "Line Speedup","progress_speedup": "Program Speedup" })
-                    #data = new_data
-                    checklist_all = sorted( list(new_data.point.unique()))
-                    checklist_select = sorted( list(new_data.point.unique()))
-                    fig1, fig2 = update_line_graph(sort_filt, checklist_all, checklist_select, new_data, points_filt)
-                    return div_children, fig1, fig2#, checklist_all, checklist_select#, checklist_all, checklist_select
+                new_data_file = base64.decodebytes(list_of_contents.encode("utf-8").split(b";base64,")[1]).decode("utf-8") 
+                new_data = parseUploadedFile(new_data_file)
+                new_data = getSpeedupData(new_data).rename(columns={"speedup": "Line Speedup","progress_speedup": "Program Speedup" })
+                
+                data = new_data
+                checklist_all_val = sorted( list(new_data.point.unique()))
+                checklist_select_val = checklist_all_val
+                checklist_select_opt = checklist_all_val
+                checklist_all_opt = checklist_select_val
+                fig1, fig2 = update_line_graph(sort_filt, checklist_all_val, checklist_all_val, new_data, points_filt)
             
         else:
-            fig1, fig2 = update_line_graph(sort_filt, checklist_all, checklist_select, data, points_filt)
+            fig1, fig2 = update_line_graph(sort_filt, checklist_all_values, checklist_select_values, data, points_filt)
+            checklist_all_val = checklist_all_values
+            checklist_select_val = checklist_select_values
+            checklist_select_opt = checklist_select_options
+            checklist_all_opt = checklist_all_options
 
-            return div_children, fig1, fig2#, checklist_all, checklist_select#, checklist_all, checklist_select
+        header = get_header(
+                data,
+                dropDownMenuItems,
+                input_filters,
+                filt_kernel_names,
+            )
+        return div_children, header, fig1, fig2, checklist_all_opt, checklist_select_opt, checklist_all_val, checklist_select_val
     
 
 def build_miperf_layout(

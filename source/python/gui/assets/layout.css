@@ -229,19 +229,7 @@ ul#nav li.current a { color: #F06000; }
    width:90%;
    margin: auto;
 }
-button.upload {
-   color: #fff;
-   background-color: #F06000;
-   font: 16px 'opensans-bold', sans-serif;
-   border: none;
-   cursor: pointer;
-   height: auto;
-   display: inline-block;
-   border-radius: 3px;
-   right:0;
-   padding: 8px 13px;
-   margin: 8px 13px;
-}
+
 /* Report Button */
 button.report {
    color: #fff;
