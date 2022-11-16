@@ -953,8 +953,7 @@ hip_activity_callback(const char* begin, const char* end, void* arg)
             assert(_end_ns >= _beg_ns);
             tracing::push_perfetto_track(
                 category::device_hip{}, _kernel_names.at(_name).c_str(), _track, _beg_ns,
-                perfetto::TerminatingFlow::ProcessScoped(_cid),
-                [&](perfetto::EventContext ctx) {
+                perfetto::Flow::ProcessScoped(_cid), [&](perfetto::EventContext ctx) {
                     if(config::get_perfetto_annotations())
                     {
                         tracing::add_perfetto_annotation(ctx, "begin_ns", _beg_ns);
@@ -1001,6 +1000,9 @@ hip_activity_callback(const char* begin, const char* end, void* arg)
             _async_ops->emplace_back(std::move(_func));
         }
     }
+
+    // ensures that all the updates are written
+    if(get_use_perfetto()) ::perfetto::TrackEvent::Flush();
 }
 
 bool&
