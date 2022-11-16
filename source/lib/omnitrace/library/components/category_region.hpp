@@ -259,9 +259,12 @@ category_region<CategoryT>::audit(const gotcha_data_t& _data, audit::incoming,
     if(!trait::runtime_enabled<CategoryT>::get()) return;
 
     start<OptsT...>(_data.tool_id.c_str(), [&](perfetto::EventContext ctx) {
-        int64_t _n = 0;
-        OMNITRACE_FOLD_EXPRESSION(tracing::add_perfetto_annotation(
-            ctx, tim::try_demangle<std::remove_reference_t<Args>>(), _args, _n++));
+        if(config::get_perfetto_annotations())
+        {
+            int64_t _n = 0;
+            OMNITRACE_FOLD_EXPRESSION(tracing::add_perfetto_annotation(
+                ctx, tim::try_demangle<std::remove_reference_t<Args>>(), _args, _n++));
+        }
     });
 }
 
@@ -275,7 +278,8 @@ category_region<CategoryT>::audit(const gotcha_data_t& _data, audit::outgoing,
     if(!trait::runtime_enabled<CategoryT>::get()) return;
 
     stop<OptsT...>(_data.tool_id.c_str(), [&](perfetto::EventContext ctx) {
-        tracing::add_perfetto_annotation(ctx, "return", JOIN(", ", _args...));
+        if(config::get_perfetto_annotations())
+            tracing::add_perfetto_annotation(ctx, "return", JOIN(", ", _args...));
     });
 }
 
@@ -289,9 +293,12 @@ category_region<CategoryT>::audit(std::string_view _name, audit::incoming,
     if(!trait::runtime_enabled<CategoryT>::get()) return;
 
     start<OptsT...>(_name.data(), [&](perfetto::EventContext ctx) {
-        int64_t _n = 0;
-        OMNITRACE_FOLD_EXPRESSION(tracing::add_perfetto_annotation(
-            ctx, tim::try_demangle<std::remove_reference_t<Args>>(), _args, _n++));
+        if(config::get_perfetto_annotations())
+        {
+            int64_t _n = 0;
+            OMNITRACE_FOLD_EXPRESSION(tracing::add_perfetto_annotation(
+                ctx, tim::try_demangle<std::remove_reference_t<Args>>(), _args, _n++));
+        }
     });
 }
 
@@ -305,7 +312,8 @@ category_region<CategoryT>::audit(std::string_view _name, audit::outgoing,
     if(!trait::runtime_enabled<CategoryT>::get()) return;
 
     stop<OptsT...>(_name.data(), [&](perfetto::EventContext ctx) {
-        tracing::add_perfetto_annotation(ctx, "return", JOIN(", ", _args...));
+        if(config::get_perfetto_annotations())
+            tracing::add_perfetto_annotation(ctx, "return", JOIN(", ", _args...));
     });
 }
 

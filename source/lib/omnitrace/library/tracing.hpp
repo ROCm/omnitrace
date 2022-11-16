@@ -214,15 +214,16 @@ push_perfetto(CategoryT, const char* name, Args&&... args)
     if constexpr(sizeof...(Args) == 1 &&
                  std::is_invocable<Args..., perfetto::EventContext>::value)
     {
-        TRACE_EVENT_BEGIN(trait::name<CategoryT>::value, perfetto::StaticString(name),
-                          _ts, [&](perfetto::EventContext ctx) {
-                              if(config::get_perfetto_annotations())
-                              {
-                                  tracing::add_perfetto_annotation(ctx, "begin_ns", _ts);
-                                  OMNITRACE_FOLD_EXPRESSION(
-                                      std::forward<Args>(args)(std::move(ctx)));
-                              }
-                          });
+        if(config::get_perfetto_annotations())
+        {
+            TRACE_EVENT_BEGIN(trait::name<CategoryT>::value, perfetto::StaticString(name),
+                              _ts, "begin_ns", _ts, std::forward<Args>(args)...);
+        }
+        else
+        {
+            TRACE_EVENT_BEGIN(trait::name<CategoryT>::value, perfetto::StaticString(name),
+                              _ts, std::forward<Args>(args)...);
+        }
     }
     else
     {
@@ -248,14 +249,16 @@ pop_perfetto(CategoryT, const char*, Args&&... args)
     if constexpr(sizeof...(Args) == 1 &&
                  std::is_invocable<Args..., perfetto::EventContext>::value)
     {
-        TRACE_EVENT_END(
-            trait::name<CategoryT>::value, _ts, [&](perfetto::EventContext ctx) {
-                if(config::get_perfetto_annotations())
-                {
-                    tracing::add_perfetto_annotation(ctx, "end_ts", _ts);
-                    OMNITRACE_FOLD_EXPRESSION(std::forward<Args>(args)(std::move(ctx)));
-                }
-            });
+        if(config::get_perfetto_annotations())
+        {
+            TRACE_EVENT_END(trait::name<CategoryT>::value, _ts, "end_ns", _ts,
+                            std::forward<Args>(args)...);
+        }
+        else
+        {
+            TRACE_EVENT_END(trait::name<CategoryT>::value, _ts,
+                            std::forward<Args>(args)...);
+        }
     }
     else
     {
@@ -263,7 +266,7 @@ pop_perfetto(CategoryT, const char*, Args&&... args)
                         [&](perfetto::EventContext ctx) {
                             if(config::get_perfetto_annotations())
                             {
-                                tracing::add_perfetto_annotation(ctx, "end_ts", _ts);
+                                tracing::add_perfetto_annotation(ctx, "end_ns", _ts);
                             }
                         });
     }
