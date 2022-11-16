@@ -26,6 +26,11 @@
 #include "library/config.hpp"
 #include "library/tracing.hpp"
 
+#if defined(__GNUC__) && (__GNUC__ == 7)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 namespace omnitrace
 {
 namespace impl
@@ -162,3 +167,7 @@ omnitrace_pop_category_region_hidden(omnitrace_category_t _category, const char*
         _category, name, _annotations, _annotation_count,
         omnitrace::utility::make_index_sequence_range<1, OMNITRACE_CATEGORY_LAST>{});
 }
+
+#if defined(__GNUC__) && (__GNUC__ == 7)
+#    pragma GCC diagnostic pop
+#endif
