@@ -1527,8 +1527,7 @@ get_use_roctracer()
 bool
 get_perfetto_roctracer_per_stream()
 {
-#if defined(OMNITRACE_USE_ROCTRACER) && OMNITRACE_USE_ROCTRACER > 0 &&                   \
-    defined(OMNITRACE_USE_PERFETTO) && OMNITRACE_USE_PERFETTO > 0
+#if defined(OMNITRACE_USE_ROCTRACER) && OMNITRACE_USE_ROCTRACER > 0
     static auto _v = get_config()->find("OMNITRACE_PERFETTO_ROCTRACER_PER_STREAM");
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 #else

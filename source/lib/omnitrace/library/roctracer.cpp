@@ -32,9 +32,8 @@
 
 #include <timemory/backends/cpu.hpp>
 #include <timemory/backends/threading.hpp>
+#include <timemory/hash/types.hpp>
 #include <timemory/utility/types.hpp>
-
-#include <perfetto.h>
 
 #include <atomic>
 #include <chrono>
@@ -348,23 +347,12 @@ hsa_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void*
 }
 
 void
-hsa_activity_callback(uint32_t op, activity_record_t* record, void* arg)
+hsa_activity_callback(uint32_t op, const activity_record_t* record, void* arg)
 {
     if(get_state() != State::Active || !trait::runtime_enabled<comp::roctracer>::get())
         return;
 
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
-
-    static thread_local std::once_flag _once{};
-    std::call_once(_once, []() {
-        threading::offset_this_id(true);
-        if(threading::get_id() != 0)
-        {
-            sampling::block_signals();
-            threading::set_thread_name("roctracer.hsa");
-            sampling::shutdown();
-        }
-    });
 
     auto&& _protect = comp::roctracer::protect_flush_activity();
     (void) _protect;
@@ -536,20 +524,6 @@ roctx_api_callback(uint32_t domain, uint32_t cid, const void* callback_data,
     }
 }
 
-static std::size_t
-hash_combine(std::size_t i, std::size_t j)
-{
-    return i ^ (j + 0x9e3779b97f4a7c17ul + (i << 6) + (i >> 2));
-}
-
-static std::size_t
-queue_uuid(int queue_id)
-{
-    // SHA1 of "OMNITRACE_ROCTRACER_HIP_DEVICE_QUEUE"
-    static constexpr std::size_t hip_device_queue_namespace = 0x11c9d8a8894b428ul;
-    return hash_combine(hip_device_queue_namespace, queue_id);
-}
-
 // HIP API callback function
 void
 hip_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void* arg)
@@ -669,23 +643,6 @@ hip_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void*
         OMNITRACE_HIP_API_QUEUE_CASE(hipStreamUpdateCaptureDependencies, stream)
 #endif
         default: break;
-    }
-
-    if(get_perfetto_roctracer_per_stream())
-    {
-        static thread_local std::unordered_set<uintptr_t> seen_queues;
-        if(seen_queues.find(_queue) == seen_queues.end())
-        {
-            const auto _queue_track = perfetto::Track(queue_uuid(_queue));
-            auto       desc_        = _queue_track.Serialize();
-
-            std::stringstream ss;
-            ss << std::hex << _queue;
-            desc_.set_name("Stream 0x" + ss.str());
-            perfetto::TrackEvent::SetTrackDescriptor(_queue_track, desc_);
-
-            seen_queues.insert(_queue);
-        }
     }
 
     auto& _device_id = get_current_device();
@@ -850,23 +807,12 @@ hip_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void*
 
 // Activity tracing callback
 void
-hip_activity_callback(const char* begin, const char* end, void*)
+hip_activity_callback(const char* begin, const char* end, void* arg)
 {
     if(get_state() != State::Active || !trait::runtime_enabled<comp::roctracer>::get())
         return;
 
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
-
-    static thread_local std::once_flag _once{};
-    std::call_once(_once, []() {
-        threading::offset_this_id(true);
-        if(threading::get_id() != 0)
-        {
-            sampling::block_signals();
-            threading::set_thread_name("roctracer.hip");
-            sampling::shutdown();
-        }
-    });
 
     auto&& _protect = comp::roctracer::protect_flush_activity();
     (void) _protect;
@@ -895,8 +841,12 @@ hip_activity_callback(const char* begin, const char* end, void*)
         assert(HIP_OP_ID_DISPATCH == 0);
         assert(HIP_OP_ID_COPY == 1);
         assert(HIP_OP_ID_BARRIER == 2);
-        assert(record->domain == ACTIVITY_DOMAIN_HIP_OPS);
 
+        if(record->domain == ACTIVITY_DOMAIN_HSA_OPS)
+        {
+            hsa_activity_callback(record->op, record, arg);
+            continue;
+        }
         if(record->domain != ACTIVITY_DOMAIN_HIP_OPS) continue;
         if(record->op > HIP_OP_ID_BARRIER) continue;
 
@@ -959,7 +909,7 @@ hip_activity_callback(const char* begin, const char* end, void*)
             auto          _verbose = []() { return get_verbose() >= 0 || get_debug(); };
             static size_t _n       = 0;
             static size_t _nmax =
-                get_env<size_t>("OMNITRACE_ROCTRACER_DISCARD_INVALID", 10);
+                get_env<size_t>("OMNITRACE_ROCTRACER_DISCARD_INVALID", 0);
             if(_nmax == 0) std::swap(_end_ns, _beg_ns);
             OMNITRACE_WARNING_IF_F(
                 _n < _nmax && _verbose(),
@@ -989,14 +939,22 @@ hip_activity_callback(const char* begin, const char* end, void*)
             if(_kernel_names.find(_name) == _kernel_names.end())
                 _kernel_names.emplace(_name, tim::demangle(_name));
 
-            const auto _queue_track = get_perfetto_roctracer_per_stream()
-                                          ? perfetto::Track(queue_uuid(_queue))
-                                          : perfetto::ThreadTrack::Current();
+            auto _track_desc = [](int32_t _device_id, int64_t _queue_id) {
+                if(config::get_perfetto_roctracer_per_stream())
+                    return JOIN("", "HIP Activity Device ", _device_id, ", Queue ",
+                                _queue_id);
+                return JOIN("", "HIP Activity Device ", _device_id);
+            };
+
+            const auto _track = tracing::get_perfetto_track(
+                category::device_hip{}, _track_desc, _devid,
+                (get_perfetto_roctracer_per_stream()) ? _queid : 0);
 
             assert(_end_ns >= _beg_ns);
             tracing::push_perfetto_track(
-                category::device_hip{}, _kernel_names.at(_name).c_str(), _queue_track, _beg_ns,
-                perfetto::Flow::ProcessScoped(_cid), [&](perfetto::EventContext ctx) {
+                category::device_hip{}, _kernel_names.at(_name).c_str(), _track, _beg_ns,
+                perfetto::TerminatingFlow::ProcessScoped(_cid),
+                [&](perfetto::EventContext ctx) {
                     if(config::get_perfetto_annotations())
                     {
                         tracing::add_perfetto_annotation(ctx, "begin_ns", _beg_ns);
@@ -1005,11 +963,13 @@ hip_activity_callback(const char* begin, const char* end, void*)
                         tracing::add_perfetto_annotation(ctx, "device", _devid);
                         tracing::add_perfetto_annotation(ctx, "queue", _queid);
                         tracing::add_perfetto_annotation(ctx, "tid", _tid);
+                        tracing::add_perfetto_annotation(
+                            ctx, "stream", JOIN("", "0x", std::hex, _queue));
                         tracing::add_perfetto_annotation(ctx, "op",
                                                          _op_id_names.at(record->op));
                     }
                 });
-            tracing::pop_perfetto_track(category::device_hip{}, "", _queue_track, _end_ns);
+            tracing::pop_perfetto_track(category::device_hip{}, "", _track, _end_ns);
         }
 
         if(_critical_trace)
