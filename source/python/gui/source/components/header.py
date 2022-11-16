@@ -21,6 +21,7 @@
 ################################################################################
 
 from dash import html, dash_table, dcc
+import dash_daq as daq
 import dash_bootstrap_components as dbc
 from matplotlib.style import available
 import sys
@@ -58,7 +59,6 @@ def filePath():
     ]
 )
 
-
 def uploadFile():
     return html.Div(
         className="nav-right",
@@ -86,8 +86,53 @@ def uploadFile():
         ],
     )
 
-    
-    
+def minPoints(name, values):
+    return html.Li(
+        className="filter",
+        #style={#'width': '100%',
+        #'height': '50px'},
+        children = [
+            html.Div(
+                style={
+                    'width':'200px',
+                    'position': 'relative',
+                    'display': 'inline-block',
+                    'list-style': 'none'
+                },
+                children=[
+                    
+                    html.A(
+                        className="smoothscroll",
+                        children=["Min Points:"],
+                        ),
+                    
+                ]
+            ),
+            html.Div(
+                style={
+                    'width':'200px',
+                    'padding-top': '10px',
+                    'vertical-align': 'middle',
+                    'position': 'relative',
+                    'display': 'inline-block',
+                    'list-style': 'none'
+                },
+                children=[
+                    daq.Slider(
+                        min = 0, 
+                        max = values, 
+                        step = 1,
+                        value = 1,
+                        id="points-filt",
+                        handleLabel={"showCurrentValue": True,"label": "VALUE"},
+                        size = 200
+                    )
+                    
+                ]
+            )
+        ],
+    )
+
 def get_header_child(name, values, filter, style_):
     return html.Li(
         className="filter",
@@ -114,7 +159,6 @@ def get_header_child(name, values, filter, style_):
             )
         ],
     )
-
 
 def reportBug():
     return html.Div(
@@ -300,11 +344,9 @@ def get_header(raw_pmc, dropDownMenuItems, input_filters, kernel_names):
         header_nav = children_[0].children[0].children
         if filter["type"] == "int":
             header_nav.append(
-                get_header_child(
+                minPoints(
                     filter["Name"],
-                    filter["values"],
-                    filter["filter"],
-                    {"width": "60px"},
+                    filter["values"]
                 )
             )
         elif filter["type"] == "Name":
@@ -321,9 +363,10 @@ def get_header(raw_pmc, dropDownMenuItems, input_filters, kernel_names):
             )
         else:
             print("type not supported")
-            sys.exit(1)
+            #sys.exit(1)
     header_nav = children_[0].children[0].children
     header_nav.append(reportBug())
+    #header_nav.append(minPoints())
     header_nav.append(filePath())
     header_nav.append(uploadFile())
 

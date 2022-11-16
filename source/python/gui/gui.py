@@ -50,6 +50,7 @@ from source.utils.causal_parser import parseFile, parseUploadedFile, getSpeedupD
 
 file_timestamp = 0
 data=pd.DataFrame()
+input_filters=None
 pd.set_option(
     "mode.chained_assignment", None
 )  # ignore SettingWithCopyWarning pandas warning
@@ -425,10 +426,50 @@ def update_line_graph(sort_filt, selected_all, selected_select, data, points_fil
 
     return fig1, fig2
 
+def reset_Input_filters(kernel_names, max_points):
+    sortOptions=[
+        "Alphabetical",
+        "Max Speedup",
+        "Min Speedup",
+        "Impact"
+    ]
+
+    input_filters = [
+        {
+            "Name": "Sort by",
+            "filter": [],
+            "values": list(
+                map(
+                    str,
+                    sortOptions,
+                )
+            ),
+            "type": "Name",
+        },
+        {
+            "Name": "kernel",
+            "filter": [],
+            "values": list(
+                map(
+                    str,
+                    kernel_names,
+                )
+            ),
+            "type": "Name",
+        },
+        {
+            "Name": "points",
+            "filter": [],
+            "values": max_points,
+            "type": "int",
+        },
+    ]
+    return input_filters
+
 def build_causal_layout(
     app,
     runs,
-    input_filters,
+    input_filters_,
     path_to_dir,
     data_,
     debug=False,
@@ -439,6 +480,8 @@ def build_causal_layout(
     """
     global data 
     data =data_
+    global input_filters
+    input_filters = input_filters_
     program_names = sorted(list(set(data.point)))
 
     dropDownMenuItems = [
@@ -520,6 +563,7 @@ def build_causal_layout(
     ):
         global file_timestamp
         global data
+        global input_filters
         #change to if debug
         if True:
             print("Sort by is ", sort_filt)
@@ -543,10 +587,16 @@ def build_causal_layout(
             new_data = parseFile(profile_path)
             new_data = getSpeedupData(new_data).rename(columns={"speedup": "Line Speedup","progress_speedup": "Program Speedup" })
             data = new_data
+
+            #reset checklists
             checklist_all_val = sorted( list(new_data.point.unique()))
             checklist_select_val = checklist_all_val
             checklist_select_opt = checklist_all_val
             checklist_all_opt = checklist_select_val
+
+            #reset input_filters
+
+
             fig1, fig2 = update_line_graph(sort_filt, checklist_all_val, checklist_select_val, new_data, points_filt)
         #div_children.append()
         elif list_of_contents is not None:
@@ -557,12 +607,19 @@ def build_causal_layout(
                 new_data_file = base64.decodebytes(list_of_contents.encode("utf-8").split(b";base64,")[1]).decode("utf-8") 
                 new_data = parseUploadedFile(new_data_file)
                 new_data = getSpeedupData(new_data).rename(columns={"speedup": "Line Speedup","progress_speedup": "Program Speedup" })
-                
                 data = new_data
+
+                #reset checklists
                 checklist_all_val = sorted( list(new_data.point.unique()))
                 checklist_select_val = checklist_all_val
                 checklist_select_opt = checklist_all_val
                 checklist_all_opt = checklist_select_val
+
+                max_points= new_data.point.value_counts().max().max()
+
+                #reset input_filters
+                input_filters=reset_Input_filters(checklist_all_opt, max_points)
+
                 fig1, fig2 = update_line_graph(sort_filt, checklist_all_val, checklist_all_val, new_data, points_filt)
             
         else:
