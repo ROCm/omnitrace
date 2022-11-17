@@ -129,7 +129,7 @@ tool_initialize(ompt_function_lookup_t lookup, int initial_device_num,
             lookup, initial_device_num, tool_data);
     }
     return 1;  // success
-};
+}
 
 void
 tool_finalize(ompt_data_t*)
