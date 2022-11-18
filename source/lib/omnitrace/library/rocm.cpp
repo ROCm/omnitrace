@@ -237,7 +237,7 @@ extern "C"
                             hsa_activity_callback),
                         nullptr, output_prefix
                     };
-#    elseif OMNITRACE_HIP_VERSION < 50301
+#elif OMNITRACE_HIP_VERSION < 50301
                     hsa_ops_properties_t ops_properties;
                     ops_properties.table = table;
                     ops_properties.reserved1[0] =
