@@ -237,7 +237,7 @@ extern "C"
                             hsa_activity_callback),
                         nullptr, output_prefix
                     };
-#elseif OMNITRACE_HIP_VERSION < 50301
+#    elseif OMNITRACE_HIP_VERSION < 50301
                     hsa_ops_properties_t ops_properties;
                     ops_properties.table = table;
                     ops_properties.reserved1[0] =
@@ -245,10 +245,8 @@ extern "C"
                     ops_properties.reserved1[1] = nullptr;
                     ops_properties.reserved1[2] = nullptr;
 #else
-                    hsa_ops_properties_t ops_properties {
-                        table,
-                        reinterpret_cast<void*>(&hsa_activity_callback),
-                        nullptr,
+                    hsa_ops_properties_t ops_properties{
+                        table, reinterpret_cast<void*>(&hsa_activity_callback), nullptr,
                         nullptr
                     };
 #endif
