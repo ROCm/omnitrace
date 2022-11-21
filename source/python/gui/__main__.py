@@ -76,12 +76,7 @@ def causal(args):
         {
             "Name": "points",
             "filter": [],
-            "values": list(
-                map(
-                    str,
-                    range(max_points),
-                )
-            ),
+            "values": max_points,
             "type": "int",
         },
     ]

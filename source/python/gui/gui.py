@@ -398,12 +398,20 @@ def update_line_graph(sort_filt, selected_all, selected_select, data, points_fil
                 newData
             ])
         data = newData
-    mask_all = data.point.isin(selected_all)
-    mask_select = data.point.isin(selected_select)
+
+    point_counts = data.point.value_counts()
+    #points_filt = 6.5
+    sufficient_points = point_counts>points_filt
+    sufficient_points = sufficient_points.loc[lambda x:x == True].index
+    #sufficient_points = sufficient_points
+    mask_all = data[data.point.isin(selected_all)].point.isin(list(sufficient_points))
+
+    mask_select = data[data.point.isin(selected_select)].point.isin(sufficient_points)
     #what = mask_select.value_counts()[True]
     #what = data[mask_all]
-    
-    fig1 = px.line(data[mask_all], 
+    fig_data1 = data[mask_all]
+    fig_data2 = data[mask_select]
+    fig1 = px.line(fig_data1, 
         x="Line Speedup", 
         y="Program Speedup", 
         #height=700, 
@@ -414,7 +422,7 @@ def update_line_graph(sort_filt, selected_all, selected_select, data, points_fil
         markers=True,
         line_shape="spline"
         )
-    fig2 = px.line(data[mask_select], 
+    fig2 = px.line(fig_data2, 
         x="Line Speedup", y="Program Speedup", 
         #height=700, width=700, 
         color="point",
@@ -460,7 +468,7 @@ def reset_Input_filters(kernel_names, max_points):
         {
             "Name": "points",
             "filter": [],
-            "values": max_points,
+            "values": max_points-1,
             "type": "int",
         },
     ]
@@ -623,6 +631,7 @@ def build_causal_layout(
                 fig1, fig2 = update_line_graph(sort_filt, checklist_all_val, checklist_all_val, new_data, points_filt)
             
         else:
+            #change to update checklist after points selection
             fig1, fig2 = update_line_graph(sort_filt, checklist_all_values, checklist_select_values, data, points_filt)
             checklist_all_val = checklist_all_values
             checklist_select_val = checklist_select_values
