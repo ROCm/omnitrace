@@ -142,8 +142,6 @@ extern "C"
     /// #include <cstddef>
     /// #include <cstdint>
     ///
-    /// #include <omnitrace/user.h>
-    ///
     /// double
     /// compute_residual(size_t n, double* data);
     ///

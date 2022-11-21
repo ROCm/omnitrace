@@ -39,43 +39,7 @@ extern "C"
 
     /// @struct omnitrace_user_callbacks
     /// @brief Struct containing the callbacks for the user API
-    /// @code{.cpp}
     ///
-    /// #include <cerrno>
-    /// #include <cstring>
-    ///
-    /// omnitrace_user_callbacks_t custom_callbacks   = OMNITRACE_USER_CALLBACKS_INIT;
-    /// omnitrace_user_callbacks_t original_callbacks = OMNITRACE_USER_CALLBACKS_INIT;
-    ///
-    /// // in our custom push region, we are going to redirect the unannotated user push
-    /// // region to annotate the trace entries with the global errno and if errno is
-    /// // non-zero, store the message
-    /// int
-    /// custom_push_region(const char* name)
-    /// {
-    ///     if(!original_callbacks.push_annotated_region)
-    ///         return OMNITRACE_USER_ERROR_NO_BINDING;
-    ///
-    ///     int32_t     _err = errno;
-    ///     const char* _msg = nullptr;
-    ///     char        _buff[1024];
-    ///     if(_err != 0) _msg = strerror_r(_err, _buff, sizeof(_buff));
-    ///
-    ///     omnitrace_annotation_t _annotates[] = { { "errno", OMNITRACE_INT32, &_err },
-    ///                                             { "msg", OMNITRACE_STRING, _msg } };
-    ///     return (*original_callbacks.push_annotated_region)(name, &_annotations, 2);
-    /// }
-    ///
-    /// int
-    /// main(int argc, char** argv)
-    /// {
-    ///     custom_callbacks.push_region = &custom_push_region;
-    ///     omnitrace_user_configure(OMNITRACE_USER_UNION_CONFIG, custom_callbacks,
-    ///                              &original_callbacks);
-    ///     // ...
-    /// }
-    ///
-    /// @endcode
     /// @typedef omnitrace_user_callbacks omnitrace_user_callbacks_t
     typedef struct omnitrace_user_callbacks
     {
