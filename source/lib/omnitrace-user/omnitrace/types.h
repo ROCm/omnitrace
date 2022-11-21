@@ -37,7 +37,7 @@ extern "C"
     typedef int (*omnitrace_annotated_region_func_t)(const char*, omnitrace_annotation*,
                                                      size_t);
 
-    /// @typedef omnitrace_user_callbacks_t
+    /// @struct omnitrace_user_callbacks
     /// @brief Struct containing the callbacks for the user API
     /// @code{.cpp}
     ///
@@ -76,6 +76,7 @@ extern "C"
     /// }
     ///
     /// @endcode
+    /// @typedef omnitrace_user_callbacks omnitrace_user_callbacks_t
     typedef struct omnitrace_user_callbacks
     {
         omnitrace_trace_func_t            start_trace;
@@ -86,11 +87,28 @@ extern "C"
         omnitrace_region_func_t           pop_region;
         omnitrace_annotated_region_func_t push_annotated_region;
         omnitrace_annotated_region_func_t pop_annotated_region;
+
+        /// @var start_trace
+        /// @brief callback for starting a trace region
+        /// @var stop_trace
+        /// @brief callback for starting a trace region
+        /// @var start_thread_trace
+        /// @brief callback for starting a trace region
+        /// @var stop_thread_trace
+        /// @brief callback for starting a trace region
+        /// @var push_region
+        /// @brief callback for starting a trace region
+        /// @var pop_region
+        /// @brief callback for starting a trace region
+        /// @var push_annotated_region
+        /// @brief callback for starting a trace region
+        /// @var pop_annotated_region
+        /// @brief callback for starting a trace region
     } omnitrace_user_callbacks_t;
 
-    /// @typedef omnitrace_user_configure_mode_t
+    /// @enum OMNITRACE_USER_CONFIGURE_MODE
     /// @brief Identifier for errors
-    ///
+    /// @typedef OMNITRACE_USER_CONFIGURE_MODE omnitrace_user_configure_mode_t
     typedef enum OMNITRACE_USER_CONFIGURE_MODE
     {
         // clang-format off
@@ -101,8 +119,9 @@ extern "C"
         // clang-format on
     } omnitrace_user_configure_mode_t;
 
-    /// @typedef omnitrace_user_error_t
+    /// @enum OMNITRACE_USER_ERROR
     /// @brief Identifier for errors
+    /// @typedef OMNITRACE_USER_ERROR omnitrace_user_error_t
     ///
     typedef enum OMNITRACE_USER_ERROR
     {

@@ -1,7 +1,9 @@
 # User API
 
 ```eval_rst
-.. doxygenfile:: omnitrace/user.h
+.. doxygenindex::
+   :project: omnitrace
+   :outline:
 ```
 
 By default, when omnitrace detects any `omnitrace_user_start_*` or `omnitrace_user_stop_*` function, instrumentation
