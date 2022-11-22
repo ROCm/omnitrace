@@ -38,34 +38,31 @@ namespace unwind = ::tim::unwind;
 
 namespace causal
 {
-static constexpr size_t unwind_depth  = 8;
+static constexpr size_t unwind_depth  = 4;
 static constexpr size_t unwind_offset = 2;
 using unwind_stack_t                  = unwind::stack<unwind_depth>;
 
-struct progress_stack
-{
-    std::string_view name  = {};
-    unwind_stack_t   stack = {};
-};
+using hash_value_t = tim::hash_value_t;
 
-using progress_stack_vector_t = std::vector<progress_stack>;
+void set_current_selection(unwind_stack_t);
 
-void
-push_progress_stack(progress_stack&&);
+unwind_stack_t
+sample_selection(size_t _nitr = 1000);
 
-progress_stack
-pop_progress_stack();
+void push_progress_point(std::string_view);
+
+void pop_progress_point(std::string_view);
 
 bool
 sample_enabled(int64_t _tid = utility::get_thread_index());
 
-int8_t
+uint16_t
 sample_virtual_speedup(int64_t _tid = utility::get_thread_index());
 
-progress_stack
-sample_progress_stack();
-
 void
-test();
+start_experimenting();
+
+// void
+// test();
 }  // namespace causal
 }  // namespace omnitrace

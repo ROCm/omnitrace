@@ -46,19 +46,22 @@ struct delay
 
     static std::string label();
     static std::string description();
+    static void        preinit();
 
     TIMEMORY_DEFAULT_OBJECT(delay)
 
-    static void start();
-    static void stop();
-    static void sample();
-    static void process();
-    static void credit();
+    static void    start();
+    static void    stop();
+    static void    sample(int = -1);
+    static void    process();
+    static void    credit();
+    static int64_t sync();
 
     static std::atomic<int64_t>& get_global();
     static int64_t&              get_local(int64_t _tid = threading::get_id());
 
-    static int64_t get(int64_t _tid = threading::get_id());
+    static int64_t  get(int64_t _tid = threading::get_id());
+    static uint64_t compute_total_delay(uint64_t);
 };
 }  // namespace causal
 }  // namespace omnitrace

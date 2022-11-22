@@ -25,7 +25,10 @@
 #include "library/common.hpp"
 #include "library/components/fwd.hpp"
 #include "library/defines.hpp"
+#include "timemory/components/base/declaration.hpp"
 #include "timemory/components/timing/wall_clock.hpp"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <timemory/components/base.hpp>
 #include <timemory/hash/types.hpp>
@@ -34,54 +37,99 @@
 #include <timemory/tpls/cereal/cereal.hpp>
 
 #include <cstdint>
-#include <map>
+#include <unordered_map>
 
 namespace omnitrace
 {
 namespace causal
 {
-struct progress_point
-: comp::empty_base
-, concepts::component
+struct progress_point : comp::base<progress_point, int64_t>
 {
-    using value_type = void;
-    using hash_type  = tim::hash_value_t;
+    using base_type     = comp::base<progress_point, int64_t>;
+    using value_type    = int64_t;
+    using hash_type     = tim::hash_value_t;
+    using iterator_type = progress_point*;
 
     static std::string label();
     static std::string description();
 
     TIMEMORY_DEFAULT_OBJECT(progress_point)
 
-    void start() const;
-    void stop() const;
-    void set_prefix(hash_type _v);
-
-    struct result
+    static value_type record() noexcept
     {
-        double throughput = 0;
-        double latency    = 0;
+        return tim::get_clock_real_now<int64_t, std::nano>();
+    }
 
-        template <typename ArchiveT>
-        void serialize(ArchiveT&);
-    };
+    double get() const noexcept { return load() / static_cast<double>(get_unit()); }
+    auto   get_display() const noexcept { return get(); }
 
-    // the result per function
-    using result_data_t = std::map<hash_type, result>;
+    void start() noexcept { value = record(); }
+    void stop() noexcept { accum += (value = (record() - value)); }
 
-    static void          setup();  // reset data before experiment
-    static result_data_t get();    // compute the experiment result
+    void set_iterator(iterator_type _v) { m_iterator = _v; }
+    auto get_iterator() const { return m_iterator; }
+
+    void print(std::ostream& os) const;
+
+    void set_hash(hash_type _v) { m_hash = _v; }
+    auto get_hash() const { return m_hash; }
+
+    template <typename ArchiveT>
+    void save(ArchiveT& ar, const unsigned _version) const
+    {
+        namespace cereal = ::tim::cereal;
+
+        ar(cereal::make_nvp("hash", m_hash),
+           cereal::make_nvp("name", std::string{ tim::get_hash_identifier(m_hash) }));
+        base_type::save(ar, _version);
+    }
 
 private:
-    hash_type        m_hash       = 0;
-    comp::wall_clock m_throughput = {};
+    hash_type       m_hash     = 0;
+    progress_point* m_iterator = nullptr;
 };
 
-template <typename ArchiveT>
-inline void
-progress_point::result::serialize(ArchiveT& ar)
-{
-    ar(tim::cereal::make_nvp("throughput", throughput),
-       tim::cereal::make_nvp("latency", latency));
-}
+std::unordered_map<tim::hash_value_t, progress_point>
+get_progress_points();
 }  // namespace causal
 }  // namespace omnitrace
+
+OMNITRACE_DEFINE_CONCRETE_TRAIT(uses_storage, causal::progress_point, false_type)
+OMNITRACE_DEFINE_CONCRETE_TRAIT(flat_storage, causal::progress_point, true_type)
+OMNITRACE_DEFINE_CONCRETE_TRAIT(uses_timing_units, causal::progress_point, true_type)
+OMNITRACE_DEFINE_CONCRETE_TRAIT(is_timing_category, causal::progress_point, true_type)
+
+namespace tim
+{
+namespace operation
+{
+template <>
+struct push_node<omnitrace::causal::progress_point>
+{
+    using type = omnitrace::causal::progress_point;
+
+    TIMEMORY_DEFAULT_OBJECT(push_node)
+
+    push_node(type& _obj, scope::config _scope, hash_value_t _hash,
+              int64_t _tid = threading::get_id())
+    {
+        (*this)(_obj, _scope, _hash, _tid);
+    }
+
+    void operator()(type& _obj, scope::config, hash_value_t _hash,
+                    int64_t _tid = threading::get_id()) const;
+};
+
+template <>
+struct pop_node<omnitrace::causal::progress_point>
+{
+    using type = omnitrace::causal::progress_point;
+
+    TIMEMORY_DEFAULT_OBJECT(pop_node)
+
+    pop_node(type& _obj, int64_t _tid = threading::get_id()) { (*this)(_obj, _tid); }
+
+    void operator()(type& _obj, int64_t _tid = threading::get_id()) const;
+};
+}  // namespace operation
+}  // namespace tim

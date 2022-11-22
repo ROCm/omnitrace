@@ -48,6 +48,7 @@ struct blocking_gotcha : comp::base<blocking_gotcha, void>
     // string id for component
     static std::string label();
     static std::string description();
+    static void        preinit();
 
     // generate the gotcha wrappers
     static void configure();
@@ -55,12 +56,15 @@ struct blocking_gotcha : comp::base<blocking_gotcha, void>
 
     static void start();
     static void stop();
+
+    static void set_data(const comp::gotcha_data&);
 };
 
 using blocking_gotcha_t =
     comp::gotcha<blocking_gotcha::gotcha_capacity,
-                 tim::lightweight_tuple<blocking_gotcha>, project::omnitrace>;
+                 tim::lightweight_tuple<blocking_gotcha>, category::causal>;
 }  // namespace causal
 }  // namespace omnitrace
 
 OMNITRACE_DEFINE_CONCRETE_TRAIT(prevent_reentry, causal::blocking_gotcha_t, false_type)
+OMNITRACE_DEFINE_CONCRETE_TRAIT(static_data, causal::blocking_gotcha_t, true_type)

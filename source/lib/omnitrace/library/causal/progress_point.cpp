@@ -27,8 +27,12 @@
 #include "library/timemory.hpp"
 #include "timemory/mpl/type_traits.hpp"
 
+#include <bits/stdint-intn.h>
 #include <timemory/hash/types.hpp>
 #include <timemory/units.hpp>
+
+using progress_map_t =
+    std::unordered_map<tim::hash_value_t, omnitrace::causal::progress_point*>;
 
 namespace omnitrace
 {
@@ -36,20 +40,23 @@ namespace causal
 {
 namespace
 {
-struct progress_point_data
-{
-    comp::wall_clock throughput = {};
-    comp::wall_clock latency    = {};
-};
+using thread_data_t        = thread_data<identity<progress_map_t>>;
+using progress_allocator_t = tim::data::ring_buffer_allocator<progress_point>;
 
-using data_t        = std::unordered_map<tim::hash_value_t, progress_point_data>;
-using thread_data_t = thread_data<data_t, category::causal>;
+progress_map_t&
+get_progress_map(int64_t _tid)
+{
+    static auto& _v = thread_data_t::instances();
+    return _v.at(_tid);
+}
 
 auto&
-get_progress_point_data()
+get_progress_allocator(int64_t _tid)
 {
-    return thread_data_t::instance(construct_on_init{});
+    static auto& _v = thread_data<progress_allocator_t>::instances(construct_on_init{});
+    return _v.at(_tid);
 }
+
 }  // namespace
 
 std::string
@@ -64,81 +71,67 @@ progress_point::description()
     return "Tracks progress point latency and throughput for casual profiling";
 }
 
-void
-progress_point::start() const
+std::unordered_map<tim::hash_value_t, progress_point>
+get_progress_points()
 {
-    if(m_hash == 0) return;
-    auto& itr = (*get_progress_point_data())[m_hash];
-    if(itr.latency.get_is_running())
+    auto _data = std::unordered_map<tim::hash_value_t, progress_point>{};
+    for(const auto& titr : thread_data_t::instances())
     {
-        tim::invoke::invoke<operation::stop>(std::tie(itr.latency));
-    }
-    else
-    {
-        tim::invoke::invoke<operation::start>(std::tie(itr.latency));
-    }
-    tim::invoke::invoke<operation::start>(std::tie(itr.throughput));
-}
-
-void
-progress_point::stop() const
-{
-    if(m_hash == 0) return;
-    auto& itr = (*get_progress_point_data())[m_hash];
-    tim::invoke::invoke<operation::stop>(std::tie(itr.throughput));
-    // tim::invoke::invoke<operation::plus>(std::tie(itr.throughput), m_throughput);
-    // itr.throughput.set_laps(itr.throughput.get_laps() + 1);
-}
-
-void
-progress_point::set_prefix(hash_type _v)
-{
-    m_hash = _v;
-}
-
-void
-progress_point::setup()
-{
-    if(!trait::runtime_enabled<progress_point>::get()) return;
-
-    auto_lock_t _lk{ type_mutex<progress_point>() };
-    trait::runtime_enabled<progress_point>::set(false);
-
-    auto& _data = thread_data_t::instances();
-    for(auto& itr : _data)
-    {
-        if(itr) *itr = data_t{};
-    }
-
-    trait::runtime_enabled<progress_point>::set(true);
-}
-
-progress_point::result_data_t
-progress_point::get()
-{
-    auto_lock_t _lk{ type_mutex<progress_point>() };
-
-    auto& _data   = thread_data_t::instances();
-    auto  _result = result_data_t{};
-
-    trait::runtime_enabled<progress_point>::set(false);
-    for(auto& itr : _data)
-    {
-        if(!itr) continue;
-        for(const auto& eitr : *itr)
+        for(const auto& itr : titr)
         {
-            auto _latency = eitr.second.latency.get_laps() / eitr.second.latency.get();
-            auto _throughput =
-                eitr.second.throughput.get() / eitr.second.throughput.get_laps();
-
-            _result[eitr.first].latency +=
-                (eitr.second.latency.get_laps() > 0) ? (1.0 / _latency) : 0.0;
-            _result[eitr.first].throughput += 1.0 / _throughput;
+            if(itr.second)
+            {
+                auto& ditr = _data[itr.first];
+                ditr += *itr.second;
+                ditr.set_hash(itr.second->get_hash());
+                ditr.set_laps(ditr.get_laps() + itr.second->get_laps());
+            }
         }
     }
+    return _data;
+}
 
-    trait::runtime_enabled<progress_point>::set(true);
-    return _result;
+void
+progress_point::print(std::ostream& os) const
+{
+    os << tim::get_hash_identifier(m_hash) << " :: ";
+    tim::operation::base_printer<progress_point>(os, *this);
 }
 }  // namespace causal
 }  // namespace omnitrace
+
+namespace tim
+{
+namespace operation
+{
+namespace causal = omnitrace::causal;
+
+void
+push_node<causal::progress_point>::operator()(type&        _obj, scope::config,
+                                              hash_value_t _hash, int64_t _tid) const
+{
+    auto itr = causal::get_progress_map(_tid).emplace(_hash, nullptr);
+    if(itr.second && !itr.first->second)
+    {
+        auto& _alloc = causal::get_progress_allocator(_tid);
+        auto* _val   = _alloc->allocate(1);
+        _alloc->construct(_val);
+        _val->set_hash(_hash);
+        itr.first->second = _val;
+    }
+    _obj.set_hash(_hash);
+    _obj.set_iterator(itr.first->second);
+}
+
+void
+pop_node<causal::progress_point>::operator()(type& _obj, int64_t) const
+{
+    auto* itr = _obj.get_iterator();
+    if(itr && !(_obj.get_is_invalid() || _obj.get_is_running()))
+    {
+        *itr += _obj;
+        itr->set_laps(itr->get_laps() + _obj.get_laps());
+    }
+}
+}  // namespace operation
+}  // namespace tim

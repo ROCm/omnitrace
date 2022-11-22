@@ -48,6 +48,7 @@ struct unblocking_gotcha : comp::base<unblocking_gotcha, void>
     // string id for component
     static std::string label();
     static std::string description();
+    static void        preinit();
 
     // generate the gotcha wrappers
     static void configure();
@@ -55,12 +56,15 @@ struct unblocking_gotcha : comp::base<unblocking_gotcha, void>
 
     static void start();
     static void stop();
+
+    static void set_data(const comp::gotcha_data&);
 };
 
 using unblocking_gotcha_t =
     comp::gotcha<unblocking_gotcha::gotcha_capacity,
-                 tim::lightweight_tuple<unblocking_gotcha>, project::omnitrace>;
+                 tim::lightweight_tuple<unblocking_gotcha>, category::causal>;
 }  // namespace causal
 }  // namespace omnitrace
 
 OMNITRACE_DEFINE_CONCRETE_TRAIT(prevent_reentry, causal::unblocking_gotcha_t, false_type)
+OMNITRACE_DEFINE_CONCRETE_TRAIT(static_data, causal::unblocking_gotcha_t, true_type)

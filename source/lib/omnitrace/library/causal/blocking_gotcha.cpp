@@ -23,6 +23,11 @@
 #include "library/causal/blocking_gotcha.hpp"
 #include "library/causal/delay.hpp"
 #include "library/config.hpp"
+#include "library/debug.hpp"
+#include "library/runtime.hpp"
+
+#include <timemory/components/macros.hpp>
+#include <timemory/hash/types.hpp>
 
 #include <csignal>
 #include <cstdint>
@@ -47,11 +52,17 @@ blocking_gotcha::description()
 }
 
 void
+blocking_gotcha::preinit()
+{
+    configure();
+}
+
+void
 blocking_gotcha::configure()
 {
-    if(!config::get_use_critical_trace()) return;
-
     blocking_gotcha_t::get_initializer() = []() {
+        if(!config::get_use_causal()) return;
+
         blocking_gotcha_t::configure(
             comp::gotcha_config<0, int, pthread_mutex_t*>{ "pthread_mutex_lock" });
 
@@ -100,19 +111,35 @@ blocking_gotcha::configure()
 void
 blocking_gotcha::shutdown()
 {
-    blocking_gotcha_t::disable();
+    // blocking_gotcha_t::disable();
 }
 
 void
 blocking_gotcha::start()
 {
-    causal::delay::process();
+    if(get_state() == ::omnitrace::State::Active) causal::delay::process();
 }
 
 void
 blocking_gotcha::stop()
 {
-    causal::delay::process();
+    if(get_state() == ::omnitrace::State::Active) causal::delay::process();
+}
+
+void
+blocking_gotcha::set_data(const comp::gotcha_data& _data)
+{
+    OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
+    auto   _hash  = tim::add_hash_id(_data.tool_id);
+    auto&& _ident = tim::get_hash_identifier(_hash);
+    if(_ident != _data.tool_id)
+        throw std::runtime_error(JOIN("", "Error! resolving hash for \"", _data.tool_id,
+                                      "\" (", _hash, ") returns ", _ident.c_str()));
+#if defined(OMNITRACE_CI)
+    OMNITRACE_VERBOSE_F(3, "data set for '%s'...\n", _data.tool_id.c_str());
+#endif
 }
 }  // namespace causal
 }  // namespace omnitrace
+
+TIMEMORY_INVOKE_PREINIT(omnitrace::causal::blocking_gotcha)

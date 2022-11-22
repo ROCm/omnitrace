@@ -21,14 +21,23 @@
 // SOFTWARE.
 
 #include "library/causal/data.hpp"
+#include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
 #include "library/debug.hpp"
+#include "library/ptl.hpp"
+#include "library/runtime.hpp"
+#include "library/state.hpp"
 #include "library/thread_data.hpp"
+#include "library/thread_info.hpp"
 #include "library/utility.hpp"
 
+#include <timemory/hash/types.hpp>
+
 #include <atomic>
+#include <chrono>
 #include <cstdlib>
 #include <random>
+#include <thread>
 
 namespace omnitrace
 {
@@ -36,12 +45,13 @@ namespace causal
 {
 namespace
 {
-using random_engine_t = std::mt19937_64;
+using random_engine_t    = std::mt19937_64;
+using progress_bundles_t = component_bundle_cache<progress_point>;
 
-int8_t              increment            = 5;
-std::vector<int8_t> virtual_speedup_dist = []() {
-    size_t              _n = std::max<size_t>(1, 100 / increment);
-    std::vector<int8_t> _v(_n, int8_t{ 0 });
+uint16_t              increment            = 5;
+std::vector<uint16_t> virtual_speedup_dist = []() {
+    size_t                _n = std::max<size_t>(1, 100 / increment);
+    std::vector<uint16_t> _v(_n, uint16_t{ 0 });
     std::generate(_v.begin(), _v.end(),
                   [_value = 0]() mutable { return (_value += increment); });
     OMNITRACE_CI_THROW(_v.back() > 100, "Error! last value is too large: %i\n",
@@ -96,43 +106,88 @@ sample_thread_index(int64_t _tid)
         get_engine(_tid));
 }
 
-using mutex_t       = std::mutex;
-using lock_t        = std::unique_lock<mutex_t>;
-auto progress_mutex = std::array<mutex_t, max_supported_threads>{};
-
-unique_ptr_t<progress_stack_vector_t>&
-get_progress_stack(int64_t _tid = utility::get_thread_index())
+void
+perform_experiment_impl()
 {
-    using thread_data_t = thread_data<progress_stack_vector_t, category::causal>;
-    static auto& _v     = thread_data_t::instances(thread_data_t::construct_on_init{},
-                                               progress_stack_vector_t{});
-    update_max_thread_index(_tid);
-    return _v.at(_tid);
+    thread_info::init(true);
+
+    auto _experim = experiment{};
+    // loop until started or finalized
+    while(!_experim.start())
+    {
+        if(get_state() == State::Finalized) return;
+    }
+
+    // wait for the experiment to complete
+    _experim.wait();
+
+    // loop until stopped or finalized
+    while(!_experim.stop())
+    {
+        if(get_state() == State::Finalized) return;
+    }
+
+    if(get_state() == State::Finalized) return;
+
+    // cool-down / inactive period
+    std::this_thread::yield();
+    std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
+
+    // start a new experiment
+    tasking::general::get_task_group().exec(perform_experiment_impl);
 }
 
-const progress_stack*
-get_current_progress(int64_t _tid = utility::get_thread_index())
-{
-    if(!get_progress_stack(_tid)) return nullptr;
-    if(get_progress_stack(_tid)->empty()) return nullptr;
-    return &get_progress_stack(_tid)->back();
-}
+auto latest_progress_point = unwind_stack_t{};
 }  // namespace
 
+//--------------------------------------------------------------------------------------//
+
 void
-push_progress_stack(progress_stack&& _v)
+set_current_selection(unwind_stack_t _stack)
 {
-    lock_t _lk{ progress_mutex.at(utility::get_thread_index()) };
-    get_progress_stack()->emplace_back(_v);
+    // data-race but that is ok
+    latest_progress_point = _stack;
 }
 
-progress_stack
-pop_progress_stack()
+unwind_stack_t
+sample_selection(size_t _nitr)
 {
-    lock_t _lk{ progress_mutex.at(utility::get_thread_index()) };
-    auto&& _v = get_progress_stack()->back();
-    get_progress_stack()->pop_back();
-    return _v;
+    size_t         _n   = 0;
+    unwind_stack_t _val = {};
+    while((_val = latest_progress_point).empty())
+    {
+        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::microseconds{ 1 });
+        if(_n++ >= _nitr) break;
+    }
+    return _val;
+}
+
+void
+push_progress_point(std::string_view _name)
+{
+    auto  _hash   = tim::add_hash_id(_name);
+    auto& _data   = progress_bundles_t::instance(utility::get_thread_index());
+    auto* _bundle = _data.construct(_hash);
+    _bundle->push();
+    _bundle->start();
+}
+
+void
+pop_progress_point(std::string_view _name)
+{
+    auto  _hash = tim::add_hash_id(_name);
+    auto& _data = progress_bundles_t::instance(utility::get_thread_index());
+    for(auto itr = _data.rbegin(); itr != _data.rend(); ++itr)
+    {
+        if((*itr)->get_hash() == _hash)
+        {
+            (*itr)->stop();
+            (*itr)->pop();
+            _data.destroy(itr);
+            return;
+        }
+    }
 }
 
 bool
@@ -144,7 +199,7 @@ sample_enabled(int64_t _tid)
     return (_v.at(_tid)(get_engine(_tid)) == 1);
 }
 
-int8_t
+uint16_t
 sample_virtual_speedup(int64_t _tid)
 {
     using thread_data_t =
@@ -154,27 +209,30 @@ sample_virtual_speedup(int64_t _tid)
     return virtual_speedup_dist.at(_v.at(_tid)(get_engine(_tid)));
 }
 
-progress_stack
-sample_progress_stack()
-{
-    auto                  _tid = utility::get_thread_index();
-    const progress_stack* _v   = nullptr;
-    while(_v == nullptr)
-    {
-        auto   _idx = sample_thread_index(_tid);
-        lock_t _lk{ progress_mutex.at(_idx) };
-        _v = get_current_progress(_idx);
-        if(_v) return *_v;
-    }
-    return progress_stack{};
-}
-
 void
-test()
+start_experimenting()
+{
+    thread_info::init(true);
+
+    // wait until fully activated before proceeding
+    while(get_state() < State::Active)
+    {
+        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
+    }
+
+    if(get_state() != State::Finalized)
+    {
+        // start a new experiment
+        tasking::general::get_task_group().exec(perform_experiment_impl);
+    }
+}
+/*
+void test()
 {
     size_t                   _n     = 0;
     std::map<bool, size_t>   _on    = {};
-    std::map<int8_t, size_t> _speed = {};
+    std::map<uint16_t, size_t> _speed = {};
     for(size_t j = 0; j < 1000; ++j)
     {
         for(int64_t i = 0; i < 64; ++i)
@@ -199,6 +257,6 @@ test()
                         static_cast<double>(itr.second) / _n * 100., "%");
     }
     std::exit(EXIT_SUCCESS);
-}
+}*/
 }  // namespace causal
 }  // namespace omnitrace
