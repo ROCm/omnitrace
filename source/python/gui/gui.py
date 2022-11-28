@@ -51,6 +51,8 @@ from source.utils.causal_parser import parseFile, parseUploadedFile, getSpeedupD
 file_timestamp = 0
 data=pd.DataFrame()
 input_filters=None
+checklist_options=None
+checklist_values=None
 pd.set_option(
     "mode.chained_assignment", None
 )  # ignore SettingWithCopyWarning pandas warning
@@ -402,16 +404,19 @@ def update_line_graph(sort_filt, selected_all, selected_select, data, points_fil
     point_counts = data.point.value_counts()
     #points_filt = 6.5
     sufficient_points = point_counts>points_filt
-    sufficient_points = sufficient_points.loc[lambda x:x == True].index
+    sufficient_points = sufficient_points.loc[lambda x:x == True]
+    sufficient_points = list(sufficient_points.index)
     #sufficient_points = sufficient_points
-    mask_all = data[data.point.isin(selected_all)].point.isin(list(sufficient_points))
+    mask_all = data[data.point.isin(selected_all)]
+    mask_all = mask_all[mask_all.point.isin(sufficient_points)]
 
-    mask_select = data[data.point.isin(selected_select)].point.isin(sufficient_points)
+    mask_select = data[data.point.isin(selected_select)]
+    mask_select = mask_select[mask_select.point.isin(sufficient_points)]
     #what = mask_select.value_counts()[True]
     #what = data[mask_all]
-    fig_data1 = data[mask_all]
-    fig_data2 = data[mask_select]
-    fig1 = px.line(fig_data1, 
+    #fig_data1 = data[mask_all]
+    #fig_data2 = data[mask_select]
+    fig1 = px.line(mask_all, 
         x="Line Speedup", 
         y="Program Speedup", 
         #height=700, 
@@ -422,7 +427,7 @@ def update_line_graph(sort_filt, selected_all, selected_select, data, points_fil
         markers=True,
         line_shape="spline"
         )
-    fig2 = px.line(fig_data2, 
+    fig2 = px.line(mask_select, 
         x="Line Speedup", y="Program Speedup", 
         #height=700, width=700, 
         color="point",
@@ -432,7 +437,7 @@ def update_line_graph(sort_filt, selected_all, selected_select, data, points_fil
         line_shape="spline"
         )
 
-    return fig1, fig2
+    return mask_all, fig1, fig2
 
 def reset_Input_filters(kernel_names, max_points):
     sortOptions=[
@@ -556,8 +561,8 @@ def build_causal_layout(
 
         [State("upload-drag", "filename")],
         #[State('upload-drag', 'last_modified')],
-        [State("checklist_all", "options")],
-        [State("checklist_select", "options")],
+        #[State("checklist_all", "options")],
+        #[State("checklist_select", "options")],
         [State("container", "children")],
         
     )
@@ -566,12 +571,15 @@ def build_causal_layout(
     workload_path,
     list_of_contents,
     filename,
-    checklist_all_options, checklist_select_options, 
+    #checklist_all_options, checklist_select_options, 
     div_children,
     ):
         global file_timestamp
         global data
         global input_filters
+        global checklist_options
+        global checklist_values
+
         #change to if debug
         if True:
             print("Sort by is ", sort_filt)
@@ -585,10 +593,7 @@ def build_causal_layout(
         fig1=None
         fig2=None
         global new_data
-        checklist_all_opt = []
-        checklist_select_opt = []
-        checklist_all_val = []
-        checklist_select_val = []
+
         if workload_path is not None and exists(os.path.join(workload_path, "profile.coz")):
             profile_path = os.path.join(workload_path, "profile.coz")
             #if exists(os.path.join(workload_path, "profile.coz")):
@@ -596,16 +601,15 @@ def build_causal_layout(
             new_data = getSpeedupData(new_data).rename(columns={"speedup": "Line Speedup","progress_speedup": "Program Speedup" })
             data = new_data
 
-            #reset checklists
-            checklist_all_val = sorted( list(new_data.point.unique()))
-            checklist_select_val = checklist_all_val
-            checklist_select_opt = checklist_all_val
-            checklist_all_opt = checklist_select_val
+            #reset checklists 
+            checklist_options = checklist_values = sorted(list(new_data.point.unique()))
 
             #reset input_filters
 
+            screen_data, fig1, fig2 = update_line_graph(sort_filt, checklist_values, checklist_values, new_data, points_filt)
 
-            fig1, fig2 = update_line_graph(sort_filt, checklist_all_val, checklist_select_val, new_data, points_filt)
+            header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
+            return div_children, header, fig1, fig2, checklist_all_options, checklist_select_options, checklist_all_values, checklist_select_values
         #div_children.append()
         elif list_of_contents is not None:
         #if filename is not None and upload is not None:
@@ -618,33 +622,34 @@ def build_causal_layout(
                 data = new_data
 
                 #reset checklists
-                checklist_all_val = sorted( list(new_data.point.unique()))
-                checklist_select_val = checklist_all_val
-                checklist_select_opt = checklist_all_val
-                checklist_all_opt = checklist_select_val
+                checklist_options = checklist_values = sorted(list(new_data.point.unique()))
 
                 max_points= new_data.point.value_counts().max().max()
 
                 #reset input_filters
-                input_filters=reset_Input_filters(checklist_all_opt, max_points)
+                input_filters=reset_Input_filters(checklist_options, max_points)
 
-                fig1, fig2 = update_line_graph(sort_filt, checklist_all_val, checklist_all_val, new_data, points_filt)
+                screen_data, fig1, fig2 = update_line_graph(sort_filt, checklist_values, checklist_values, new_data, points_filt)
+                header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
+                return div_children, header, fig1, fig2, checklist_all_options, checklist_select_options, checklist_all_values, checklist_select_values
             
         else:
             #change to update checklist after points selection
-            fig1, fig2 = update_line_graph(sort_filt, checklist_all_values, checklist_select_values, data, points_filt)
-            checklist_all_val = checklist_all_values
-            checklist_select_val = checklist_select_values
-            checklist_select_opt = checklist_select_options
-            checklist_all_opt = checklist_all_options
+            screen_data, fig1, fig2 = update_line_graph(sort_filt, checklist_all_values, checklist_select_values, data, points_filt)
+            screen_data_points = sorted(list(screen_data.point.unique()))
 
-        header = get_header(
-                data,
-                dropDownMenuItems,
-                input_filters,
-                filt_kernel_names,
-            )
-        return div_children, header, fig1, fig2, checklist_all_opt, checklist_select_opt, checklist_all_val, checklist_select_val
+            #First run, checklist options not populated yet
+            if checklist_options is None:
+                checklist_all_values = checklist_select_values = checklist_select_options = checklist_all_options = checklist_options = screen_data_points
+
+            else:
+                #TODO filter checklist_options to include only screen_data_points...maybe values also
+                checklist_all_values = checklist_all_values
+                checklist_select_values = checklist_select_values
+                checklist_select_options = checklist_all_options = checklist_options
+
+            header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
+            return div_children, header, fig1, fig2, checklist_all_options, checklist_select_options, checklist_all_values, checklist_select_values
     
 
 def build_miperf_layout(
