@@ -1,0 +1,45 @@
+startup	time=1665591613970118792
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:21	speedup=0.70	duration=148054607	selected-samples=503
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=0
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:21	speedup=0.55	duration=450084209	selected-samples=1000
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=0
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:21	speedup=0.45	duration=1100081668	selected-samples=2000
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=0
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:17	speedup=0.20	duration=3199879792	selected-samples=4001
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=1
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:21	speedup=0.15	duration=6956726791	selected-samples=6955
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=2
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:21	speedup=0.05	duration=15281827194	selected-samples=14361
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=4
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:17	speedup=0.40	duration=23384568353	selected-samples=21538
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=5
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:21	speedup=0.25	duration=25940500608	selected-samples=24237
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=7
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:21	speedup=0.60	duration=20698733245	selected-samples=18835
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=5
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:17	speedup=0.00	duration=32000085851	selected-samples=31982
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=8
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:17	speedup=0.60	duration=20195334366	selected-samples=19674
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=6
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:17	speedup=0.85	duration=16560402364	selected-samples=18164
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=4
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:21	speedup=0.40	duration=47553894046	selected-samples=41114
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=11
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:17	speedup=0.30	duration=24794345763	selected-samples=24018
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=7
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:21	speedup=0.00	duration=32000090528	selected-samples=30611
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=8
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:21	speedup=0.00	duration=32000090717	selected-samples=30409
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=8
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:17	speedup=0.00	duration=32000088685	selected-samples=31983
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=9
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:17	speedup=0.30	duration=24647358088	selected-samples=24508
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=6
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:17	speedup=0.80	duration=16890208039	selected-samples=18887
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=5
+experiment	selected=/home/jose/coz/benchmarks/toy/toy.cpp:17	speedup=0.00	duration=31998547290	selected-samples=8046
+throughput-point	name=/home/jose/coz/benchmarks/toy/toy.cpp:31	delta=3
+runtime	time=515524762594
+samples	location=/home/jose/coz/benchmarks/toy/toy.cpp:17	count=387212
+samples	location=/home/jose/coz/benchmarks/toy/toy.cpp:18	count=323
+samples	location=/home/jose/coz/benchmarks/toy/toy.cpp:21	count=369723

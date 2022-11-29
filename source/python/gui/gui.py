@@ -47,7 +47,7 @@ from source.components.header import get_header
 from source.components.roofline import get_roofline
 from source.components.memchart import get_memchart
 from source.utils.causal_parser import parseFile, parseUploadedFile, getSpeedupData
-
+import glob
 file_timestamp = 0
 data=pd.DataFrame()
 input_filters=None
@@ -548,7 +548,7 @@ def build_causal_layout(
         Output("checklist_all", "value"),
         Output("checklist_select", "value"),
         
-
+        [Input("nav-wrap", "children")],
         [Input("Sort by-filt", "value")],
         [Input("kernel-filt", "value")],
         [Input("points-filt", "value")],
@@ -567,6 +567,7 @@ def build_causal_layout(
         
     )
     def generate_from_filter(
+        header,
     sort_filt, kernel_filt, points_filt, checklist_all_values, checklist_select_values,
     workload_path,
     list_of_contents,
@@ -594,22 +595,31 @@ def build_causal_layout(
         fig2=None
         global new_data
 
-        if workload_path is not None and exists(os.path.join(workload_path, "profile.coz")):
-            profile_path = os.path.join(workload_path, "profile.coz")
+        if workload_path is not None and os.path.isdir(workload_path):
+            files = glob.glob(os.path.join(workload_path, '*.coz'))
+            subfiles = glob.glob(os.path.join(workload_path, '*/*.coz'))
+            #profile_path = os.path.join(workload_path, "profile.coz")
+
+            all_files = files + subfiles
             #if exists(os.path.join(workload_path, "profile.coz")):
-            new_data = parseFile(profile_path)
+            new_data = pd.DataFrame()
+            for profile_path in all_files:
+                new_data = new_data.append(parseFile(profile_path))
             new_data = getSpeedupData(new_data).rename(columns={"speedup": "Line Speedup","progress_speedup": "Program Speedup" })
             data = new_data
 
             #reset checklists 
             checklist_options = checklist_values = sorted(list(new_data.point.unique()))
 
+            max_points= new_data.point.value_counts().max().max()
+
             #reset input_filters
+            input_filters=reset_Input_filters(checklist_options, max_points)
 
             screen_data, fig1, fig2 = update_line_graph(sort_filt, checklist_values, checklist_values, new_data, points_filt)
 
             header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
-            return div_children, header, fig1, fig2, checklist_all_options, checklist_select_options, checklist_all_values, checklist_select_values
+            return div_children, header, fig1, fig2, checklist_options, checklist_options, checklist_values, checklist_values
         #div_children.append()
         elif list_of_contents is not None:
         #if filename is not None and upload is not None:
@@ -622,7 +632,7 @@ def build_causal_layout(
                 data = new_data
 
                 #reset checklists
-                checklist_options = checklist_values = sorted(list(new_data.point.unique()))
+                checklist_options = checklist_values = sorted(list(data.point.unique()))
 
                 max_points= new_data.point.value_counts().max().max()
 
@@ -631,7 +641,7 @@ def build_causal_layout(
 
                 screen_data, fig1, fig2 = update_line_graph(sort_filt, checklist_values, checklist_values, new_data, points_filt)
                 header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
-                return div_children, header, fig1, fig2, checklist_all_options, checklist_select_options, checklist_all_values, checklist_select_values
+                return div_children, header, fig1, fig2, checklist_options, checklist_options, checklist_options, checklist_options
             
         else:
             #change to update checklist after points selection
@@ -647,8 +657,8 @@ def build_causal_layout(
                 checklist_all_values = checklist_all_values
                 checklist_select_values = checklist_select_values
                 checklist_select_options = checklist_all_options = checklist_options
-
-            header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
+            #TODO keep min points value..........
+            #header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
             return div_children, header, fig1, fig2, checklist_all_options, checklist_select_options, checklist_all_values, checklist_select_values
     
 
