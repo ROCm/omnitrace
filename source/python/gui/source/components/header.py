@@ -58,7 +58,29 @@ def filePath():
         )
     ]
 )
-
+def kernel_filter(name, values, filter, style_):
+    return html.Li(
+        className="filter",
+        children=[
+            html.Li(
+                dcc.Input(
+                    id="point-regex",
+                    placeholder="Insert filter regex",
+                    type="text",
+                    debounce = True,
+                    style={
+                        'width': '100%',
+                        'height': '50px',
+                        'lineHeight': '60px',
+                        'borderWidth': '1px',
+                                'borderStyle': 'dashed',
+                                'borderRadius': '5px',
+                                'textAlign': 'center'
+                        }
+                )
+            )
+        ]
+    )
 def uploadFile():
     return html.Div(
         className="nav-right",
@@ -133,7 +155,7 @@ def minPoints(name, values):
         ],
     )
 
-def get_header_child(name, values, filter, style_):
+def sortBy(name, values, filter, style_):
     return html.Li(
         className="filter",
         children=[
@@ -351,7 +373,19 @@ def get_header(raw_pmc, dropDownMenuItems, input_filters, kernel_names):
             )
         elif filter["type"] == "Name":
             header_nav.append(
-                get_header_child(
+                sortBy(
+                    filter["Name"],
+                    filter["values"],
+                    filter["filter"],
+                    {
+                        "width": "200px",  # TODO: Change these widths to % rather than fixed value
+                        "height": "34px",
+                    },
+                )
+            )
+        elif filter["type"] == "Kernel Name":
+            header_nav.append(
+                kernel_filter(
                     filter["Name"],
                     filter["values"],
                     filter["filter"],

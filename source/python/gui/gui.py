@@ -20,6 +20,7 @@
 # THE SOFTWARE.
 ################################################################################
 
+import re
 from re import L
 from selectors import EpollSelector
 import sys
@@ -550,7 +551,7 @@ def build_causal_layout(
         
         [Input("nav-wrap", "children")],
         [Input("Sort by-filt", "value")],
-        [Input("kernel-filt", "value")],
+        [Input("point-regex", "value")],
         [Input("points-filt", "value")],
         [Input("checklist_all", "value")],
         [Input("checklist_select", "value")],
@@ -568,7 +569,7 @@ def build_causal_layout(
     )
     def generate_from_filter(
         header,
-    sort_filt, kernel_filt, points_filt, checklist_all_values, checklist_select_values,
+    sort_filt, point_regex, points_filt, checklist_all_values, checklist_select_values,
     workload_path,
     list_of_contents,
     filename,
@@ -584,7 +585,7 @@ def build_causal_layout(
         #change to if debug
         if True:
             print("Sort by is ", sort_filt)
-            print("kernel-filter is ", kernel_filt)
+            print("point_regex is ", point_regex)
             print("points is: ", points_filt)
             print("checklist_all is: ", checklist_all_values)
             print("checklist_select is: ", checklist_select_values)
@@ -594,7 +595,7 @@ def build_causal_layout(
         fig1=None
         fig2=None
         global new_data
-
+        
         if workload_path is not None and os.path.isdir(workload_path):
             files = glob.glob(os.path.join(workload_path, '*.coz'))
             subfiles = glob.glob(os.path.join(workload_path, '*/*.coz'))
@@ -643,6 +644,26 @@ def build_causal_layout(
                 header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
                 return div_children, header, fig1, fig2, checklist_options, checklist_options, checklist_options, checklist_options
             
+        elif point_regex is not None:
+            # filter options and values
+            #reg = point_regex.encode('unicode_escape')
+            p = re.compile(point_regex, flags = 0)
+
+            checklist_all_values = [ s for s in  checklist_all_values if p.match(s) ]
+            checklist_select_values = [ s for s in  checklist_select_values if p.match(s) ]
+            checklist_select_options = checklist_all_options = [ s for s in  checklist_options if p.match(s) ]
+
+            #change to update checklist after points selection
+            screen_data, fig1, fig2 = update_line_graph(sort_filt, checklist_all_values, checklist_select_values, data, points_filt)
+            screen_data_points = sorted(list(screen_data.point.unique()))
+
+            
+
+            #TODO keep min points value..........
+            #header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
+            return div_children, header, fig1, fig2, checklist_all_options, checklist_select_options, checklist_all_values, checklist_select_values
+
+
         else:
             #change to update checklist after points selection
             screen_data, fig1, fig2 = update_line_graph(sort_filt, checklist_all_values, checklist_select_values, data, points_filt)
