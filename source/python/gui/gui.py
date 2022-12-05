@@ -649,8 +649,7 @@ def build_causal_layout(
             #reg = point_regex.encode('unicode_escape')
             p = re.compile(point_regex, flags = 0)
 
-            checklist_all_values = [ s for s in  checklist_all_values if p.match(s) ]
-            checklist_select_values = [ s for s in  checklist_select_values if p.match(s) ]
+            checklist_all_values = checklist_select_values = [ s for s in  checklist_values if p.match(s) ]
             checklist_select_options = checklist_all_options = [ s for s in  checklist_options if p.match(s) ]
 
             #change to update checklist after points selection
@@ -671,7 +670,7 @@ def build_causal_layout(
 
             #First run, checklist options not populated yet
             if checklist_options is None:
-                checklist_all_values = checklist_select_values = checklist_select_options = checklist_all_options = checklist_options = screen_data_points
+                checklist_all_values = checklist_select_values = checklist_select_options = checklist_all_options = checklist_values = checklist_options = screen_data_points
 
             else:
                 #TODO filter checklist_options to include only screen_data_points...maybe values also
