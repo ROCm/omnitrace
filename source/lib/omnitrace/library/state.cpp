@@ -53,6 +53,22 @@ get_thread_state_history(int64_t _idx = utility::get_thread_index())
 
     return _v.at(_idx);
 }
+
+auto&
+get_causal_state_history(int64_t _idx = utility::get_thread_index())
+{
+    static auto _v = utility::get_filled_array<OMNITRACE_MAX_THREADS>(
+        []() { return utility::get_reserved_vector<causal_state>(32); });
+
+    return _v.at(_idx);
+}
+
+causal_state&
+get_causal_state_impl()
+{
+    static thread_local causal_state _v{ CausalState::Enabled };
+    return _v;
+}
 }  // namespace
 
 State
@@ -109,6 +125,48 @@ pop_thread_state()
     }
     return get_thread_state();
 }
+
+//--------------------------------------------------------------------------------------//
+//
+//      Causal state
+//
+//--------------------------------------------------------------------------------------//
+
+causal_state
+get_causal_state()
+{
+    return get_causal_state_impl();
+}
+
+causal_state
+push_causal_state(CausalState _v)
+{
+    // if causal state is disabled, immediately return
+    // if causal state is selected, do not change the state. Instead
+    // increment the selected state counter so that the thread
+    // knows it is still in the selected function and does not delay
+    auto& _state = get_causal_state_impl();
+    if(_state.state == CausalState::Disabled) return _state;
+    if(_state.state == CausalState::Selected) return (++_state.count, _state);
+    if(_state.state == _v) return (++_state.count, _state);
+    return get_causal_state_history().emplace_back(_v);
+}
+
+causal_state
+pop_causal_state()
+{
+    auto& _state = get_causal_state_impl();
+    if(_state.state == CausalState::Disabled) return _state;
+    if(_state.count > 1) return (--_state.count, _state);
+
+    auto& _hist = get_causal_state_history();
+    if(!_hist.empty())
+    {
+        get_causal_state_impl() = _hist.back();
+        _hist.pop_back();
+    }
+    return get_causal_state();
+}
 }  // namespace omnitrace
 
 namespace std
@@ -136,6 +194,19 @@ to_string(omnitrace::ThreadState _v)
         case omnitrace::ThreadState::Internal: return "Internal";
         case omnitrace::ThreadState::Completed: return "Completed";
         case omnitrace::ThreadState::Disabled: return "Disabled";
+    }
+    return {};
+}
+
+std::string
+to_string(omnitrace::CausalState _v)
+{
+    switch(_v)
+    {
+        case omnitrace::CausalState::Enabled: return "Enabled";
+        case omnitrace::CausalState::Internal: return "Internal";
+        case omnitrace::CausalState::Selected: return "Selected";
+        case omnitrace::CausalState::Disabled: return "Disabled";
     }
     return {};
 }
