@@ -27,6 +27,7 @@
 #include "api.hpp"
 #include "common/setup.hpp"
 #include "library/causal/data.hpp"
+#include "library/causal/experiment.hpp"
 #include "library/components/exit_gotcha.hpp"
 #include "library/components/fork_gotcha.hpp"
 #include "library/components/fwd.hpp"
@@ -150,6 +151,51 @@ is_system_backend()
 
 using Device = critical_trace::Device;
 using Phase  = critical_trace::Phase;
+
+template <typename... Tp>
+struct fini_bundle
+{
+    using data_type = std::tuple<Tp...>;
+
+    TIMEMORY_DEFAULT_OBJECT(fini_bundle)
+
+    fini_bundle(std::string_view _label)
+    : m_label{ _label }
+    {}
+
+    template <typename... Args>
+    void start(Args&&... _args)
+    {
+        TIMEMORY_FOLD_EXPRESSION(tim::operation::start<Tp>{}(
+            std::get<Tp>(m_data), std::forward<Args>(_args)...));
+    }
+
+    template <typename... Args>
+    void stop(Args&&... _args)
+    {
+        TIMEMORY_FOLD_EXPRESSION(tim::operation::stop<Tp>{}(
+            std::get<Tp>(m_data), std::forward<Args>(_args)...));
+    }
+
+    std::string as_string(bool _print_prefix = true) const
+    {
+        std::stringstream _ss;
+        if(_print_prefix && m_label.length() > 0) _ss << m_label << " : ";
+        _ss << timemory::join::join(", ", std::get<Tp>(m_data)...);
+        return _ss.str();
+    }
+
+    std::string_view m_label = {};
+    data_type        m_data  = {};
+};
+
+template <typename... Tp>
+struct fini_bundle<tim::lightweight_tuple<Tp...>>
+{
+    using base_type = fini_bundle<Tp...>;
+};
+
+using fini_bundle_t = typename fini_bundle<main_bundle_t>::base_type;
 }  // namespace
 
 //======================================================================================//
@@ -401,6 +447,9 @@ omnitrace_init_tooling_hidden()
 
     tasking::setup();
 
+    if(get_use_causal())
+        tasking::general::get_task_group().exec(causal::start_experimenting);
+
     if(get_use_timemory())
     {
         comp::user_global_bundle::global_init();
@@ -630,13 +679,6 @@ omnitrace_finalize_hidden(void)
     tim::signals::enable_signal_detection({ tim::signals::sys_signal::Interrupt },
                                           [](int) {});
 
-    std::string              _bundle_name = OMNITRACE_FUNCTION;
-    comp::user_global_bundle _bundle{ _bundle_name.c_str() };
-    _bundle.clear();
-    _bundle.insert<comp::wall_clock, comp::cpu_clock, comp::peak_rss, comp::page_rss,
-                   comp::cpu_util>();
-    _bundle.start();
-
     OMNITRACE_DEBUG_F("Copying over all timemory hash information to main thread...\n");
     // copy these over so that all hashes are known
     auto& _hzero = tracing::get_timemory_hash_ids(0);
@@ -663,6 +705,9 @@ omnitrace_finalize_hidden(void)
         OMNITRACE_DEBUG_F("Stopping main bundle...\n");
         get_main_bundle()->stop();
     }
+
+    fini_bundle_t _finalization{};
+    _finalization.start();
 
     if(get_use_rcclp())
     {
@@ -784,6 +829,12 @@ omnitrace_finalize_hidden(void)
     {
         OMNITRACE_VERBOSE_F(1, "Post-processing the sampling backtraces...\n");
         sampling::post_process();
+    }
+
+    if(get_use_causal())
+    {
+        OMNITRACE_VERBOSE_F(1, "Saving the causal experiments...\n");
+        causal::experiment::save_experiments();
     }
 
     if(get_use_critical_trace() || (get_use_rocm_smi() && get_use_roctracer()))
@@ -930,18 +981,6 @@ omnitrace_finalize_hidden(void)
         }
     }
 
-    _bundle.stop();
-    auto _get_metric = [](auto* _v, std::string_view _tail) -> std::string {
-        return (_v) ? JOIN("", *_v, _tail) : std::string{};
-    };
-
-    OMNITRACE_VERBOSE_F(0, "Finalization metrics: %s%s%s%s%s\n",
-                        _get_metric(_bundle.get<comp::wall_clock>(), ", ").c_str(),
-                        _get_metric(_bundle.get<comp::peak_rss>(), ", ").c_str(),
-                        _get_metric(_bundle.get<comp::page_rss>(), ", ").c_str(),
-                        _get_metric(_bundle.get<comp::cpu_clock>(), ", ").c_str(),
-                        _get_metric(_bundle.get<comp::cpu_util>(), "").c_str());
-
     if(_timemory_manager && _timemory_manager != nullptr)
     {
         _timemory_manager->add_metadata([](auto& ar) {
@@ -968,6 +1007,8 @@ omnitrace_finalize_hidden(void)
                                           "omnitrace", _cfg);
     }
 
+    _finalization.stop();
+
     if(_perfetto_output_error)
     {
         OMNITRACE_THROW("Error opening perfetto output file: %s",
@@ -985,7 +1026,7 @@ omnitrace_finalize_hidden(void)
 
     config::finalize();
 
-    OMNITRACE_VERBOSE_F(0, "Finalized\n");
+    OMNITRACE_VERBOSE_F(0, "Finalized: %s\n", _finalization.as_string().c_str());
 }
 
 //======================================================================================//
