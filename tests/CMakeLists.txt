@@ -1254,6 +1254,27 @@ omnitrace_add_test(
     RUNTIME_PASS_REGEX "(\\\[[0-9]+\\\]) function coverage ::  66.67%"
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) function coverage ::  66.67%")
 
+omnitrace_add_test(
+    SKIP_RUNTIME
+    NAME causal-profiling
+    TARGET causal
+    REWRITE_ARGS
+        -e
+        -v
+        2
+        -i
+        32
+        --label
+        file
+        line
+        args
+        -E
+        std::operator
+    LABELS "causal-profiling"
+    ENVIRONMENT
+        "${_base_environment};OMNITRACE_USE_CAUSAL=ON;OMNITRACE_USE_PERFETTO=OFF;OMNITRACE_SAMPLING_FREQ=1000;OMNITRACE_SAMPLING_DELAY=1.0e-6"
+    )
+
 # -------------------------------------------------------------------------------------- #
 #
 # critical-trace tests
