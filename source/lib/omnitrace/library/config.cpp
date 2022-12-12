@@ -686,6 +686,33 @@ configure_settings(bool _init)
         std::string, "OMNITRACE_TMPDIR", "Base directory for temporary files",
         get_env<std::string>("TMPDIR", "/tmp"), "io", "data", "advanced");
 
+    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FIXED_LINE",
+                             "List of specific <file>:<line> entries for causal "
+                             "profiling (separated by tabs or semi-colons)",
+                             std::string{}, "causal", "analysis", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FIXED_SPEEDUP",
+                             "List of virtual speedups between 0 and 100 (inclusive) to "
+                             "sample from for causal profiling",
+                             std::string{}, "causal", "analysis", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FILE",
+                             "Name of causal output filename (w/o extension)",
+                             std::string{ "experiments" }, "causal", "analysis",
+                             "advanced");
+
+    OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_CAUSAL_BINARY_SCOPE",
+        "Limits causal experiments to the binaries matching the provided list of regular "
+        "expressions (delim: tab and/or semi-colon)",
+        std::string{ ".*" }, "causal", "analysis", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_SOURCE_SCOPE",
+                             "Limits causal experiments to the source files matching the "
+                             "provided list of regular "
+                             "expressions (delim: tab and/or semi-colon)",
+                             std::string{ ".*" }, "causal", "analysis", "advanced");
+
     // set the defaults
     _config->get_flamegraph_output()     = false;
     _config->get_ctest_notes()           = false;
@@ -957,7 +984,7 @@ configure_mode_settings()
         set_default_setting_value("OMNITRACE_USE_CODE_COVERAGE", true);
         _set("OMNITRACE_USE_PERFETTO", false);
         _set("OMNITRACE_USE_TIMEMORY", false);
-        //_set("OMNITRACE_USE_CAUSAL", false);
+        _set("OMNITRACE_USE_CAUSAL", false);
         _set("OMNITRACE_USE_ROCM_SMI", false);
         _set("OMNITRACE_USE_ROCTRACER", false);
         _set("OMNITRACE_USE_ROCPROFILER", false);
@@ -1014,7 +1041,7 @@ configure_mode_settings()
     {
         _set("OMNITRACE_USE_PERFETTO", false);
         _set("OMNITRACE_USE_TIMEMORY", false);
-        //_set("OMNITRACE_USE_CAUSAL", false);
+        _set("OMNITRACE_USE_CAUSAL", false);
         _set("OMNITRACE_USE_ROCM_SMI", false);
         _set("OMNITRACE_USE_ROCTRACER", false);
         _set("OMNITRACE_USE_ROCPROFILER", false);
@@ -2224,6 +2251,52 @@ get_tmp_file(std::string _basename, std::string _ext)
     _v->open();
     _existing_files.emplace(_fname, std::move(_v));
     return _existing_files.at(_fname);
+}
+
+std::vector<std::string>
+get_causal_fixed_line()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FIXED_LINE");
+    return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
+                        "\t;");
+}
+
+std::set<int64_t>
+get_causal_fixed_speedup()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FIXED_SPEEDUP");
+    return parse_numeric_range<>(
+        static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
+        "causal fixed speedup", 5);
+}
+
+std::string
+get_causal_output_filename()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FILE");
+    return static_cast<tim::tsettings<std::string>&>(*_v->second).get();
+}
+
+std::string
+get_causal_binary_scope()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_BINARY_SCOPE");
+    namespace join = timemory::join;
+    return join::join(
+        join::array_config{ "|", "(", ")" },
+        tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
+                     "\t;"));
+}
+
+std::string
+get_causal_source_scope()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_SOURCE_SCOPE");
+    namespace join = timemory::join;
+    return join::join(
+        join::array_config{ "|", "(", ")" },
+        tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
+                     "\t;"));
 }
 }  // namespace config
 }  // namespace omnitrace
