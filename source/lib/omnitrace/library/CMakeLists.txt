@@ -3,6 +3,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/defines.hpp.in
                ${CMAKE_CURRENT_BINARY_DIR}/defines.hpp @ONLY)
 
 set(library_sources
+    ${CMAKE_CURRENT_LIST_DIR}/code_object.cpp
     ${CMAKE_CURRENT_LIST_DIR}/config.cpp
     ${CMAKE_CURRENT_LIST_DIR}/coverage.cpp
     ${CMAKE_CURRENT_LIST_DIR}/cpu_freq.cpp
@@ -26,6 +27,7 @@ set(library_sources
 
 set(library_headers
     ${CMAKE_CURRENT_LIST_DIR}/categories.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/code_object.hpp
     ${CMAKE_CURRENT_LIST_DIR}/config.hpp
     ${CMAKE_CURRENT_LIST_DIR}/common.hpp
     ${CMAKE_CURRENT_LIST_DIR}/concepts.hpp
