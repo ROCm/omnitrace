@@ -164,7 +164,7 @@ pthread_create_gotcha::wrapper::operator()() const
     auto        _bundle      = std::shared_ptr<bundle_t>{};
     auto        _signals     = std::set<int>{};
     auto        _coverage    = (get_mode() == Mode::Coverage);
-    const auto& _parent_info = thread_info::get(m_parent_tid, LookupTID);
+    const auto& _parent_info = thread_info::get(m_parent_tid, InternalTID);
     auto        _dtor        = [&]() {
         set_thread_state(ThreadState::Internal);
         if(_is_sampling)
