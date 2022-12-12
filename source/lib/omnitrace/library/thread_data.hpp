@@ -38,6 +38,7 @@
 #include <memory>
 #include <optional>
 #include <type_traits>
+#include <vector>
 
 namespace omnitrace
 {
@@ -390,13 +391,90 @@ thread_data<identity<Tp>, Tag, MaxThreads>::instances(construct_on_init, Args&&.
 // vector<instrumentation_bundle_t> so using vector<instrumentation_bundle_t*> and
 // timemory's ring_buffer_allocator to create contiguous memory-page aligned instances of
 // the bundle
-struct instrumentation_bundles
+template <typename... Tp>
+struct component_bundle_cache
 {
-    using instance_array_t = std::array<instrumentation_bundles, max_supported_threads>;
+    using bundle_type    = tim::component_bundle<project::omnitrace, Tp...>;
+    using this_type      = component_bundle_cache<Tp...>;
+    using allocator_type = tim::data::ring_buffer_allocator<bundle_type>;
+    using instance_type =
+        std::array<component_bundle_cache<Tp...>, max_supported_threads>;
 
-    bundle_allocator_t                     allocator{};
-    std::vector<instrumentation_bundle_t*> bundles{};
+    using iterator         = typename std::vector<bundle_type*>::iterator;
+    using const_iterator   = typename std::vector<bundle_type*>::const_iterator;
+    using reverse_iterator = typename std::vector<bundle_type*>::reverse_iterator;
 
-    static instance_array_t& instances();
+    allocator_type            allocator = {};
+    std::vector<bundle_type*> bundles   = {};
+
+    auto begin() { return bundles.begin(); }
+    auto end() { return bundles.end(); }
+
+    auto rbegin() { return bundles.rbegin(); }
+    auto rend() { return bundles.rend(); }
+
+    auto begin() const { return bundles.begin(); }
+    auto end() const { return bundles.end(); }
+
+    auto size() const { return bundles.size(); }
+
+    auto&       at(size_t _idx) { return bundles.at(_idx); }
+    const auto& at(size_t _idx) const { return bundles.at(_idx); }
+
+    static auto& instances()
+    {
+        static auto _v = instance_type{};
+        return _v;
+    }
+
+    static auto& instance(int64_t _tid) { return instances().at(_tid); }
+
+    template <typename... Args>
+    bundle_type* construct(Args&&... args)
+    {
+        bundle_type* _v = allocator.allocate(1);
+        allocator.construct(_v, std::forward<Args>(args)...);
+        return bundles.emplace_back(_v);
+    }
+
+    void destroy(bundle_type* _v, size_t _idx)
+    {
+        allocator.destroy(_v);
+        allocator.deallocate(_v, 1);
+        bundles.erase(bundles.begin() + _idx);
+    }
+
+    template <typename IterT>
+    void destroy(IterT _v)
+    {
+        iterator itr = begin();
+        if constexpr(std::is_same<IterT, reverse_iterator>::value)
+        {
+            if(_v == rend()) return;
+            std::advance(itr, std::distance(rbegin(), _v));
+        }
+        else
+        {
+            if(_v == end()) return;
+            itr = _v;
+        }
+        allocator.destroy(*itr);
+        allocator.deallocate(*itr, 1);
+        bundles.erase(itr);
+    }
 };
+
+template <typename... Tp>
+struct component_bundle_cache<tim::component_bundle<project::omnitrace, Tp...>>
+: component_bundle_cache<Tp...>
+{
+    using base_type = component_bundle_cache<Tp...>;
+
+    using base_type::allocator;
+    using base_type::bundles;
+    using base_type::instances;
+};
+
+using instrumentation_bundles = component_bundle_cache<instrumentation_bundle_t>;
+extern template struct component_bundle_cache<instrumentation_bundle_t>;
 }  // namespace omnitrace

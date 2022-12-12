@@ -30,12 +30,7 @@
 
 namespace omnitrace
 {
-instrumentation_bundles::instance_array_t&
-instrumentation_bundles::instances()
-{
-    static auto _v = instance_array_t{};
-    return _v;
-}
+template struct component_bundle_cache<instrumentation_bundle_t>;
 
 void
 thread_deleter<void>::operator()() const
