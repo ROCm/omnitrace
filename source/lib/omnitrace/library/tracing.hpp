@@ -30,6 +30,7 @@
 #include "library/perfetto.hpp"
 #include "library/runtime.hpp"
 #include "library/sampling.hpp"
+#include "library/thread_data.hpp"
 #include "library/timemory.hpp"
 #include "library/tracing/annotation.hpp"
 #include "library/utility.hpp"
@@ -149,8 +150,7 @@ get_interval_data(int64_t _tid = threading::get_id())
 inline auto&
 get_instrumentation_bundles(int64_t _tid = threading::get_id())
 {
-    static thread_local auto& _v = instrumentation_bundles::instances().at(_tid);
-    return _v;
+    return instrumentation_bundles::instance(_tid);
 }
 
 inline auto&
@@ -224,11 +224,8 @@ push_timemory(CategoryT, const char* name, Args&&... args)
 
     auto& _data = tracing::get_instrumentation_bundles();
     // this generates a hash for the raw string array
-    auto  _hash   = tim::add_hash_id(tim::string_view_t{ name });
-    auto* _bundle = _data.allocator.allocate(1);
-    _data.bundles.emplace_back(_bundle);
-    _data.allocator.construct(_bundle, _hash);
-    _bundle->start(std::forward<Args>(args)...);
+    auto _hash = tim::add_hash_id(tim::string_view_t{ name });
+    _data.construct(_hash)->start(std::forward<Args>(args)...);
 }
 
 template <typename CategoryT, typename... Args>
