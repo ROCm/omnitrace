@@ -21,8 +21,10 @@
 // SOFTWARE.
 
 #include "library/sampling.hpp"
+#include "library/causal/data.hpp"
 #include "library/common.hpp"
 #include "library/components/backtrace.hpp"
+#include "library/components/backtrace_causal.hpp"
 #include "library/components/backtrace_metrics.hpp"
 #include "library/components/backtrace_timestamp.hpp"
 #include "library/components/fwd.hpp"
@@ -58,12 +60,14 @@
 #include <timemory/units.hpp>
 #include <timemory/utility/backtrace.hpp>
 #include <timemory/utility/demangle.hpp>
+#include <timemory/utility/procfs/maps.hpp>
 #include <timemory/utility/types.hpp>
 #include <timemory/variadic.hpp>
 
 #include <array>
 #include <chrono>
 #include <condition_variable>
+#include <csignal>
 #include <cstring>
 #include <ctime>
 #include <initializer_list>
@@ -76,6 +80,20 @@
 #include <pthread.h>
 #include <signal.h>
 
+namespace tim
+{
+namespace math
+{
+template <typename Tp, typename Up>
+TIMEMORY_INLINE Tp
+plus(Tp&& _lhs, const Up& _rhs)
+{
+    Tp _v = _lhs;
+    plus(_v, _rhs);
+    return _v;
+}
+}  // namespace math
+}  // namespace tim
 namespace omnitrace
 {
 namespace sampling
@@ -84,7 +102,8 @@ using hw_counters               = typename component::backtrace_metrics::hw_coun
 using signal_type_instances     = thread_data<std::set<int>, category::sampling>;
 using sampler_running_instances = thread_data<bool, category::sampling>;
 using bundle_t =
-    tim::lightweight_tuple<backtrace_timestamp, backtrace, backtrace_metrics>;
+    tim::lightweight_tuple<component::backtrace_timestamp, component::backtrace,
+                           component::backtrace_metrics, component::backtrace_causal>;
 using sampler_t              = tim::sampling::sampler<bundle_t, tim::sampling::dynamic>;
 using sampler_instances      = thread_data<sampler_t, category::sampling>;
 using sampler_init_instances = thread_data<bundle_t, category::sampling>;
@@ -437,6 +456,17 @@ configure(bool _setup, int64_t _tid)
         }
     };
 
+    // backtrace metrics are only exported to perfetto
+    if(get_use_causal() || !get_use_perfetto())
+        trait::runtime_enabled<component::backtrace_metrics>::set(false);
+
+    // unnecessary for causal profiling
+    if(get_use_causal())
+    {
+        trait::runtime_enabled<component::backtrace>::set(false);
+        trait::runtime_enabled<component::backtrace_timestamp>::set(false);
+    }
+
     _erase_tid_signal(_cpu_tids, get_cputime_signal());
     _erase_tid_signal(_real_tids, get_realtime_signal());
 
@@ -531,6 +561,7 @@ configure(bool _setup, int64_t _tid)
         *_running = true;
         sampling::get_sampler_init(_tid)->sample();
         start_duration_thread();
+        if(get_use_causal() && _tid == 0) component::backtrace_causal::start();
         _sampler->start();
     }
     else if(!_setup && _sampler && _is_running)
@@ -594,6 +625,9 @@ post_process_perfetto(int64_t _tid, const bundle_t* _init,
 void
 post_process_timemory(int64_t _tid, const bundle_t* _init,
                       const std::vector<bundle_t*>& _data);
+std::pair<size_t, size_t>
+post_process_causal(int64_t _tid, const bundle_t* _init,
+                    const std::vector<bundle_t*>& _data);
 }  // namespace
 
 unique_ptr_t<std::set<int>>&
@@ -669,14 +703,18 @@ unblock_signals(std::set<int> _signals)
 void
 post_process()
 {
+    OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
+
     omnitrace::component::backtrace::stop();
     OMNITRACE_VERBOSE(2 || get_debug_sampling(), "Stopping backtrace metrics...\n");
 
     for(size_t i = 0; i < max_supported_threads; ++i)
         backtrace_metrics::configure(false, i);
 
-    size_t _total_data    = 0;
-    size_t _total_threads = 0;
+    size_t _total_data       = 0;
+    size_t _total_threads    = 0;
+    auto   _external_samples = std::atomic<size_t>{ 0 };
+    auto   _internal_samples = std::atomic<size_t>{ 0 };
 
     for(size_t i = 0; i < max_supported_threads; ++i)
     {
@@ -740,35 +778,63 @@ post_process()
         if(_raw_data.size() == 1 && _raw_data.front().size() <= 1) _raw_data.clear();
 
         std::vector<sampling::bundle_t*> _data{};
+        std::vector<sampling::bundle_t*> _causal_data{};
         for(auto& itr : _raw_data)
         {
-            _data.reserve(_data.size() + itr.size());
+            _causal_data.emplace_back(&itr);
             auto* _bt = itr.get<backtrace>();
             auto* _ts = itr.get<backtrace_timestamp>();
-            if(!_bt || !_ts) continue;
-            if(_bt->empty()) continue;
-            if(!_thread_info->is_valid_time(_ts->get_timestamp())) continue;
-            _data.emplace_back(&itr);
+            if(_thread_info && _bt && !_bt->empty() && _ts &&
+               _thread_info->is_valid_time(_ts->get_timestamp()))
+            {
+                _data.emplace_back(&itr);
+            }
         }
 
-        if(_data.empty())
+        if(get_use_causal())
+        {
+            _total_data += _causal_data.size();
+            _total_threads += (!_causal_data.empty()) ? 1 : 0;
+
+            if(!_causal_data.empty())
+            {
+                OMNITRACE_VERBOSE(1 || get_debug_sampling(),
+                                  "Causal data for thread %lu has %zu valid entries...\n",
+                                  i, _causal_data.size());
+                tim::math::plus(std::tie(_internal_samples, _external_samples),
+                                post_process_causal(i, _init, _causal_data));
+            }
+            else
+            {
+                OMNITRACE_VERBOSE(
+                    2 || get_debug_sampling(),
+                    "Causal data for thread %lu has zero valid entries out of "
+                    "%zu... (skipped)\n",
+                    i, _raw_data.size());
+            }
+        }
+        else
+        {
+            _total_data += _data.size();
+            _total_threads += (!_data.empty()) ? 1 : 0;
+        }
+
+        if(!_data.empty())
+        {
+            OMNITRACE_VERBOSE(2 || get_debug_sampling(),
+                              "Sampler data for thread %lu has %zu valid entries...\n", i,
+                              _data.size());
+
+            if(get_use_perfetto()) post_process_perfetto(i, _init, _data);
+            if(get_use_timemory()) post_process_timemory(i, _init, _data);
+        }
+        else
         {
             OMNITRACE_VERBOSE(2 || get_debug_sampling(),
                               "Sampler data for thread %lu has zero valid entries out of "
                               "%zu... (skipped)\n",
                               i, _raw_data.size());
-            continue;
         }
-
-        OMNITRACE_VERBOSE(2 || get_debug_sampling(),
-                          "Sampler data for thread %lu has %zu valid entries...\n", i,
-                          _raw_data.size());
-
-        _total_data += _raw_data.size();
-        _total_threads += 1;
-
-        if(get_use_perfetto()) post_process_perfetto(i, _init, _data);
-        if(get_use_timemory()) post_process_timemory(i, _init, _data);
     }
 
     OMNITRACE_VERBOSE(3 || get_debug_sampling(), "Destroying samplers...\n");
@@ -779,8 +845,10 @@ post_process()
     }
 
     OMNITRACE_VERBOSE(1 || get_debug_sampling(),
-                      "Collected %zu samples from %zu threads...\n", _total_data,
-                      _total_threads);
+                      "Collected %zu samples from %zu threads... %zu samples out of %zu "
+                      "were taken while within instrumented routines\n",
+                      _total_data, _total_threads, _internal_samples.load(),
+                      (_internal_samples + _external_samples));
 }
 
 namespace
@@ -1090,6 +1158,61 @@ post_process_timemory(int64_t _tid, const bundle_t* _init,
             iitr.pop();
         }
     }
+}
+
+std::pair<size_t, size_t>
+post_process_causal(int64_t, const bundle_t*, const std::vector<bundle_t*>& _data)
+{
+    auto _as_hex = [](auto _v) { return JOIN("", "0x", std::hex, _v); };
+
+    size_t _internal = 0;
+    size_t _external = 0;
+
+    static bool _once = true;
+    static auto _maps = tim::procfs::read_maps(process::get_id());
+    if(!_once && (_once = true))
+    {
+        for(const auto& itr : _maps)
+        {
+            if(!itr.pathname.empty())
+            {
+                OMNITRACE_BASIC_PRINT_F(
+                    "%s : %s[%zu][%s]\n", itr.pathname.c_str(),
+                    JOIN({ "[", ":", "]" }, _as_hex(itr.start_address),
+                         _as_hex(itr.end_address))
+                        .c_str(),
+                    itr.end_address - itr.start_address, _as_hex(itr.offset).c_str());
+            }
+        }
+    }
+
+    using cache_type            = tim::unwind::stack<causal::unwind_depth>::cache_type;
+    using processed_entry_vec_t = std::vector<unwind::processed_entry>;
+
+    auto _found_info = std::set<std::string>{};
+    auto _processed  = std::map<uint32_t, processed_entry_vec_t>{};
+    auto _cache      = cache_type{ true };
+    for(const auto& itr : _data)
+    {
+        auto* _bt_causal = itr->get<component::backtrace_causal>();
+        if(_bt_causal->is_valid())
+        {
+            _internal += (_bt_causal->get_internal()) ? 1 : 0;
+            _external += (_bt_causal->get_internal()) ? 0 : 1;
+        }
+        if(!_bt_causal->is_valid()) continue;
+        auto _stack_data = _bt_causal->get_stack().get(&_cache, false);
+        for(auto& ditr : _stack_data)
+            _processed[_bt_causal->get_index()].emplace_back(ditr);
+    }
+
+    // static std::mutex _mutex;
+    //_mutex.lock();
+    for(const auto& pitr : _processed)
+        component::backtrace_causal::add_samples(pitr.first, pitr.second);
+    //_mutex.unlock();
+
+    return { _internal, _external };
 }
 
 struct sampling_initialization
