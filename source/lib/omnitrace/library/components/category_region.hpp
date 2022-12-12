@@ -98,8 +98,9 @@ category_region<CategoryT>::start(std::string_view name, Args&&... args)
     // skip if category is disabled
     if(!trait::runtime_enabled<CategoryT>::get()) return;
 
+    auto _thread_state = get_thread_state();
     // unconditionally return if thread is disabled or finalized
-    if(get_thread_state() == ThreadState::Disabled) return;
+    if(_thread_state == ThreadState::Disabled) return;
     if(get_state() == State::Finalized) return;
 
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
@@ -128,22 +129,22 @@ category_region<CategoryT>::start(std::string_view name, Args&&... args)
         (sizeof...(OptsT) == 0 ||
          tim::is_one_of<quirk::causal, tim::type_list<OptsT...>>::value);
 
-    OMNITRACE_CONDITIONAL_PRINT(tracing::debug_push,
-                                "[%s][PID=%i][state=%s] omnitrace_push_region(%s)\n",
-                                category_name, process::get_id(),
-                                std::to_string(get_state()).c_str(), name.data());
+    OMNITRACE_CONDITIONAL_PRINT(
+        tracing::debug_push,
+        "[%s][PID=%i][state=%s][thread_state=%s] omnitrace_push_region(%s)\n",
+        category_name, process::get_id(), std::to_string(get_state()).c_str(),
+        std::to_string(_thread_state).c_str(), name.data());
 
-    if constexpr(tim::is_one_of<CategoryT, tim::type_list<category::host>>::value)
+    if constexpr(tim::is_one_of<CategoryT, tim::type_list<category::host, category::mpi,
+                                                          category::pthread,
+                                                          category::rocm_hip>>::value)
     {
         ++tracing::push_count();
     }
 
     if constexpr(_ct_use_causal)
     {
-        if(get_use_causal())
-            causal::push_progress_stack(causal::progress_stack{
-                name, tim::get_unw_backtrace_raw<causal::unwind_depth,
-                                                 causal::unwind_offset, false>() });
+        if(get_use_causal()) causal::push_progress_point(name);
     }
 
     if constexpr(_ct_use_perfetto)
@@ -213,7 +214,10 @@ category_region<CategoryT>::stop(std::string_view name, Args&&... args)
     // only execute when active
     if(get_state() == State::Active)
     {
-        if constexpr(tim::is_one_of<CategoryT, tim::type_list<category::host>>::value)
+        if constexpr(tim::is_one_of<
+                         CategoryT,
+                         tim::type_list<category::host, category::mpi, category::pthread,
+                                        category::rocm_hip>>::value)
         {
             ++tracing::pop_count();
         }
@@ -238,7 +242,7 @@ category_region<CategoryT>::stop(std::string_view name, Args&&... args)
 
         if constexpr(_ct_use_causal)
         {
-            if(get_use_causal()) causal::pop_progress_stack();
+            if(get_use_causal()) causal::pop_progress_point(name);
         }
 
         if constexpr(tim::is_one_of<CategoryT, tim::type_list<category::host>>::value)
