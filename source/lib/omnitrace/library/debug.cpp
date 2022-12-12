@@ -45,6 +45,9 @@ get_source_location_history()
     static thread_local auto _v = source_location_history{};
     return _v;
 }
+
+auto _protect_lock   = std::atomic<bool>{ false };
+auto _protect_unlock = std::atomic<bool>{ false };
 }  // namespace
 
 void
@@ -58,19 +61,23 @@ set_source_location(source_location&& _v)
 lock::lock()
 : m_lk{ tim::type_mutex<decltype(std::cerr)>(), std::defer_lock }
 {
-    if(!m_lk.owns_lock())
+    if(!m_lk.owns_lock() && !_protect_lock)
     {
+        _protect_lock.store(true);
         push_thread_state(ThreadState::Internal);
         m_lk.lock();
+        _protect_lock.store(false);
     }
 }
 
 lock::~lock()
 {
-    if(m_lk.owns_lock())
+    if(m_lk.owns_lock() && !_protect_unlock)
     {
+        _protect_unlock.store(true);
         m_lk.unlock();
         pop_thread_state();
+        _protect_unlock.store(false);
     }
 }
 
