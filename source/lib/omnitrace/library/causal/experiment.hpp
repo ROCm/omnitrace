@@ -26,7 +26,6 @@
 #include "library/causal/progress_point.hpp"
 #include "library/defines.hpp"
 
-#include <libunwind-x86_64.h>
 #include <timemory/hash/types.hpp>
 #include <timemory/mpl/concepts.hpp>
 #include <timemory/tpls/cereal/cereal.hpp>
@@ -47,6 +46,7 @@ struct experiment
 {
     using progress_points_t = std::unordered_map<tim::hash_value_t, progress_point>;
     using experiments_t     = std::vector<experiment>;
+    using filename_config_t = settings::compose_filename_config;
 
     static std::string                     label();
     static std::string                     description();
@@ -55,8 +55,8 @@ struct experiment
     TIMEMORY_DEFAULT_OBJECT(experiment)
 
     bool        start();
-    void        wait() const;
-    bool        stop();
+    bool        wait() const;  // returns false if interrupted
+    bool        stop(bool = true);
     std::string as_string() const;
 
     template <typename ArchiveT>
@@ -64,25 +64,28 @@ struct experiment
 
     // in nanoseconds
     static uint64_t      get_delay();
+    static uint32_t      get_index();
+    static bool          is_active();
     static bool          is_selected(unwind_stack_t);
     static void          add_selected();
     static experiments_t get_experiments();
 
     static void save_experiments();
     static void load_experiments();
-    static void save_experiments(std::string, settings::compose_filename_config);
-    static void load_experiments(std::string, settings::compose_filename_config);
+    static void save_experiments(std::string, const filename_config_t&);
+    static void load_experiments(std::string, const filename_config_t&);
 
     bool              active          = false;
     bool              running         = false;
     uint16_t          virtual_speedup = 0;  // 0-100 in multiples of 5
+    uint32_t          index           = 0;
     uint64_t          start_time      = 0;
     uint64_t          duration        = 0;
     uint64_t          end_time        = 0;
     uint64_t          sample_delay    = 0;
     uint64_t          total_delay     = 0;
     uint64_t          selected        = 0;
-    unwind_stack_t    selection       = {};
+    selected_entry    selection       = {};
     progress_points_t start_progress  = {};
     progress_points_t end_progress    = {};
 };
@@ -96,12 +99,14 @@ experiment::serialize(ArchiveT& ar, const unsigned)
     auto _selection = std::vector<std::string>{};
     if constexpr(concepts::is_output_archive<ArchiveT>::value)
     {
-        _selection.reserve(selection.size());
-        for(auto itr : selection)
+        _selection.reserve(selection.stack.size());
+        for(auto itr : selection.stack)
         {
-            if(itr) _selection.emplace_back(demangle(itr->get_name(selection.context)));
+            if(itr)
+                _selection.emplace_back(demangle(itr->get_name(selection.stack.context)));
         }
     }
+
     ar(cereal::make_nvp("active", active),
        cereal::make_nvp("virtual_speedup", virtual_speedup),
        cereal::make_nvp("start_time", start_time), cereal::make_nvp("duration", duration),

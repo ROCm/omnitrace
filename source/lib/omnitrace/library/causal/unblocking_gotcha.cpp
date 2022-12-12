@@ -92,19 +92,23 @@ unblocking_gotcha::configure()
 void
 unblocking_gotcha::shutdown()
 {
-    // unblocking_gotcha_t::disable();
+    unblocking_gotcha_t::disable();
 }
 
 void
 unblocking_gotcha::start()
 {
-    if(get_state() == ::omnitrace::State::Active) causal::delay::process();
+    if(get_state() == ::omnitrace::State::Active &&
+       get_thread_state() == ::omnitrace::ThreadState::Enabled)
+        causal::delay::process();
 }
 
 void
 unblocking_gotcha::stop()
 {
-    if(get_state() == ::omnitrace::State::Active) causal::delay::credit();
+    if(get_state() == ::omnitrace::State::Active &&
+       get_thread_state() == ::omnitrace::ThreadState::Enabled)
+        causal::delay::credit();
 }
 
 void

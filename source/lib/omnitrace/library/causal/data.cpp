@@ -23,6 +23,8 @@
 #include "library/causal/data.hpp"
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
+#include "library/code_object.hpp"
+#include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/ptl.hpp"
 #include "library/runtime.hpp"
@@ -32,12 +34,36 @@
 #include "library/utility.hpp"
 
 #include <timemory/hash/types.hpp>
+#include <timemory/unwind/processed_entry.hpp>
 
 #include <atomic>
 #include <chrono>
 #include <cstdlib>
 #include <random>
 #include <thread>
+#include <utility>
+#include <vector>
+
+namespace std
+{
+template <size_t N>
+struct hash<tim::unwind::stack<N>>
+{
+    size_t operator()(const tim::unwind::stack<N>& _v) const { return _v.hash(); }
+};
+
+template <>
+struct hash<omnitrace::causal::selected_entry>
+{
+    size_t operator()(const omnitrace::causal::selected_entry& _v) const
+    {
+        if(_v.index == omnitrace::causal::unwind_depth) return 0;
+        return _v.stack.hash(_v.index);
+    }
+};
+
+template struct hash<tim::unwind::stack<8>>;
+}  // namespace std
 
 namespace omnitrace
 {
@@ -71,7 +97,7 @@ get_seed()
 }
 
 auto&
-get_engine(int64_t _tid = threading::get_id())
+get_engine(int64_t _tid = utility::get_thread_index())
 {
     using thread_data_t = thread_data<identity<random_engine_t>, experiment>;
     static auto& _v =
@@ -110,6 +136,7 @@ void
 perform_experiment_impl()
 {
     thread_info::init(true);
+    OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
 
     auto _experim = experiment{};
     // loop until started or finalized
@@ -121,7 +148,6 @@ perform_experiment_impl()
     // wait for the experiment to complete
     _experim.wait();
 
-    // loop until stopped or finalized
     while(!_experim.stop())
     {
         if(get_state() == State::Finalized) return;
@@ -137,7 +163,128 @@ perform_experiment_impl()
     tasking::general::get_task_group().exec(perform_experiment_impl);
 }
 
-auto latest_progress_point = unwind_stack_t{};
+auto&
+get_unwind_cache()
+{
+    static auto _v = unwind_cache_t{ true };
+    return _v;
+}
+
+using line_info_map_t = std::map<code_object::procfs::maps, code_object::basic_line_info>;
+
+std::pair<line_info_map_t, line_info_map_t>&
+get_cached_line_info()
+{
+    static auto _v = []() {
+        auto _discarded = line_info_map_t{};
+        auto _requested = code_object::get_basic_line_info(&_discarded);
+        return std::make_pair(_requested, _discarded);
+    }();
+    return _v;
+}
+
+auto
+compute_eligible_pcs()
+{
+    /*
+    auto _write = [](std::ofstream& _ofs, const auto& _data) {
+        auto _as_hex = [](auto&& _v) {
+            std::stringstream _ss{};
+            _ss.fill('0');
+            _ss << "0x" << std::hex << std::setw(16) << _v;
+            return _ss.str();
+        };
+
+        for(auto& itr : _data)
+        {
+            _ofs << itr.first.pathname << " [" << _as_hex(itr.first.start_address)
+                 << " - " << _as_hex(itr.first.end_address) << "]\n";
+
+            for(auto& ditr : itr.second)
+            {
+                auto _addr     = ditr.address;
+                auto _addr_off = ditr.address + itr.first.start_address;
+                _ofs << "    " << _as_hex(_addr_off) << " [" << _as_hex(_addr)
+                     << "] :: " << ditr.file << ":" << ditr.line;
+                if(!ditr.func.empty()) _ofs << " [" << tim::demangle(ditr.func) << "]";
+                _ofs << "\n";
+            }
+        }
+
+        _ofs << "\n" << std::flush;
+    };
+
+    {
+        std::string ofname = "codemap.txt";
+        std::ofstream _ofs{ ofname };
+        if(!_ofs) throw std::runtime_error("Error opening " + ofname);
+    }*/
+
+    auto        _v              = std::unordered_set<uintptr_t>{};
+    auto        _specific_lines = config::get_causal_fixed_line();
+    const auto& _line_info      = get_cached_line_info().first;
+    if(!_specific_lines.empty())
+    {
+        for(const auto& itr : _specific_lines)
+        {
+            auto _entry = tim::delimit(itr, ":");
+            if(_entry.size() == 2)
+            {
+                auto _file_re = std::regex{ _entry.front() + "$" };
+                auto _line_no = std::stoul(_entry.back());
+                for(const auto& litr : _line_info)
+                {
+                    for(const auto& ditr : litr.second)
+                    {
+                        if(ditr.line == _line_no &&
+                           std::regex_search(ditr.file, _file_re))
+                        {
+                            auto _addr_off = litr.first.start_address + ditr.address;
+                            _v.emplace(_addr_off);
+                        }
+                    }
+                }
+            }
+            else if(_entry.size() == 1)
+            {
+                auto _file_re = std::regex{ _entry.front() + "$" };
+                for(const auto& litr : _line_info)
+                {
+                    for(const auto& ditr : litr.second)
+                    {
+                        if(std::regex_search(ditr.file, _file_re))
+                        {
+                            auto _addr_off = litr.first.start_address + ditr.address;
+                            _v.emplace(_addr_off);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        for(const auto& litr : _line_info)
+        {
+            for(const auto& ditr : litr.second)
+            {
+                auto _addr_off = litr.first.start_address + ditr.address;
+                _v.emplace(_addr_off);
+            }
+        }
+    }
+    return _v;
+}
+
+auto&
+get_eligible_pcs()
+{
+    static auto _v = compute_eligible_pcs();
+    return _v;
+}
+
+auto latest_progress_point = std::unordered_set<selected_entry>{};
+auto latest_progress_mutex = std::mutex{};
 }  // namespace
 
 //--------------------------------------------------------------------------------------//
@@ -145,22 +292,51 @@ auto latest_progress_point = unwind_stack_t{};
 void
 set_current_selection(unwind_stack_t _stack)
 {
-    // data-race but that is ok
-    latest_progress_point = _stack;
+    if(experiment::is_active()) return;
+
+    size_t _idx      = 0;
+    auto   _prog_pts = std::unordered_set<selected_entry>{};
+    for(auto itr : _stack)
+    {
+        if(itr && get_eligible_pcs().count(itr->address()) > 0)
+            _prog_pts.emplace(selected_entry{ _idx, _stack });
+        ++_idx;
+    }
+
+    if(!_prog_pts.empty())
+    {
+        std::scoped_lock _lk{ latest_progress_mutex };
+        for(auto itr : _prog_pts)
+            latest_progress_point.emplace(itr);
+    }
 }
 
-unwind_stack_t
-sample_selection(size_t _nitr)
+selected_entry
+sample_selection(size_t _nitr, size_t _wait_ns)
 {
-    size_t         _n   = 0;
-    unwind_stack_t _val = {};
-    while((_val = latest_progress_point).empty())
+    OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
+    size_t _n = 0;
+
+    while(_n++ < _nitr)
     {
+        {
+            std::scoped_lock _lk{ latest_progress_mutex };
+            auto&            _lpp = latest_progress_point;
+            if(!_lpp.empty())
+            {
+                auto _dist = std::uniform_int_distribution<size_t>{ 0, _lpp.size() - 1 };
+                auto itr   = _lpp.begin();
+                auto _idx  = _dist(get_engine());
+                std::advance(itr, _idx);
+                return *itr;
+            }
+        }
+
         std::this_thread::yield();
-        std::this_thread::sleep_for(std::chrono::microseconds{ 1 });
-        if(_n++ >= _nitr) break;
+        std::this_thread::sleep_for(std::chrono::nanoseconds{ _wait_ns });
     }
-    return _val;
+
+    return selected_entry{};
 }
 
 void
@@ -227,36 +403,42 @@ start_experimenting()
         tasking::general::get_task_group().exec(perform_experiment_impl);
     }
 }
-/*
-void test()
+
+const std::map<code_object::procfs::maps, code_object::basic_line_info>&
+get_causal_line_info()
 {
-    size_t                   _n     = 0;
-    std::map<bool, size_t>   _on    = {};
-    std::map<uint16_t, size_t> _speed = {};
-    for(size_t j = 0; j < 1000; ++j)
-    {
-        for(int64_t i = 0; i < 64; ++i)
+    return get_cached_line_info().first;
+}
+
+const std::map<code_object::procfs::maps, code_object::basic_line_info>&
+get_causal_ignored_line_info()
+{
+    return get_cached_line_info().second;
+}
+
+code_object::basic::line_info
+find_line_info(uintptr_t _addr, bool _include_ignored)
+{
+    auto _find_line_info = [](auto _address, auto& _line_info) {
+        for(const auto& litr : _line_info)
         {
-            auto _enabled = sample_enabled(i);
-            auto _speedup = (_enabled) ? sample_virtual_speedup(i) : 0;
-            ++_n;
-            _on[_enabled] += 1;
-            _speed[_speedup] += 1;
+            for(const auto& eitr : litr.second)
+            {
+                auto _addr_off = litr.first.start_address + eitr.address;
+                if(_addr_off == _address)
+                {
+                    return eitr;
+                }
+            }
         }
-    }
-    OMNITRACE_PRINT("\n");
-    for(auto& itr : _on)
-    {
-        OMNITRACE_PRINT("[%5s] usage: %4.1f%s\n", std::to_string(itr.first).c_str(),
-                        static_cast<double>(itr.second) / _n * 100., "%");
-    }
-    OMNITRACE_PRINT("\n");
-    for(auto& itr : _speed)
-    {
-        OMNITRACE_PRINT("[%5i] usage: %4.1f%s\n", (int) itr.first,
-                        static_cast<double>(itr.second) / _n * 100., "%");
-    }
-    std::exit(EXIT_SUCCESS);
-}*/
+        return code_object::basic::line_info{};
+    };
+
+    auto _v = _find_line_info(_addr, get_cached_line_info().first);
+    if(_include_ignored && !_v.is_valid())
+        _v = _find_line_info(_addr, get_cached_line_info().second);
+    return _v;
+}
+
 }  // namespace causal
 }  // namespace omnitrace

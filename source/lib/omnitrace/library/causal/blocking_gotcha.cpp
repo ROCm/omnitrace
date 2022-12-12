@@ -25,6 +25,7 @@
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/runtime.hpp"
+#include "library/state.hpp"
 
 #include <timemory/components/macros.hpp>
 #include <timemory/hash/types.hpp>
@@ -111,19 +112,23 @@ blocking_gotcha::configure()
 void
 blocking_gotcha::shutdown()
 {
-    // blocking_gotcha_t::disable();
+    blocking_gotcha_t::disable();
 }
 
 void
 blocking_gotcha::start()
 {
-    if(get_state() == ::omnitrace::State::Active) causal::delay::process();
+    if(get_state() == ::omnitrace::State::Active &&
+       get_thread_state() == ::omnitrace::ThreadState::Enabled)
+        causal::delay::process();
 }
 
 void
 blocking_gotcha::stop()
 {
-    if(get_state() == ::omnitrace::State::Active) causal::delay::process();
+    if(get_state() == ::omnitrace::State::Active &&
+       get_thread_state() == ::omnitrace::ThreadState::Enabled)
+        causal::delay::process();
 }
 
 void

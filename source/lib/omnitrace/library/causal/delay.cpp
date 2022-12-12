@@ -79,14 +79,14 @@ delay::preinit()
         _stats += (_diff - _val);
     }
     sleep_for_overhead = _stats.get_mean();
-    OMNITRACE_BASIC_PRINT("overhead of this_thread::sleep_for(chrono::nanoseconds{ ... "
-                          "}) = %6.3f usec +/- %e\n",
-                          _stats.get_mean() / units::usec,
-                          _stats.get_stddev() / units::usec);
-    tim::manager::instance()->add_metadata("this_thread::sleep_for overhead mean [nsec]",
-                                           _stats.get_mean());
-    tim::manager::instance()->add_metadata(
-        "this_thread::sleep_for overhead stddev [nsec]", _stats.get_stddev());
+    OMNITRACE_BASIC_VERBOSE(1,
+                            "[causal] overhead of std::this_thread::sleep_for(...) "
+                            "invocation = %6.3f usec +/- %e\n",
+                            _stats.get_mean() / units::usec,
+                            _stats.get_stddev() / units::usec);
+    tim::manager::instance()->add_metadata([_stats](auto& ar) {
+        ar(tim::cereal::make_nvp("causal thread sleep overhead [nsec]", _stats));
+    });
 }
 
 void
@@ -130,7 +130,7 @@ delay::process()
     if(!trait::runtime_enabled<delay>::get()) return;
     if(get_state() == ::omnitrace::State::Finalized) return;
 
-    static thread_local const auto& _info = thread_info::get();
+    const auto& _info = thread_info::get();
 
     if(!_info) return;
 
