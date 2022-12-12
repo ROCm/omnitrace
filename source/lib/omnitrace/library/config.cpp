@@ -315,7 +315,7 @@ configure_settings(bool _init)
                              "timemory");
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_CAUSAL",
-                             "Enable causal profiling analysis", true, "backend",
+                             "Enable causal profiling analysis", false, "backend",
                              "causal", "analysis");
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_ROCTRACER",
