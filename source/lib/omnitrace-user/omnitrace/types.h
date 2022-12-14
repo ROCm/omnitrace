@@ -53,21 +53,21 @@ extern "C"
         omnitrace_annotated_region_func_t pop_annotated_region;
 
         /// @var start_trace
-        /// @brief callback for starting a trace region
+        /// @brief callback for enabling tracing globally
         /// @var stop_trace
-        /// @brief callback for starting a trace region
+        /// @brief callback for disabling tracing globally
         /// @var start_thread_trace
-        /// @brief callback for starting a trace region
+        /// @brief callback for enabling tracing on current thread
         /// @var stop_thread_trace
-        /// @brief callback for starting a trace region
+        /// @brief callback for disabling tracing on current thread
         /// @var push_region
         /// @brief callback for starting a trace region
         /// @var pop_region
-        /// @brief callback for starting a trace region
+        /// @brief callback for ending a trace region
         /// @var push_annotated_region
-        /// @brief callback for starting a trace region
+        /// @brief callback for starting a trace region + annotations
         /// @var pop_annotated_region
-        /// @brief callback for starting a trace region
+        /// @brief callback for ending a trace region + annotations
     } omnitrace_user_callbacks_t;
 
     /// @enum OMNITRACE_USER_CONFIGURE_MODE
