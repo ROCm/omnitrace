@@ -54,19 +54,10 @@ get_thread_state_history(int64_t _idx = utility::get_thread_index())
     return _v.at(_idx);
 }
 
-auto&
-get_causal_state_history(int64_t _idx = utility::get_thread_index())
-{
-    static auto _v = utility::get_filled_array<OMNITRACE_MAX_THREADS>(
-        []() { return utility::get_reserved_vector<causal_state>(32); });
-
-    return _v.at(_idx);
-}
-
-causal_state&
+CausalState&
 get_causal_state_impl()
 {
-    static thread_local causal_state _v{ CausalState::Enabled };
+    static thread_local auto _v = CausalState::Enabled;
     return _v;
 }
 }  // namespace
@@ -132,40 +123,22 @@ pop_thread_state()
 //
 //--------------------------------------------------------------------------------------//
 
-causal_state
+CausalState
 get_causal_state()
 {
     return get_causal_state_impl();
 }
 
-causal_state
-push_causal_state(CausalState _v)
+CausalState
+set_causal_state(CausalState _v)
 {
     // if causal state is disabled, immediately return
     // if causal state is selected, do not change the state. Instead
     // increment the selected state counter so that the thread
     // knows it is still in the selected function and does not delay
     auto& _state = get_causal_state_impl();
-    if(_state.state == CausalState::Disabled) return _state;
-    if(_state.state == CausalState::Selected) return (++_state.count, _state);
-    if(_state.state == _v) return (++_state.count, _state);
-    return get_causal_state_history().emplace_back(_v);
-}
-
-causal_state
-pop_causal_state()
-{
-    auto& _state = get_causal_state_impl();
-    if(_state.state == CausalState::Disabled) return _state;
-    if(_state.count > 1) return (--_state.count, _state);
-
-    auto& _hist = get_causal_state_history();
-    if(!_hist.empty())
-    {
-        get_causal_state_impl() = _hist.back();
-        _hist.pop_back();
-    }
-    return get_causal_state();
+    std::swap(_state, _v);
+    return _v;
 }
 }  // namespace omnitrace
 
@@ -219,6 +192,17 @@ to_string(omnitrace::Mode _v)
         case omnitrace::Mode::Trace: return "Trace";
         case omnitrace::Mode::Sampling: return "Sampling";
         case omnitrace::Mode::Coverage: return "Coverage";
+    }
+    return {};
+}
+
+std::string
+to_string(omnitrace::CausalMode _v)
+{
+    switch(_v)
+    {
+        case omnitrace::CausalMode::Line: return "Line";
+        case omnitrace::CausalMode::Function: return "Function";
     }
     return {};
 }

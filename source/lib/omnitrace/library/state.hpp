@@ -64,6 +64,12 @@ enum class Mode : unsigned short
     Coverage
 };
 
+enum class CausalMode : unsigned short
+{
+    Line = 0,
+    Function
+};
+
 //
 //      Runtime configuration data
 //
@@ -94,54 +100,16 @@ struct scoped_thread_state
 
 //--------------------------------------------------------------------------------------//
 
-struct causal_state
-{
-    causal_state(CausalState _v)
-    : state{ _v }
-    {}
-
-    ~causal_state() = default;
-
-    causal_state(const causal_state&) noexcept = default;
-    causal_state(causal_state&&) noexcept      = default;
-
-    causal_state& operator=(const causal_state&) noexcept = default;
-    causal_state& operator=(causal_state&&) noexcept = default;
-
-    CausalState state;
-    uint32_t    count = 1;
-};
-
-causal_state
+CausalState
 get_causal_state() OMNITRACE_HOT;
 
-causal_state push_causal_state(CausalState) OMNITRACE_HOT;
-
-causal_state
-pop_causal_state() OMNITRACE_HOT;
-
-struct scoped_causal_state
-{
-    scoped_causal_state(CausalState _v)
-    : value{ push_causal_state(_v) }
-    {}
-    ~scoped_causal_state() { pop_causal_state(); }
-
-    causal_state value;
-};
-
+CausalState set_causal_state(CausalState) OMNITRACE_HOT;
 }  // namespace omnitrace
 
 #define OMNITRACE_SCOPED_THREAD_STATE(STATE)                                             \
     ::omnitrace::scoped_thread_state OMNITRACE_VARIABLE(_scoped_thread_state_, __LINE__) \
     {                                                                                    \
         ::omnitrace::STATE                                                               \
-    }
-
-#define OMNITRACE_SCOPED_CAUSAL_STATE(STATE)                                             \
-    ::omnitrace::scoped_causal_state OMNITRACE_VARIABLE(_scoped_causal_state_, __LINE__) \
-    {                                                                                    \
-        STATE                                                                            \
     }
 
 namespace std
@@ -157,4 +125,7 @@ to_string(omnitrace::CausalState _v);
 
 std::string
 to_string(omnitrace::Mode _v);
+
+std::string
+to_string(omnitrace::CausalMode _v);
 }  // namespace std
