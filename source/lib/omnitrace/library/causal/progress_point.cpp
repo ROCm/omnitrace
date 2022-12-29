@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include "library/causal/progress_point.hpp"
+#include "library/causal/experiment.hpp"
 #include "library/common.hpp"
 #include "library/debug.hpp"
 #include "library/thread_data.hpp"
@@ -85,6 +86,9 @@ get_progress_points()
                 ditr += *itr.second;
                 ditr.set_hash(itr.second->get_hash());
                 ditr.set_laps(ditr.get_laps() + itr.second->get_laps());
+                itr.second->set_laps(0);
+                itr.second->set_value(0);
+                itr.second->set_accum(0);
             }
         }
     }

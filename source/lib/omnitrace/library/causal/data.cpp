@@ -24,6 +24,7 @@
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
 #include "library/code_object.hpp"
+#include "library/components/backtrace_causal.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/ptl.hpp"
@@ -33,13 +34,19 @@
 #include "library/thread_info.hpp"
 #include "library/utility.hpp"
 
+#include <timemory/data/atomic_ring_buffer.hpp>
 #include <timemory/hash/types.hpp>
+#include <timemory/log/logger.hpp>
+#include <timemory/unwind/dlinfo.hpp>
 #include <timemory/unwind/processed_entry.hpp>
 
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
+#include <initializer_list>
 #include <random>
+#include <regex>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -57,8 +64,7 @@ struct hash<omnitrace::causal::selected_entry>
 {
     size_t operator()(const omnitrace::causal::selected_entry& _v) const
     {
-        if(_v.index == omnitrace::causal::unwind_depth) return 0;
-        return _v.stack.hash(_v.index);
+        return _v.hash();
     }
 };
 
@@ -74,26 +80,30 @@ namespace
 using random_engine_t    = std::mt19937_64;
 using progress_bundles_t = component_bundle_cache<progress_point>;
 
-uint16_t              increment            = 5;
-std::vector<uint16_t> virtual_speedup_dist = []() {
-    size_t                _n = std::max<size_t>(1, 100 / increment);
+auto speedup_seeds     = std::vector<size_t>{};
+auto speedup_divisions = get_env<uint16_t>("OMNITRACE_CAUSAL_SPEEDUP_DIVISIONS", 5);
+auto speedup_dist      = []() {
+    size_t                _n = std::max<size_t>(1, 100 / speedup_divisions);
     std::vector<uint16_t> _v(_n, uint16_t{ 0 });
     std::generate(_v.begin(), _v.end(),
-                  [_value = 0]() mutable { return (_value += increment); });
+                  [_value = 0]() mutable { return (_value += speedup_divisions); });
+    // approximately 25% of bins should be zero speedup
+    size_t _nzero = std::ceil(_v.size() / 4.0);
+    _v.resize(_v.size() + _nzero, 0);
+    std::sort(_v.begin(), _v.end());
     OMNITRACE_CI_THROW(_v.back() > 100, "Error! last value is too large: %i\n",
                        (int) _v.back());
     return _v;
 }();
-std::vector<size_t> seeds = {};
 
 auto
 get_seed()
 {
     static auto       _v = std::random_device{};
     static std::mutex _mutex;
-    std::unique_lock  _lk{ _mutex };
-    seeds.emplace_back(_v());
-    return seeds.back();
+    std::scoped_lock  _lk{ _mutex };
+    speedup_seeds.emplace_back(_v());
+    return speedup_seeds.back();
 }
 
 auto&
@@ -105,62 +115,49 @@ get_engine(int64_t _tid = utility::get_thread_index())
     return _v.at(_tid);
 }
 
-std::atomic<int64_t>&
-get_max_thread_index()
-{
-    static auto _v = std::atomic<int64_t>{ 1 };
-    return _v;
-}
-
-void
-update_max_thread_index(int64_t _tid)
-{
-    bool _success = false;
-    while(!_success)
-    {
-        auto _v = get_max_thread_index().load();
-        if(_tid <= _v) break;
-        _success = get_max_thread_index().compare_exchange_strong(
-            _v, _tid, std::memory_order_relaxed);
-    }
-}
-
-int64_t
-sample_thread_index(int64_t _tid)
-{
-    return std::uniform_int_distribution<int64_t>{ 0, get_max_thread_index().load() }(
-        get_engine(_tid));
-}
-
 void
 perform_experiment_impl()
 {
-    thread_info::init(true);
+    const auto& _thr_info = thread_info::init(true);
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
+    OMNITRACE_CONDITIONAL_THROW(!_thr_info->is_offset,
+                                "Error! causal profiling thread should be offset");
 
-    auto _experim = experiment{};
-    // loop until started or finalized
-    while(!_experim.start())
+    auto _impl_count = 0;
+    while(get_state() < State::Finalized)
     {
-        if(get_state() == State::Finalized) return;
+        auto _impl_no = _impl_count++;
+        auto _experim = experiment{};
+
+        // loop until started or finalized
+        while(!_experim.start())
+        {
+            if(get_state() == State::Finalized)
+            {
+                OMNITRACE_CONDITIONAL_THROW(_impl_no == 0, "experiment never started\n");
+                return;
+            }
+        }
+
+        // wait for the experiment to complete
+        if(config::get_causal_end_to_end())
+        {
+            while(get_state() < State::Finalized)
+            {
+                std::this_thread::yield();
+                std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
+            }
+        }
+        else
+        {
+            _experim.wait();
+        }
+
+        while(!_experim.stop())
+        {
+            if(get_state() == State::Finalized) return;
+        }
     }
-
-    // wait for the experiment to complete
-    _experim.wait();
-
-    while(!_experim.stop())
-    {
-        if(get_state() == State::Finalized) return;
-    }
-
-    if(get_state() == State::Finalized) return;
-
-    // cool-down / inactive period
-    std::this_thread::yield();
-    std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
-
-    // start a new experiment
-    tasking::general::get_task_group().exec(perform_experiment_impl);
 }
 
 auto&
@@ -170,106 +167,107 @@ get_unwind_cache()
     return _v;
 }
 
-using line_info_map_t = std::map<code_object::procfs::maps, code_object::basic_line_info>;
+std::set<code_object::address_range>&
+get_eligible_address_ranges()
+{
+    static auto _v = std::set<code_object::address_range>{};
+    return _v;
+}
+
+using line_info_map_t = code_object::line_info_map<code_object::ext_line_info>;
 
 std::pair<line_info_map_t, line_info_map_t>&
 get_cached_line_info()
 {
     static auto _v = []() {
         auto _discarded = line_info_map_t{};
-        auto _requested = code_object::get_basic_line_info(&_discarded);
+        auto _requested = code_object::get_ext_line_info(&_discarded);
         return std::make_pair(_requested, _discarded);
     }();
     return _v;
 }
 
 auto
-compute_eligible_pcs()
+compute_eligible_lines()
 {
-    /*
-    auto _write = [](std::ofstream& _ofs, const auto& _data) {
-        auto _as_hex = [](auto&& _v) {
-            std::stringstream _ss{};
-            _ss.fill('0');
-            _ss << "0x" << std::hex << std::setw(16) << _v;
-            return _ss.str();
-        };
+    auto _v =
+        std::unordered_map<uintptr_t,
+                           std::vector<std::unique_ptr<code_object::basic::line_info>>>{};
+    auto        _specific_lines = config::get_causal_fixed_line();
+    auto        _specific_funcs = config::get_causal_fixed_function();
+    const auto& _line_info      = get_cached_line_info().first;
 
-        for(auto& itr : _data)
-        {
-            _ofs << itr.first.pathname << " [" << _as_hex(itr.first.start_address)
-                 << " - " << _as_hex(itr.first.end_address) << "]\n";
-
-            for(auto& ditr : itr.second)
-            {
-                auto _addr     = ditr.address;
-                auto _addr_off = ditr.address + itr.first.start_address;
-                _ofs << "    " << _as_hex(_addr_off) << " [" << _as_hex(_addr)
-                     << "] :: " << ditr.file << ":" << ditr.line;
-                if(!ditr.func.empty()) _ofs << " [" << tim::demangle(ditr.func) << "]";
-                _ofs << "\n";
-            }
-        }
-
-        _ofs << "\n" << std::flush;
+    auto _add_line_info = [&_v](auto _ip_val, const auto& _li_val) {
+        for(const auto& vitr : _v[_ip_val])
+            if(*vitr == _li_val) return;
+        _v[_ip_val].emplace_back(
+            std::make_unique<code_object::basic::line_info>(_li_val));
     };
 
-    {
-        std::string ofname = "codemap.txt";
-        std::ofstream _ofs{ ofname };
-        if(!_ofs) throw std::runtime_error("Error opening " + ofname);
-    }*/
-
-    auto        _v              = std::unordered_set<uintptr_t>{};
-    auto        _specific_lines = config::get_causal_fixed_line();
-    const auto& _line_info      = get_cached_line_info().first;
     if(!_specific_lines.empty())
     {
         for(const auto& itr : _specific_lines)
         {
-            auto _entry = tim::delimit(itr, ":");
-            if(_entry.size() == 2)
+            auto _re = std::regex{ itr + "$" };
+            for(const auto& litr : _line_info)
             {
-                auto _file_re = std::regex{ _entry.front() + "$" };
-                auto _line_no = std::stoul(_entry.back());
-                for(const auto& litr : _line_info)
+                auto _range = code_object::address_range{ litr.first.load_address,
+                                                          litr.first.last_address };
+                for(const auto& ditr : litr.second)
                 {
-                    for(const auto& ditr : litr.second)
-                    {
-                        if(ditr.line == _line_no &&
-                           std::regex_search(ditr.file, _file_re))
-                        {
-                            auto _addr_off = litr.first.start_address + ditr.address;
-                            _v.emplace(_addr_off);
-                        }
-                    }
-                }
-            }
-            else if(_entry.size() == 1)
-            {
-                auto _file_re = std::regex{ _entry.front() + "$" };
-                for(const auto& litr : _line_info)
-                {
-                    for(const auto& ditr : litr.second)
-                    {
-                        if(std::regex_search(ditr.file, _file_re))
-                        {
-                            auto _addr_off = litr.first.start_address + ditr.address;
-                            _v.emplace(_addr_off);
-                        }
-                    }
+                    auto _li =
+                        std::visit([](auto&& _val) { return _val.get_basic(); }, ditr);
+                    // match to <file> or <file>:<line>
+                    if(std::regex_search(_li.file, _re) == false &&
+                       std::regex_search(JOIN(':', _li.file, _li.line), _re) == false)
+                        continue;
+                    // map the instruction pointer address to the line info
+                    auto _ip = litr.first.load_address + _li.address;
+                    _add_line_info(_ip, _li);
+                    get_eligible_address_ranges().emplace(_range);
                 }
             }
         }
     }
-    else
+
+    if(!_specific_funcs.empty())
+    {
+        for(const auto& itr : _specific_funcs)
+        {
+            auto _re = std::regex{ itr, std::regex_constants::optimize };
+            for(const auto& litr : _line_info)
+            {
+                auto _range = code_object::address_range{ litr.first.load_address,
+                                                          litr.first.last_address };
+                for(const auto& ditr : litr.second)
+                {
+                    auto _li =
+                        std::visit([](auto&& _val) { return _val.get_basic(); }, ditr);
+                    // match to <file> or <file>:<line>
+                    if(std::regex_search(_li.func, _re) == false &&
+                       std::regex_search(demangle(_li.func), _re) == false)
+                        continue;
+                    // map the instruction pointer address to the line info
+                    auto _ip = litr.first.load_address + _li.address;
+                    _add_line_info(_ip, _li);
+                    get_eligible_address_ranges().emplace(_range);
+                }
+            }
+        }
+    }
+
+    if(_v.empty())
     {
         for(const auto& litr : _line_info)
         {
+            auto _range = code_object::address_range{ litr.first.load_address,
+                                                      litr.first.last_address };
             for(const auto& ditr : litr.second)
             {
-                auto _addr_off = litr.first.start_address + ditr.address;
-                _v.emplace(_addr_off);
+                auto _li = std::visit([](auto&& _val) { return _val.get_basic(); }, ditr);
+                auto _ip = litr.first.load_address + _li.address;
+                _add_line_info(_ip, _li);
+                get_eligible_address_ranges().emplace(_range);
             }
         }
     }
@@ -277,37 +275,191 @@ compute_eligible_pcs()
 }
 
 auto&
-get_eligible_pcs()
+get_eligible_lines()
 {
-    static auto _v = compute_eligible_pcs();
+    static auto _v = compute_eligible_lines();
     return _v;
 }
 
-auto latest_progress_point = std::unordered_set<selected_entry>{};
-auto latest_progress_mutex = std::mutex{};
+template <typename Tp, size_t N>
+struct static_vector
+{
+    TIMEMORY_DEFAULT_OBJECT(static_vector)
+
+    static_vector(size_t _n, Tp _v = {})
+    {
+        m_size.store(_n);
+        m_data.fill(_v);
+    }
+
+    static_vector& operator=(std::initializer_list<Tp>&& _v)
+    {
+        reset();
+        for(auto itr : _v)
+        {
+            OMNITRACE_CONDITIONAL_THROW(m_size == N, "Error! %s has reached its capacity",
+                                        demangle<static_vector>().c_str());
+            m_data[m_size++] = itr;
+        }
+        purge(Tp{});
+        return *this;
+    }
+
+    template <typename Up>
+    auto& emplace_back(Up&& _v)
+    {
+        OMNITRACE_CONDITIONAL_THROW(m_size == N, "Error! %s has reached its capacity",
+                                    demangle<static_vector>().c_str());
+        auto _idx    = m_size++;
+        m_data[_idx] = std::forward<Up>(_v);
+        return m_data[_idx];
+    }
+
+    // reset the size but do not clear data
+    void reset() { m_size.store(0); }
+
+    // purge old values
+    void purge(Tp _v = {})
+    {
+        for(size_t i = m_size; i < N; ++i)
+        {
+            m_data.at(i) = _v;
+        }
+    }
+
+    bool empty() const { return (m_size.load() == 0); }
+    auto size() const { return m_size.load(); }
+    auto begin() { return m_data.begin(); }
+    auto end() { return m_data.begin() + m_size.load(); }
+    auto begin() const { return m_data.begin(); }
+    auto end() const { return m_data.begin() + m_size.load(); }
+
+    decltype(auto) at(size_t _idx) { return m_data.at(_idx); }
+    decltype(auto) at(size_t _idx) const { return m_data.at(_idx); }
+
+private:
+    std::atomic<size_t> m_size = 0;
+    std::array<Tp, N>   m_data = {};
+};
+
+// thread-safe read/write ring-buffer via atomics
+using pc_ring_buffer_t = tim::data_storage::atomic_ring_buffer<uintptr_t>;
+// latest_eligible_pcs is an array of unwind_depth size -> samples will
+// use lowest indexes for most recent functions address in the call-stack
+auto latest_eligible_pc = []() {
+    auto _arr = std::array<std::unique_ptr<pc_ring_buffer_t>, unwind_depth>{};
+    for(auto& itr : _arr)
+        itr = std::make_unique<pc_ring_buffer_t>(units::get_page_size() /
+                                                 (sizeof(uintptr_t) + 1));
+    return _arr;
+}();
 }  // namespace
 
 //--------------------------------------------------------------------------------------//
+
+template <typename Tp>
+std::string
+as_hex(Tp _v, size_t _width)
+{
+    std::stringstream _ss;
+    _ss.fill('0');
+    _ss << "0x" << std::hex << std::setw(_width) << _v;
+    return _ss.str();
+}
+
+template std::string as_hex<int32_t>(int32_t, size_t);
+template std::string as_hex<uint32_t>(uint32_t, size_t);
+template std::string as_hex<int64_t>(int64_t, size_t);
+template std::string as_hex<uint64_t>(uint64_t, size_t);
+template std::string
+as_hex<void*>(void*, size_t);
+
+bool
+is_eligible_address(uintptr_t _v)
+{
+    return get_eligible_address_ranges().count(_v) > 0;
+}
+
+void
+save_line_info(const settings::compose_filename_config& _cfg)
+{
+    auto _write_impl = [](std::ofstream& _ofs, const auto& _data) {
+        for(auto& itr : _data)
+        {
+            _ofs << itr.first.pathname << " [" << as_hex(itr.first.load_address) << " - "
+                 << as_hex(itr.first.last_address) << "]\n";
+
+            for(auto& ditr : itr.second)
+            {
+                auto _li   = std::visit([](auto&& _v) { return _v.get_basic(); }, ditr);
+                auto _addr = _li.address;
+                auto _addr_off = _li.address + itr.first.load_address;
+                _ofs << "    " << as_hex(_addr_off) << " [" << as_hex(_addr)
+                     << "] :: " << _li.file << ":" << _li.line;
+                if(!_li.func.empty()) _ofs << " [" << tim::demangle(_li.func) << "]";
+                _ofs << "\n";
+            }
+        }
+
+        _ofs << "\n" << std::flush;
+    };
+
+    auto _write = [&_write_impl](const std::string& ofname, const auto& _data) {
+        auto _ofs = std::ofstream{};
+        if(tim::filepath::open(_ofs, ofname))
+        {
+            if(config::get_verbose() >= 0)
+                operation::file_output_message<code_object::basic_line_info>{}(
+                    ofname, std::string{ "causal_line_info" });
+            _write_impl(_ofs, _data);
+        }
+        else
+        {
+            throw std::runtime_error("Error opening " + ofname);
+        }
+    };
+
+    _write(tim::settings::compose_output_filename("line-info-included", "txt", _cfg),
+           get_cached_line_info().first);
+    _write(tim::settings::compose_output_filename("line-info-discarded", "txt", _cfg),
+           get_cached_line_info().second);
+}
+
+void
+set_current_selection(utility::c_array<void*> _stack)
+{
+    if(experiment::is_active()) return;
+
+    size_t _n = 0;
+    for(auto* itr : _stack)
+    {
+        auto& _pcs  = latest_eligible_pc.at(_n);
+        auto  _addr = reinterpret_cast<uintptr_t>(itr);
+        if(_pcs && is_eligible_address(_addr))
+        {
+            _pcs->write(&_addr);
+            // increment after valid found -> first valid pc for call-stack
+            ++_n;
+        }
+    }
+}
 
 void
 set_current_selection(unwind_stack_t _stack)
 {
     if(experiment::is_active()) return;
 
-    size_t _idx      = 0;
-    auto   _prog_pts = std::unordered_set<selected_entry>{};
+    size_t _n = 0;
     for(auto itr : _stack)
     {
-        if(itr && get_eligible_pcs().count(itr->address()) > 0)
-            _prog_pts.emplace(selected_entry{ _idx, _stack });
-        ++_idx;
-    }
-
-    if(!_prog_pts.empty())
-    {
-        std::scoped_lock _lk{ latest_progress_mutex };
-        for(auto itr : _prog_pts)
-            latest_progress_point.emplace(itr);
+        auto& _pcs  = latest_eligible_pc.at(_n);
+        auto  _addr = itr->address();
+        if(_pcs && is_eligible_address(_addr))
+        {
+            _pcs->write(&_addr);
+            // increment after valid found -> first valid pc for call-stack
+            ++_n;
+        }
     }
 }
 
@@ -315,21 +467,72 @@ selected_entry
 sample_selection(size_t _nitr, size_t _wait_ns)
 {
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
-    size_t _n = 0;
+
+    auto&  _eligible_pcs   = get_eligible_lines();
+    size_t _n              = 0;
+    auto   _select_address = [&](auto& _addresses) {
+        if(_addresses.empty()) return selected_entry{};
+        auto _dist = std::uniform_int_distribution<size_t>{ 0, _addresses.size() - 1 };
+        auto _idx  = _dist(get_engine());
+        auto _addr = _addresses.at(_idx);
+        if(get_causal_mode() == CausalMode::Function)
+        {
+            auto      _dl_info  = unwind::dlinfo::construct(_addr);
+            uintptr_t _sym_addr = (_dl_info.symbol) ? _dl_info.symbol.address() : _addr;
+            auto&     pitrs     = _eligible_pcs.at(_sym_addr);
+            for(auto ritr = pitrs.rbegin(); ritr != pitrs.rend(); ++ritr)
+            {
+                auto& pitr = *ritr;
+                // skip lambdas since these provide no relevant info
+                if(demangle(pitr->func).find("operator()") == 0) continue;
+                OMNITRACE_VERBOSE(-1, "Selected address %s ('%s') for experiment...\n",
+                                  as_hex(_sym_addr).c_str(),
+                                  demangle(pitr->func).c_str());
+                return selected_entry{ _addr, _sym_addr, *pitr };
+            }
+            auto& pitr = _eligible_pcs.at(_sym_addr).back();
+            OMNITRACE_VERBOSE(-1, "Selected address %s ('%s') for experiment...\n",
+                              as_hex(_sym_addr).c_str(), demangle(pitr->func).c_str());
+            return selected_entry{ _addr, _sym_addr, *pitr };
+        }
+        else if(get_causal_mode() == CausalMode::Line)
+        {
+            auto& pitrs = _eligible_pcs.at(_addr);
+            for(auto ritr = pitrs.rbegin(); ritr != pitrs.rend(); ++ritr)
+            {
+                auto& pitr = *ritr;
+                // skip lambdas since these provide no relevant info
+                if(demangle(pitr->func).find("operator()") == 0) continue;
+                OMNITRACE_VERBOSE(
+                    -1,
+                    "Selected address %s (%s) for experiment at index %zu of %zu "
+                    "options from %zu eligible addresses...\n",
+                    as_hex(_addr).c_str(), demangle(pitr->func).c_str(), _idx,
+                    _addresses.size(), _eligible_pcs.size());
+                return selected_entry{ _addr, 0, *pitr };
+            }
+        }
+        return selected_entry{};
+    };
 
     while(_n++ < _nitr)
     {
+        auto _addresses = std::vector<uintptr_t>{};
+        for(auto& aitr : latest_eligible_pc)
         {
-            std::scoped_lock _lk{ latest_progress_mutex };
-            auto&            _lpp = latest_progress_point;
-            if(!_lpp.empty())
+            if(!aitr) continue;
+            auto _naddrs = aitr->count();
+            _addresses.reserve(_addresses.size() + _naddrs);
+            for(size_t i = 0; i < _naddrs; ++i)
             {
-                auto _dist = std::uniform_int_distribution<size_t>{ 0, _lpp.size() - 1 };
-                auto itr   = _lpp.begin();
-                auto _idx  = _dist(get_engine());
-                std::advance(itr, _idx);
-                return *itr;
+                uintptr_t _addr = 0;
+                if(aitr->read(&_addr) != nullptr)
+                {
+                    if(_eligible_pcs.count(_addr) > 0) _addresses.emplace_back(_addr);
+                }
             }
+
+            if(!_addresses.empty()) return _select_address(_addresses);
         }
 
         std::this_thread::yield();
@@ -339,9 +542,31 @@ sample_selection(size_t _nitr, size_t _wait_ns)
     return selected_entry{};
 }
 
+std::vector<code_object::basic::line_info>
+get_line_info(uintptr_t _addr, bool include_discarded)
+{
+    auto _data          = std::vector<code_object::basic::line_info>{};
+    auto _get_line_info = [&](const auto& _info) {
+        for(const auto& litr : _info)
+        {
+            for(const auto& ditr : litr.second)
+            {
+                auto _li = std::visit([](auto&& _v) { return _v.get_basic(); }, ditr);
+                auto _ip = litr.first.load_address + _li.address;
+                if(_ip == _addr) _data.emplace_back(_li);
+            }
+        }
+    };
+    _get_line_info(get_cached_line_info().first);
+    if(include_discarded) _get_line_info(get_cached_line_info().second);
+    return _data;
+}
+
 void
 push_progress_point(std::string_view _name)
 {
+    if(!config::get_causal_end_to_end() && !experiment::is_active()) return;
+
     auto  _hash   = tim::add_hash_id(_name);
     auto& _data   = progress_bundles_t::instance(utility::get_thread_index());
     auto* _bundle = _data.construct(_hash);
@@ -352,16 +577,30 @@ push_progress_point(std::string_view _name)
 void
 pop_progress_point(std::string_view _name)
 {
-    auto  _hash = tim::add_hash_id(_name);
+    if(!config::get_causal_end_to_end() && !experiment::is_active()) return;
+
     auto& _data = progress_bundles_t::instance(utility::get_thread_index());
-    for(auto itr = _data.rbegin(); itr != _data.rend(); ++itr)
+    if(_data.empty()) return;
+    if(_name.empty())
     {
-        if((*itr)->get_hash() == _hash)
+        auto* itr = _data.back();
+        itr->stop();
+        itr->pop();
+        _data.pop_back();
+        return;
+    }
+    else
+    {
+        auto _hash = tim::add_hash_id(_name);
+        for(auto itr = _data.rbegin(); itr != _data.rend(); ++itr)
         {
-            (*itr)->stop();
-            (*itr)->pop();
-            _data.destroy(itr);
-            return;
+            if((*itr)->get_hash() == _hash)
+            {
+                (*itr)->stop();
+                (*itr)->pop();
+                _data.destroy(itr);
+                return;
+            }
         }
     }
 }
@@ -381,64 +620,39 @@ sample_virtual_speedup(int64_t _tid)
     using thread_data_t =
         thread_data<identity<std::uniform_int_distribution<size_t>>, experiment>;
     static auto& _v = thread_data_t::instances(construct_on_init{}, size_t{ 0 },
-                                               virtual_speedup_dist.size() - 1);
-    return virtual_speedup_dist.at(_v.at(_tid)(get_engine(_tid)));
+                                               speedup_dist.size() - 1);
+    return speedup_dist.at(_v.at(_tid)(get_engine(_tid)));
 }
 
 void
 start_experimenting()
 {
-    thread_info::init(true);
+    OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
+
+    auto _user_speedup_dist = config::get_causal_fixed_speedup();
+    if(!_user_speedup_dist.empty())
+    {
+        speedup_dist.clear();
+        for(auto itr : _user_speedup_dist)
+        {
+            OMNITRACE_CONDITIONAL_ABORT_F(itr > 100,
+                                          "Virtual speedups must be in range [0, 100]. "
+                                          "Invalid virtual speedup: %lu\n",
+                                          itr);
+            speedup_dist.emplace_back(static_cast<uint16_t>(itr));
+        }
+    }
+
+    (void) get_eligible_lines();
 
     // wait until fully activated before proceeding
-    while(get_state() < State::Active)
+    while(utility::get_thread_index() > 0 && get_state() < State::Active)
     {
         std::this_thread::yield();
         std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
     }
 
-    if(get_state() != State::Finalized)
-    {
-        // start a new experiment
-        tasking::general::get_task_group().exec(perform_experiment_impl);
-    }
+    if(get_state() < State::Finalized) std::thread{ perform_experiment_impl }.detach();
 }
-
-const std::map<code_object::procfs::maps, code_object::basic_line_info>&
-get_causal_line_info()
-{
-    return get_cached_line_info().first;
-}
-
-const std::map<code_object::procfs::maps, code_object::basic_line_info>&
-get_causal_ignored_line_info()
-{
-    return get_cached_line_info().second;
-}
-
-code_object::basic::line_info
-find_line_info(uintptr_t _addr, bool _include_ignored)
-{
-    auto _find_line_info = [](auto _address, auto& _line_info) {
-        for(const auto& litr : _line_info)
-        {
-            for(const auto& eitr : litr.second)
-            {
-                auto _addr_off = litr.first.start_address + eitr.address;
-                if(_addr_off == _address)
-                {
-                    return eitr;
-                }
-            }
-        }
-        return code_object::basic::line_info{};
-    };
-
-    auto _v = _find_line_info(_addr, get_cached_line_info().first);
-    if(_include_ignored && !_v.is_valid())
-        _v = _find_line_info(_addr, get_cached_line_info().second);
-    return _v;
-}
-
 }  // namespace causal
 }  // namespace omnitrace

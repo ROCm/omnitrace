@@ -22,6 +22,7 @@
 
 #include "library/causal/blocking_gotcha.hpp"
 #include "library/causal/delay.hpp"
+#include "library/causal/experiment.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/runtime.hpp"
@@ -115,20 +116,33 @@ blocking_gotcha::shutdown()
     blocking_gotcha_t::disable();
 }
 
+namespace
+{
+thread_local int64_t global_delay_value = 0;
+}
+
 void
 blocking_gotcha::start()
 {
-    if(get_state() == ::omnitrace::State::Active &&
-       get_thread_state() == ::omnitrace::ThreadState::Enabled)
-        causal::delay::process();
+    if(causal::experiment::is_active() &&
+       get_causal_state() < ::omnitrace::CausalState::Disabled &&
+       get_state() == ::omnitrace::State::Active &&
+       get_thread_state() == ::omnitrace::ThreadState::Enabled && global_delay_value == 0)
+        global_delay_value = causal::delay::get_global().load();
 }
 
 void
 blocking_gotcha::stop()
 {
-    if(get_state() == ::omnitrace::State::Active &&
+    if(causal::experiment::is_active() &&
+       get_causal_state() < ::omnitrace::CausalState::Disabled &&
+       get_state() == ::omnitrace::State::Active &&
        get_thread_state() == ::omnitrace::ThreadState::Enabled)
-        causal::delay::process();
+    {
+        auto _value        = global_delay_value;
+        global_delay_value = 0;
+        causal::delay::postblock(_value);
+    }
 }
 
 void

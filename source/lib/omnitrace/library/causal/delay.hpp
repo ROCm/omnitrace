@@ -55,6 +55,8 @@ struct delay
     static void    sample(int = -1);
     static void    process();
     static void    credit();
+    static void    preblock();
+    static void    postblock(int64_t);
     static int64_t sync();
 
     static std::atomic<int64_t>& get_global();

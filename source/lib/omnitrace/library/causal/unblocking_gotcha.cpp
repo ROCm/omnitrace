@@ -22,6 +22,7 @@
 
 #include "library/causal/unblocking_gotcha.hpp"
 #include "library/causal/delay.hpp"
+#include "library/causal/experiment.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/runtime.hpp"
@@ -98,7 +99,9 @@ unblocking_gotcha::shutdown()
 void
 unblocking_gotcha::start()
 {
-    if(get_state() == ::omnitrace::State::Active &&
+    if(causal::experiment::is_active() &&
+       get_causal_state() < ::omnitrace::CausalState::Disabled &&
+       get_state() == ::omnitrace::State::Active &&
        get_thread_state() == ::omnitrace::ThreadState::Enabled)
         causal::delay::process();
 }
@@ -106,7 +109,9 @@ unblocking_gotcha::start()
 void
 unblocking_gotcha::stop()
 {
-    if(get_state() == ::omnitrace::State::Active &&
+    if(causal::experiment::is_active() &&
+       get_causal_state() < ::omnitrace::CausalState::Disabled &&
+       get_state() == ::omnitrace::State::Active &&
        get_thread_state() == ::omnitrace::ThreadState::Enabled)
         causal::delay::credit();
 }

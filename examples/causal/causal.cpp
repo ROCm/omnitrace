@@ -1,145 +1,183 @@
-/*
- * Copyright (c) 2015, Charlie Curtsinger and Emery Berger,
- *                     University of Massachusetts Amherst
- * This file is part of the Coz project. See LICENSE.md file at the top-level
- * directory of this distribution and at http://github.com/plasma-umass/coz.
- */
 
 #include <chrono>
 #include <cmath>
-#include <coz.h>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <mutex>
 #include <optional>
+#include <random>
+#include <stdexcept>
 #include <string>
 #include <sys/times.h>
 #include <thread>
 #include <unistd.h>
+
+#define STR2(x) #x
+#define STR(x)  STR2(x)
+#define LABEL   __FILE__ ":" STR(__LINE__)
+
+#if defined(USE_OMNI) && USE_OMNI > 0
+#    include <omnitrace/user.h>
+#    define CAUSAL_PROGRESS omnitrace_user_progress(LABEL)
+#elif defined(USE_COZ) && USE_COZ > 0
+#    include <coz.h>
+#    define CAUSAL_PROGRESS COZ_PROGRESS_NAMED(LABEL)
+#else
+#    define CAUSAL_PROGRESS
+#endif
 
 using mutex_t     = std::timed_mutex;
 using auto_lock_t = std::unique_lock<mutex_t>;
 using clock_type  = std::chrono::high_resolution_clock;
 using nanosec     = std::chrono::nanoseconds;
 
-mutex_t mtx{};
-
+namespace
+{
 std::chrono::duration<double, std::milli> t_ms;
 std::chrono::duration<double, std::milli> slow_ms;
 std::chrono::duration<double, std::milli> fast_ms;
 
-inline __attribute__((always_inline)) int64_t
-clock_tick() noexcept
-{
-    static int64_t _val = ::sysconf(_SC_CLK_TCK);
-    return _val;
-}
+template <typename... Args>
+inline void
+consume_variables(Args&&...)
+{}
+}  // namespace
 
-template <typename Precision, typename Ret = int64_t>
-inline __attribute__((always_inline)) Ret
-clock_tick() noexcept
-{
-    return static_cast<Ret>(Precision::den) / static_cast<Ret>(clock_tick());
-}
+bool
+rng_func_impl(int64_t n, uint64_t rseed);
 
-template <typename Tp = int64_t, typename Precision = std::nano>
-inline __attribute__((always_inline)) Tp
-get_clock_now(clockid_t clock_id) noexcept
-{
-    constexpr Tp    factor = Precision::den / static_cast<Tp>(std::nano::den);
-    struct timespec ts;
-    clock_gettime(clock_id, &ts);
-    return (ts.tv_sec * std::nano::den + ts.tv_nsec) * factor;
-}
+bool
+cpu_func_impl(int64_t n, int nloop);
 
-template <typename Tp = int64_t, typename Precision = std::nano>
-inline __attribute__((always_inline)) Tp
-get_clock_cpu_now() noexcept
-{
-    return get_clock_now<Tp, Precision>(CLOCK_THREAD_CPUTIME_ID);
-}
+int64_t
+rng_slow_func(int64_t n, uint64_t rseed);
 
-__attribute__((noinline)) void
-slow_func(int64_t n);
-
-__attribute__((noinline)) void
-fast_func(int64_t n);
+int64_t
+rng_fast_func(int64_t n, uint64_t rseed);
 
 void
-slow_func(int64_t n)
-{
-    auto _t       = clock_type::now();
-    auto _cpu_now = get_clock_cpu_now();
-    auto _cpu_end = _cpu_now + n;
-    while(get_clock_cpu_now() < _cpu_end)
-    {
-        for(volatile int i = 0; i < 1000; ++i)
-        {}
-    }
-    slow_ms += clock_type::now() - _t;
-}
+cpu_slow_func(int64_t n, int nloop);
 
 void
-fast_func(int64_t n)
-{
-    auto _t       = clock_type::now();
-    auto _cpu_now = get_clock_cpu_now();
-    auto _cpu_end = _cpu_now + n;
-    while(get_clock_cpu_now() < _cpu_end)
-    {
-        for(volatile int i = 0; i < 1000; ++i)
-        {}
-    }
-    fast_ms += clock_type::now() - _t;
-}
+cpu_fast_func(int64_t n, int nloop);
+
+#if USE_CPU > 0
+#    define CPU_SLOW_FUNC(...) cpu_slow_func(__VA_ARGS__)
+#    define CPU_FAST_FUNC(...) cpu_fast_func(__VA_ARGS__)
+#else
+#    define CPU_SLOW_FUNC(...) consume_variables(__VA_ARGS__)
+#    define CPU_FAST_FUNC(...) consume_variables(__VA_ARGS__)
+#endif
+
+#if USE_RNG > 0
+#    define RNG_SLOW_FUNC(...) rng_slow_func(__VA_ARGS__)
+#    define RNG_FAST_FUNC(...) rng_fast_func(__VA_ARGS__)
+#else
+#    define RNG_SLOW_FUNC(...) consume_variables(__VA_ARGS__)
+#    define RNG_FAST_FUNC(...) consume_variables(__VA_ARGS__)
+#endif
 
 int
 main(int argc, char** argv)
 {
-    int     nitr   = 20;
-    double  frac   = 25;
-    int64_t t_nsec = 100000000L;
+    uint64_t rseed    = std::random_device{}();
+    int      nitr     = 150;
+    double   frac     = 70;
+    int64_t  slow_val = 100000000L;
 
-    if(argc > 1) nitr = atoi(argv[1]);
-    if(argc > 2) frac = fmod(atof(argv[2]), 100.);
-    if(argc > 3) t_nsec = atoll(argv[3]);
+    if(argc > 1) frac = std::stod(argv[1]);
+    if(argc > 2) nitr = std::stoi(argv[2]);
+    if(argc > 3) rseed = std::stoul(argv[3]);
+    if(argc > 4) slow_val = std::stol(argv[4]);
 
-    int64_t slow_nsec = t_nsec;
-    int64_t fast_nsec = t_nsec - ((frac / 100.0) * t_nsec);
+    int64_t fast_val = (frac / 100.0) * slow_val;
+    double  rfrac    = (fast_val / static_cast<double>(slow_val));
+    if(argc > 5) fast_val = std::stol(argv[5]);
 
-    if(argc > 4) fast_nsec = atoll(argv[4]);
-
-    std::unique_lock<mutex_t> _lk{ mtx };
-
-    printf("Iterations: %i :: slow = %zu, fast = %zu\n", nitr, slow_nsec, fast_nsec);
-
-    std::string _name  = "iteration-" + std::to_string(static_cast<int64_t>(frac));
-    std::string _phase = "phase-" + std::to_string(static_cast<int64_t>(frac));
+    printf("\nIterations: %i, fraction: %6.2f, random seed: %lu :: slow = %zu, "
+           "fast = %zu, expected ratio = %6.2f\n",
+           nitr, frac, rseed, slow_val, fast_val, rfrac * 100.0);
 
     auto _t = clock_type::now();
     for(int i = 0; i < nitr; ++i)
     {
-        printf("executing iteration: %i\n", i);
-        auto _threads = std::array<std::optional<std::thread>, 2>{
-            std::thread{ slow_func, slow_nsec }, std::thread{ fast_func, fast_nsec }
+        if(i == 0 || i + 1 == nitr || i % (nitr / 5) == 0)
+            printf("executing iteration: %i\n", i);
+        auto&& _slow_func = [](auto _nsec, auto _seed, auto _nloop) {
+            CPU_SLOW_FUNC(_nsec, _nloop);
+            RNG_SLOW_FUNC(_nsec / 5, _seed);
         };
-
+        auto&& _fast_func = [](auto _nsec, auto _seed, auto _nloop) {
+            CPU_FAST_FUNC(_nsec, _nloop);
+            RNG_FAST_FUNC(_nsec / 5, _seed);
+        };
+        auto _threads = std::array<std::thread, 2>{
+            std::thread{ std::move(_slow_func), slow_val, rseed, 10000 },
+            std::thread{ std::move(_fast_func), fast_val, rseed, 10000 }
+        };
+        //
         for(auto& itr : _threads)
-            itr->join();
+            itr.join();
 
-        for(auto& itr : _threads)
-            itr.reset();
-
-        // COZ_END(_phase.c_str());
-        COZ_PROGRESS_NAMED(_name.c_str());
+        CAUSAL_PROGRESS;
     }
     t_ms += clock_type::now() - _t;
-
-    // printf("\n");
+    auto rms = (fast_ms.count() / slow_ms.count());
     printf("slow_func() took %8.3f ms\n", slow_ms.count());
     printf("fast_func() took %8.3f ms\n", fast_ms.count());
-    printf("total is %8.3f ms\n", t_ms.count());
-    printf("ratio is %8.3f %s\n", (1.0 - (fast_ms.count() / slow_ms.count())) * 100, "%");
+    printf("total is %12.3f ms\n", t_ms.count());
+    printf("ratio is %12.3f %s\n", 100.0 * rms, "%");
+    printf("rdiff is %12.3f %s\n", 100.0 * (rms - rfrac), "%");
+}
+
+//
+//  This implementation works well for Omnitrace
+//  while COZ makes poor predictions
+//
+int64_t
+rng_slow_func(int64_t n, uint64_t rseed)
+{
+    auto _t = clock_type::now();
+    // clang-format off
+    while(!rng_func_impl(n, rseed)) {}
+    // clang-format on
+    slow_ms += clock_type::now() - _t;
+    return slow_ms.count();
+}
+
+int64_t
+rng_fast_func(int64_t n, uint64_t rseed)
+{
+    auto _t = clock_type::now();
+    // clang-format off
+    while(!rng_func_impl(n, rseed)) {}
+    // clang-format on
+    fast_ms += clock_type::now() - _t;
+    return fast_ms.count();
+}
+
+//
+//  This implementation works well for COZ
+//  while Omnitrace makes poor predictions
+//
+void
+cpu_slow_func(int64_t n, int nloop)
+{
+    auto _t = clock_type::now();
+    // clang-format off
+    while(!cpu_func_impl(n, nloop)) {}
+    // clang-format on
+    slow_ms += clock_type::now() - _t;
+}
+
+void
+cpu_fast_func(int64_t n, int nloop)
+{
+    auto _t = clock_type::now();
+    // clang-format off
+    while(!cpu_func_impl(n, nloop)) {}
+    // clang-format on
+    fast_ms += clock_type::now() - _t;
 }

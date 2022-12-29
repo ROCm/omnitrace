@@ -27,11 +27,12 @@
 #include "library/thread_data.hpp"
 #include "library/thread_info.hpp"
 #include "library/tracing.hpp"
-#include "timemory/components/macros.hpp"
-#include "timemory/mpl/concepts.hpp"
 
+#include <timemory/components/macros.hpp>
+#include <timemory/mpl/concepts.hpp>
 #include <timemory/mpl/types.hpp>
 
+#include <atomic>
 #include <random>
 
 namespace omnitrace
@@ -105,49 +106,48 @@ delay::stop()
     process();
 }
 
+static auto _delay_sample_interval =
+    get_env<int64_t>("OMNITRACE_CAUSAL_DELAY_INTERVAL", 8);
+
 void
 delay::sample(int)
 {
     if(!trait::runtime_enabled<delay>::get()) return;
-    if(get_state() == ::omnitrace::State::Finalized) return;
+    if(get_state() >= ::omnitrace::State::Finalized) return;
 
-    auto _causal_state = get_causal_state();
-    // TIMEMORY_PRINTF(stderr, "[causal_state][%li] %s\n", utility::get_thread_index(),
-    //                std::to_string(_causal_state.state).c_str());
-    if(_causal_state.state == CausalState::Selected)
-    {
-        auto _delay = experiment::get_delay();
-        get_local() += _delay;
-        get_global() += _delay;
-    }
-
-    process();
+    static thread_local int64_t _n = 0;
+    if(++_n % _delay_sample_interval == 0) process();
 }
 
 void
 delay::process()
 {
     if(!trait::runtime_enabled<delay>::get()) return;
-    if(get_state() == ::omnitrace::State::Finalized) return;
+    if(get_state() >= ::omnitrace::State::Finalized) return;
 
-    const auto& _info = thread_info::get();
-
-    if(!_info) return;
-
-    int64_t _diff = get_local() - get_global();
-    if(_diff < 0)
+    // if(causal::experiment::is_active())
     {
-        int64_t _val = -1 * _diff;
-        if(_val >= sleep_for_overhead)
+        if(get_global() < get_local())
         {
-            std::this_thread::sleep_for(
-                std::chrono::nanoseconds{ _val - sleep_for_overhead });
+            auto _diff = (get_local() - get_global());
+            if(_diff > sleep_for_overhead) get_global() += _diff;
         }
-        get_local() += _val;
+        else if(get_global() > get_local())
+        {
+            // using clock_type    = std::chrono::steady_clock;
+            // using duration_type = std::chrono::duration<clock_type::rep, std::nano>;
+            // auto _tp            = clock_type::now() + duration_type{ _global - _local
+            // };
+            auto _beg = tracing::now();
+            // std::this_thread::sleep_until(_tp);
+            std::this_thread::sleep_for(
+                std::chrono::nanoseconds{ get_global() - get_local() });
+            get_local() += (tracing::now() - _beg);
+        }
     }
-    else if(_diff > 0)
+    // else
     {
-        get_global() += _diff;
+        // get_local() = get_global();
     }
 }
 
@@ -155,7 +155,7 @@ void
 delay::credit()
 {
     if(!trait::runtime_enabled<delay>::get()) return;
-    if(get_state() == ::omnitrace::State::Finalized) return;
+    if(get_state() >= ::omnitrace::State::Finalized) return;
 
     auto _diff = get_global() - get_local();
     if(_diff > 0)
@@ -164,10 +164,32 @@ delay::credit()
     }
 }
 
+void
+delay::preblock()
+{
+    if(!trait::runtime_enabled<delay>::get()) return;
+    if(get_state() >= ::omnitrace::State::Finalized) return;
+
+    auto _diff = get_global() - get_local();
+    if(_diff > 0)
+    {
+        get_local() += _diff;
+    }
+}
+
+void
+delay::postblock(int64_t _preblock_global_delay_value)
+{
+    if(!trait::runtime_enabled<delay>::get()) return;
+    if(get_state() >= ::omnitrace::State::Finalized) return;
+
+    get_local() += (get_global() - _preblock_global_delay_value);
+}
+
 int64_t
 delay::sync()
 {
-    auto _v = get_global().load();
+    auto _v = get_global().load(std::memory_order_seq_cst);
     delay_thread_data::instances().fill(_v);
     return _v;
 }
@@ -190,10 +212,11 @@ uint64_t
 delay::compute_total_delay(uint64_t _baseline)
 {
     // this function assumes that baseline is <= all entries due to call to sync
-    uint64_t _sum = 0;
-    for(auto itr : delay_thread_data::instances())
-        _sum += (itr - _baseline);
-    return _sum;
+    return get_global().load() - _baseline;
+    // uint64_t _sum = 0;
+    // for(auto itr : delay_thread_data::instances())
+    //    _sum += (itr - _baseline);
+    // return _sum;
 }
 }  // namespace causal
 }  // namespace omnitrace
