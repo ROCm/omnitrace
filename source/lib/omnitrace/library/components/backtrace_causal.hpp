@@ -27,13 +27,13 @@
 #include "library/components/fwd.hpp"
 #include "library/defines.hpp"
 #include "library/timemory.hpp"
-#include "timemory/utility/unwind.hpp"
 
 #include <timemory/components/base.hpp>
 #include <timemory/macros/language.hpp>
 #include <timemory/mpl/concepts.hpp>
 #include <timemory/tpls/cereal/cereal/cereal.hpp>
 #include <timemory/units.hpp>
+#include <timemory/utility/unwind.hpp>
 
 #include <chrono>
 #include <cstdint>
@@ -47,24 +47,23 @@ struct backtrace_causal
 , tim::concepts::component
 {
     using value_type = void;
-    struct sample_data : unwind::processed_entry
+    struct sample_data
     {
-        using base_type = unwind::processed_entry;
+        uintptr_t        address = 0x0;
+        mutable uint64_t count   = 0;
 
-        using base_type::operator==;
-        using base_type::operator!=;
-        using base_type::operator<;
-        using base_type::operator>;
-        using base_type::operator<=;
-        using base_type::operator>=;
-
-        mutable uint64_t count = 0;
+        bool operator==(sample_data _v) const { return (address == _v.address); }
+        bool operator!=(sample_data _v) const { return !(*this == _v); }
+        bool operator<(sample_data _v) const { return (address < _v.address); }
+        bool operator>(sample_data _v) const { return (address > _v.address); }
+        bool operator<=(sample_data _v) const { return (address <= _v.address); }
+        bool operator>=(sample_data _v) const { return (address >= _v.address); }
 
         template <typename ArchiveT>
-        void serialize(ArchiveT& ar, const unsigned version)
+        void serialize(ArchiveT& ar, const unsigned)
         {
-            base_type::serialize(ar, version);
-            ar(tim::cereal::make_nvp("count", count));
+            ar(tim::cereal::make_nvp("address", address),
+               tim::cereal::make_nvp("count", count));
         }
     };
 
@@ -83,12 +82,10 @@ struct backtrace_causal
     backtrace_causal& operator=(backtrace_causal&&) noexcept = default;
 
     static void start();
-    static void stop() {}
+    static void stop();
 
     void sample(int = -1);
 
-    auto is_valid() const { return m_valid; }
-    auto get_internal() const { return m_internal; }
     auto get_selected() const { return m_selected; }
     auto get_index() const { return m_index; }
     auto get_stack() const { return m_stack; }
@@ -101,12 +98,13 @@ struct backtrace_causal
     static std::map<uint32_t, sample_data_set_t> get_samples();
     static std::set<sample_data>                 get_samples(uint32_t);
 
-    static void add_sample(uint32_t, const sample_data::base_type&);
-    static void add_samples(uint32_t, const std::vector<sample_data::base_type>&);
+    static void add_sample(uint32_t, uintptr_t);
+    static void add_samples(uint32_t, const std::vector<uintptr_t>&);
+
+    static tim::statistics<int64_t> get_period_stats();
+    static void                     reset_period_stats();
 
 private:
-    bool                   m_valid    = false;
-    bool                   m_internal = false;
     bool                   m_selected = false;
     uint32_t               m_index    = 0;
     causal::unwind_stack_t m_stack    = {};

@@ -24,8 +24,10 @@
 #include "library/causal/data.hpp"
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
+#include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/runtime.hpp"
+#include "library/state.hpp"
 #include "library/thread_data.hpp"
 #include "library/thread_info.hpp"
 #include "library/tracing.hpp"
@@ -33,8 +35,14 @@
 
 #include <timemory/components/timing/backends.hpp>
 #include <timemory/components/timing/wall_clock.hpp>
+#include <timemory/mpl/concepts.hpp>
+#include <timemory/mpl/types.hpp>
+#include <timemory/process/threading.hpp>
+#include <timemory/units.hpp>
+#include <timemory/utility/backtrace.hpp>
 
 #include <atomic>
+#include <ctime>
 #include <type_traits>
 
 namespace omnitrace
@@ -43,13 +51,27 @@ namespace component
 {
 namespace
 {
-auto sampling_count = std::atomic<uint64_t>{ 0 };
+using ::tim::backtrace::get_unw_signal_frame_stack;
+using delay_statistics_t =
+    thread_data<identity<tim::statistics<int64_t>>, category::sampling>;
+using in_use_t = thread_data<identity<bool>, category::sampling>;
 
-auto&
-get_sampling_start()
+struct scoped_in_use
 {
-    static auto _v = tracing::now();
-    return _v;
+    scoped_in_use(int64_t _tid = threading::get_id())
+    : value{ in_use_t::instances().at(_tid) }
+    {
+        value = true;
+    }
+    ~scoped_in_use() { value = false; }
+
+    bool& value;
+};
+
+auto
+is_in_use(int64_t _tid = threading::get_id())
+{
+    return in_use_t::instances().at(_tid);
 }
 
 auto samples = std::map<uint32_t, std::set<backtrace_causal::sample_data>>{};
@@ -58,33 +80,64 @@ auto samples = std::map<uint32_t, std::set<backtrace_causal::sample_data>>{};
 void
 backtrace_causal::start()
 {
-    get_sampling_start() = tracing::now();
+    set_causal_state(CausalState::Enabled);
 }
 
 void
-backtrace_causal::sample(int)
+backtrace_causal::stop()
 {
-    m_valid    = (get_state() == State::Active);
-    m_internal = (get_thread_state() == ThreadState::Internal);
-    m_index    = causal::experiment::get_index();
+    set_causal_state(CausalState::Disabled);
+}
 
-    ++sampling_count;
+void
+backtrace_causal::sample(int _sig)
+{
+    constexpr size_t  depth        = causal::unwind_depth;
+    constexpr int64_t ignore_depth = causal::unwind_offset;
 
-    causal::delay::process();
+    // update the last sample for backtrace signal(s) even when in use
+    static thread_local int64_t _last_sample = 0;
 
-    using namespace tim::backtrace;
-    constexpr bool   with_signal_frame = false;
-    constexpr size_t ignore_depth      = 3;
-    m_stack    = get_unw_stack<causal::unwind_depth, ignore_depth, with_signal_frame>();
-    m_selected = causal::experiment::is_selected(m_stack);
-
-    if(m_selected)
+    if(is_in_use())
     {
-        causal::experiment::add_selected();
-        causal::delay::get_local() += causal::experiment::get_delay();
+        if(_sig >= get_causal_backtrace_signal()) _last_sample = tracing::now();
+        return;
     }
+    scoped_in_use _in_use{};
 
-    causal::set_current_selection(m_stack);
+    m_index = causal::experiment::get_index();
+    m_stack = get_unw_signal_frame_stack<depth, ignore_depth>();
+    // the batch handler timer delivers a signal according to the thread CPU
+    // clock, ensuring that setting the current selection and processing the
+    // delays only happens when the thread is active
+    if(_sig == get_causal_batch_handler_signal())
+    {
+        if(!causal::experiment::is_active())
+            causal::set_current_selection(m_stack);
+        else
+            causal::delay::process();
+    }
+    else if(_sig >= get_causal_backtrace_signal())
+    {
+        auto  _this_sample = tracing::now();
+        auto& _period_stat = delay_statistics_t::instance();
+        if(_last_sample > 0) _period_stat += (_this_sample - _last_sample);
+        _last_sample = _this_sample;
+
+        if(causal::experiment::is_active() && causal::experiment::is_selected(m_stack))
+        {
+            m_selected = true;
+            causal::experiment::add_selected();
+            // compute the delay time based on the rate of taking samples,
+            // unless we have taken less than 10, in which case, we just
+            // use the pre-computed value.
+            auto _delay =
+                (_period_stat.get_count() < 10)
+                    ? causal::experiment::get_delay()
+                    : (_period_stat.get_mean() * causal::experiment::get_delay_scaling());
+            causal::delay::get_local() += _delay;
+        }
+    }
 }
 
 template <typename Tp>
@@ -93,11 +146,39 @@ backtrace_causal::get_period(uint64_t _units)
 {
     using cast_type = std::conditional_t<std::is_floating_point<Tp>::value, Tp, double>;
 
-    auto _ticks = (tracing::now() - get_sampling_start());
-    auto _count = sampling_count.load();
-    if(_count < 20) return Tp{ 0 };
-    auto _mean = static_cast<Tp>(_ticks) / static_cast<cast_type>(_count);
-    return static_cast<Tp>(_mean) / static_cast<cast_type>(_units);
+    double _realtime_freq =
+        (get_use_sampling_realtime()) ? get_sampling_real_freq() : 0.0;
+    double _cputime_freq = (get_use_sampling_cputime()) ? get_sampling_cpu_freq() : 0.0;
+
+    auto    _freq        = std::max<double>(_realtime_freq, _cputime_freq);
+    double  _period      = 1.0 / _freq;
+    int64_t _period_nsec = static_cast<int64_t>(_period * units::sec) % units::sec;
+    return static_cast<Tp>(_period_nsec) / static_cast<cast_type>(_units);
+}
+
+tim::statistics<int64_t>
+backtrace_causal::get_period_stats()
+{
+    scoped_in_use _in_use{};
+    auto          _data = tim::statistics<int64_t>{};
+    for(size_t i = 0; i < max_supported_threads; ++i)
+    {
+        scoped_in_use _thr_in_use{ static_cast<int64_t>(i) };
+        const auto&   itr = delay_statistics_t::instances().at(i);
+        if(itr.get_count() > 1) _data += itr;
+    }
+    return _data;
+}
+
+void
+backtrace_causal::reset_period_stats()
+{
+    scoped_in_use _in_use{};
+    for(size_t i = 0; i < max_supported_threads; ++i)
+    {
+        scoped_in_use _thr_in_use{ static_cast<int64_t>(i) };
+        delay_statistics_t::instances().at(i).reset();
+    }
 }
 
 std::set<backtrace_causal::sample_data>
@@ -113,9 +194,8 @@ backtrace_causal::get_samples()
 }
 
 void
-backtrace_causal::add_sample(uint32_t _index, const sample_data::base_type& _v)
+backtrace_causal::add_sample(uint32_t _index, uintptr_t _v)
 {
-    // auto_lock_t _lk{ type_mutex<backtrace_causal::sample_data>() };
     auto& _samples = samples[_index];
     auto  _value   = sample_data{ _v };
     _value.count   = 1;
@@ -127,13 +207,11 @@ backtrace_causal::add_sample(uint32_t _index, const sample_data::base_type& _v)
 }
 
 void
-backtrace_causal::add_samples(uint32_t                                   _index,
-                              const std::vector<sample_data::base_type>& _v)
+backtrace_causal::add_samples(uint32_t _index, const std::vector<uintptr_t>& _v)
 {
     for(const auto& itr : _v)
         add_sample(_index, itr);
 }
-
 }  // namespace component
 }  // namespace omnitrace
 
