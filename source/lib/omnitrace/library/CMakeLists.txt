@@ -14,6 +14,7 @@ set(library_sources
     ${CMAKE_CURRENT_LIST_DIR}/gpu.cpp
     ${CMAKE_CURRENT_LIST_DIR}/mproc.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ompt.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/perf.cpp
     ${CMAKE_CURRENT_LIST_DIR}/perfetto.cpp
     ${CMAKE_CURRENT_LIST_DIR}/process_sampler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ptl.cpp
@@ -39,6 +40,7 @@ set(library_headers
     ${CMAKE_CURRENT_LIST_DIR}/gpu.hpp
     ${CMAKE_CURRENT_LIST_DIR}/mproc.hpp
     ${CMAKE_CURRENT_LIST_DIR}/ompt.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/perf.hpp
     ${CMAKE_CURRENT_LIST_DIR}/perfetto.hpp
     ${CMAKE_CURRENT_LIST_DIR}/process_sampler.hpp
     ${CMAKE_CURRENT_LIST_DIR}/ptl.hpp
@@ -88,3 +90,15 @@ add_subdirectory(coverage)
 add_subdirectory(rocm)
 add_subdirectory(tracing)
 add_subdirectory(causal)
+
+set(ndebug_sources
+    ${CMAKE_CURRENT_LIST_DIR}/components/mpi_gotcha.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/components/backtrace_metrics.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/rcclp.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/kokkosp.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/rocm_smi.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/ompt.cpp)
+
+set_source_files_properties(
+    ${ndebug_sources} DIRECTORY ${PROJECT_SOURCE_DIR}/source/lib/omnitrace
+    PROPERTIES COMPILE_DEFINITIONS NDEBUG COMPILE_OPTIONS "-g0;-O3")
