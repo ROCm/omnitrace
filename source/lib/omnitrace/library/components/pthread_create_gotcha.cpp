@@ -415,7 +415,7 @@ pthread_create_gotcha::operator()(pthread_t* thread, const pthread_attr_t* attr,
     }
 
     // threads must process their delays before creating a new thread
-    // causal::delay::process();
+    causal::delay::process();
 
     // create the thread
     auto _ret = (*m_wrappee)(thread, attr, &wrapper::wrap, static_cast<void*>(_wrap));

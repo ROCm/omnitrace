@@ -156,7 +156,7 @@ pthread_mutex_gotcha::configure()
                     "pthread_spin_unlock" });
         }
 
-        if(config::get_trace_thread_join())
+        if(config::get_trace_thread_join() && !get_use_causal())
         {
             pthread_mutex_gotcha_t::configure(
                 comp::gotcha_config<12, int, pthread_t, void**>{ "pthread_join" });
