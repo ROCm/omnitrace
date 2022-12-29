@@ -686,8 +686,25 @@ configure_settings(bool _init)
         std::string, "OMNITRACE_TMPDIR", "Base directory for temporary files",
         get_env<std::string>("TMPDIR", "/tmp"), "io", "data", "advanced");
 
+    OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_CAUSAL_MODE",
+        "Perform causal experiments at the function-scope or line-scope. Ideally, use "
+        "function first to locate function with highest impact and then switch to line "
+        "mode + OMNITRACE_CAUSAL_FIXED_FUNCTION set to the function being targeted.",
+        std::string{ "function" }, "causal", "analysis", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(
+        bool, "OMNITRACE_CAUSAL_END_TO_END",
+        "Perform causal experiment over the length of the entire application", true,
+        "causal", "analysis", "advanced");
+
     OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FIXED_LINE",
-                             "List of specific <file>:<line> entries for causal "
+                             "List of <file>:<line> regex entries for causal "
+                             "profiling (separated by tabs or semi-colons)",
+                             std::string{}, "causal", "analysis", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FIXED_FUNCTION",
+                             "List of <function> regex entries for causal "
                              "profiling (separated by tabs or semi-colons)",
                              std::string{}, "causal", "analysis", "advanced");
 
@@ -2253,6 +2270,46 @@ get_tmp_file(std::string _basename, std::string _ext)
     return _existing_files.at(_fname);
 }
 
+CausalMode
+get_causal_mode()
+{
+    if(!settings_are_configured())
+    {
+        auto _mode = tim::get_env_choice<std::string>("OMNITRACE_CAUSAL_MODE", "function",
+                                                      { "line", "function" });
+        if(_mode == "line") return CausalMode::Line;
+        return CausalMode::Function;
+    }
+    static auto _causal_mode = []() {
+        auto _m = std::unordered_map<std::string_view, CausalMode>{
+            { "line", CausalMode::Line }, { "function", CausalMode::Function }
+        };
+        auto _v = get_config()->find("OMNITRACE_CAUSAL_MODE");
+        try
+        {
+            return _m.at(static_cast<tim::tsettings<std::string>&>(*_v->second).get());
+        } catch(std::runtime_error& _e)
+        {
+            auto _mode = static_cast<tim::tsettings<std::string>&>(*_v->second).get();
+            std::stringstream _ss{};
+            for(const auto& itr : _v->second->get_choices())
+                _ss << ", " << itr;
+            auto _msg = (_ss.str().length() > 2) ? _ss.str().substr(2) : std::string{};
+            OMNITRACE_THROW("[%s] invalid causal mode %s. Choices: %s\n", __FUNCTION__,
+                            _mode.c_str(), _msg.c_str());
+        }
+        return CausalMode::Function;
+    }();
+    return _causal_mode;
+}
+
+bool
+get_causal_end_to_end()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_END_TO_END");
+    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
+}
+
 std::vector<std::string>
 get_causal_fixed_line()
 {
@@ -2261,11 +2318,19 @@ get_causal_fixed_line()
                         "\t;");
 }
 
-std::set<int64_t>
+std::vector<std::string>
+get_causal_fixed_function()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FIXED_FUNCTION");
+    return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
+                        "\t;");
+}
+
+std::vector<int64_t>
 get_causal_fixed_speedup()
 {
     static auto _v = get_config()->find("OMNITRACE_CAUSAL_FIXED_SPEEDUP");
-    return parse_numeric_range<>(
+    return parse_numeric_range<int64_t, std::vector<int64_t>>(
         static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
         "causal fixed speedup", 5);
 }

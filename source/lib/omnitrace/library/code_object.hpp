@@ -22,8 +22,11 @@
 
 #pragma once
 
+#include "library/common.hpp"
 #include "library/defines.hpp"
 
+#include <timemory/hash/types.hpp>
+#include <timemory/tpls/cereal/cereal/cereal.hpp>
 #include <timemory/unwind/bfd.hpp>
 #include <timemory/unwind/types.hpp>
 #include <timemory/utility/procfs/maps.hpp>
@@ -42,18 +45,48 @@ namespace code_object
 {
 namespace procfs = ::tim::procfs;
 
-using bfd_file = ::tim::unwind::bfd_file;
+using bfd_file     = ::tim::unwind::bfd_file;
+using hash_value_t = ::tim::hash_value_t;
+
+struct bfd_line_info;
+struct dwarf_line_info;
+
+struct address_range
+{
+    TIMEMORY_DEFAULT_OBJECT(address_range)
+
+    address_range(uintptr_t _v);
+    address_range(uintptr_t _low, uintptr_t _high);
+
+    bool contains(uintptr_t) const;
+    bool contains(address_range) const;
+    bool overlaps(address_range) const;
+    bool contiguous_with(address_range) const;
+
+    bool operator==(address_range _v) const;
+    bool operator!=(address_range _v) const { return !(*this == _v); }
+    bool operator<(address_range _v) const;
+
+    bool        is_range() const;
+    std::string as_string(int _depth = 0) const;
+
+    uintptr_t low  = 0x0;
+    uintptr_t high = 0x0;
+};
 
 namespace basic
 {
 struct line_info
 {
+    bool         inlined = false;
     unsigned int line    = 0;
     uintptr_t    address = 0x0;
     std::string  file    = {};
     std::string  func    = {};
 
-    bool is_valid() const { return !file.empty() && address > 0; }
+    bool         is_valid() const { return !file.empty() && address > 0; }
+    hash_value_t hash() const;
+    std::string  name() const;
 
     friend bool operator<(const line_info& _lhs, const line_info& _rhs)
     {
@@ -70,16 +103,44 @@ struct line_info
     {
         return !(_lhs == _rhs);
     }
+
+    template <typename ArchiveT>
+    void serialize(ArchiveT&, const unsigned int);
 };
+
+inline hash_value_t
+line_info::hash() const
+{
+    return tim::get_combined_hash_id(hash_value_t{ address }, line, file, func);
+}
+
+inline std::string
+line_info::name() const
+{
+    if(!file.empty()) return (line > 0) ? JOIN(':', file, line) : file;
+    return func;
+}
+
+template <typename ArchiveT>
+void
+line_info::serialize(ArchiveT& ar, const unsigned int)
+{
+    ar(tim::cereal::make_nvp("address", address), tim::cereal::make_nvp("file", file),
+       tim::cereal::make_nvp("line", line), tim::cereal::make_nvp("func", func));
+}
 }  // namespace basic
 
 struct bfd_line_info
 {
     unsigned int priority = 0;
     unsigned int line     = 0;
-    uintptr_t    address  = 0x0;
-    std::string  file     = {};
-    std::string  function = {};
+    union
+    {
+        uintptr_t     address;
+        address_range range = {};
+    };
+    std::string file = {};
+    std::string func = {};
 
     bool             is_inlined() const;
     bool             is_valid() const;
@@ -93,9 +154,8 @@ struct bfd_line_info
 
     friend bool operator==(const bfd_line_info& _lhs, const bfd_line_info& _rhs)
     {
-        return std::tie(_lhs.address, _lhs.priority, _lhs.line, _lhs.file,
-                        _lhs.function) ==
-               std::tie(_rhs.address, _rhs.priority, _rhs.line, _rhs.file, _rhs.function);
+        return std::tie(_lhs.address, _lhs.priority, _lhs.line, _lhs.file, _lhs.func) ==
+               std::tie(_rhs.address, _rhs.priority, _rhs.line, _rhs.file, _rhs.func);
     }
 
     friend bool operator!=(const bfd_line_info& _lhs, const bfd_line_info& _rhs)
@@ -167,11 +227,13 @@ using line_info = std::variant<bfd_line_info, dwarf_line_info>;
 
 using ext_line_info   = line_info<ext::line_info>;
 using basic_line_info = line_info<basic::line_info>;
+template <typename Tp = code_object::ext_line_info>
+using line_info_map = std::map<code_object::procfs::maps, Tp>;
 
-std::map<procfs::maps, ext_line_info>
-get_ext_line_info(std::map<procfs::maps, ext_line_info>* _discarded = nullptr);
+line_info_map<ext_line_info>
+get_ext_line_info(line_info_map<ext_line_info>* _discarded = nullptr);
 
-std::map<procfs::maps, basic_line_info>
-get_basic_line_info(std::map<procfs::maps, basic_line_info>* _discarded = nullptr);
+line_info_map<basic_line_info>
+get_basic_line_info(line_info_map<basic_line_info>* _discarded = nullptr);
 }  // namespace code_object
 }  // namespace omnitrace

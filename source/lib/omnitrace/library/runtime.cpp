@@ -94,19 +94,30 @@ get_cputime_signal()
     return SIGPROF;
 }
 
+int
+get_causal_batch_handler_signal()
+{
+    return SIGRTMIN + config::get_sampling_rtoffset() + 1;
+}
+
+int
+get_causal_backtrace_signal()
+{
+    return SIGRTMIN + config::get_sampling_rtoffset() + 2;
+}
+
 std::set<int> get_sampling_signals(int64_t)
 {
-    auto _sigreal = get_realtime_signal();
-    auto _sigprof = get_cputime_signal();
+    auto _v = std::set<int>{};
+    if(config::get_use_sampling_cputime()) _v.emplace(get_cputime_signal());
+    if(config::get_use_sampling_realtime()) _v.emplace(get_realtime_signal());
+    if(config::get_use_causal())
+    {
+        _v.emplace(get_causal_batch_handler_signal());
+        _v.emplace(get_causal_backtrace_signal());
+    }
 
-    if(config::get_use_sampling_realtime() && config::get_use_sampling_cputime())
-        return std::set<int>{ _sigreal, _sigprof };
-    else if(config::get_use_sampling_realtime())
-        return std::set<int>{ _sigreal };
-    else if(config::get_use_sampling_cputime())
-        return std::set<int>{ _sigprof };
-
-    return std::set<int>{};
+    return _v;
 }
 
 std::atomic<uint64_t>&

@@ -341,9 +341,12 @@ thread_data<identity<Tp>, Tag, MaxThreads>::construct(construct_on_thread&& _t,
                                                       Args&&... _args)
 {
     // construct outside of lambda to prevent data-race
-    static auto& _instances = instances();
-    if(!_instances.at(_t.index))
-        _instances.at(_t.index) = generate<value_type>{}(std::forward<Args>(_args)...);
+    static auto& _instances   = instances();
+    static auto  _constructed = std::array<bool, MaxThreads>{ false };
+    if(!_constructed.at(_t.index))
+        _constructed.at(_t.index) = (_instances.at(_t.index) = generate<value_type>{}(
+                                         std::forward<Args>(_args)...),
+                                     true);
 }
 
 template <typename Tp, typename Tag, size_t MaxThreads>
@@ -407,6 +410,14 @@ struct component_bundle_cache
     allocator_type            allocator = {};
     std::vector<bundle_type*> bundles   = {};
 
+    bool empty() const { return bundles.empty(); }
+
+    auto& front() { return bundles.front(); }
+    auto& front() const { return bundles.front(); }
+
+    auto& back() { return bundles.back(); }
+    auto& back() const { return bundles.back(); }
+
     auto begin() { return bundles.begin(); }
     auto end() { return bundles.end(); }
 
@@ -442,6 +453,14 @@ struct component_bundle_cache
         allocator.destroy(_v);
         allocator.deallocate(_v, 1);
         bundles.erase(bundles.begin() + _idx);
+    }
+
+    void pop_back()
+    {
+        bundle_type* _v = bundles.back();
+        allocator.destroy(_v);
+        allocator.deallocate(_v, 1);
+        bundles.pop_back();
     }
 
     template <typename IterT>

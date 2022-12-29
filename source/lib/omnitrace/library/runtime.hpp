@@ -86,6 +86,12 @@ get_realtime_signal();
 int
 get_cputime_signal();
 
+int
+get_causal_backtrace_signal();
+
+int
+get_causal_batch_handler_signal();
+
 std::set<int>
 get_sampling_signals(int64_t _tid = 0);
 

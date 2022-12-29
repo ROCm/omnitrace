@@ -377,10 +377,19 @@ struct tmp_file
 std::shared_ptr<tmp_file>
 get_tmp_file(std::string _basename, std::string _ext = "dat");
 
+CausalMode
+get_causal_mode();
+
+bool
+get_causal_end_to_end();
+
 std::vector<std::string>
 get_causal_fixed_line();
 
-std::set<int64_t>
+std::vector<std::string>
+get_causal_fixed_function();
+
+std::vector<int64_t>
 get_causal_fixed_speedup();
 
 std::string
@@ -388,6 +397,9 @@ get_causal_output_filename();
 
 std::string
 get_causal_binary_scope();
+
+std::string
+get_causal_source_scope();
 
 std::string
 get_causal_source_scope();
