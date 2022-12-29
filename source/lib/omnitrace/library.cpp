@@ -69,6 +69,7 @@
 #include <mutex>
 #include <string_view>
 #include <utility>
+#include <cstdlib>
 
 using namespace omnitrace;
 
@@ -447,8 +448,7 @@ omnitrace_init_tooling_hidden()
 
     tasking::setup();
 
-    if(get_use_causal())
-        tasking::general::get_task_group().exec(causal::start_experimenting);
+    if(get_use_causal()) causal::start_experimenting();
 
     if(get_use_timemory())
     {

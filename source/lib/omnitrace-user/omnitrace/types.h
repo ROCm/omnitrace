@@ -49,8 +49,10 @@ extern "C"
         omnitrace_trace_func_t            stop_thread_trace;
         omnitrace_region_func_t           push_region;
         omnitrace_region_func_t           pop_region;
+        omnitrace_region_func_t           progress;
         omnitrace_annotated_region_func_t push_annotated_region;
         omnitrace_annotated_region_func_t pop_annotated_region;
+        omnitrace_annotated_region_func_t annotated_progress;
 
         /// @var start_trace
         /// @brief callback for enabling tracing globally
@@ -104,7 +106,7 @@ extern "C"
 #ifndef OMNITRACE_USER_CALLBACKS_INIT
 #    define OMNITRACE_USER_CALLBACKS_INIT                                                \
         {                                                                                \
-            NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL                               \
+            NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL                   \
         }
 #endif
 
