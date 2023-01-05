@@ -211,7 +211,7 @@ def reset_Input_filters(kernel_names, max_points):
                     kernel_names,
                 )
             ),
-            "type": "Name",
+            "type": "Kernel Name",
         },
         {
             "Name": "points",

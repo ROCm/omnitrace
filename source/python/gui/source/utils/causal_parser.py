@@ -97,7 +97,7 @@ def parseFile(file):
                 elif (data_type not in ["startup", "shutdown", "samples", "runtime"]):
                     print("Invalid profile")
                     #sys.exit(1)
-    return data
+    return data.sort_index()
 
 def parseUploadedFile(file):
     data=pd.DataFrame()
@@ -176,7 +176,7 @@ def getSpeedupData(data):
             if (progress_speedup >= -1 and progress_speedup <= 2):
                 speedup_df=pd.concat(
                     [pd.DataFrame.from_dict(
-                    data={"point":[name], "speedup":[speedup], "progress_speedup":[progress_speedup]},
+                    data={"point":[name], "speedup":[100*speedup], "progress_speedup":[100*progress_speedup]},
                     ),speedup_df],
                 )
     speedup_df = speedup_df.sort_values(by=["speedup"])
