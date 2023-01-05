@@ -37,7 +37,7 @@ def list_unique(orig_list, is_numeric):
 
 def filePath():
     return html.Div(
-    className="nav-right",
+    className="filter",
     children = [
         html.Li(
             dcc.Input(
@@ -47,13 +47,13 @@ def filePath():
                 debounce = True,
                 style={
                     'width': '100%',
-                    'height': '50px',
+                    'height': '40%',
                     'lineHeight': '60px',
                     'borderWidth': '1px',
-                            'borderStyle': 'dashed',
-                            'borderRadius': '5px',
-                            'textAlign': 'center'
-                    }
+                    #'borderStyle': 'dashed',
+                    'borderRadius': '5px',
+                    'textAlign': 'center'
+                }
             )
         )
     ]
@@ -70,20 +70,20 @@ def kernel_filter(name, values, filter, style_):
                     debounce = True,
                     style={
                         'width': '100%',
-                        'height': '50px',
+                        'height': '40%',
                         'lineHeight': '60px',
                         'borderWidth': '1px',
-                                'borderStyle': 'dashed',
-                                'borderRadius': '5px',
-                                'textAlign': 'center'
-                        }
+                        #'borderStyle': 'dashed',
+                        'borderRadius': '5px',
+                        'textAlign': 'center'
+                    }
                 )
             )
         ]
     )
 def uploadFile():
     return html.Div(
-        className="nav-right",
+        className="filter",
         children=[
             html.Li(
                 children=[
@@ -96,8 +96,8 @@ def uploadFile():
                         ], 
                         style={
                             'width': '100%',
-                            'height': '50px',
-                            'lineHeight': '60px',
+                            'height': '40%',
+                            'lineHeight': '40%',
                             'borderWidth': '1px',
                             'borderStyle': 'dashed',
                             'borderRadius': '5px',
@@ -401,6 +401,8 @@ def get_header(raw_pmc, dropDownMenuItems, input_filters, kernel_names):
     header_nav = children_[0].children[0].children
     header_nav.append(reportBug())
     #header_nav.append(minPoints())
+    
+    
     header_nav.append(filePath())
     header_nav.append(uploadFile())
 
