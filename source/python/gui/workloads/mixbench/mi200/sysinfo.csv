@@ -1,2 +1,0 @@
-workload_name,host_name,host_cpu,host_distro,host_kernel,host_rocmver,date,gpu_soc,numSE,numCU,numSIMD,waveSize,maxWavesPerCU,maxWorkgroupSize,L1,L2,sclk,mclk,cur_sclk,cur_mclk,L2Banks,name,numSQC,hbmBW,ip_blocks
-mixbench,3c7c1111fb23,AMD EPYC 7282 16-Core Processor,Ubuntu 20.04.5 LTS,5.11.0-27-generic,5.2.3-109,Wed Oct 12 15:43:52 2022 (),gfx90a,8,104,4,64,32,1024,16,8192,1700,1600,1700,1600,32,mi200,56,1638.4,roofline|SQ|LDS|SQC|TA|TD|TCP|TCC|SPI|CPC|CPF
