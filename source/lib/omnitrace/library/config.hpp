@@ -384,10 +384,10 @@ bool
 get_causal_end_to_end();
 
 std::vector<std::string>
-get_causal_fixed_line();
+get_causal_fileline_scope();
 
 std::vector<std::string>
-get_causal_fixed_function();
+get_causal_function_scope();
 
 std::vector<int64_t>
 get_causal_fixed_speedup();

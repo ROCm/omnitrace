@@ -690,33 +690,33 @@ configure_settings(bool _init)
         std::string, "OMNITRACE_CAUSAL_MODE",
         "Perform causal experiments at the function-scope or line-scope. Ideally, use "
         "function first to locate function with highest impact and then switch to line "
-        "mode + OMNITRACE_CAUSAL_FIXED_FUNCTION set to the function being targeted.",
+        "mode + OMNITRACE_CAUSAL_FUNCTION_SCOPE set to the function being targeted.",
         std::string{ "function" }, "causal", "analysis", "advanced");
 
     OMNITRACE_CONFIG_SETTING(
         bool, "OMNITRACE_CAUSAL_END_TO_END",
-        "Perform causal experiment over the length of the entire application", true,
+        "Perform causal experiment over the length of the entire application", false,
         "causal", "analysis", "advanced");
 
-    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FIXED_LINE",
-                             "List of <file>:<line> regex entries for causal "
-                             "profiling (separated by tabs or semi-colons)",
-                             std::string{}, "causal", "analysis", "advanced");
-
-    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FIXED_FUNCTION",
-                             "List of <function> regex entries for causal "
-                             "profiling (separated by tabs or semi-colons)",
-                             std::string{}, "causal", "analysis", "advanced");
+    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FILE",
+                             "Name of causal output filename (w/o extension)",
+                             std::string{ "experiments" }, "causal", "analysis",
+                             "advanced");
 
     OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FIXED_SPEEDUP",
                              "List of virtual speedups between 0 and 100 (inclusive) to "
                              "sample from for causal profiling",
                              std::string{}, "causal", "analysis", "advanced");
 
-    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FILE",
-                             "Name of causal output filename (w/o extension)",
-                             std::string{ "experiments" }, "causal", "analysis",
-                             "advanced");
+    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FUNCTION_SCOPE",
+                             "List of <function> regex entries for causal "
+                             "profiling (separated by tabs or semi-colons)",
+                             std::string{}, "causal", "analysis", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FILELINE_SCOPE",
+                             "List of <file>:<line> regex entries for causal "
+                             "profiling (separated by tabs or semi-colons)",
+                             std::string{}, "causal", "analysis", "advanced");
 
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_CAUSAL_BINARY_SCOPE",
@@ -2310,22 +2310,6 @@ get_causal_end_to_end()
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
-std::vector<std::string>
-get_causal_fixed_line()
-{
-    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FIXED_LINE");
-    return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
-                        "\t;");
-}
-
-std::vector<std::string>
-get_causal_fixed_function()
-{
-    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FIXED_FUNCTION");
-    return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
-                        "\t;");
-}
-
 std::vector<int64_t>
 get_causal_fixed_speedup()
 {
@@ -2338,8 +2322,32 @@ get_causal_fixed_speedup()
 std::string
 get_causal_output_filename()
 {
-    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FILE");
-    return static_cast<tim::tsettings<std::string>&>(*_v->second).get();
+    static auto _v     = get_config()->find("OMNITRACE_CAUSAL_FILE");
+    auto        _fname = static_cast<tim::tsettings<std::string>&>(*_v->second).get();
+    for(auto&& itr : std::initializer_list<std::string>{ ".txt", ".json", ".xml" })
+    {
+        auto _pos = _fname.find(itr);
+        // if extension is found at end of string, remove
+        if(_pos != std::string::npos && (_pos + itr.length()) == _fname.length())
+            _fname = _fname.substr(0, _fname.length() - itr.length());
+    }
+    return _fname;
+}
+
+std::vector<std::string>
+get_causal_fileline_scope()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FILELINE_SCOPE");
+    return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
+                        "\t;");
+}
+
+std::vector<std::string>
+get_causal_function_scope()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FUNCTION_SCOPE");
+    return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
+                        "\t;");
 }
 
 std::string

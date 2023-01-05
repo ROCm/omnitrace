@@ -193,9 +193,9 @@ compute_eligible_lines()
     auto _v =
         std::unordered_map<uintptr_t,
                            std::vector<std::unique_ptr<code_object::basic::line_info>>>{};
-    auto        _specific_lines = config::get_causal_fixed_line();
-    auto        _specific_funcs = config::get_causal_fixed_function();
-    const auto& _line_info      = get_cached_line_info().first;
+    auto        _line_scope = config::get_causal_fileline_scope();
+    auto        _func_scope = config::get_causal_function_scope();
+    const auto& _line_info  = get_cached_line_info().first;
 
     auto _add_line_info = [&_v](auto _ip_val, const auto& _li_val) {
         for(const auto& vitr : _v[_ip_val])
@@ -204,9 +204,9 @@ compute_eligible_lines()
             std::make_unique<code_object::basic::line_info>(_li_val));
     };
 
-    if(!_specific_lines.empty())
+    if(!_line_scope.empty())
     {
-        for(const auto& itr : _specific_lines)
+        for(const auto& itr : _line_scope)
         {
             auto _re = std::regex{ itr + "$" };
             for(const auto& litr : _line_info)
@@ -230,9 +230,9 @@ compute_eligible_lines()
         }
     }
 
-    if(!_specific_funcs.empty())
+    if(!_func_scope.empty())
     {
-        for(const auto& itr : _specific_funcs)
+        for(const auto& itr : _func_scope)
         {
             auto _re = std::regex{ itr, std::regex_constants::optimize };
             for(const auto& litr : _line_info)

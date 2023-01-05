@@ -349,7 +349,7 @@ experiment::save_experiments()
 {
     auto _cfg         = settings::compose_filename_config{};
     _cfg.subdirectory = "causal";
-    save_experiments("experiments", _cfg);
+    save_experiments(config::get_causal_output_filename(), _cfg);
 }
 
 void  // NOLINTNEXTLINE
@@ -547,7 +547,7 @@ experiment::load_experiments(bool _throw_on_error)
 {
     auto _cfg         = settings::compose_filename_config{};
     _cfg.subdirectory = "causal";
-    return load_experiments("experiments", _cfg, _throw_on_error);
+    return load_experiments(config::get_causal_output_filename(), _cfg, _throw_on_error);
 }
 
 std::vector<experiment::record>
