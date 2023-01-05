@@ -1,18 +1,17 @@
-import argparse
-from mailbox import linesep
-import os.path
-from pathlib import Path
 import sys
-
-from yaml import parse
-import gui
-from source.utils import file_io, schema, parser
+import argparse
+import os.path
 import dash
 import dash_bootstrap_components as dbc
-from collections import OrderedDict
 import copy
 import json
 import pandas as pd
+
+from pathlib import Path
+from yaml import parse
+from collections import OrderedDict
+
+import gui
 from source.utils.causal_parser import parseFile, getSpeedupData
 
 

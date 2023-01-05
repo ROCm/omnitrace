@@ -20,35 +20,29 @@
 # THE SOFTWARE.
 ################################################################################
 
+import glob
 import re
-from re import L
-from selectors import EpollSelector
 import sys
 import copy
+import base64
+import os
+import pandas as pd
+import dash_bootstrap_components as dbc
+import plotly.express as px
+
+from re import L
+from selectors import EpollSelector
 from matplotlib.axis import XAxis
 from numpy import append
-import pandas as pd
-import base64
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Symbol
 from dash import html, dash_table
 from dash.dependencies import Input, Output, State
 from dash import dcc
-import dash_bootstrap_components as dbc
-import os
-import plotly.express as px
 from os.path import exists
 
-import colorlover
-from pyparsing import line_end
-
-from source.utils import parser, file_io, schema
-
 from source.components.header import get_header
-from source.components.roofline import get_roofline
-from source.components.memchart import get_memchart
 from source.utils.causal_parser import parseFile, parseUploadedFile, getSpeedupData
-import glob
 
 file_timestamp = 0
 data = pd.DataFrame()

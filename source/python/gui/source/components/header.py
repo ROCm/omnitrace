@@ -20,12 +20,12 @@
 # THE SOFTWARE.
 ################################################################################
 
-from dash import html, dash_table, dcc
+import sys
 import dash_daq as daq
 import dash_bootstrap_components as dbc
+
+from dash import html, dash_table, dcc
 from matplotlib.style import available
-import sys
-from ..utils import schema
 
 # List all the unique column values for desired column in df, 'target_col'
 def list_unique(orig_list, is_numeric):
@@ -230,134 +230,6 @@ def get_header(raw_pmc, dropDownMenuItems, input_filters, kernel_names):
             ],
         ),
     ]
-    avail_normalizations = []
-    if "gpu" in input_filters:
-        children_.append(
-            html.Li(
-                className="filter",
-                children=[
-                    html.Div(
-                        children=[
-                            html.A(
-                                className="smoothscroll",
-                                children=["GCD:"],
-                            ),
-                            dcc.Dropdown(
-                                list_unique(
-                                    list(
-                                        map(
-                                            str,
-                                            raw_pmc[schema.pmc_perf_file_prefix][
-                                                "gpu-id"
-                                            ],
-                                        )
-                                    ),
-                                    True,
-                                ),  # list avail gcd ids
-                                id="gcd-filt",
-                                multi=True,
-                                value=input_filters[
-                                    "gpu"
-                                ],  # default to any gpu filters passed as args
-                                placeholder="ALL",
-                                clearable=False,
-                                style={"width": "60px"},
-                            ),
-                        ]
-                    )
-                ],
-            )
-        )
-    if "dispatch" in input_filters:
-        children_.append(
-            html.Li(
-                className="filter",
-                children=[
-                    html.Div(
-                        children=[
-                            html.A(
-                                className="smoothscroll",
-                                children=["Dispatch Filter:"],
-                            ),
-                            dcc.Dropdown(
-                                list(
-                                    map(
-                                        str,
-                                        raw_pmc[schema.pmc_perf_file_prefix]["Index"],
-                                    )
-                                ),
-                                id="disp-filt",
-                                multi=True,
-                                value=input_filters[
-                                    "dispatch"
-                                ],  # default to any dispatch filters passed as args,
-                                placeholder="ALL",
-                                style={"width": "150px"},
-                            ),
-                        ]
-                    )
-                ],
-            )
-        )
-    if schema.pmc_perf_file_prefix in raw_pmc:
-        children_.append(
-            html.Li(
-                className="filter",
-                children=[
-                    html.Div(
-                        children=[
-                            html.A(
-                                className="smoothscroll",
-                                children=["Kernels:"],
-                            ),
-                            dcc.Dropdown(
-                                list_unique(
-                                    list(
-                                        map(
-                                            str,
-                                            raw_pmc[schema.pmc_perf_file_prefix][
-                                                "KernelName"
-                                            ],
-                                        )
-                                    ),
-                                    False,
-                                ),  # list avail kernel names
-                                id="kernel-filt",
-                                multi=True,
-                                value=kernel_names,
-                                placeholder="ALL",
-                                style={
-                                    "width": "400px",  # TODO: Change these widths to % rather than fixed value
-                                    "height": "34px",
-                                },
-                            ),
-                        ]
-                    )
-                ],
-            )
-        )
-        children_.append(
-            html.Li(
-                className="filter",
-                children=[
-                    html.Div(
-                        children=[
-                            html.A(
-                                className="smoothscroll",
-                                children=["Normalization:"],
-                            ),
-                            dcc.Dropdown(
-                                avail_normalizations,
-                                value="per Wave",
-                                clearable=False,
-                                style={"width": "150px"},
-                                disabled=True,  # TODO: Turn this off once multi normalization is enabled
-                            ),
-                        ]
-                    )
-                ],
-            )
-        )
 
     for filter in input_filters:
         header_nav = children_[0].children[0].children
