@@ -1,3 +1,27 @@
+################################################################################
+# Copyright (c) 2021 - 2022 Advanced Micro Devices, Inc. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+################################################################################
+
+from __future__ import absolute_import
+
 import sys
 import argparse
 import os.path
@@ -11,8 +35,9 @@ from pathlib import Path
 from yaml import parse
 from collections import OrderedDict
 
-import gui
-from source.utils.causal_parser import parseFile, getSpeedupData
+from . import gui
+from .parser import parseFile
+from .parser import getSpeedupData
 
 
 def causal(args):
@@ -67,7 +92,6 @@ def causal(args):
         input_filters,
         workload_path,
         speedup_df,
-        args.g,
         args.verbose,
     )
     app.run_server(debug=False, host="0.0.0.0", port=8051)
@@ -75,68 +99,56 @@ def causal(args):
 
 def main():
     # omnitrace version
-    ver_path = cur_root = Path(__file__).resolve().parent / "VERSION"
+    this_dir = Path(__file__).resolve().parent
+    if os.path.basename(this_dir) == "source":
+        ver_path = os.path.join(f"{this_dir.parent}", "VERSION")
+    else:
+        ver_path = os.path.join(f"{this_dir}", "VERSION")
     f = open(ver_path, "r")
     VER = f.read()
-    my_parser = argparse.ArgumentParser(
-        description="CLI AMD's Omnitrace GUI",
-        prog="tool",
-        formatter_class=lambda prog: argparse.RawTextHelpFormatter(
-            prog, max_help_position=30
-        ),
-        usage="gui --path ",
-    )
-    Causal_group = my_parser.add_argument_group("Causal Visualization")
-    Causal_group.add_argument(
-        "-v",
-        "--version",
-        action="version",
-        version="Causal Visualizer (" + VER + ")",
-    )
-    subparsers = my_parser.add_subparsers(
-        dest="mode",
-        help="Select mode of interaction with the target application:",
-    )
-    Causal_parser = subparsers.add_parser(
-        "Causal",
-        help="Omnitrace's Causal Profiler GUI",
-        usage="""
-                                        \nOmnitrace gui --name <workload_name> --path <path>
 
-                                        \n\n-------------------------------------------------------------------------------
-                                        \nExamples:
-                                        \n\tOmnitrace gui --name toy --path workloads/toy
-                                        \n-------------------------------------------------------------------------------\n
-                                        """,
+    my_parser = argparse.ArgumentParser(
+        description="AMD's OmniTrace GUI",
         prog="tool",
         allow_abbrev=False,
         formatter_class=lambda prog: argparse.RawTextHelpFormatter(
             prog, max_help_position=40
         ),
-    )
-    Causal_parser._optionals.title = "Help"
+        usage="""
+                                        \nomnitrace-causal-plot --path <path>
 
-    Causal_parser.add_argument(
+                                        \n\n-------------------------------------------------------------------------------
+                                        \nExamples:
+                                        \n\tomnitrace-causal-plot --path workloads/toy
+                                        \n-------------------------------------------------------------------------------\n
+                                        """,
+    )
+    my_parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version="Causal Visualizer (" + VER + ")",
+    )
+
+    my_parser.add_argument(
+        "-V", "--verbose", help="Increase output verbosity", default=0, type=int,
+    )
+
+    my_parser.add_argument(
         "-p",
         "--path",
         metavar="",
         type=str,
         dest="path",
-        default=os.getcwd() + "/workloads",
+        default=os.path.join(os.path.dirname(__file__), "workloads", "toy"),
         required=False,
         help="\t\t\tSpecify path to save workload.\n\t\t\t(DEFAULT: {}/workloads/<name>)".format(
             os.getcwd()
         ),
     )
-    Causal_parser.add_argument("-g", action="store_true", help="\t\tDebug single metric.")
-    Causal_parser.add_argument(
-        "-V", "--verbose", help="Increase output verbosity", action="store_true"
-    )
 
     args = my_parser.parse_args()
-    if args.mode == "Causal":
-        print("hello")
-        causal(args)
+    causal(args)
 
 
 if __name__ == "__main__":

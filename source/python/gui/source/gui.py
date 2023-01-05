@@ -20,6 +20,8 @@
 # THE SOFTWARE.
 ################################################################################
 
+from __future__ import absolute_import
+
 import glob
 import re
 import sys
@@ -41,8 +43,10 @@ from dash.dependencies import Input, Output, State
 from dash import dcc
 from os.path import exists
 
-from source.components.header import get_header
-from source.utils.causal_parser import parseFile, parseUploadedFile, getSpeedupData
+from .header import get_header
+from .parser import parseFile
+from .parser import parseUploadedFile
+from .parser import getSpeedupData
 
 file_timestamp = 0
 data = pd.DataFrame()
@@ -223,8 +227,7 @@ def build_causal_layout(
     input_filters_,
     path_to_dir,
     data_,
-    debug=False,
-    verbose=False,
+    verbose=0,
 ):
     """
     Build gui layout
