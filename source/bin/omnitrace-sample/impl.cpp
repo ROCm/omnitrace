@@ -147,6 +147,8 @@ get_internal_libpath(const std::string& _lib)
 void
 print_updated_environment(std::vector<char*> _env)
 {
+    if(get_env<int>("OMNITRACE_VERBOSE", 0) < 0) return;
+
     std::sort(_env.begin(), _env.end(), [](auto* _lhs, auto* _rhs) {
         if(!_lhs) return false;
         if(!_rhs) return true;

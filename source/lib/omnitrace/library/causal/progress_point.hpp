@@ -60,6 +60,8 @@ struct progress_point : comp::base<progress_point, int64_t>
         return tim::get_clock_real_now<int64_t, std::nano>();
     }
 
+    decltype(auto) load() const { return base_type::load(); }
+
     double get() const noexcept { return load() / static_cast<double>(get_unit()); }
     auto   get_display() const noexcept { return get(); }
 
@@ -75,12 +77,23 @@ struct progress_point : comp::base<progress_point, int64_t>
     auto get_hash() const { return m_hash; }
 
     template <typename ArchiveT>
+    void load(ArchiveT& ar, const unsigned _version)
+    {
+        namespace cereal = ::tim::cereal;
+        auto _name       = std::string{};
+
+        ar(cereal::make_nvp("name", _name));
+        m_hash = tim::hash::add_hash_id(_name);
+
+        base_type::load(ar, _version);
+    }
+
+    template <typename ArchiveT>
     void save(ArchiveT& ar, const unsigned _version) const
     {
         namespace cereal = ::tim::cereal;
-
-        ar(cereal::make_nvp("hash", m_hash),
-           cereal::make_nvp("name", std::string{ tim::get_hash_identifier(m_hash) }));
+        ar(cereal::make_nvp("hash", m_hash));
+        ar(cereal::make_nvp("name", std::string{ tim::get_hash_identifier(m_hash) }));
         base_type::save(ar, _version);
     }
 

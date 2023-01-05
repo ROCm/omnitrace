@@ -52,6 +52,7 @@ set(library_headers
     ${CMAKE_CURRENT_LIST_DIR}/runtime.hpp
     ${CMAKE_CURRENT_LIST_DIR}/sampling.hpp
     ${CMAKE_CURRENT_LIST_DIR}/state.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/static_vector.hpp
     ${CMAKE_CURRENT_LIST_DIR}/thread_data.hpp
     ${CMAKE_CURRENT_LIST_DIR}/thread_info.hpp
     ${CMAKE_CURRENT_LIST_DIR}/timemory.hpp

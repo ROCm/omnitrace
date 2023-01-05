@@ -81,7 +81,9 @@ template <typename ArchiveT>
 void
 selected_entry::serialize(ArchiveT& ar, const unsigned int)
 {
-    ar(tim::cereal::make_nvp("address", address), tim::cereal::make_nvp("info", info));
+    using ::tim::cereal::make_nvp;
+    ar(make_nvp("address", address), make_nvp("symbol_address", symbol_address),
+       make_nvp("info", info));
 }
 
 void
@@ -102,9 +104,6 @@ sample_selection(size_t _nitr = 1000, size_t _wait_ns = 10000);
 void push_progress_point(std::string_view);
 
 void pop_progress_point(std::string_view);
-
-bool
-sample_enabled(int64_t _tid = utility::get_thread_index());
 
 uint16_t
 sample_virtual_speedup(int64_t _tid = utility::get_thread_index());

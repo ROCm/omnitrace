@@ -57,13 +57,114 @@ namespace
 using backtrace_causal = omnitrace::component::backtrace_causal;
 namespace cereal       = ::tim::cereal;
 
-auto                        current_experiment_value = experiment{};
-std::atomic<uint64_t>       current_selected_count{ 0 };
-std::atomic<experiment*>    current_experiment{ nullptr };
-std::vector<experiment>     experiment_history = {};
-std::vector<unwind_stack_t> ignored_stacks     = {};
-int64_t                     global_scaling     = 1;
+auto    current_experiment_value = experiment{};
+auto    current_selected_count   = std::atomic<uint64_t>{ 0 };
+auto    current_experiment       = std::atomic<experiment*>{ nullptr };
+auto    experiment_history       = std::vector<experiment>{};
+auto    ignored_stacks           = std::vector<unwind_stack_t>{};
+int64_t global_scaling           = 1;
 }  // namespace
+
+bool
+experiment::sample::operator==(const sample& _v) const
+{
+    return std::tie(info.line, info.file, info.func, location) ==
+           std::tie(_v.info.line, _v.info.file, _v.info.func, _v.location);
+}
+
+bool
+experiment::sample::operator<(const sample& _v) const
+{
+    return std::tie(info.line, info.file, info.func) <
+           std::tie(_v.info.line, _v.info.file, _v.info.func);
+}
+
+const auto&
+experiment::sample::operator+=(const sample& _v) const
+{
+    if(*this == _v && this != &_v) count += _v.count;
+    return *this;
+}
+
+template <typename ArchiveT>
+void
+experiment::sample::serialize(ArchiveT& ar, const unsigned)
+{
+    namespace cereal = ::tim::cereal;
+    ar(cereal::make_nvp("location", location), cereal::make_nvp("count", count),
+       cereal::make_nvp("info", info));
+}
+
+template <typename ArchiveT>
+void
+experiment::record::serialize(ArchiveT& ar, const unsigned)
+{
+    namespace cereal = ::tim::cereal;
+    ar(cereal::make_nvp("startup_time", startup),
+       cereal::make_nvp("experiments", experiments),
+       cereal::make_nvp("runtime", runtime));
+    auto _samples = std::vector<sample>{};
+    if constexpr(concepts::is_input_archive<ArchiveT>::value)
+    {
+        ar(cereal::make_nvp("samples", _samples));
+        for(auto& itr : _samples)
+            samples.emplace(std::move(itr));
+    }
+    else
+    {
+        for(const auto& itr : samples)
+            _samples.emplace_back(itr);
+        ar(cereal::make_nvp("samples", _samples));
+    }
+}
+
+template <typename ArchiveT>
+void
+experiment::serialize(ArchiveT& ar, const unsigned)
+{
+    namespace cereal = ::tim::cereal;
+
+    ar(cereal::make_nvp("index", index),
+       cereal::make_nvp("virtual_speedup", virtual_speedup),
+       cereal::make_nvp("sampling_period", sampling_period),
+       cereal::make_nvp("start_time", start_time), cereal::make_nvp("end_time", end_time),
+       cereal::make_nvp("experiment_time", experiment_time),
+       cereal::make_nvp("batch_size", batch_size), cereal::make_nvp("duration", duration),
+       cereal::make_nvp("scaling_factor", scaling_factor),
+       cereal::make_nvp("selected", selected),
+       cereal::make_nvp("sample_delay", sample_delay),
+       cereal::make_nvp("delay_scaling", delay_scaling),
+       cereal::make_nvp("total_delay", total_delay),
+       cereal::make_nvp("global_delay", global_delay),
+       cereal::make_nvp("selection", selection));
+
+    if constexpr(concepts::is_input_archive<ArchiveT>::value)
+    {
+        auto _ppts = std::vector<progress_point>{};
+        init_progress.clear();
+        fini_progress.clear();
+        ar(cereal::make_nvp("progress_points", _ppts));
+        for(auto itr : _ppts)
+            fini_progress.emplace(itr.get_hash(), itr);
+    }
+    else
+    {
+        auto _ppts = std::vector<progress_point>{};
+        {
+            auto ppts = fini_progress;
+            for(auto& pitr : ppts)
+                pitr.second.set_hash(pitr.first);
+            for(auto pitr : init_progress)
+                ppts[pitr.first] -= pitr.second;
+            _ppts.reserve(ppts.size());
+            for(auto& pitr : ppts)
+                _ppts.emplace_back(pitr.second);
+        }
+        ar(cereal::make_nvp("progress_points", _ppts));
+    }
+
+    ar(cereal::make_nvp("period_stats", period_stats));
+}
 
 std::string
 experiment::label()
@@ -251,87 +352,102 @@ experiment::save_experiments()
     save_experiments("experiments", _cfg);
 }
 
-void
-experiment::load_experiments(bool _throw_on_error)
+void  // NOLINTNEXTLINE
+experiment::save_experiments(std::string _fname_base, const filename_config_t& _cfg)
 {
-    auto _cfg         = settings::compose_filename_config{};
-    _cfg.subdirectory = "causal";
-    load_experiments("experiments", _cfg, _throw_on_error);
-}
-
-void
-experiment::save_experiments(std::string _fname, const filename_config_t& _cfg)
-{
-    using cache_type = typename unwind_stack_t::cache_type;
-
-    auto        _fname_orig = _fname;
-    const auto& _info0      = thread_info::get(0, InternalTID);
+    const auto& _info0 = thread_info::get(0, InternalTID);
 
     // if(experiment_history.size() > 1)
     //    experiment_history.erase(experiment_history.begin());
 
-    auto _merge_samples = [](auto& _dst, const auto& _src) {
-        for(const auto& sitr : _src)
+    auto current_record    = record{};
+    current_record.startup = _info0->lifetime.first;
+
+    // update experiments
+    {
+        for(auto& itr : experiment_history)
         {
-            if(!_dst.emplace(sitr).second)
-            {
-                auto titr = _dst.find(sitr);
-                titr->count += sitr.count;
-            }
+            if(itr.duration == 0 || itr.experiment_time == 0) continue;
+            current_record.experiments.emplace_back(std::move(itr));
         }
-    };
+        experiment_history.clear();
+    }
+
+    // update runtime value
+    {
+        uint64_t _beg_runtime = std::numeric_limits<uint64_t>::max();
+        uint64_t _end_runtime = std::numeric_limits<uint64_t>::min();
+        for(auto& itr : current_record.experiments)
+        {
+            if(itr.duration == 0) continue;
+            if(itr.experiment_time == 0) continue;
+            _beg_runtime = std::min<uint64_t>(_beg_runtime, itr.start_time);
+            _end_runtime = std::max<uint64_t>(_end_runtime, itr.end_time);
+        }
+        current_record.runtime = (_end_runtime - _beg_runtime);
+    }
 
     // update sample data
     {
-        auto _samples = component::backtrace_causal::get_samples();
-        for(auto& itr : experiment_history)
-            _merge_samples(itr.samples, _samples[itr.index]);
-    }
+        auto _merge_samples = [](auto& _dst, const auto& _src) {
+            for(const auto& sitr : _src)
+            {
+                if(!_dst.emplace(sitr).second)
+                {
+                    auto titr = _dst.find(sitr);
+                    titr->count += sitr.count;
+                }
+            }
+        };
 
-    auto _total_samples = sample_dataset_t{};
-    for(const auto& itr : experiment_history)
-        _merge_samples(_total_samples, itr.samples);
+        auto _samples = component::backtrace_causal::get_samples();
+        for(auto& itr : current_record.experiments)
+            _merge_samples(itr.samples, _samples[itr.index]);
+
+        auto _total_samples = sample_dataset_t{};
+        for(const auto& itr : current_record.experiments)
+            _merge_samples(_total_samples, itr.samples);
+
+        for(const auto& itr : _total_samples)
+        {
+            if(itr.count > 0)
+            {
+                for(const auto& iitr : get_line_info(itr.address, false))
+                {
+                    auto _sample = sample{ itr.count, iitr.name(), iitr };
+                    auto fitr    = current_record.samples.find(_sample);
+                    if(fitr != current_record.samples.end())
+                        *fitr += _sample;
+                    else
+                        current_record.samples.emplace(std::move(_sample));
+                }
+            }
+        }
+    }
 
     save_line_info(_cfg);
 
-    if(experiment_history.empty()) return;
+    if(current_record.experiments.empty()) return;
 
-    auto _saved_experiment_history = std::vector<experiment>{};
-    auto _saved_samples_history    = std::map<uint32_t, sample_dataset_t>{};
-    _fname = tim::settings::compose_output_filename(_fname_orig, "json", _cfg);
     {
-        std::ifstream ifs{ _fname };
-        if(ifs)
+        auto _saved_experiments = load_experiments(_fname_base, _cfg, false);
+        _saved_experiments.emplace_back(current_record);
+        std::stringstream oss{};
         {
-            auto ar = tim::policy::input_archive<cereal::JSONInputArchive>::get(ifs);
+            auto ar =
+                tim::policy::output_archive<cereal::PrettyJSONOutputArchive>::get(oss);
 
             ar->setNextName("omnitrace");
             ar->startNode();
             ar->setNextName("causal");
             ar->startNode();
-            (*ar)(cereal::make_nvp("experiments", _saved_experiment_history));
+            (*ar)(cereal::make_nvp("records", _saved_experiments));
             ar->finishNode();
             ar->finishNode();
         }
-    }
 
-    for(auto itr : experiment_history)
-        _saved_experiment_history.emplace_back(itr);
-
-    std::stringstream oss{};
-    {
-        auto ar = tim::policy::output_archive<cereal::PrettyJSONOutputArchive>::get(oss);
-
-        ar->setNextName("omnitrace");
-        ar->startNode();
-        ar->setNextName("causal");
-        ar->startNode();
-        (*ar)(cereal::make_nvp("experiments", _saved_experiment_history));
-        ar->finishNode();
-        ar->finishNode();
-    }
-    {
-        std::ofstream ofs{};
+        auto _fname = tim::settings::compose_output_filename(_fname_base, "json", _cfg);
+        auto ofs    = std::ofstream{};
         if(tim::filepath::open(ofs, _fname))
         {
             if(get_verbose() >= 0)
@@ -346,8 +462,10 @@ experiment::save_experiments(std::string _fname, const filename_config_t& _cfg)
         }
     }
 
-    _fname = tim::settings::compose_output_filename(_fname_orig, "coz", _cfg);
+    auto _fname = tim::settings::compose_output_filename(_fname_base, "coz", _cfg);
     std::stringstream _existing{};
+
+    // read in existing data
     {
         std::ifstream ifs{ _fname };
         if(ifs)
@@ -367,30 +485,14 @@ experiment::save_experiments(std::string _fname, const filename_config_t& _cfg)
         if(get_verbose() >= 0)
             operation::file_output_message<experiment>{}(
                 _fname, std::string{ "causal_experiments" });
-        auto _cache = cache_type{ true };
+
         ofs << _existing.str();
-        ofs << "startup\ttime=" << _info0->lifetime.first << "\n";
+        ofs << "startup\ttime=" << current_record.startup << "\n";
 
-        uint64_t _beg_runtime = std::numeric_limits<uint64_t>::max();
-        uint64_t _end_runtime = std::numeric_limits<uint64_t>::min();
-        for(auto& itr : experiment_history)
+        for(auto& itr : current_record.experiments)
         {
-            if(itr.duration == 0) continue;
-            if(itr.experiment_time == 0) continue;
-            _beg_runtime = std::min<uint64_t>(_beg_runtime, itr.start_time);
-            _end_runtime = std::max<uint64_t>(_end_runtime, itr.end_time);
-        }
-        uint64_t _runtime = (_end_runtime - _beg_runtime);
-
-        uint64_t _duration_sum = 0;
-        for(auto& itr : experiment_history)
-        {
-            if(itr.duration == 0) continue;
-            OMNITRACE_VERBOSE(0, "\n");
             auto& _selection = itr.selection;
             auto& _line_info = _selection.info;
-
-            _duration_sum += itr.duration;
 
             std::string _name =
                 (_selection.symbol_address > 0) ? _line_info.func : _line_info.name();
@@ -406,10 +508,7 @@ experiment::save_experiments(std::string _fname, const filename_config_t& _cfg)
                 << "\tspeedup=" << std::setprecision(2)
                 << static_cast<double>(itr.virtual_speedup / 100.0)
                 << "\tduration=" << itr.duration << "\tselected-samples=" << itr.selected
-                << "\tduration_sum=" << _duration_sum
-                << "\texperiment_time=" << itr.experiment_time
-                << "\tglobal_delay=" << itr.global_delay
-                << "\ttotal_delay=" << itr.total_delay << "\n";
+                << "\n";
 
             auto ppts = itr.fini_progress;
             for(auto pitr : itr.init_progress)
@@ -430,26 +529,11 @@ experiment::save_experiments(std::string _fname, const filename_config_t& _cfg)
             }
         }
 
-        auto _prediction =
-            100.0 * ((_runtime - _duration_sum) / static_cast<double>(_runtime));
-        ofs << "runtime\ttime=" << _runtime
-            << "\tremainder=" << (_runtime - _duration_sum)
-            << "\tprediction=" << _prediction << "\n";
+        ofs << "runtime\ttime=" << current_record.runtime << "\n";
 
-        // sort the samples alphabetically
-        auto _aggregated_total_samples = std::map<std::string, uint64_t>{};
-        for(const auto& itr : _total_samples)
-        {
-            for(const auto& iitr : get_line_info(itr.address, false))
-                _aggregated_total_samples[iitr.name()] += itr.count;
-        }
-
-        for(const auto& itr : _aggregated_total_samples)
-        {
-            if(itr.second > 0)
-                ofs << "samples\tlocation=" << itr.first << "\tcount=" << itr.second
-                    << "\n";
-        }
+        for(const auto& itr : current_record.samples)
+            ofs << "samples\tlocation=" << itr.location << "\tcount=" << itr.count
+                << "\n";
     }
     else
     {
@@ -458,14 +542,22 @@ experiment::save_experiments(std::string _fname, const filename_config_t& _cfg)
     }
 }
 
-void
+std::vector<experiment::record>
+experiment::load_experiments(bool _throw_on_error)
+{
+    auto _cfg         = settings::compose_filename_config{};
+    _cfg.subdirectory = "causal";
+    return load_experiments("experiments", _cfg, _throw_on_error);
+}
+
+std::vector<experiment::record>
 experiment::load_experiments(std::string _fname, const filename_config_t& _cfg,
                              bool _throw_on_error)
 {
     _fname = tim::settings::compose_input_filename(_fname, "json", _cfg);
 
-    std::ifstream           ifs{};
-    std::vector<experiment> _experiments{};
+    auto ifs   = std::ifstream{};
+    auto _data = std::vector<experiment::record>{};
     if(tim::filepath::open(ifs, _fname))
     {
         auto ar = tim::policy::input_archive<cereal::JSONInputArchive>::get(ifs);
@@ -474,7 +566,7 @@ experiment::load_experiments(std::string _fname, const filename_config_t& _cfg,
         ar->startNode();
         ar->setNextName("causal");
         ar->startNode();
-        (*ar)(cereal::make_nvp("experiments", _experiments));
+        (*ar)(cereal::make_nvp("records", _data));
         ar->finishNode();
         ar->finishNode();
     }
@@ -485,12 +577,9 @@ experiment::load_experiments(std::string _fname, const filename_config_t& _cfg,
             OMNITRACE_THROW("Error opening causal experiments input file: %s",
                             _fname.c_str());
         }
-        return;
     }
 
-    experiment_history.reserve(experiment_history.size() + _experiments.size());
-    for(auto& itr : _experiments)
-        experiment_history.emplace_back(std::move(itr));
+    return _data;
 }
 }  // namespace causal
 }  // namespace omnitrace

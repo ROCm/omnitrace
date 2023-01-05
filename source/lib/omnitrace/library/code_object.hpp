@@ -26,6 +26,7 @@
 #include "library/defines.hpp"
 
 #include <timemory/hash/types.hpp>
+#include <timemory/mpl/concepts.hpp>
 #include <timemory/tpls/cereal/cereal/cereal.hpp>
 #include <timemory/unwind/bfd.hpp>
 #include <timemory/unwind/types.hpp>
@@ -87,6 +88,7 @@ struct line_info
     bool         is_valid() const { return !file.empty() && address > 0; }
     hash_value_t hash() const;
     std::string  name() const;
+                 operator bool() const { return is_valid(); }
 
     friend bool operator<(const line_info& _lhs, const line_info& _rhs)
     {
@@ -127,6 +129,9 @@ line_info::serialize(ArchiveT& ar, const unsigned int)
 {
     ar(tim::cereal::make_nvp("address", address), tim::cereal::make_nvp("file", file),
        tim::cereal::make_nvp("line", line), tim::cereal::make_nvp("func", func));
+    if constexpr(concepts::is_output_archive<ArchiveT>::value)
+        ar(tim::cereal::make_nvp("dfunc", demangle(func)));
+    ar(tim::cereal::make_nvp("inlined", inlined));
 }
 }  // namespace basic
 

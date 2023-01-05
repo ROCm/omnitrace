@@ -53,6 +53,33 @@ struct experiment
     using sample_dataset_t  = std::set<sample_data_t>;
     using period_stats_t    = tim::statistics<int64_t>;
 
+    struct sample
+    {
+        using line_info = code_object::basic::line_info;
+
+        mutable uint64_t count    = 0;
+        std::string      location = {};
+        line_info        info     = {};
+
+        bool        operator==(const sample&) const;
+        bool        operator<(const sample&) const;
+        const auto& operator+=(const sample&) const;
+
+        template <typename ArchiveT>
+        void serialize(ArchiveT& ar, const unsigned);
+    };
+
+    struct record
+    {
+        int64_t                 startup     = 0;
+        uint64_t                runtime     = 0;
+        std::vector<experiment> experiments = {};
+        std::set<sample>        samples     = {};
+
+        template <typename ArchiveT>
+        void serialize(ArchiveT& ar, const unsigned);
+    };
+
     static std::string                     label();
     static std::string                     description();
     static const std::atomic<experiment*>& get_current_experiment();
@@ -77,10 +104,11 @@ struct experiment
     static void          add_selected();
     static experiments_t get_experiments();
 
-    static void save_experiments();
-    static void load_experiments(bool _throw_on_err = true);
-    static void save_experiments(std::string, const filename_config_t&);
-    static void load_experiments(std::string, const filename_config_t&, bool = true);
+    static void                save_experiments();
+    static void                save_experiments(std::string, const filename_config_t&);
+    static std::vector<record> load_experiments(bool _throw_on_err = true);
+    static std::vector<record> load_experiments(std::string, const filename_config_t&,
+                                                bool = true);
 
     bool              running         = false;
     uint16_t          virtual_speedup = 0;   /// 0-100 in multiples of 5
@@ -103,35 +131,5 @@ struct experiment
     sample_dataset_t  samples         = {};   /// data sampled during experiment
     period_stats_t    period_stats    = {};   /// stats for sampling period
 };
-
-template <typename ArchiveT>
-void
-experiment::serialize(ArchiveT& ar, const unsigned)
-{
-    namespace cereal = ::tim::cereal;
-
-    ar(cereal::make_nvp("index", index),
-       cereal::make_nvp("virtual_speedup", virtual_speedup),
-       cereal::make_nvp("sampling_period", sampling_period),
-       cereal::make_nvp("start_time", start_time), cereal::make_nvp("end_time", end_time),
-       cereal::make_nvp("experiment_time", experiment_time),
-       cereal::make_nvp("batch_size", batch_size), cereal::make_nvp("duration", duration),
-       cereal::make_nvp("scaling_factor", scaling_factor),
-       cereal::make_nvp("selected", selected),
-       cereal::make_nvp("sample_delay", sample_delay),
-       cereal::make_nvp("delay_scaling", delay_scaling),
-       cereal::make_nvp("total_delay", total_delay),
-       cereal::make_nvp("global_delay", global_delay),
-       cereal::make_nvp("selection", selection),
-       cereal::make_nvp("init_progress", init_progress),
-       cereal::make_nvp("fini_progress", fini_progress),
-       cereal::make_nvp("period_stats", period_stats),
-       cereal::make_nvp("samples", samples));
-
-    if constexpr(concepts::is_input_archive<ArchiveT>::value)
-    {
-        // selection.name = tim::get_hash_identifier(tim::add_hash_id(_selection));
-    }
-}
 }  // namespace causal
 }  // namespace omnitrace

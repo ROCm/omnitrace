@@ -281,67 +281,6 @@ get_eligible_lines()
     return _v;
 }
 
-template <typename Tp, size_t N>
-struct static_vector
-{
-    TIMEMORY_DEFAULT_OBJECT(static_vector)
-
-    static_vector(size_t _n, Tp _v = {})
-    {
-        m_size.store(_n);
-        m_data.fill(_v);
-    }
-
-    static_vector& operator=(std::initializer_list<Tp>&& _v)
-    {
-        reset();
-        for(auto itr : _v)
-        {
-            OMNITRACE_CONDITIONAL_THROW(m_size == N, "Error! %s has reached its capacity",
-                                        demangle<static_vector>().c_str());
-            m_data[m_size++] = itr;
-        }
-        purge(Tp{});
-        return *this;
-    }
-
-    template <typename Up>
-    auto& emplace_back(Up&& _v)
-    {
-        OMNITRACE_CONDITIONAL_THROW(m_size == N, "Error! %s has reached its capacity",
-                                    demangle<static_vector>().c_str());
-        auto _idx    = m_size++;
-        m_data[_idx] = std::forward<Up>(_v);
-        return m_data[_idx];
-    }
-
-    // reset the size but do not clear data
-    void reset() { m_size.store(0); }
-
-    // purge old values
-    void purge(Tp _v = {})
-    {
-        for(size_t i = m_size; i < N; ++i)
-        {
-            m_data.at(i) = _v;
-        }
-    }
-
-    bool empty() const { return (m_size.load() == 0); }
-    auto size() const { return m_size.load(); }
-    auto begin() { return m_data.begin(); }
-    auto end() { return m_data.begin() + m_size.load(); }
-    auto begin() const { return m_data.begin(); }
-    auto end() const { return m_data.begin() + m_size.load(); }
-
-    decltype(auto) at(size_t _idx) { return m_data.at(_idx); }
-    decltype(auto) at(size_t _idx) const { return m_data.at(_idx); }
-
-private:
-    std::atomic<size_t> m_size = 0;
-    std::array<Tp, N>   m_data = {};
-};
-
 // thread-safe read/write ring-buffer via atomics
 using pc_ring_buffer_t = tim::data_storage::atomic_ring_buffer<uintptr_t>;
 // latest_eligible_pcs is an array of unwind_depth size -> samples will
@@ -484,7 +423,8 @@ sample_selection(size_t _nitr, size_t _wait_ns)
             {
                 auto& pitr = *ritr;
                 // skip lambdas since these provide no relevant info
-                if(demangle(pitr->func).find("operator()") == 0) continue;
+                if(pitr->inlined && demangle(pitr->func).find("operator()") == 0)
+                    continue;
                 OMNITRACE_VERBOSE(-1, "Selected address %s ('%s') for experiment...\n",
                                   as_hex(_sym_addr).c_str(),
                                   demangle(pitr->func).c_str());
@@ -502,13 +442,13 @@ sample_selection(size_t _nitr, size_t _wait_ns)
             {
                 auto& pitr = *ritr;
                 // skip lambdas since these provide no relevant info
-                if(demangle(pitr->func).find("operator()") == 0) continue;
-                OMNITRACE_VERBOSE(
-                    -1,
-                    "Selected address %s (%s) for experiment at index %zu of %zu "
-                    "options from %zu eligible addresses...\n",
-                    as_hex(_addr).c_str(), demangle(pitr->func).c_str(), _idx,
-                    _addresses.size(), _eligible_pcs.size());
+                if(pitr->inlined && demangle(pitr->func).find("operator()") == 0)
+                    continue;
+                OMNITRACE_VERBOSE(0,
+                                  "Selected address %s (%s) for experiment from %zu "
+                                  "eligible addresses...\n",
+                                  as_hex(_addr).c_str(), demangle(pitr->func).c_str(),
+                                  _eligible_pcs.size());
                 return selected_entry{ _addr, 0, *pitr };
             }
         }
@@ -603,15 +543,6 @@ pop_progress_point(std::string_view _name)
             }
         }
     }
-}
-
-bool
-sample_enabled(int64_t _tid)
-{
-    using thread_data_t =
-        thread_data<identity<std::uniform_int_distribution<int>>, experiment>;
-    static auto& _v = thread_data_t::instances(construct_on_init{}, 0, 1);
-    return (_v.at(_tid)(get_engine(_tid)) == 1);
 }
 
 uint16_t
