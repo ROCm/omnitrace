@@ -206,18 +206,14 @@ def get_roofline(path_to_dir, ret_df, verbose):
                     html.Div(
                         className="float-child",
                         children=[
-                            html.H3(
-                                children="Empirical Roofline Analysis (FP32/FP64)"
-                            ),
+                            html.H3(children="Empirical Roofline Analysis (FP32/FP64)"),
                             dcc.Graph(figure=fp32_fig),
                         ],
                     ),
                     html.Div(
                         className="float-child",
                         children=[
-                            html.H3(
-                                children="Empirical Roofline Analysis (FP16/INT8)"
-                            ),
+                            html.H3(children="Empirical Roofline Analysis (FP16/INT8)"),
                             dcc.Graph(figure=ml_combo_fig),
                         ],
                     ),

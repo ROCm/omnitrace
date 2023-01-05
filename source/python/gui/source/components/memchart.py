@@ -544,42 +544,26 @@ def get_memchart(mem_data, base_data):
                                         className="misc-rec",
                                         children=[
                                             Rect(x="1063", y="32"),
-                                            Rect(
-                                                id="a6", x="326.25", y="138.25"
-                                            ),
+                                            Rect(id="a6", x="326.25", y="138.25"),
                                             Rect(id="b6", x="450", y="122"),
                                         ],
                                     ),
                                     G(
                                         className="val-1",
                                         children=[
-                                            Rect(
-                                                x="319", y="32", rx="3", ry="3"
-                                            ),
-                                            Rect(
-                                                x="319", y="82", rx="3", ry="3"
-                                            ),
-                                            Rect(
-                                                x="319", y="132", rx="3", ry="3"
-                                            ),
-                                            Rect(
-                                                x="319", y="182", rx="3", ry="3"
-                                            ),
-                                            Rect(
-                                                x="319", y="231", rx="3", ry="3"
-                                            ),
-                                            Rect(
-                                                x="319", y="282", rx="3", ry="3"
-                                            ),
+                                            Rect(x="319", y="32", rx="3", ry="3"),
+                                            Rect(x="319", y="82", rx="3", ry="3"),
+                                            Rect(x="319", y="132", rx="3", ry="3"),
+                                            Rect(x="319", y="182", rx="3", ry="3"),
+                                            Rect(x="319", y="231", rx="3", ry="3"),
+                                            Rect(x="319", y="282", rx="3", ry="3"),
                                             Rect(
                                                 x="319",
                                                 y="329.5",
                                                 rx="3",
                                                 ry="3",
                                             ),
-                                            Rect(
-                                                x="319", y="382", rx="3", ry="3"
-                                            ),
+                                            Rect(x="319", y="382", rx="3", ry="3"),
                                             Rect(
                                                 x="1367.69",
                                                 y="271",
@@ -699,33 +683,19 @@ def get_memchart(mem_data, base_data):
                                     G(
                                         className="val-2",
                                         children=[
-                                            Rect(
-                                                x="362", y="32", rx="3", ry="3"
-                                            ),
-                                            Rect(
-                                                x="362", y="82", rx="3", ry="3"
-                                            ),
-                                            Rect(
-                                                x="362", y="132", rx="3", ry="3"
-                                            ),
-                                            Rect(
-                                                x="362", y="182", rx="3", ry="3"
-                                            ),
-                                            Rect(
-                                                x="362", y="231", rx="3", ry="3"
-                                            ),
-                                            Rect(
-                                                x="362", y="282", rx="3", ry="3"
-                                            ),
+                                            Rect(x="362", y="32", rx="3", ry="3"),
+                                            Rect(x="362", y="82", rx="3", ry="3"),
+                                            Rect(x="362", y="132", rx="3", ry="3"),
+                                            Rect(x="362", y="182", rx="3", ry="3"),
+                                            Rect(x="362", y="231", rx="3", ry="3"),
+                                            Rect(x="362", y="282", rx="3", ry="3"),
                                             Rect(
                                                 x="362",
                                                 y="329.5",
                                                 rx="3",
                                                 ry="3",
                                             ),
-                                            Rect(
-                                                x="362", y="382", rx="3", ry="3"
-                                            ),
+                                            Rect(x="362", y="382", rx="3", ry="3"),
                                         ],
                                     ),
                                     G(
@@ -856,18 +826,14 @@ def get_memchart(mem_data, base_data):
                                                 rx="3",
                                                 ry="3",
                                             ),
-                                            Rect(
-                                                x="460", y="241", rx="3", ry="3"
-                                            ),
+                                            Rect(x="460", y="241", rx="3", ry="3"),
                                             Rect(
                                                 x="460",
                                                 y="284.54",
                                                 rx="3",
                                                 ry="3",
                                             ),
-                                            Rect(
-                                                x="460", y="314", rx="3", ry="3"
-                                            ),
+                                            Rect(x="460", y="314", rx="3", ry="3"),
                                             Rect(
                                                 x="460",
                                                 y="140.32",

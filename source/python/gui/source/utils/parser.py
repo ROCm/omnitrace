@@ -196,9 +196,7 @@ class CodeTransformer(ast.NodeTransformer):
 
         new_node = ast.Expr(
             value=ast.Call(
-                func=ast.Attribute(
-                    value=node.body, attr="where", ctx=ast.Load()
-                ),
+                func=ast.Attribute(value=node.body, attr="where", ctx=ast.Load()),
                 args=[node.test, node.orelse],
                 keywords=[],
             )
@@ -222,9 +220,7 @@ class CodeTransformer(ast.NodeTransformer):
     def visit_Name(self, node):
         self.generic_visit(node)
         # print("-------------", node.id)
-        if (not node.id.startswith("ammolite__")) and (
-            not node.id in supported_call
-        ):
+        if (not node.id.startswith("ammolite__")) and (not node.id in supported_call):
             new_node = ast.Subscript(
                 value=ast.Name(id="raw_pmc_df", ctx=ast.Load()),
                 slice=ast.Index(value=ast.Str(s=node.id)),
@@ -372,11 +368,7 @@ def build_dfs(archConfigs, filter_metrics):
                             values.append(metric_idx)
                             values.append(key)
                             for k, v in entries.items():
-                                if (
-                                    k != "tips"
-                                    and k != "coll_level"
-                                    and k != "alias"
-                                ):
+                                if k != "tips" and k != "coll_level" and k != "alias":
                                     values.append(v)
 
                             if "alias" in entries.keys():
@@ -445,9 +437,7 @@ def build_metric_value_string(dfs, dfs_type, normal_unit):
             for expr in df.columns:
                 if expr in schema.supported_field:
                     # NB: apply all build-in before building the whole string
-                    df[expr] = df[expr].apply(
-                        update_denom_string, unit=normal_unit
-                    )
+                    df[expr] = df[expr].apply(update_denom_string, unit=normal_unit)
 
                     # NB: there should be a faster way to do with single apply
                     if not df.empty:
@@ -461,9 +451,7 @@ def build_metric_value_string(dfs, dfs_type, normal_unit):
                                 )
 
                 elif expr.lower() == "unit" or expr.lower() == "units":
-                    df[expr] = df[expr].apply(
-                        update_normUnit_string, unit=normal_unit
-                    )
+                    df[expr] = df[expr].apply(update_normUnit_string, unit=normal_unit)
 
         # print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
 
@@ -481,9 +469,7 @@ def eval_metric(dfs, dfs_type, sys_info, soc_spec, raw_pmc_df, debug):
     ammolite__numSE = sys_info.numSE
     ammolite__numCU = sys_info.numCU
     ammolite__numSIMD = sys_info.numSIMD
-    ammolite__numWavesPerCU = (
-        sys_info.maxWavesPerCU
-    )  # todo: check do we still need it
+    ammolite__numWavesPerCU = sys_info.maxWavesPerCU  # todo: check do we still need it
     ammolite__numSQC = sys_info.numSQC
     ammolite__L2Banks = sys_info.L2Banks
     ammolite__freq = sys_info.cur_sclk  # todo: check do we still need it
@@ -523,20 +509,14 @@ def eval_metric(dfs, dfs_type, sys_info, soc_spec, raw_pmc_df, debug):
                                     print("~" * 40 + "\nExpression:")
                                     print(expr, "=", row[expr])
                                     print("Inputs:")
-                                    matched_vars = re.findall(
-                                        "ammolite__\w+", row[expr]
-                                    )
+                                    matched_vars = re.findall("ammolite__\w+", row[expr])
                                     if matched_vars:
                                         for v in matched_vars:
                                             print(
                                                 "Var ",
                                                 v,
                                                 ":",
-                                                eval(
-                                                    compile(
-                                                        v, "<string>", "eval"
-                                                    )
-                                                ),
+                                                eval(compile(v, "<string>", "eval")),
                                             )
                                     matched_cols = re.findall(
                                         "raw_pmc_df\['\w+'\]\['\w+'\]",
@@ -578,9 +558,7 @@ def eval_metric(dfs, dfs_type, sys_info, soc_spec, raw_pmc_df, debug):
                                         print(
                                             "skiping entry. Encounterd a missing counter"
                                         )
-                                        print(
-                                            expr, " has been assigned to None"
-                                        )
+                                        print(expr, " has been assigned to None")
                                         print(np.nan)
                                     except AttributeError as ae:
                                         if (
@@ -597,9 +575,7 @@ def eval_metric(dfs, dfs_type, sys_info, soc_spec, raw_pmc_df, debug):
 
                                 # print("eval_metric", id, expr)
                                 try:
-                                    out = eval(
-                                        compile(row[expr], "<string>", "eval")
-                                    )
+                                    out = eval(compile(row[expr], "<string>", "eval"))
                                     if row.name != "19.1.1" and np.isnan(
                                         out
                                     ):  # Special exception for unique format of Active CUs in mem chart
@@ -668,9 +644,7 @@ def apply_filters(workload, is_gui, debug):
             if kernels:
                 # print("fitlered df:", len(df.index))
                 ret_df = ret_df.loc[
-                    ret_df[schema.pmc_perf_file_prefix]["KernelName"].isin(
-                        kernels
-                    )
+                    ret_df[schema.pmc_perf_file_prefix]["KernelName"].isin(kernels)
                 ]
         else:
             if debug:

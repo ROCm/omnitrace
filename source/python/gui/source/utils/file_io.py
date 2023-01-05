@@ -38,9 +38,7 @@ top_stats_build_in_config = {
     0: {
         "id": 0,
         "title": "Top Stat",
-        "data source": [
-            {"raw_csv_table": {"id": 1, "source": "pmc_kernel_top.csv"}}
-        ],
+        "data source": [{"raw_csv_table": {"id": 1, "source": "pmc_kernel_top.csv"}}],
     }
 }
 
@@ -119,9 +117,7 @@ def create_df_kernel_top_stats(
     """
     # NB:
     #   We even don't have to create pmc_kernel_top.csv explictly
-    df = pd.read_csv(
-        os.path.join(raw_data_dir, schema.pmc_perf_file_prefix + ".csv")
-    )
+    df = pd.read_csv(os.path.join(raw_data_dir, schema.pmc_perf_file_prefix + ".csv"))
 
     # The logic below for filters are the same as in parser.apply_filters(),
     # which can be merged together if need it.
@@ -139,9 +135,7 @@ def create_df_kernel_top_stats(
 
     # First, create a dispatches file used to populate global vars
     dispatch_info = df.loc[:, ["Index", "KernelName", "gpu-id"]]
-    dispatch_info.to_csv(
-        os.path.join(raw_data_dir, "pmc_dispatch_info.csv"), index=False
-    )
+    dispatch_info.to_csv(os.path.join(raw_data_dir, "pmc_dispatch_info.csv"), index=False)
 
     time_stats = pd.concat(
         [df["KernelName"], (df["EndNs"] - df["BeginNs"])],
@@ -174,22 +168,16 @@ def create_df_kernel_top_stats(
     # NB:
     #   Sort by total time as default.
     if sortby == "sum":
-        grouped = grouped.sort_values(
-            by=("Sum" + time_unit_str), ascending=False
-        )
+        grouped = grouped.sort_values(by=("Sum" + time_unit_str), ascending=False)
 
         grouped = grouped.head(num_results)  # Display only the top n results
 
-        grouped.to_csv(
-            os.path.join(raw_data_dir, "pmc_kernel_top.csv"), index=False
-        )
+        grouped.to_csv(os.path.join(raw_data_dir, "pmc_kernel_top.csv"), index=False)
     elif sortby == "kernel":
         grouped = grouped.sort_values("KernelName")
 
         grouped = grouped.head(num_results)  # Display only the top n results
-        grouped.to_csv(
-            os.path.join(raw_data_dir, "pmc_kernel_top.csv"), index=False
-        )
+        grouped.to_csv(os.path.join(raw_data_dir, "pmc_kernel_top.csv"), index=False)
 
 
 def create_df_pmc(raw_data_dir):
@@ -270,6 +258,4 @@ def is_single_panel_config(root_dir):
     elif counter == len(supported_arch.keys()):
         return False
     else:
-        raise Exception(
-            "Found multiple panel config sets but incomplete for all archs!"
-        )
+        raise Exception("Found multiple panel config sets but incomplete for all archs!")

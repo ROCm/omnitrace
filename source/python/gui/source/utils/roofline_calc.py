@@ -143,9 +143,7 @@ def plot_roof(roof_details, roof_data):
             peakMFMA = float(roof_data["MFMAI8Ops"][roof_details["device"]])
         else:
             peakMFMA = float(
-                roof_data["MFMAF{}Flops".format(target_precision)][
-                    roof_details["device"]
-                ]
+                roof_data["MFMAF{}Flops".format(target_precision)][roof_details["device"]]
             )
 
         x1 = float(XMIN)
@@ -187,9 +185,7 @@ def plot_roof(roof_details, roof_data):
 
     # Plot MFMA roof
     if (
-        x1_mfma != -1
-        or roof_details["dtype"] == "FP16"
-        or roof_details["dtype"] == "I8"
+        x1_mfma != -1 or roof_details["dtype"] == "FP16" or roof_details["dtype"] == "I8"
     ):  # assert that mfma has been assigned
         x0_mfma = XMAX
         if x2_mfma < x0_mfma:
@@ -228,9 +224,7 @@ def plot_application(sortType, ret_df, verbose):
         mfma_flops_f64
     ) = (
         lds_data
-    ) = (
-        L1cache_data
-    ) = L2cache_data = hbm_data = calls = totalDuration = avgDuration = 0.0
+    ) = L1cache_data = L2cache_data = hbm_data = calls = totalDuration = avgDuration = 0.0
 
     kernelName = ""
 
@@ -286,9 +280,7 @@ def plot_application(sortType, ret_df, verbose):
                 lds_data
             ) = (
                 L1cache_data
-            ) = (
-                L2cache_data
-            ) = hbm_data = calls = totalDuration = avgDuration = 0.0
+            ) = L2cache_data = hbm_data = calls = totalDuration = avgDuration = 0.0
 
         kernelName = row["KernelName"]
         try:
@@ -371,9 +363,7 @@ def plot_application(sortType, ret_df, verbose):
 
         try:
             lds_data += (
-                (row["SQ_LDS_IDX_ACTIVE"] - row["SQ_LDS_BANK_CONFLICT"])
-                * 4
-                * L2_BANKS
+                (row["SQ_LDS_IDX_ACTIVE"] - row["SQ_LDS_BANK_CONFLICT"]) * 4 * L2_BANKS
             )  # L2_BANKS = 32 (since assuming mi200)
         except KeyError:
             if verbose:
@@ -451,9 +441,7 @@ def plot_application(sortType, ret_df, verbose):
                 lds_data
             ) = (
                 L1cache_data
-            ) = (
-                L2cache_data
-            ) = hbm_data = calls = totalDuration = avgDuration = 0.0
+            ) = L2cache_data = hbm_data = calls = totalDuration = avgDuration = 0.0
 
     myList.sort(key=lambda x: x.totalDuration, reverse=True)
 
@@ -478,9 +466,9 @@ def plot_application(sortType, ret_df, verbose):
         ) if myList[i].hbm_data else intensities["curr_ai_hbm"].append(0)
         # print("cur_ai_hbm", myList[i].total_flops/myList[i].hbm_data) if myList[i].hbm_data else print("null")
         # print()
-        curr_perf.append(
-            myList[i].total_flops / myList[i].avgDuration
-        ) if myList[i].avgDuration else curr_perf.append(0)
+        curr_perf.append(myList[i].total_flops / myList[i].avgDuration) if myList[
+            i
+        ].avgDuration else curr_perf.append(0)
         # print("cur_perf", myList[i].total_flops/myList[i].avgDuration) if myList[i].avgDuration else print("null")
 
         i += 1
