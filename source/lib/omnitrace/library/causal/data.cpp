@@ -425,13 +425,15 @@ sample_selection(size_t _nitr, size_t _wait_ns)
                 // skip lambdas since these provide no relevant info
                 if(pitr->inlined && demangle(pitr->func).find("operator()") == 0)
                     continue;
-                OMNITRACE_VERBOSE(-1, "Selected address %s ('%s') for experiment...\n",
+                if(demangle(pitr->func).find("__restore_rt") == 0) continue;
+                OMNITRACE_VERBOSE(0, "Selected address %s ('%s') for experiment...\n",
                                   as_hex(_sym_addr).c_str(),
                                   demangle(pitr->func).c_str());
                 return selected_entry{ _addr, _sym_addr, *pitr };
             }
             auto& pitr = _eligible_pcs.at(_sym_addr).back();
-            OMNITRACE_VERBOSE(-1, "Selected address %s ('%s') for experiment...\n",
+            if(demangle(pitr->func).find("__restore_rt") == 0) return selected_entry{};
+            OMNITRACE_VERBOSE(0, "Selected address %s ('%s') for experiment...\n",
                               as_hex(_sym_addr).c_str(), demangle(pitr->func).c_str());
             return selected_entry{ _addr, _sym_addr, *pitr };
         }
@@ -444,6 +446,7 @@ sample_selection(size_t _nitr, size_t _wait_ns)
                 // skip lambdas since these provide no relevant info
                 if(pitr->inlined && demangle(pitr->func).find("operator()") == 0)
                     continue;
+                if(demangle(pitr->func).find("__restore_rt") == 0) continue;
                 OMNITRACE_VERBOSE(0,
                                   "Selected address %s (%s) for experiment from %zu "
                                   "eligible addresses...\n",
@@ -543,6 +546,20 @@ pop_progress_point(std::string_view _name)
             }
         }
     }
+}
+
+void
+mark_progress_point(std::string_view _name)
+{
+    if(!config::get_causal_end_to_end() && !experiment::is_active()) return;
+
+    auto  _hash   = tim::add_hash_id(_name);
+    auto& _data   = progress_bundles_t::instance(utility::get_thread_index());
+    auto* _bundle = _data.construct(_hash);
+    _bundle->push();
+    _bundle->mark();
+    _bundle->pop();
+    _data.pop_back();
 }
 
 uint16_t

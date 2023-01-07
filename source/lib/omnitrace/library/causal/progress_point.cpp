@@ -57,20 +57,7 @@ get_progress_allocator(int64_t _tid)
     static auto& _v = thread_data<progress_allocator_t>::instances(construct_on_init{});
     return _v.at(_tid);
 }
-
 }  // namespace
-
-std::string
-progress_point::label()
-{
-    return "progress_point";
-}
-
-std::string
-progress_point::description()
-{
-    return "Tracks progress point latency and throughput for casual profiling";
-}
 
 std::unordered_map<tim::hash_value_t, progress_point>
 get_progress_points()
@@ -85,14 +72,119 @@ get_progress_points()
                 auto& ditr = _data[itr.first];
                 ditr += *itr.second;
                 ditr.set_hash(itr.second->get_hash());
-                ditr.set_laps(ditr.get_laps() + itr.second->get_laps());
-                itr.second->set_laps(0);
                 itr.second->set_value(0);
-                itr.second->set_accum(0);
             }
         }
     }
     return _data;
+}
+
+std::string
+progress_point::label()
+{
+    return "progress_point";
+}
+
+std::string
+progress_point::description()
+{
+    return "Tracks progress point latency and throughput for casual profiling";
+}
+
+void
+progress_point::start()
+{
+    ++m_arrival;
+}
+
+void
+progress_point::stop()
+{
+    ++m_departure;
+}
+
+void
+progress_point::mark()
+{
+    ++m_delta;
+}
+
+void
+progress_point::set_value(int64_t _v)
+{
+    m_delta     = _v;
+    m_arrival   = _v;
+    m_departure = _v;
+}
+
+progress_point&
+progress_point::operator+=(const progress_point& _v)
+{
+    if(this != &_v)
+    {
+        m_delta += _v.m_delta;
+        m_arrival += _v.m_arrival;
+        m_departure += _v.m_departure;
+    }
+    return *this;
+}
+
+progress_point&
+progress_point::operator-=(const progress_point& _v)
+{
+    if(this != &_v)
+    {
+        m_delta -= _v.m_delta;
+        m_arrival -= _v.m_arrival;
+        m_departure -= _v.m_departure;
+    }
+    return *this;
+}
+
+bool
+progress_point::is_throughput_point() const
+{
+    return (m_delta != 0);
+}
+
+bool
+progress_point::is_latency_point() const
+{
+    return (m_arrival != 0 || m_departure != 0);
+}
+
+int64_t
+progress_point::get_delta() const
+{
+    return m_delta;
+}
+
+int64_t
+progress_point::get_arrival() const
+{
+    if(!is_latency_point()) return m_arrival;
+    // when it is a latency point, we want the difference to be greater than zero
+    return (m_arrival >= m_departure) ? (m_arrival + 1) : m_arrival;
+}
+
+int64_t
+progress_point::get_departure() const
+{
+    // if(!is_latency_point()) return m_departure;
+    // return (m_departure <= m_arrival) ? m_departure : (m_departure + 1);
+    return m_departure;
+}
+
+int64_t
+progress_point::get_latency_delta() const
+{
+    return (get_arrival() - get_departure());
+}
+
+int64_t
+progress_point::get_laps() const
+{
+    return std::max(get_delta(), get_latency_delta());
 }
 
 void
@@ -134,7 +226,6 @@ pop_node<causal::progress_point>::operator()(type& _obj, int64_t) const
     if(itr && !(_obj.get_is_invalid() || _obj.get_is_running()))
     {
         *itr += _obj;
-        itr->set_laps(itr->get_laps() + _obj.get_laps());
     }
 }
 }  // namespace operation

@@ -43,9 +43,9 @@ namespace omnitrace
 {
 namespace causal
 {
-struct progress_point : comp::base<progress_point, int64_t>
+struct progress_point : comp::base<progress_point, void>
 {
-    using base_type     = comp::base<progress_point, int64_t>;
+    using base_type     = comp::base<progress_point, void>;
     using value_type    = int64_t;
     using hash_type     = tim::hash_value_t;
     using iterator_type = progress_point*;
@@ -55,51 +55,57 @@ struct progress_point : comp::base<progress_point, int64_t>
 
     TIMEMORY_DEFAULT_OBJECT(progress_point)
 
-    static value_type record() noexcept
-    {
-        return tim::get_clock_real_now<int64_t, std::nano>();
-    }
+    void            start();
+    void            stop();
+    void            mark();
+    void            set_value(int64_t);
+    progress_point& operator+=(const progress_point&);
+    progress_point& operator-=(const progress_point&);
 
-    decltype(auto) load() const { return base_type::load(); }
-
-    double get() const noexcept { return load() / static_cast<double>(get_unit()); }
-    auto   get_display() const noexcept { return get(); }
-
-    void start() noexcept { value = record(); }
-    void stop() noexcept { accum += (value = (record() - value)); }
-
-    void set_iterator(iterator_type _v) { m_iterator = _v; }
-    auto get_iterator() const { return m_iterator; }
-
+    bool is_throughput_point() const;
+    bool is_latency_point() const;
     void print(std::ostream& os) const;
 
-    void set_hash(hash_type _v) { m_hash = _v; }
-    auto get_hash() const { return m_hash; }
+    void    set_hash(hash_type _v) { m_hash = _v; }
+    void    set_iterator(iterator_type _v) { m_iterator = _v; }
+    auto    get_iterator() const { return m_iterator; }
+    auto    get_hash() const { return m_hash; }
+    int64_t get_delta() const;
+    int64_t get_arrival() const;
+    int64_t get_departure() const;
+    int64_t get_latency_delta() const;
+    int64_t get_laps() const;
 
     template <typename ArchiveT>
-    void load(ArchiveT& ar, const unsigned _version)
+    void load(ArchiveT& ar, const unsigned)
     {
         namespace cereal = ::tim::cereal;
         auto _name       = std::string{};
 
         ar(cereal::make_nvp("name", _name));
+        ar(cereal::make_nvp("delta", m_delta));
+        ar(cereal::make_nvp("arrival", m_arrival));
+        ar(cereal::make_nvp("departure", m_departure));
         m_hash = tim::hash::add_hash_id(_name);
-
-        base_type::load(ar, _version);
     }
 
     template <typename ArchiveT>
-    void save(ArchiveT& ar, const unsigned _version) const
+    void save(ArchiveT& ar, const unsigned) const
     {
         namespace cereal = ::tim::cereal;
         ar(cereal::make_nvp("hash", m_hash));
         ar(cereal::make_nvp("name", std::string{ tim::get_hash_identifier(m_hash) }));
-        base_type::save(ar, _version);
+        ar(cereal::make_nvp("delta", m_delta));
+        ar(cereal::make_nvp("arrival", m_arrival));
+        ar(cereal::make_nvp("departure", m_departure));
     }
 
 private:
-    hash_type       m_hash     = 0;
-    progress_point* m_iterator = nullptr;
+    hash_type       m_hash      = 0;
+    int64_t         m_delta     = 0;
+    int64_t         m_arrival   = 0;
+    int64_t         m_departure = 0;
+    progress_point* m_iterator  = nullptr;
 };
 
 std::unordered_map<tim::hash_value_t, progress_point>

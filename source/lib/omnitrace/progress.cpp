@@ -29,12 +29,8 @@
 extern "C" void
 omnitrace_progress_hidden(const char* _name)
 {
-    // stop the last progress point
-    omnitrace::component::category_region<omnitrace::category::causal>::stop<
-        omnitrace::quirk::causal>(std::string_view{});
-
-    // start the new progress point
-    omnitrace::component::category_region<omnitrace::category::causal>::start<
+    // mark the progress point
+    omnitrace::component::category_region<omnitrace::category::causal>::mark<
         omnitrace::quirk::causal>(_name);
 }
 
@@ -43,11 +39,7 @@ omnitrace_annotated_progress_hidden(const char*             _name,
                                     omnitrace_annotation_t* _annotations,
                                     size_t                  _annotation_count)
 {
-    // stop the last progress point
-    omnitrace::component::category_region<omnitrace::category::causal>::stop<
-        omnitrace::quirk::causal>(std::string_view{});
-
-    // start the new annotated progress point
-    omnitrace::component::category_region<omnitrace::category::causal>::start<
+    // mark the progress point
+    omnitrace::component::category_region<omnitrace::category::causal>::mark<
         omnitrace::quirk::causal>(_name, _annotations, _annotation_count);
 }

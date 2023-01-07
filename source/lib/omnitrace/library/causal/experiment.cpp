@@ -254,8 +254,10 @@ experiment::stop()
 
     int64_t _num = 0;
     for(auto fitr : fini_progress)
-        _num = std::max<int64_t>(_num, fitr.second.get_laps() -
-                                           init_progress[fitr.first].get_laps());
+    {
+        auto _pt = fitr.second - init_progress[fitr.first];
+        _num     = std::max<int64_t>(_num, _pt.get_laps());
+    }
 
     if(_num < 5)
         global_scaling *= 2;
@@ -516,15 +518,23 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
 
             for(auto pitr : ppts)
             {
-                if(pitr.second.get_laps() == 0) continue;
+                // if(pitr.second.get_laps() == 0) continue;
                 if(get_causal_end_to_end() && pitr.second.get_laps() > 1) continue;
-                ofs << "throughput-point\tname="
-                    << tim::demangle(tim::get_hash_identifier(pitr.first))
-                    << "\tdelta=" << pitr.second.get_laps() << "\n";
-                // ofs << "latency-point\tname=" << tim::get_hash_identifier(pitr.first)
-                //    << "\tarrivals=" << pitr.second.get_laps()
-                //    << "\tdepartures=" << pitr.second.get_laps()
-                //    << "\tdifference=" << pitr.second.get_accum() << "\n";
+                if(pitr.second.is_throughput_point() && pitr.second.get_delta() != 0)
+                {
+                    ofs << "throughput-point\tname="
+                        << tim::demangle(tim::get_hash_identifier(pitr.first))
+                        << "\tdelta=" << pitr.second.get_delta() << "\n";
+                }
+                if(pitr.second.is_latency_point())
+                {
+                    auto _delta = std::max<int64_t>(pitr.second.get_latency_delta(), 1);
+                    ofs << "latency-point\tname="
+                        << tim::demangle(tim::get_hash_identifier(pitr.first))
+                        << "\tarrivals=" << pitr.second.get_arrival()
+                        << "\tdepartures=" << pitr.second.get_departure()
+                        << "\tdifference=" << _delta << "\n";
+                }
                 if(get_causal_end_to_end()) break;
             }
         }

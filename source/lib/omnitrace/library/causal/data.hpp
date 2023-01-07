@@ -105,6 +105,8 @@ void push_progress_point(std::string_view);
 
 void pop_progress_point(std::string_view);
 
+void mark_progress_point(std::string_view);
+
 uint16_t
 sample_virtual_speedup(int64_t _tid = utility::get_thread_index());
 
