@@ -60,19 +60,14 @@ if(NOT TARGET Kokkos::kokkos)
     find_package(Kokkos REQUIRED)
 endif()
 
-add_library(lulesh-coz INTERFACE)
-if(LULESH_USE_COZ)
-    find_package(coz-profiler REQUIRED)
-    target_compile_definitions(lulesh-coz INTERFACE LULESH_USE_COZ=1)
-    target_link_libraries(lulesh-coz INTERFACE coz::coz)
-endif()
-
 file(GLOB headers ${PROJECT_SOURCE_DIR}/*.h ${PROJECT_SOURCE_DIR}/*.hxx)
 file(GLOB sources ${PROJECT_SOURCE_DIR}/*.cc)
 
-add_executable(lulesh ${sources} ${headers})
-target_include_directories(lulesh PRIVATE ${PROJECT_SOURCE_DIR}/includes)
-target_link_libraries(lulesh PRIVATE Kokkos::kokkos lulesh-mpi lulesh-coz)
+omnitrace_causal_example_executable(
+    "lulesh"
+    SOURCES ${sources} ${headers}
+    LINK_LIBRARIES Kokkos::kokkos lulesh-mpi
+    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}/includes)
 
 if(OMNITRACE_INSTALL_EXAMPLES)
     if(LULESH_BUILD_KOKKOS)
@@ -83,8 +78,4 @@ if(OMNITRACE_INSTALL_EXAMPLES)
         set_target_properties(lulesh PROPERTIES INSTALL_RPATH
                                                 "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
     endif()
-    install(
-        TARGETS lulesh
-        DESTINATION bin
-        COMPONENT omnitrace-examples)
 endif()

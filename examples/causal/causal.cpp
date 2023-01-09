@@ -1,3 +1,4 @@
+#include "causal.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -13,20 +14,6 @@
 #include <sys/times.h>
 #include <thread>
 #include <unistd.h>
-
-#define STR2(x) #x
-#define STR(x)  STR2(x)
-#define LABEL   __FILE__ ":" STR(__LINE__)
-
-#if defined(USE_OMNI) && USE_OMNI > 0
-#    include <omnitrace/user.h>
-#    define CAUSAL_PROGRESS omnitrace_user_progress(LABEL)
-#elif defined(USE_COZ) && USE_COZ > 0
-#    include <coz.h>
-#    define CAUSAL_PROGRESS COZ_PROGRESS_NAMED(LABEL)
-#else
-#    define CAUSAL_PROGRESS
-#endif
 
 using mutex_t     = std::timed_mutex;
 using auto_lock_t = std::unique_lock<mutex_t>;
@@ -105,31 +92,34 @@ main(int argc, char** argv)
     {
         if(i == 0 || i + 1 == nitr || i % (nitr / 5) == 0)
             printf("executing iteration: %i\n", i);
+        //
         auto&& _slow_func = [](auto _nsec, auto _seed, auto _nloop) {
             CPU_SLOW_FUNC(_nsec, _nloop);
             RNG_SLOW_FUNC(_nsec / 5, _seed);
         };
+        //
         auto&& _fast_func = [](auto _nsec, auto _seed, auto _nloop) {
             CPU_FAST_FUNC(_nsec, _nloop);
             RNG_FAST_FUNC(_nsec / 5, _seed);
         };
-        auto _threads = std::array<std::thread, 2>{
-            std::thread{ std::move(_slow_func), slow_val, rseed, 10000 },
-            std::thread{ std::move(_fast_func), fast_val, rseed, 10000 }
-        };
         //
-        for(auto& itr : _threads)
+        CAUSAL_BEGIN("main_iteration");
+        //
+        for(auto& itr : std::array<std::thread, 2>{
+                std::thread{ std::move(_slow_func), slow_val, rseed, 10000 },
+                std::thread{ std::move(_fast_func), fast_val, rseed, 10000 } })
             itr.join();
-
+        //
+        CAUSAL_END("main_iteration");
         CAUSAL_PROGRESS;
     }
     t_ms += clock_type::now() - _t;
     auto rms = (fast_ms.count() / slow_ms.count());
-    printf("slow_func() took %8.3f ms\n", slow_ms.count());
-    printf("fast_func() took %8.3f ms\n", fast_ms.count());
-    printf("total is %12.3f ms\n", t_ms.count());
-    printf("ratio is %12.3f %s\n", 100.0 * rms, "%");
-    printf("rdiff is %12.3f %s\n", 100.0 * (rms - rfrac), "%");
+    printf("slow_func() took %10.3f ms\n", slow_ms.count());
+    printf("fast_func() took %10.3f ms\n", fast_ms.count());
+    printf("total is %18.3f ms\n", t_ms.count());
+    printf("ratio is %18.3f %s\n", 100.0 * rms, "%");
+    printf("rdiff is %18.3f %s\n", 100.0 * (rms - rfrac), "%");
 }
 
 //

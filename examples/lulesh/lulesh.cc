@@ -13,14 +13,7 @@
 
 #include "lulesh.h"
 
-#if defined(LULESH_USE_COZ)
-#    include <coz.h>
-#else
-#    define COZ_BEGIN(...)
-#    define COZ_END(...)
-#    define COZ_PROGRESS
-#    define COZ_PROGRESS_NAMED(...)
-#endif
+#include "causal.hpp"
 
 static Kokkos::View<Real_t*> buffer;
 static size_t                buffer_size;
@@ -55,7 +48,7 @@ TimeIncrement(Domain& domain)
 
     if((domain.dtfixed() <= Real_t(0.0)) && (domain.cycle() != Int_t(0)))
     {
-        COZ_BEGIN("TimeIncrement_Iteration")
+        CAUSAL_BEGIN("TimeIncrement_Iteration")
         Real_t ratio;
         Real_t olddt = domain.deltatime();
 
@@ -96,7 +89,7 @@ TimeIncrement(Domain& domain)
             newdt = domain.dtmax();
         }
         domain.deltatime() = newdt;
-        COZ_END("TimeIncrement_Iteration")
+        CAUSAL_END("TimeIncrement_Iteration")
     }
 
     if((targetdt > domain.deltatime()) &&
@@ -2252,22 +2245,22 @@ main(int argc, char* argv[])
         while((locDom.time() < locDom.stoptime()) && (locDom.cycle() < opts.its))
         {
             Kokkos::Tools::startSection(_time_incrp);
-            COZ_BEGIN("Iteration")
+            CAUSAL_BEGIN("Iteration")
             TimeIncrement(locDom);
             Kokkos::Tools::stopSection(_time_incrp);
 
             Kokkos::Tools::startSection(_leap_frogp);
             LagrangeLeapFrog(locDom);
             Kokkos::Tools::stopSection(_leap_frogp);
-            COZ_END("Iteration")
-            
+            CAUSAL_END("Iteration")
+
             if((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0))
             {
                 printf("cycle = %d, time = %e, dt=%e\n", locDom.cycle(),
                        double(locDom.time()), double(locDom.deltatime()));
             }
             Kokkos::Tools::markEvent("completed_timestep");
-            COZ_PROGRESS
+            CAUSAL_PROGRESS
         }
 
         Kokkos::Tools::destroyProfileSection(_time_incrp);

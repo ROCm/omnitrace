@@ -186,6 +186,13 @@ parse:
         PATHS: '*'
         PATH_SUFFIXES: '*'
         DOC: '*'
+    omnitrace_causal_example_executable:
+      kwargs:
+        TAG: '*'
+        SOURCES: '*'
+        DEFINITIONS: '*'
+        LINK_LIBRARIES: '*'
+        INCLUDE_DIRECTORIES: '*'
   override_spec: {}
   vartags: []
   proptags: []
