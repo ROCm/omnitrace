@@ -827,8 +827,9 @@ get_ext_line_info(std::map<procfs::maps, ext_line_info>* _discarded)
     // and do not process the libraries outside of the binary scope
     auto _filter = [](const procfs::maps& _v) {
         // exclude internal libraries used by omnitrace
-        auto&& _ourlib_scope =
-            std::regex{ "lib(omnitrace[-\\.]|gotcha\\.|unwind\\.so\\.99)" };
+        auto&& _ourlib_scope = std::regex{
+            "lib(omnitrace[-\\.]|dyninst|tbbmalloc|gotcha\\.|unwind\\.so\\.99)"
+        };
         auto&& _binary_scope = std::regex{ config::get_causal_binary_scope() };
         auto&& _path         = _v.pathname;
         return (!_path.empty() && filepath::exists(_path) &&
