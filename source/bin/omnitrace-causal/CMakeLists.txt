@@ -4,9 +4,10 @@
 #
 # ------------------------------------------------------------------------------#
 
-add_executable(omnitrace-causal ${CMAKE_CURRENT_LIST_DIR}/omnitrace-causal.cpp
-                                ${CMAKE_CURRENT_LIST_DIR}/omnitrace-causal.hpp
-                                ${CMAKE_CURRENT_LIST_DIR}/impl.cpp)
+add_executable(
+    omnitrace-causal
+    ${CMAKE_CURRENT_LIST_DIR}/omnitrace-causal.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/omnitrace-causal.hpp ${CMAKE_CURRENT_LIST_DIR}/impl.cpp)
 
 target_compile_definitions(omnitrace-causal PRIVATE TIMEMORY_CMAKE=1)
 target_include_directories(omnitrace-causal PRIVATE ${CMAKE_CURRENT_LIST_DIR})
