@@ -29,6 +29,10 @@ namespace omnitrace
 {
 namespace tracing
 {
+bool debug_push = tim::get_env("OMNITRACE_DEBUG_PUSH", false) || get_debug_env();
+bool debug_pop  = tim::get_env("OMNITRACE_DEBUG_POP", false) || get_debug_env();
+bool debug_user = tim::get_env("OMNITRACE_DEBUG_USER_REGIONS", false) || get_debug_env();
+
 perfetto::TraceConfig&
 get_perfetto_config()
 {

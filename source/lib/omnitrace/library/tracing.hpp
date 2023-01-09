@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "common/defines.h"
 #include "library/common.hpp"
 #include "library/concepts.hpp"
 #include "library/config.hpp"
@@ -55,6 +56,10 @@ namespace tracing
 {
 using interval_data_instances = thread_data<std::vector<bool>>;
 using hash_value_t            = tim::hash_value_t;
+
+extern OMNITRACE_HIDDEN_API bool debug_push;
+extern OMNITRACE_HIDDEN_API bool debug_pop;
+extern OMNITRACE_HIDDEN_API bool debug_user;
 
 perfetto::TraceConfig&
 get_perfetto_config();
@@ -129,21 +134,10 @@ now()
 void
 record_thread_start_time();
 
-namespace
-{
-bool debug_push =  // NOLINT
-    tim::get_env("OMNITRACE_DEBUG_PUSH", false) || get_debug_env();
-bool debug_pop =  // NOLINT
-    tim::get_env("OMNITRACE_DEBUG_POP", false) || get_debug_env();
-bool debug_user =  // NOLINT
-    tim::get_env("OMNITRACE_DEBUG_USER_REGIONS", false) || get_debug_env();
-}  // namespace
-
 inline auto&
 get_interval_data(int64_t _tid = threading::get_id())
 {
-    static auto& _v =
-        interval_data_instances::instances(interval_data_instances::construct_on_init{});
+    static auto& _v = interval_data_instances::instances(construct_on_init{});
     return _v.at(_tid);
 }
 

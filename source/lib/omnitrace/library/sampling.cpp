@@ -271,8 +271,7 @@ get_sampler_init(int64_t _tid = threading::get_id())
 unique_ptr_t<bool>&
 get_sampler_running(int64_t _tid)
 {
-    static auto& _v = sampler_running_instances::instances(
-        sampler_running_instances::construct_on_init{}, false);
+    static auto& _v = sampler_running_instances::instances(construct_on_init{}, false);
     return _v.at(_tid);
 }
 
