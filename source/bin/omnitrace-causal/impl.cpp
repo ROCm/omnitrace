@@ -695,17 +695,6 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         _causal_envs_tmp.reserve(_data.size() * _tmp.size());
         for(auto ditr : _data)
         {
-            // ensure that all backslashes are properly escaped
-            auto _pos = ditr.find('\\');
-            while(_pos != std::string::npos)
-            {
-                if(_pos > 0 && ditr.at(_pos - 1) != '\\') ditr = ditr.insert(_pos, "\\");
-                if(_pos + 2 < ditr.length())
-                    _pos = ditr.find('\\', _pos + 2);
-                else
-                    break;
-            }
-
             if(_quote)
             {
                 ditr.insert(0, "\"");
