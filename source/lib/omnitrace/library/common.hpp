@@ -117,6 +117,7 @@ namespace trait     = ::tim::trait;      // NOLINT
 using ::tim::auto_lock_t;   // NOLINT
 using ::tim::demangle;      // NOLINT
 using ::tim::get_env;       // NOLINT
+using ::tim::set_env;       // NOLINT
 using ::tim::try_demangle;  // NOLINT
 using ::tim::type_mutex;    // NOLINT
 }  // namespace omnitrace

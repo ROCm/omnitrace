@@ -23,37 +23,29 @@
 #pragma once
 
 #include "library/common.hpp"
-#include "library/components/fwd.hpp"
 #include "library/defines.hpp"
+#include "library/timemory.hpp"
 
-#include <timemory/api.hpp>
-#include <timemory/backends/mpi.hpp>
-#include <timemory/backends/process.hpp>
-#include <timemory/backends/threading.hpp>
-#include <timemory/components.hpp>
-#include <timemory/components/gotcha/mpip.hpp>
-#include <timemory/config.hpp>
-#include <timemory/environment.hpp>
-#include <timemory/manager.hpp>
-#include <timemory/mpl.hpp>
-#include <timemory/operations.hpp>
-#include <timemory/runtime.hpp>
-#include <timemory/settings.hpp>
-#include <timemory/storage.hpp>
-#include <timemory/utility/signals.hpp>
-#include <timemory/variadic.hpp>
+#include <cstdint>
+#include <future>
 
 namespace omnitrace
 {
-namespace audit     = ::tim::audit;      // NOLINT
-namespace comp      = ::tim::component;  // NOLINT
-namespace dmp       = ::tim::dmp;        // NOLINT
-namespace operation = ::tim::operation;  // NOLINT
-namespace quirk     = ::tim::quirk;      // NOLINT
-namespace units     = ::tim::units;      // NOLINT
+namespace causal
+{
+struct causal_gotcha : tim::component::base<causal_gotcha, void>
+{
+    TIMEMORY_DEFAULT_OBJECT(causal_gotcha)
 
-using settings = ::tim::settings;  // NOLINT
+    // string id for component
+    static std::string label() { return "causal_gotcha"; }
 
-using ::tim::get_env;  // NOLINT
-using ::tim::set_env;  // NOLINT
+    // generate the gotcha wrappers
+    static void configure();
+    static void shutdown();
+
+    static void start();
+    static void stop();
+};
+}  // namespace causal
 }  // namespace omnitrace

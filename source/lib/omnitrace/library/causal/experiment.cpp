@@ -22,11 +22,11 @@
 
 #include "library/causal/experiment.hpp"
 #include "common/defines.h"
+#include "library/causal/components/backtrace_causal.hpp"
+#include "library/causal/components/progress_point.hpp"
 #include "library/causal/data.hpp"
 #include "library/causal/delay.hpp"
-#include "library/causal/progress_point.hpp"
 #include "library/code_object.hpp"
-#include "library/components/backtrace_causal.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/state.hpp"
@@ -276,9 +276,13 @@ experiment::as_string() const
 {
     std::stringstream _ss{};
     auto _dur = static_cast<double>(experiment_time) / static_cast<double>(units::sec);
+    auto _addr =
+        selection.symbol_address > 0 ? selection.symbol_address : selection.address;
     _ss << std::boolalpha << "virtual speed-up: " << std::setw(3) << virtual_speedup
         << "%, delay: " << std::setw(6) << sample_delay << ", duration: " << std::setw(6)
-        << std::fixed << std::setprecision(3) << _dur << " sec";
+        << std::fixed << std::setprecision(3) << _dur
+        << " sec :: experiment: " << as_hex(_addr) << " ['"
+        << demangle(selection.info.func) << "']";
     return _ss.str();
 }
 

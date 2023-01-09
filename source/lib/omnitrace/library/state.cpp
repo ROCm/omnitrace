@@ -197,6 +197,7 @@ to_string(omnitrace::Mode _v)
     {
         case omnitrace::Mode::Trace: return "Trace";
         case omnitrace::Mode::Sampling: return "Sampling";
+        case omnitrace::Mode::Causal: return "Causal";
         case omnitrace::Mode::Coverage: return "Coverage";
     }
     return {};

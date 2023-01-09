@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "library/causal/unblocking_gotcha.hpp"
+#include "library/causal/components/unblocking_gotcha.hpp"
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
 #include "library/config.hpp"

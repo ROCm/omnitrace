@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include "library/causal/progress_point.hpp"
 #include "library/code_object.hpp"
 #include "library/containers/c_array.hpp"
 #include "library/defines.hpp"

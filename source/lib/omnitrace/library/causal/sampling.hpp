@@ -22,38 +22,41 @@
 
 #pragma once
 
-#include "library/common.hpp"
-#include "library/components/fwd.hpp"
+#include "library/concepts.hpp"
 #include "library/defines.hpp"
 
-#include <timemory/api.hpp>
-#include <timemory/backends/mpi.hpp>
-#include <timemory/backends/process.hpp>
-#include <timemory/backends/threading.hpp>
-#include <timemory/components.hpp>
-#include <timemory/components/gotcha/mpip.hpp>
-#include <timemory/config.hpp>
-#include <timemory/environment.hpp>
-#include <timemory/manager.hpp>
-#include <timemory/mpl.hpp>
-#include <timemory/operations.hpp>
-#include <timemory/runtime.hpp>
-#include <timemory/settings.hpp>
-#include <timemory/storage.hpp>
-#include <timemory/utility/signals.hpp>
-#include <timemory/variadic.hpp>
+#include <cstdint>
+#include <memory>
+#include <set>
+#include <type_traits>
 
 namespace omnitrace
 {
-namespace audit     = ::tim::audit;      // NOLINT
-namespace comp      = ::tim::component;  // NOLINT
-namespace dmp       = ::tim::dmp;        // NOLINT
-namespace operation = ::tim::operation;  // NOLINT
-namespace quirk     = ::tim::quirk;      // NOLINT
-namespace units     = ::tim::units;      // NOLINT
+namespace causal
+{
+namespace sampling
+{
+std::set<int>
+get_signal_types(int64_t _tid);
 
-using settings = ::tim::settings;  // NOLINT
+void
+block_samples();
 
-using ::tim::get_env;  // NOLINT
-using ::tim::set_env;  // NOLINT
+void
+unblock_samples();
+
+void block_signals(std::set<int> = {});
+
+void unblock_signals(std::set<int> = {});
+
+std::set<int>
+setup();
+
+std::set<int>
+shutdown();
+
+void
+post_process();
+}  // namespace sampling
+}  // namespace causal
 }  // namespace omnitrace

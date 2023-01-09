@@ -22,9 +22,9 @@
 
 #pragma once
 
+#include "library/causal/components/backtrace_causal.hpp"
+#include "library/causal/components/progress_point.hpp"
 #include "library/causal/data.hpp"
-#include "library/causal/progress_point.hpp"
-#include "library/components/backtrace_causal.hpp"
 #include "library/containers/c_array.hpp"
 #include "library/defines.hpp"
 #include "library/utility.hpp"

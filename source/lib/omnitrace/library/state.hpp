@@ -61,6 +61,7 @@ enum class Mode : unsigned short
 {
     Trace = 0,
     Sampling,
+    Causal,
     Coverage
 };
 

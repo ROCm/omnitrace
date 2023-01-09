@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "library/components/backtrace_causal.hpp"
+#include "library/causal/components/backtrace_causal.hpp"
 #include "library/causal/data.hpp"
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
@@ -114,24 +114,25 @@ backtrace_causal::sample(int _sig)
 
     if(is_in_use())
     {
-        if(_sig >= get_causal_backtrace_signal()) _last_sample = tracing::now();
+        if(_sig == get_realtime_signal()) _last_sample = tracing::now();
         return;
     }
     scoped_in_use _in_use{};
 
     m_index = causal::experiment::get_index();
     m_stack = get_unw_signal_frame_stack<depth, ignore_depth>();
+
     // the batch handler timer delivers a signal according to the thread CPU
     // clock, ensuring that setting the current selection and processing the
     // delays only happens when the thread is active
-    if(_sig == get_causal_batch_handler_signal())
+    if(_sig == get_cputime_signal())
     {
         if(!causal::experiment::is_active())
             causal::set_current_selection(m_stack);
         else
             causal::delay::process();
     }
-    else if(_sig >= get_causal_backtrace_signal())
+    else if(_sig == get_realtime_signal())
     {
         auto  _this_sample = tracing::now();
         auto& _period_stat = get_delay_statistics()->at(threading::get_id());
@@ -151,6 +152,10 @@ backtrace_causal::sample(int _sig)
                     : (_period_stat.get_mean() * causal::experiment::get_delay_scaling());
             causal::delay::get_local() += _delay;
         }
+    }
+    else
+    {
+        OMNITRACE_THROW("unhandled signal %i\n", _sig);
     }
 }
 

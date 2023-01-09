@@ -1069,11 +1069,13 @@ omnitrace_preload()
     {
         // reset_omnitrace_preload();
         omnitrace_preinit_library();
+        auto _causal = get_env("OMNITRACE_USE_CAUSAL", false);
+        auto _mode   = get_env("OMNITRACE_MODE", (_causal) ? "causal" : "sampling");
         OMNITRACE_DL_LOG(1, "[%s] invoking %s(%s)\n", __FUNCTION__, "omnitrace_init",
-                         ::omnitrace::join(::omnitrace::QuoteStrings{}, ", ", "sampling",
-                                           false, "main")
+                         ::omnitrace::join(::omnitrace::QuoteStrings{}, ", ", _mode,
+                                           false, "omnitrace")
                              .c_str());
-        omnitrace_init("sampling", false, "omnitrace");
+        omnitrace_init(_mode.c_str(), false, "omnitrace");
         omnitrace_init_tooling();
     }
 

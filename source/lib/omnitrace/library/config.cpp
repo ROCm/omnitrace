@@ -1001,6 +1001,9 @@ configure_mode_settings()
         }
     };
 
+    auto _use_causal = get_setting_value<bool>("OMNITRACE_USE_CAUSAL");
+    if(_use_causal.first && _use_causal.second) set_env("OMNITRACE_MODE", "causal", 1);
+
     if(get_mode() == Mode::Coverage)
     {
         set_default_setting_value("OMNITRACE_USE_CODE_COVERAGE", true);
@@ -1017,6 +1020,15 @@ configure_mode_settings()
         _set("OMNITRACE_USE_PROCESS_SAMPLING", false);
         _set("OMNITRACE_CRITICAL_TRACE", false);
     }
+    else if(get_mode() == Mode::Causal)
+    {
+        _set("OMNITRACE_USE_CAUSAL", true);
+        _set("OMNITRACE_USE_PERFETTO", false);
+        _set("OMNITRACE_USE_TIMEMORY", false);
+        _set("OMNITRACE_CRITICAL_TRACE", false);
+        _set("OMNITRACE_USE_SAMPLING", false);
+        _set("OMNITRACE_USE_PROCESS_SAMPLING", false);
+    }
     else if(get_mode() == Mode::Sampling)
     {
         set_default_setting_value("OMNITRACE_USE_SAMPLING", true);
@@ -1026,8 +1038,10 @@ configure_mode_settings()
 
     if(gpu::device_count() == 0)
     {
+#if OMNITRACE_HIP_VERSION > 0
         OMNITRACE_BASIC_VERBOSE(1, "No HIP devices were found: disabling roctracer, "
                                    "rocprofiler, and rocm_smi...\n");
+#endif
         _set("OMNITRACE_USE_ROCPROFILER", false);
         _set("OMNITRACE_USE_ROCTRACER", false);
         _set("OMNITRACE_USE_ROCM_SMI", false);
@@ -1170,6 +1184,7 @@ configure_disabled_settings()
 
     _handle_use_option("OMNITRACE_USE_SAMPLING", "sampling");
     _handle_use_option("OMNITRACE_USE_PROCESS_SAMPLING", "process_sampling");
+    _handle_use_option("OMNITRACE_USE_CAUSAL", "causal");
     _handle_use_option("OMNITRACE_USE_KOKKOSP", "kokkos");
     _handle_use_option("OMNITRACE_USE_PERFETTO", "perfetto");
     _handle_use_option("OMNITRACE_USE_TIMEMORY", "timemory");
@@ -1502,15 +1517,18 @@ get_mode()
     if(!settings_are_configured())
     {
         auto _mode = tim::get_env_choice<std::string>(
-            "OMNITRACE_MODE", "trace", { "trace", "sampling", "coverage" });
+            "OMNITRACE_MODE", "trace", { "trace", "sampling", "causal", "coverage" });
         if(_mode == "sampling")
             return Mode::Sampling;
+        else if(_mode == "causal")
+            return Mode::Causal;
         else if(_mode == "coverage")
             return Mode::Coverage;
         return Mode::Trace;
     }
     static auto _m =
         std::unordered_map<std::string_view, Mode>{ { "trace", Mode::Trace },
+                                                    { "causal", Mode::Causal },
                                                     { "sampling", Mode::Sampling },
                                                     { "coverage", Mode::Coverage } };
     static auto _v = get_config()->find("OMNITRACE_MODE");

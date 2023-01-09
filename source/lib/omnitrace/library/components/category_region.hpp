@@ -58,6 +58,17 @@ namespace omnitrace
 {
 namespace component
 {
+// define this outside of category region functions so that the
+// static thread_local is global instead of per-template instantiation
+inline ThreadState
+get_thread_status()
+{
+    static thread_local auto _thread_init_once = std::once_flag{};
+    std::call_once(_thread_init_once, tracing::thread_init);
+
+    return get_thread_state();
+}
+
 // timemory component which calls omnitrace functions
 // (used in gotcha wrappers)
 template <typename CategoryT>
@@ -113,12 +124,7 @@ category_region<CategoryT>::start(std::string_view name, Args&&... args)
     // tooling one time and as it exits set it to active and return true.
     if(get_state() != State::Active && !omnitrace_init_tooling_hidden()) return;
 
-    tracing::thread_init();
-
-    // thread initialization may have disabled the thread
-    if(get_thread_state() == ThreadState::Disabled) return;
-
-    tracing::thread_init_sampling();
+    if(get_thread_status() == ThreadState::Disabled) return;
 
     constexpr bool _ct_use_timemory =
         (sizeof...(OptsT) == 0 ||

@@ -25,16 +25,13 @@
 #include "library/common.hpp"
 #include "library/components/fwd.hpp"
 #include "library/defines.hpp"
-#include "timemory/components/base/declaration.hpp"
-#include "timemory/components/timing/wall_clock.hpp"
-#include "timemory/mpl/type_traits.hpp"
-#include "timemory/utility/types.hpp"
 
 #include <timemory/components/base.hpp>
 #include <timemory/hash/types.hpp>
-#include <timemory/macros/language.hpp>
 #include <timemory/mpl/concepts.hpp>
+#include <timemory/mpl/type_traits.hpp>
 #include <timemory/tpls/cereal/cereal.hpp>
+#include <timemory/utility/types.hpp>
 
 #include <cstdint>
 #include <unordered_map>

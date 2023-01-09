@@ -23,8 +23,7 @@
 #pragma once
 
 #include "api.hpp"
-#include "library/causal/blocking_gotcha.hpp"
-#include "library/causal/unblocking_gotcha.hpp"
+#include "library/causal/components/causal_gotcha.hpp"
 #include "library/common.hpp"
 #include "library/components/exit_gotcha.hpp"
 #include "library/components/fork_gotcha.hpp"
@@ -54,8 +53,7 @@ using preinit_bundle_t =
 
 // started during init phase
 using init_bundle_t =
-    tim::lightweight_tuple<causal::blocking_gotcha_t, causal::unblocking_gotcha_t,
-                           pthread_gotcha, component::numa_gotcha>;
+    tim::lightweight_tuple<causal::causal_gotcha, pthread_gotcha, component::numa_gotcha>;
 
 // bundle of components around omnitrace_init and omnitrace_finalize
 using main_bundle_t =
@@ -85,12 +83,6 @@ get_realtime_signal();
 
 int
 get_cputime_signal();
-
-int
-get_causal_backtrace_signal();
-
-int
-get_causal_batch_handler_signal();
 
 std::set<int>
 get_sampling_signals(int64_t _tid = 0);

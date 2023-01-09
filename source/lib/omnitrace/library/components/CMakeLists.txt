@@ -1,7 +1,6 @@
 #
 set(component_sources
     ${CMAKE_CURRENT_LIST_DIR}/backtrace.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/backtrace_causal.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backtrace_metrics.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backtrace_timestamp.cpp
     ${CMAKE_CURRENT_LIST_DIR}/comm_data.cpp
@@ -17,7 +16,6 @@ set(component_sources
 set(component_headers
     ${CMAKE_CURRENT_LIST_DIR}/fwd.hpp
     ${CMAKE_CURRENT_LIST_DIR}/backtrace.hpp
-    ${CMAKE_CURRENT_LIST_DIR}/backtrace_causal.hpp
     ${CMAKE_CURRENT_LIST_DIR}/backtrace_metrics.hpp
     ${CMAKE_CURRENT_LIST_DIR}/backtrace_timestamp.hpp
     ${CMAKE_CURRENT_LIST_DIR}/category_region.hpp

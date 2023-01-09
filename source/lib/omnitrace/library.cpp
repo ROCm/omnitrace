@@ -28,6 +28,7 @@
 #include "common/setup.hpp"
 #include "library/causal/data.hpp"
 #include "library/causal/experiment.hpp"
+#include "library/causal/sampling.hpp"
 #include "library/components/exit_gotcha.hpp"
 #include "library/components/fork_gotcha.hpp"
 #include "library/components/fwd.hpp"
@@ -446,13 +447,21 @@ omnitrace_init_tooling_hidden()
             OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
             process_sampler::setup();
         }
-        if(get_use_sampling())
+        if(get_use_causal())
         {
-            OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
-            sampling::setup();
+            {
+                OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
+                causal::sampling::setup();
+            }
+            push_enable_sampling_on_child_threads(get_use_causal());
+            sampling::unblock_signals();
         }
-        if(get_use_sampling())
+        else if(get_use_sampling())
         {
+            {
+                OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
+                sampling::setup();
+            }
             push_enable_sampling_on_child_threads(get_use_sampling());
             sampling::unblock_signals();
         }
@@ -822,6 +831,12 @@ omnitrace_finalize_hidden(void)
         rocprofiler::rocm_cleanup();
     }
 
+    if(get_use_causal())
+    {
+        OMNITRACE_VERBOSE_F(1, "Shutting down causal sampling...\n");
+        causal::sampling::shutdown();
+    }
+
     if(get_use_sampling())
     {
         OMNITRACE_VERBOSE_F(1, "Shutting down sampling...\n");
@@ -864,6 +879,12 @@ omnitrace_finalize_hidden(void)
     {
         OMNITRACE_VERBOSE_F(1, "Post-processing the sampling backtraces...\n");
         sampling::post_process();
+    }
+
+    if(get_use_causal())
+    {
+        OMNITRACE_VERBOSE_F(1, "Post-processing the causal samples...\n");
+        causal::sampling::post_process();
     }
 
     if(get_use_causal())

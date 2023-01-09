@@ -24,7 +24,6 @@
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
 #include "library/code_object.hpp"
-#include "library/components/backtrace_causal.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/ptl.hpp"
@@ -278,6 +277,9 @@ compute_eligible_lines()
             }
         }
     }
+
+    OMNITRACE_PRINT("[causal] eligible addresses: %zu, eligible address ranges: %zu\n",
+                    _v.size(), get_eligible_address_ranges().size());
     return _v;
 }
 
@@ -433,15 +435,10 @@ sample_selection(size_t _nitr, size_t _wait_ns)
                 if(pitr->inlined && demangle(pitr->func).find("operator()") == 0)
                     continue;
                 if(demangle(pitr->func).find("__restore_rt") == 0) continue;
-                OMNITRACE_VERBOSE(0, "Selected address %s ('%s') for experiment...\n",
-                                  as_hex(_sym_addr).c_str(),
-                                  demangle(pitr->func).c_str());
                 return selected_entry{ _addr, _sym_addr, *pitr };
             }
             auto& pitr = _eligible_pcs.at(_sym_addr).back();
             if(demangle(pitr->func).find("__restore_rt") == 0) return selected_entry{};
-            OMNITRACE_VERBOSE(0, "Selected address %s ('%s') for experiment...\n",
-                              as_hex(_sym_addr).c_str(), demangle(pitr->func).c_str());
             return selected_entry{ _addr, _sym_addr, *pitr };
         }
         else if(get_causal_mode() == CausalMode::Line)
@@ -454,11 +451,6 @@ sample_selection(size_t _nitr, size_t _wait_ns)
                 if(pitr->inlined && demangle(pitr->func).find("operator()") == 0)
                     continue;
                 if(demangle(pitr->func).find("__restore_rt") == 0) continue;
-                OMNITRACE_VERBOSE(0,
-                                  "Selected address %s (%s) for experiment from %zu "
-                                  "eligible addresses...\n",
-                                  as_hex(_addr).c_str(), demangle(pitr->func).c_str(),
-                                  _eligible_pcs.size());
                 return selected_entry{ _addr, 0, *pitr };
             }
         }

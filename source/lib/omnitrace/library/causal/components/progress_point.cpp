@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "library/causal/progress_point.hpp"
+#include "library/causal/components/progress_point.hpp"
 #include "library/causal/experiment.hpp"
 #include "library/common.hpp"
 #include "library/concepts.hpp"

@@ -20,59 +20,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "library/components/pthread_gotcha.hpp"
-#include "library/components/pthread_create_gotcha.hpp"
-#include "library/components/pthread_mutex_gotcha.hpp"
+#include "library/causal/components/causal_gotcha.hpp"
+#include "library/causal/components/blocking_gotcha.hpp"
+#include "library/causal/components/unblocking_gotcha.hpp"
 #include "library/config.hpp"
-#include "library/debug.hpp"
-#include "library/runtime.hpp"
-#include "library/sampling.hpp"
-#include "library/thread_data.hpp"
-#include "library/utility.hpp"
 
 #include <timemory/backends/threading.hpp>
 #include <timemory/utility/macros.hpp>
 #include <timemory/utility/types.hpp>
 
-#include <pthread.h>
-
 #include <array>
 #include <vector>
 
-namespace tim
-{
-namespace operation
-{
-template <>
-struct stop<omnitrace::component::pthread_create_gotcha_t>
-{
-    using type = omnitrace::component::pthread_create_gotcha_t;
-
-    TIMEMORY_DEFAULT_OBJECT(stop)
-
-    template <typename... Args>
-    explicit stop(type&, Args&&...)
-    {}
-
-    template <typename... Args>
-    void operator()(type&, Args&&...)
-    {}
-};
-}  // namespace operation
-}  // namespace tim
-
 namespace omnitrace
+{
+namespace causal
 {
 namespace
 {
-using bundle_t = tim::lightweight_tuple<component::pthread_create_gotcha_t,
-                                        component::pthread_mutex_gotcha_t>;
+using bundle_t = tim::lightweight_tuple<blocking_gotcha_t, unblocking_gotcha_t>;
 
 auto&
 get_bundle()
 {
     static auto _v = std::unique_ptr<bundle_t>{};
-    if(!_v) _v = std::make_unique<bundle_t>("pthread_gotcha");
+    if(!_v) _v = std::make_unique<bundle_t>("causal_gotcha");
     return _v;
 }
 
@@ -82,37 +54,38 @@ bool is_configured = false;
 //--------------------------------------------------------------------------------------//
 
 void
-pthread_gotcha::configure()
+causal_gotcha::configure()
 {
     if(!is_configured)
     {
-        ::omnitrace::component::pthread_create_gotcha::configure();
-        ::omnitrace::component::pthread_mutex_gotcha::configure();
+        blocking_gotcha::configure();
+        unblocking_gotcha::configure();
         is_configured = true;
     }
 }
 
 void
-pthread_gotcha::shutdown()
+causal_gotcha::shutdown()
 {
     if(is_configured)
     {
-        ::omnitrace::component::pthread_mutex_gotcha::shutdown();
-        // ::omnitrace::component::pthread_create_gotcha::shutdown();
+        blocking_gotcha::shutdown();
+        unblocking_gotcha::shutdown();
         is_configured = false;
     }
 }
 
 void
-pthread_gotcha::start()
+causal_gotcha::start()
 {
     configure();
     get_bundle()->start();
 }
 
 void
-pthread_gotcha::stop()
+causal_gotcha::stop()
 {
     get_bundle()->stop();
 }
+}  // namespace causal
 }  // namespace omnitrace

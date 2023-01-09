@@ -197,7 +197,7 @@ diagnose_status(pid_t _pid, int _status)
     if(!_normal_exit)
     {
         if(_ec == 0) _ec = EXIT_FAILURE;
-        if(_verbose >= 5)
+        if(_verbose >= 0)
         {
             TIMEMORY_PRINTF_FATAL(
                 stderr, "process %i terminated abnormally. exit code: %i\n", _pid, _ec);
@@ -206,7 +206,7 @@ diagnose_status(pid_t _pid, int _status)
 
     if(_stopped)
     {
-        if(_verbose >= 5)
+        if(_verbose >= 0)
         {
             TIMEMORY_PRINTF_FATAL(stderr,
                                   "process %i stopped with signal %i. exit code: %i\n",
@@ -216,7 +216,7 @@ diagnose_status(pid_t _pid, int _status)
 
     if(_core_dump)
     {
-        if(_verbose >= 5)
+        if(_verbose >= 0)
         {
             TIMEMORY_PRINTF_FATAL(
                 stderr, "process %i terminated and produced a core dump. exit code: %i\n",
@@ -226,7 +226,7 @@ diagnose_status(pid_t _pid, int _status)
 
     if(_unhandled_signal)
     {
-        if(_verbose >= 5)
+        if(_verbose >= 0)
         {
             TIMEMORY_PRINTF_FATAL(stderr,
                                   "process %i terminated because it received a signal "
@@ -237,7 +237,7 @@ diagnose_status(pid_t _pid, int _status)
 
     if(!_normal_exit && _exit_status > 0)
     {
-        if(_verbose >= 5)
+        if(_verbose >= 0)
         {
             if(_exit_status == 127)
             {
@@ -294,8 +294,9 @@ get_initial_environment()
     update_env(_env, "LD_PRELOAD",
                get_realpath(get_internal_libpath("libomnitrace-dl.so")), true);
 
-    update_env(_env, "OMNITRACE_USE_SAMPLING", true);
+    update_env(_env, "OMNITRACE_MODE", "causal");
     update_env(_env, "OMNITRACE_USE_CAUSAL", true);
+    update_env(_env, "OMNITRACE_USE_SAMPLING", false);
     update_env(_env, "OMNITRACE_USE_PERFETTO", false);
     update_env(_env, "OMNITRACE_USE_TIMEMORY", false);
     update_env(_env, "OMNITRACE_USE_PROCESS_SAMPLING", false);
@@ -730,8 +731,8 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
 
     if(_generate_configs)
     {
-        auto _is_omni_env = [](std::string_view itr) {
-            return (itr.find("OMNITRACE") == 0 &&
+        auto _is_omni_cfg = [](std::string_view itr) {
+            return (itr.find("OMNITRACE") == 0 && itr.find("OMNITRACE_MODE") != 0 &&
                     itr.find("OMNITRACE_CONFIG_FILE") != 0 &&
                     itr.find('=') < itr.length());
         };
@@ -739,7 +740,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         auto _omni_env = std::map<std::string, std::string>{};
         for(auto* itr : _env)
         {
-            if(_is_omni_env(itr))
+            if(_is_omni_cfg(itr))
             {
                 auto _env_var = std::string{ itr };
                 auto _pos     = _env_var.find('=');
@@ -749,7 +750,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
             }
         }
 
-        _env.erase(std::remove_if(_env.begin(), _env.end(), _is_omni_env), _env.end());
+        _env.erase(std::remove_if(_env.begin(), _env.end(), _is_omni_cfg), _env.end());
 
         _causal_envs_tmp = std::move(_causal_envs);
         _causal_envs.clear();
@@ -791,6 +792,9 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
             _causal_envs.emplace_back(_cfg);
         }
     }
+
+    //_causal_envs.front().emplace(std::string_view{ "OMNITRACE_CAUSAL_FILE_CLOBBER" },
+    //                             std::string{ "true" });
 
     return _outv;
 }

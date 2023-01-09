@@ -101,27 +101,18 @@ get_cputime_signal()
     return SIGPROF;
 }
 
-int
-get_causal_batch_handler_signal()
-{
-    return SIGRTMIN + config::get_sampling_rtoffset() + 1;
-}
-
-int
-get_causal_backtrace_signal()
-{
-    return SIGRTMIN + config::get_sampling_rtoffset() + 2;
-}
-
 std::set<int> get_sampling_signals(int64_t)
 {
     auto _v = std::set<int>{};
-    if(config::get_use_sampling_cputime()) _v.emplace(get_cputime_signal());
-    if(config::get_use_sampling_realtime()) _v.emplace(get_realtime_signal());
     if(config::get_use_causal())
     {
-        _v.emplace(get_causal_batch_handler_signal());
-        _v.emplace(get_causal_backtrace_signal());
+        _v.emplace(get_cputime_signal());
+        _v.emplace(get_realtime_signal());
+    }
+    else
+    {
+        if(config::get_use_sampling_cputime()) _v.emplace(get_cputime_signal());
+        if(config::get_use_sampling_realtime()) _v.emplace(get_realtime_signal());
     }
 
     return _v;

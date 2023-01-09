@@ -23,6 +23,7 @@
 #pragma once
 
 #include "common/defines.h"
+#include "library/causal/sampling.hpp"
 #include "library/common.hpp"
 #include "library/concepts.hpp"
 #include "library/config.hpp"
@@ -31,6 +32,7 @@
 #include "library/perfetto.hpp"
 #include "library/runtime.hpp"
 #include "library/sampling.hpp"
+#include "library/state.hpp"
 #include "library/thread_data.hpp"
 #include "library/timemory.hpp"
 #include "library/tracing/annotation.hpp"
@@ -57,15 +59,40 @@ namespace tracing
 using interval_data_instances = thread_data<std::vector<bool>>;
 using hash_value_t            = tim::hash_value_t;
 
+//
+//  declarations
+//
 extern OMNITRACE_HIDDEN_API bool debug_push;
 extern OMNITRACE_HIDDEN_API bool debug_pop;
 extern OMNITRACE_HIDDEN_API bool debug_user;
+
+std::unordered_map<hash_value_t, std::string>&
+get_perfetto_track_uuids();
 
 perfetto::TraceConfig&
 get_perfetto_config();
 
 std::unique_ptr<perfetto::TracingSession>&
 get_perfetto_session();
+
+tim::hash_map_ptr_t&
+get_timemory_hash_ids(int64_t _tid = threading::get_id());
+
+tim::hash_alias_ptr_t&
+get_timemory_hash_aliases(int64_t _tid = threading::get_id());
+
+std::vector<std::function<void()>>&
+get_finalization_functions();
+
+void
+record_thread_start_time();
+
+void
+thread_init();
+
+//
+//  definitions
+//
 
 template <typename CategoryT, typename... Args>
 auto
@@ -75,9 +102,6 @@ get_perfetto_category_uuid(Args&&... _args)
         tim::hash::get_hash_id(JOIN('_', "omnitrace", trait::name<CategoryT>::value)),
         std::forward<Args>(_args)...);
 }
-
-std::unordered_map<hash_value_t, std::string>&
-get_perfetto_track_uuids();
 
 template <typename CategoryT, typename TrackT = ::perfetto::Track, typename FuncT,
           typename... Args>
@@ -115,24 +139,12 @@ get_perfetto_track(CategoryT, FuncT&& _desc_generator, Args&&... _args)
     return TrackT(_uuid);
 }
 
-std::vector<std::function<void()>>&
-get_finalization_functions();
-
-tim::hash_map_ptr_t&
-get_timemory_hash_ids(int64_t _tid = threading::get_id());
-
-tim::hash_alias_ptr_t&
-get_timemory_hash_aliases(int64_t _tid = threading::get_id());
-
 template <typename Tp = uint64_t>
 OMNITRACE_INLINE auto
 now()
 {
     return ::tim::get_clock_real_now<Tp, std::nano>();
 }
-
-void
-record_thread_start_time();
 
 inline auto&
 get_interval_data(int64_t _tid = threading::get_id())
@@ -159,54 +171,6 @@ pop_count()
 {
     static std::atomic<size_t> _v{ 0 };
     return _v;
-}
-
-inline void
-thread_init()
-{
-    static thread_local auto _dtor = scope::destructor{ []() {
-        if(get_state() != State::Finalized)
-        {
-            if(get_use_sampling()) sampling::shutdown();
-            auto& _thr_bundle = thread_data<thread_bundle_t>::instance();
-            if(_thr_bundle && _thr_bundle->get<comp::wall_clock>() &&
-               _thr_bundle->get<comp::wall_clock>()->get_is_running())
-                _thr_bundle->stop();
-        }
-    } };
-    static thread_local auto _thread_setup = []() {
-        if(threading::get_id() > 0)
-            threading::set_thread_name(JOIN(" ", "Thread", threading::get_id()).c_str());
-        thread_data<thread_bundle_t>::construct(JOIN('/', "omnitrace/process",
-                                                     process::get_id(), "thread",
-                                                     threading::get_id()),
-                                                quirk::config<quirk::auto_start>{});
-        get_interval_data()->reserve(512);
-        // save the hash maps
-        get_timemory_hash_ids()     = tim::get_hash_ids();
-        get_timemory_hash_aliases() = tim::get_hash_aliases();
-        record_thread_start_time();
-        return true;
-    }();
-    (void) _thread_setup;
-    (void) _dtor;
-}
-
-inline void
-thread_init_sampling()
-{
-    static thread_local auto _v = []() {
-        auto _idx = utility::get_thread_index();
-        // the main thread will initialize sampling when it initializes the tooling
-        if(_idx > 0)
-        {
-            auto _use_sampling = get_use_sampling();
-            if(_use_sampling) sampling::setup();
-            return _use_sampling;
-        }
-        return false;
-    }();
-    (void) _v;
 }
 
 template <typename CategoryT, typename... Args>
@@ -358,6 +322,5 @@ pop_perfetto_track(CategoryT, const char*, perfetto::Track _track, uint64_t _ts,
     TRACE_EVENT_END(trait::name<CategoryT>::value, _track, _ts,
                     std::forward<Args>(args)...);
 }
-
 }  // namespace tracing
 }  // namespace omnitrace
