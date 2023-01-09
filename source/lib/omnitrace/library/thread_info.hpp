@@ -66,6 +66,8 @@ struct thread_index_data
     int64_t sequent_value  = tim::threading::get_id();
 };
 
+int64_t grow_data(int64_t);
+
 struct thread_info
 {
     using index_data_t    = std::optional<thread_index_data>;

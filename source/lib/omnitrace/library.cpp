@@ -34,6 +34,7 @@
 #include "library/components/mpi_gotcha.hpp"
 #include "library/components/pthread_gotcha.hpp"
 #include "library/components/rocprofiler.hpp"
+#include "library/concepts.hpp"
 #include "library/config.hpp"
 #include "library/coverage.hpp"
 #include "library/critical_trace.hpp"
@@ -54,6 +55,7 @@
 #include "library/utility.hpp"
 #include "omnitrace/categories.h"  // in omnitrace-user
 
+#include <timemory/process/threading.hpp>
 #include <timemory/signals/signal_handlers.hpp>
 #include <timemory/signals/types.hpp>
 #include <timemory/hash/types.hpp>
@@ -70,6 +72,7 @@
 #include <string_view>
 #include <utility>
 #include <cstdlib>
+#include <stdexcept>
 
 using namespace omnitrace;
 
@@ -95,9 +98,39 @@ namespace
 auto _timemory_manager  = tim::manager::instance();
 auto _timemory_settings = tim::settings::shared_instance();
 
+bool
+ensure_initialization(bool _offset, int64_t _glob_n, int64_t _offset_n)
+{
+    auto _exit_info = component::exit_gotcha::get_exit_info();
+    if(_exit_info.is_known && _exit_info.exit_code != EXIT_SUCCESS) return _offset;
+
+    auto _tid         = utility::get_thread_index();
+    auto _max_threads = grow_data(_tid);
+
+    if(_tid > 0 && _tid < _max_threads)
+    {
+        const auto& _info = thread_info::get();
+        OMNITRACE_BASIC_VERBOSE_F(3,
+                                  "thread info: %s, offset: %s, global counter: %li, "
+                                  "offset counter: %li, max threads: %li\n",
+                                  std::to_string(static_cast<bool>(_info)).c_str(),
+                                  std::to_string(_offset).c_str(), _glob_n, _offset_n,
+                                  _max_threads);
+    }
+
+    return _offset;
+}
+
 auto
 ensure_finalization(bool _static_init = false)
 {
+    if(_static_init)
+    {
+        auto _idx = threading::add_callback(&ensure_initialization);
+        if(_idx < 0)
+            throw exception<std::runtime_error>("failure adding threading callback");
+    }
+
     const auto& _info = thread_info::init();
     const auto& _tid  = _info->index_data;
     if(_tid)
@@ -611,6 +644,8 @@ omnitrace_finalize_hidden(void)
 {
     // disable thread id recycling during finalization
     threading::recycle_ids() = false;
+    // disable initialization callback
+    threading::remove_callback(&ensure_initialization);
 
     set_thread_state(ThreadState::Completed);
 
