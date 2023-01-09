@@ -23,6 +23,7 @@
 #include "library/causal/progress_point.hpp"
 #include "library/causal/experiment.hpp"
 #include "library/common.hpp"
+#include "library/concepts.hpp"
 #include "library/debug.hpp"
 #include "library/thread_data.hpp"
 #include "library/timemory.hpp"
@@ -41,14 +42,20 @@ namespace causal
 {
 namespace
 {
-using thread_data_t        = thread_data<identity<progress_map_t>>;
 using progress_allocator_t = tim::data::ring_buffer_allocator<progress_point>;
+
+auto&
+get_progress_map()
+{
+    using thread_data_t = thread_data<identity<progress_map_t>>;
+    static auto& _v     = thread_data_t::instance(construct_on_init{});
+    return _v;
+}
 
 progress_map_t&
 get_progress_map(int64_t _tid)
 {
-    static auto& _v = thread_data_t::instances();
-    return _v.at(_tid);
+    return get_progress_map()->at(_tid);
 }
 
 auto&
@@ -63,7 +70,8 @@ std::unordered_map<tim::hash_value_t, progress_point>
 get_progress_points()
 {
     auto _data = std::unordered_map<tim::hash_value_t, progress_point>{};
-    for(const auto& titr : thread_data_t::instances())
+    if(!get_progress_map()) return _data;
+    for(const auto& titr : *get_progress_map())
     {
         for(const auto& itr : titr)
         {

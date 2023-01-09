@@ -256,12 +256,13 @@ experiment::stop()
     for(auto fitr : fini_progress)
     {
         auto _pt = fitr.second - init_progress[fitr.first];
-        _num     = std::max<int64_t>(_num, _pt.get_laps());
+        _num     = std::max<int64_t>(
+            { _num, _pt.get_laps(), _pt.get_arrival(), _pt.get_departure() });
     }
 
     if(_num < 5)
         global_scaling *= 2;
-    else if(_num > 10)
+    else if(_num > 10 && global_scaling > 1)
         global_scaling /= 2;
 
     if(_num > 0) experiment_history.emplace_back(*this);
@@ -321,7 +322,7 @@ experiment::is_selected(unwind_stack_t _stack)
 }
 
 bool
-experiment::is_selected(utility::c_array<void*> _stack)
+experiment::is_selected(container::c_array<void*> _stack)
 {
     if(is_active())
     {
@@ -432,7 +433,9 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
     if(current_record.experiments.empty()) return;
 
     {
-        auto _saved_experiments = load_experiments(_fname_base, _cfg, false);
+        auto _saved_experiments = (config::get_causal_output_clobber())
+                                      ? std::vector<experiment::record>{}
+                                      : load_experiments(_fname_base, _cfg, false);
         _saved_experiments.emplace_back(current_record);
         std::stringstream oss{};
         {
@@ -465,9 +468,10 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
     }
 
     auto _fname = tim::settings::compose_output_filename(_fname_base, "coz", _cfg);
-    std::stringstream _existing{};
 
     // read in existing data
+    std::stringstream _existing{};
+    if(!config::get_causal_output_clobber())
     {
         std::ifstream ifs{ _fname };
         if(ifs)
@@ -480,6 +484,7 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
             }
         }
     }
+
     std::ofstream ofs{};
     ofs.setf(std::ios::fixed);
     if(tim::filepath::open(ofs, _fname))

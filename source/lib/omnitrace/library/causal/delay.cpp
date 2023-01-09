@@ -22,11 +22,13 @@
 
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
+#include "library/helpers.hpp"
 #include "library/runtime.hpp"
 #include "library/state.hpp"
 #include "library/thread_data.hpp"
 #include "library/thread_info.hpp"
 #include "library/tracing.hpp"
+#include "library/utility.hpp"
 
 #include <timemory/components/macros.hpp>
 #include <timemory/mpl/concepts.hpp>
@@ -41,7 +43,15 @@ namespace causal
 {
 namespace
 {
-using delay_thread_data    = thread_data<identity<int64_t>, delay>;
+auto&
+get_delay_data()
+{
+    using thread_data_t = thread_data<identity<int64_t>, delay>;
+    static auto& _v     = thread_data_t::construct(
+        construct_on_init{}, []() { return delay::get_global().load(); });
+    return _v;
+}
+
 int64_t sleep_for_overhead = 0;
 }  // namespace
 
@@ -190,7 +200,7 @@ int64_t
 delay::sync()
 {
     auto _v = get_global().load(std::memory_order_seq_cst);
-    delay_thread_data::instances().fill(_v);
+    if(get_delay_data()) get_delay_data()->fill(_v);
     return _v;
 }
 
@@ -204,8 +214,15 @@ delay::get_global()
 int64_t&
 delay::get_local(int64_t _tid)
 {
-    static auto& _v = delay_thread_data::instances(construct_on_init{}, 0);
-    return _v.at(_tid);
+    auto&                    _data     = get_delay_data();
+    static thread_local auto _thr_init = []() {
+        using thread_data_t = thread_data<identity<int64_t>, delay>;
+        thread_data_t::construct(construct_on_thread{ utility::get_thread_index() },
+                                 get_global().load());
+        return true;
+    }();
+    return _data->at(_tid);
+    (void) _thr_init;
 }
 
 uint64_t

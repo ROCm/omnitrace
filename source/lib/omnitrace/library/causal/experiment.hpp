@@ -25,6 +25,7 @@
 #include "library/causal/data.hpp"
 #include "library/causal/progress_point.hpp"
 #include "library/components/backtrace_causal.hpp"
+#include "library/containers/c_array.hpp"
 #include "library/defines.hpp"
 #include "library/utility.hpp"
 
@@ -100,7 +101,7 @@ struct experiment
     static uint32_t      get_index();
     static bool          is_active();
     static bool          is_selected(unwind_stack_t);
-    static bool          is_selected(utility::c_array<void*>);
+    static bool          is_selected(container::c_array<void*>);
     static void          add_selected();
     static experiments_t get_experiments();
 

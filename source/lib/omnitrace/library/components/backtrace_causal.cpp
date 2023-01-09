@@ -52,14 +52,28 @@ namespace component
 namespace
 {
 using ::tim::backtrace::get_unw_signal_frame_stack;
-using delay_statistics_t =
-    thread_data<identity<tim::statistics<int64_t>>, category::sampling>;
-using in_use_t = thread_data<identity<bool>, category::sampling>;
+
+auto&
+get_delay_statistics()
+{
+    using thread_data_t =
+        thread_data<identity<tim::statistics<int64_t>>, category::sampling>;
+    static auto& _v = thread_data_t::instance(construct_on_init{});
+    return _v;
+}
+
+auto&
+get_in_use()
+{
+    using thread_data_t = thread_data<identity<bool>, category::sampling>;
+    static auto& _v     = thread_data_t::instance(construct_on_init{});
+    return _v;
+}
 
 struct scoped_in_use
 {
-    scoped_in_use(int64_t _tid = threading::get_id())
-    : value{ in_use_t::instances().at(_tid) }
+    scoped_in_use(int64_t _tid = utility::get_thread_index())
+    : value{ get_in_use()->at(_tid) }
     {
         value = true;
     }
@@ -71,7 +85,7 @@ struct scoped_in_use
 auto
 is_in_use(int64_t _tid = threading::get_id())
 {
-    return in_use_t::instances().at(_tid);
+    return get_in_use()->at(_tid);
 }
 
 auto samples = std::map<uint32_t, std::set<backtrace_causal::sample_data>>{};
@@ -120,7 +134,7 @@ backtrace_causal::sample(int _sig)
     else if(_sig >= get_causal_backtrace_signal())
     {
         auto  _this_sample = tracing::now();
-        auto& _period_stat = delay_statistics_t::instance();
+        auto& _period_stat = get_delay_statistics()->at(threading::get_id());
         if(_last_sample > 0) _period_stat += (_this_sample - _last_sample);
         _last_sample = _this_sample;
 
@@ -161,10 +175,11 @@ backtrace_causal::get_period_stats()
 {
     scoped_in_use _in_use{};
     auto          _data = tim::statistics<int64_t>{};
-    for(size_t i = 0; i < max_supported_threads; ++i)
+    if(!get_delay_statistics()) return _data;
+    for(size_t i = 0; i < get_delay_statistics()->size(); ++i)
     {
         scoped_in_use _thr_in_use{ static_cast<int64_t>(i) };
-        const auto&   itr = delay_statistics_t::instances().at(i);
+        const auto&   itr = get_delay_statistics()->at(i);
         if(itr.get_count() > 1) _data += itr;
     }
     return _data;
@@ -174,10 +189,10 @@ void
 backtrace_causal::reset_period_stats()
 {
     scoped_in_use _in_use{};
-    for(size_t i = 0; i < max_supported_threads; ++i)
+    for(size_t i = 0; i < get_delay_statistics()->size(); ++i)
     {
         scoped_in_use _thr_in_use{ static_cast<int64_t>(i) };
-        delay_statistics_t::instances().at(i).reset();
+        get_delay_statistics()->at(i).reset();
     }
 }
 

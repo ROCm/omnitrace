@@ -101,7 +101,9 @@ get_seed()
 {
     static auto       _v = std::random_device{};
     static std::mutex _mutex;
-    std::scoped_lock  _lk{ _mutex };
+
+    OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
+    std::scoped_lock _lk{ _mutex };
     speedup_seeds.emplace_back(_v());
     return speedup_seeds.back();
 }
@@ -110,9 +112,9 @@ auto&
 get_engine(int64_t _tid = utility::get_thread_index())
 {
     using thread_data_t = thread_data<identity<random_engine_t>, experiment>;
-    static auto& _v =
-        thread_data_t::instances(construct_on_init{}, []() { return get_seed(); });
-    return _v.at(_tid);
+    static auto& _v     = thread_data_t::instance(
+        construct_on_init{}, []() { return random_engine_t{ get_seed() }; });
+    return _v->at(_tid);
 }
 
 void
@@ -204,60 +206,9 @@ compute_eligible_lines()
             std::make_unique<code_object::basic::line_info>(_li_val));
     };
 
-    if(!_line_scope.empty())
+    for(const auto& itr : _line_scope)
     {
-        for(const auto& itr : _line_scope)
-        {
-            auto _re = std::regex{ itr + "$" };
-            for(const auto& litr : _line_info)
-            {
-                auto _range = code_object::address_range{ litr.first.load_address,
-                                                          litr.first.last_address };
-                for(const auto& ditr : litr.second)
-                {
-                    auto _li =
-                        std::visit([](auto&& _val) { return _val.get_basic(); }, ditr);
-                    // match to <file> or <file>:<line>
-                    if(std::regex_search(_li.file, _re) == false &&
-                       std::regex_search(JOIN(':', _li.file, _li.line), _re) == false)
-                        continue;
-                    // map the instruction pointer address to the line info
-                    auto _ip = litr.first.load_address + _li.address;
-                    _add_line_info(_ip, _li);
-                    get_eligible_address_ranges().emplace(_range);
-                }
-            }
-        }
-    }
-
-    if(!_func_scope.empty())
-    {
-        for(const auto& itr : _func_scope)
-        {
-            auto _re = std::regex{ itr, std::regex_constants::optimize };
-            for(const auto& litr : _line_info)
-            {
-                auto _range = code_object::address_range{ litr.first.load_address,
-                                                          litr.first.last_address };
-                for(const auto& ditr : litr.second)
-                {
-                    auto _li =
-                        std::visit([](auto&& _val) { return _val.get_basic(); }, ditr);
-                    // match to <file> or <file>:<line>
-                    if(std::regex_search(_li.func, _re) == false &&
-                       std::regex_search(demangle(_li.func), _re) == false)
-                        continue;
-                    // map the instruction pointer address to the line info
-                    auto _ip = litr.first.load_address + _li.address;
-                    _add_line_info(_ip, _li);
-                    get_eligible_address_ranges().emplace(_range);
-                }
-            }
-        }
-    }
-
-    if(_v.empty())
-    {
+        auto _re = std::regex{ itr + "$" };
         for(const auto& litr : _line_info)
         {
             auto _range = code_object::address_range{ litr.first.load_address,
@@ -265,6 +216,62 @@ compute_eligible_lines()
             for(const auto& ditr : litr.second)
             {
                 auto _li = std::visit([](auto&& _val) { return _val.get_basic(); }, ditr);
+
+                // match to <file> or <file>:<line>
+                if(std::regex_search(_li.file, _re) == false &&
+                   std::regex_search(JOIN(':', _li.file, _li.line), _re) == false)
+                    continue;
+                // map the instruction pointer address to the line info
+                auto _ip = litr.first.load_address + _li.address;
+                _add_line_info(_ip, _li);
+                get_eligible_address_ranges().emplace(_range);
+            }
+        }
+    }
+
+    for(const auto& itr : _func_scope)
+    {
+        auto _re = std::regex{ itr, std::regex_constants::optimize };
+        for(const auto& litr : _line_info)
+        {
+            auto _range = code_object::address_range{ litr.first.load_address,
+                                                      litr.first.last_address };
+            for(const auto& ditr : litr.second)
+            {
+                auto _li = std::visit([](auto&& _val) { return _val.get_basic(); }, ditr);
+
+                // match to <file> or <file>:<line>
+                if(std::regex_search(_li.func, _re) == false &&
+                   std::regex_search(demangle(_li.func), _re) == false)
+                    continue;
+                // map the instruction pointer address to the line info
+                auto _ip = litr.first.load_address + _li.address;
+                _add_line_info(_ip, _li);
+                get_eligible_address_ranges().emplace(_range);
+            }
+        }
+    }
+
+    if(_v.empty())
+    {
+        // catches lambdas and STL implimentation functions
+        const auto _compiler_func_scope =
+            std::regex{ "::(<|\\{)lambda\\(|^_M_|::_M", std::regex_constants::optimize };
+
+        for(const auto& litr : _line_info)
+        {
+            auto _range = code_object::address_range{ litr.first.load_address,
+                                                      litr.first.last_address };
+            for(const auto& ditr : litr.second)
+            {
+                auto _li = std::visit([](auto&& _val) { return _val.get_basic(); }, ditr);
+
+                // if no file/line scope was specified, avoid lambdas and STL
+                // implementation functions
+                if(std::regex_search(_li.func, _compiler_func_scope) ||
+                   std::regex_search(demangle(_li.func), _compiler_func_scope))
+                    continue;
+
                 auto _ip = litr.first.load_address + _li.address;
                 _add_line_info(_ip, _li);
                 get_eligible_address_ranges().emplace(_range);
@@ -354,7 +361,7 @@ save_line_info(const settings::compose_filename_config& _cfg)
         }
         else
         {
-            throw std::runtime_error("Error opening " + ofname);
+            throw ::omnitrace::exception<std::runtime_error>("Error opening " + ofname);
         }
     };
 
@@ -365,7 +372,7 @@ save_line_info(const settings::compose_filename_config& _cfg)
 }
 
 void
-set_current_selection(utility::c_array<void*> _stack)
+set_current_selection(container::c_array<void*> _stack)
 {
     if(experiment::is_active()) return;
 
@@ -567,9 +574,11 @@ sample_virtual_speedup(int64_t _tid)
 {
     using thread_data_t =
         thread_data<identity<std::uniform_int_distribution<size_t>>, experiment>;
-    static auto& _v = thread_data_t::instances(construct_on_init{}, size_t{ 0 },
-                                               speedup_dist.size() - 1);
-    return speedup_dist.at(_v.at(_tid)(get_engine(_tid)));
+    static auto& _v = thread_data_t::instance(construct_on_init{}, []() {
+        return std::uniform_int_distribution<size_t>{ size_t{ 0 },
+                                                      speedup_dist.size() - 1 };
+    });
+    return speedup_dist.at(_v->at(_tid)(get_engine(_tid)));
 }
 
 void

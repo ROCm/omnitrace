@@ -24,6 +24,7 @@
 
 #include "library/causal/progress_point.hpp"
 #include "library/code_object.hpp"
+#include "library/containers/c_array.hpp"
 #include "library/defines.hpp"
 #include "library/thread_data.hpp"
 #include "library/utility.hpp"
@@ -94,7 +95,7 @@ get_line_info(uintptr_t _addr, bool include_discarded = true);
 
 bool is_eligible_address(uintptr_t);
 
-void set_current_selection(utility::c_array<void*>);
+void set_current_selection(container::c_array<void*>);
 
 void set_current_selection(unwind_stack_t);
 
