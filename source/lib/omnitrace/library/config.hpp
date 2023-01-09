@@ -395,6 +395,9 @@ get_causal_fixed_speedup();
 std::string
 get_causal_output_filename();
 
+bool
+get_causal_output_clobber();
+
 std::string
 get_causal_binary_scope();
 

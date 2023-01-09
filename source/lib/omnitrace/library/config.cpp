@@ -701,7 +701,12 @@ configure_settings(bool _init)
     OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FILE",
                              "Name of causal output filename (w/o extension)",
                              std::string{ "experiments" }, "causal", "analysis",
-                             "advanced");
+                             "advanced", "io");
+
+    OMNITRACE_CONFIG_SETTING(
+        bool, "OMNITRACE_CAUSAL_FILE_CLOBBER",
+        "Overwrite any existing causal output file instead of appending to it", false,
+        "causal", "analysis", "advanced", "io");
 
     OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FIXED_SPEEDUP",
                              "List of virtual speedups between 0 and 100 (inclusive) to "
@@ -2332,6 +2337,13 @@ get_causal_output_filename()
             _fname = _fname.substr(0, _fname.length() - itr.length());
     }
     return _fname;
+}
+
+bool
+get_causal_output_clobber()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FILE_CLOBBER");
+    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
 std::vector<std::string>
