@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "library/thread_data.hpp"
+#include "library/thread_deleter.hpp"
 #include "library/components/pthread_create_gotcha.hpp"
 #include "library/thread_info.hpp"
 #include "library/utility.hpp"

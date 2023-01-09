@@ -26,10 +26,15 @@
 #include "library/common.hpp"
 #include "library/concepts.hpp"
 #include "library/config.hpp"
+#include "library/containers/stable_vector.hpp"
 #include "library/defines.hpp"
+#include "library/helpers.hpp"
 #include "library/state.hpp"
+#include "library/thread_deleter.hpp"
 #include "library/timemory.hpp"
+#include "timemory/utility/macros.hpp"
 
+#include <bits/stdint-intn.h>
 #include <timemory/utility/types.hpp>
 
 #include <array>
@@ -42,8 +47,6 @@
 
 namespace omnitrace
 {
-ThreadState set_thread_state(ThreadState);
-
 // bundle of components used in instrumentation
 using instrumentation_bundle_t =
     tim::component_bundle<project::omnitrace, comp::wall_clock*,
@@ -52,81 +55,38 @@ using instrumentation_bundle_t =
 // allocator for instrumentation_bundle_t
 using bundle_allocator_t = tim::data::ring_buffer_allocator<instrumentation_bundle_t>;
 
-template <typename Tp>
-struct thread_deleter;
+using grow_functor_t = int64_t (*)(int64_t);
 
-// unique ptr type for omnitrace
-template <typename Tp>
-using unique_ptr_t = std::unique_ptr<Tp, thread_deleter<Tp>>;
-
-static constexpr size_t max_supported_threads = OMNITRACE_MAX_THREADS;
-
-template <>
-struct thread_deleter<void>
+inline auto&
+grow_functors()
 {
-    void operator()() const;
-};
-
-extern template struct thread_deleter<void>;
+    static auto _v = container::stable_vector<grow_functor_t>{};
+    return _v;
+}
 
 template <typename Tp>
-struct thread_deleter
+struct base_thread_data
 {
-    void operator()(Tp* ptr) const
+    base_thread_data()
     {
-        thread_deleter<void>{}();
-        delete ptr;
+        auto _func = [](int64_t _sz) -> int64_t {
+            auto& _v = Tp::instance();
+            if(_v && _v->capacity() < static_cast<size_t>(_sz + 1))
+            {
+                _v->reserve(_v->capacity() + 1);
+                _v->resize(_v->capacity());
+            }
+            return (_v) ? _v->capacity() : 0;
+        };
+        grow_functors().emplace_back(std::move(_func));
     }
-};
-
-template <typename Tp>
-struct generate
-{
-    using type = Tp;
-
-    template <typename... Args>
-    auto operator()(Args&&... _args) const
-    {
-        if constexpr(concepts::is_unique_pointer<Tp>::value)
-        {
-            using value_type = typename type::element_type;
-            return type{ new value_type{ invoke(std::forward<Args>(_args), 0)... } };
-        }
-        else
-        {
-            return type{ invoke(std::forward<Args>(_args), 0)... };
-        }
-    }
-
-private:
-    template <typename Up>
-    static auto invoke(Up&& _v, int,
-                       std::enable_if_t<std::is_invocable<Up>::value, int> = 0)
-        -> decltype(std::forward<Up>(_v)())
-    {
-        return std::forward<Up>(_v)();
-    }
-
-    template <typename Up>
-    static auto&& invoke(Up&& _v, long)
-    {
-        return std::forward<Up>(_v);
-    }
-};
-
-using construct_on_init = std::true_type;
-
-struct construct_on_thread
-{
-    int64_t index = threading::get_id();
 };
 
 template <typename Tp, typename Tag = void, size_t MaxThreads = max_supported_threads>
 struct thread_data
 {
-    using value_type        = unique_ptr_t<Tp>;
-    using instance_array_t  = std::array<value_type, MaxThreads>;
-    using construct_on_init = std::true_type;
+    using value_type       = unique_ptr_t<Tp>;
+    using instance_array_t = std::array<value_type, MaxThreads>;
 
     template <typename... Args>
     static void              construct(construct_on_thread&&, Args&&...);
@@ -215,53 +175,151 @@ thread_data<Tp, Tag, MaxThreads>::instances(construct_on_init, Args&&... _args)
 
 template <typename Tp, typename Tag, size_t MaxThreads>
 struct thread_data<std::optional<Tp>, Tag, MaxThreads>
+: base_thread_data<thread_data<std::optional<Tp>, Tag, MaxThreads>>
 {
-    using value_type       = std::optional<Tp>;
-    using instance_array_t = std::array<value_type, MaxThreads>;
+    using this_type    = thread_data<std::optional<Tp>, Tag, MaxThreads>;
+    using value_type   = std::optional<Tp>;
+    using array_type   = container::stable_vector<value_type, MaxThreads>;
+    using functor_type = std::function<value_type()>;
+
+    thread_data()  = default;
+    ~thread_data() = default;
+
+    explicit thread_data(functor_type&& _init)
+    : m_init{ std::move(_init) }
+    {}
+
+    thread_data(const thread_data&)     = default;
+    thread_data(thread_data&&) noexcept = default;
+
+    thread_data& operator=(const thread_data&) = default;
+    thread_data& operator=(thread_data&&) noexcept = default;
+
+    static unique_ptr_t<this_type>& instance();
 
     template <typename... Args>
-    static void              construct(construct_on_thread&&, Args&&...);
-    static value_type&       instance();
-    static instance_array_t& instances();
+    static unique_ptr_t<this_type>& instance(construct_on_init, Args&&...);
+
     template <typename... Args>
     static value_type& instance(construct_on_thread&&, Args&&...);
+
     template <typename... Args>
-    static instance_array_t& instances(construct_on_init, Args&&...);
+    static unique_ptr_t<this_type>& construct(construct_on_init, Args&&...);
 
-    static constexpr size_t size() { return MaxThreads; }
+    template <typename... Args>
+    static value_type& construct(construct_on_thread&&, Args&&...);
 
-    decltype(auto) begin() { return instances().begin(); }
-    decltype(auto) end() { return instances().end(); }
+    size_t size() { return m_data.size(); }
 
-    decltype(auto) begin() const { return instances().begin(); }
-    decltype(auto) end() const { return instances().end(); }
+    decltype(auto) data() { return m_data; }
+    decltype(auto) data() const { return m_data; }
+
+    decltype(auto) begin() { return m_data.begin(); }
+    decltype(auto) end() { return m_data.end(); }
+
+    decltype(auto) begin() const { return m_data.begin(); }
+    decltype(auto) end() const { return m_data.end(); }
+
+    decltype(auto) at(size_t _idx) { return m_data.at(_idx); }
+    decltype(auto) at(size_t _idx) const { return m_data.at(_idx); }
+
+    decltype(auto) operator[](size_t _idx) { return m_data[_idx]; }
+    decltype(auto) operator[](size_t _idx) const { return m_data[_idx]; }
+
+    decltype(auto) reserve(size_t _n) { return m_data.reserve(_n); }
+    decltype(auto) capacity() const { return m_data.capacity(); }
+    decltype(auto) empty() const { return m_data.empty(); }
+
+    void resize(size_t _n) { container::resize(m_data, _n, m_init()); }
+
+    template <typename Up>
+    void resize(size_t _n, Up&& _v)
+    {
+        static_assert(std::is_assignable<value_type, Up>::value,
+                      "value is not assignable to optional<Tp>");
+        container::resize(m_data, _n, std::forward<Up>(_v));
+    }
+
+private:
+    array_type   m_data = {};
+    functor_type m_init = []() { return value_type{}; };
 };
 
 template <typename Tp, typename Tag, size_t MaxThreads>
+unique_ptr_t<thread_data<std::optional<Tp>, Tag, MaxThreads>>&
+thread_data<std::optional<Tp>, Tag, MaxThreads>::instance()
+{
+    static auto _v = unique_ptr_t<this_type>{};
+    return _v;
+}
+
+template <typename Tp, typename Tag, size_t MaxThreads>
 template <typename... Args>
-void
+unique_ptr_t<thread_data<std::optional<Tp>, Tag, MaxThreads>>&
+thread_data<std::optional<Tp>, Tag, MaxThreads>::instance(construct_on_init,
+                                                          Args&&... _args)
+{
+    static auto& _v = [&]() -> unique_ptr_t<this_type>& {
+        auto& _ref = instance();
+        if(!_ref)
+            _ref = generate<unique_ptr_t<this_type>>{}(std::forward<Args>(_args)...);
+        //_ref = unique_ptr_t<this_type>{ new this_type(std::forward<Args>(_args)...) };
+        if(_ref->size() < MaxThreads) _ref->resize(MaxThreads);
+        return _ref;
+    }();
+    return _v;
+}
+
+template <typename Tp, typename Tag, size_t MaxThreads>
+template <typename... Args>
+unique_ptr_t<thread_data<std::optional<Tp>, Tag, MaxThreads>>&
+thread_data<std::optional<Tp>, Tag, MaxThreads>::construct(construct_on_init,
+                                                           Args&&... _args)
+{
+    // construct outside of lambda to prevent data-race
+    static auto& _ref = instance(construct_on_init{});
+    static auto  _v   = [&]() {
+        if(_ref)
+        {
+            for(auto& itr : *_ref)
+                itr = generate<value_type>{}(std::forward<Args>(_args)...);
+        }
+        return (_ref != nullptr);
+    }();
+    return _ref;
+    (void) _v;
+}
+
+template <typename Tp, typename Tag, size_t MaxThreads>
+template <typename... Args>
+std::optional<Tp>&
 thread_data<std::optional<Tp>, Tag, MaxThreads>::construct(construct_on_thread&& _t,
                                                            Args&&... _args)
 {
     // construct outside of lambda to prevent data-race
-    static auto& _instances = instances();
-    if(!_instances.at(_t.index))
-        _instances.at(_t.index) = generate<value_type>{}(std::forward<Args>(_args)...);
-}
+    static auto& _instance    = instance(construct_on_init{});
+    static auto  _constructed = container::stable_vector<bool, MaxThreads>{};
+    static auto  _grow        = []() {
+        container::resize(_constructed, MaxThreads, false);
+        grow_functors().emplace_back([](int64_t _n) -> int64_t {
+            if(static_cast<size_t>(_n) >= _constructed.size())
+            {
+                _constructed.reserve(_constructed.capacity() + 1);
+                container::resize(_constructed, _constructed.capacity(), false);
+            }
+            return _constructed.size();
+        });
+        return true;
+    }();
 
-template <typename Tp, typename Tag, size_t MaxThreads>
-std::optional<Tp>&
-thread_data<std::optional<Tp>, Tag, MaxThreads>::instance()
-{
-    return instances().at(threading::get_id());
-}
+    if(!_constructed.at(_t.index))
+        _constructed.at(_t.index) = (_instance->at(_t.index) = generate<value_type>{}(
+                                         std::forward<Args>(_args)...),
+                                     true);
 
-template <typename Tp, typename Tag, size_t MaxThreads>
-typename thread_data<std::optional<Tp>, Tag, MaxThreads>::instance_array_t&
-thread_data<std::optional<Tp>, Tag, MaxThreads>::instances()
-{
-    static auto _v = instance_array_t{};
-    return _v;
+    return _instance->at(_t.index);
+
+    (void) _grow;
 }
 
 template <typename Tp, typename Tag, size_t MaxThreads>
@@ -271,22 +329,7 @@ thread_data<std::optional<Tp>, Tag, MaxThreads>::instance(construct_on_thread&& 
                                                           Args&&... _args)
 {
     construct(construct_on_thread{ _t }, std::forward<Args>(_args)...);
-    return instances().at(_t.index);
-}
-
-template <typename Tp, typename Tag, size_t MaxThreads>
-template <typename... Args>
-typename thread_data<std::optional<Tp>, Tag, MaxThreads>::instance_array_t&
-thread_data<std::optional<Tp>, Tag, MaxThreads>::instances(construct_on_init,
-                                                           Args&&... _args)
-{
-    static auto& _v = [&]() -> instance_array_t& {
-        auto& _internal = instances();
-        for(size_t i = 0; i < MaxThreads; ++i)
-            _internal.at(i) = generate<value_type>{}(std::forward<Args>(_args)...);
-        return _internal;
-    }();
-    return _v;
+    return instance()->at(_t.index);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -300,68 +343,147 @@ using tim::identity_t;
 
 template <typename Tp, typename Tag, size_t MaxThreads>
 struct thread_data<identity<Tp>, Tag, MaxThreads>
+: base_thread_data<thread_data<identity<Tp>, Tag, MaxThreads>>
 {
-    using value_type       = Tp;
-    using instance_array_t = std::array<value_type, MaxThreads>;
+    using this_type    = thread_data<identity<Tp>, Tag, MaxThreads>;
+    using value_type   = Tp;
+    using array_type   = container::stable_vector<value_type, MaxThreads>;
+    using functor_type = std::function<value_type()>;
+
+    thread_data()  = default;
+    ~thread_data() = default;
+
+    explicit thread_data(functor_type&& _init)
+    : m_init{ std::move(_init) }
+    {}
+
+    thread_data(const thread_data&)     = default;
+    thread_data(thread_data&&) noexcept = default;
+
+    thread_data& operator=(const thread_data&) = default;
+    thread_data& operator=(thread_data&&) noexcept = default;
+
+    static unique_ptr_t<this_type>& instance();
 
     template <typename... Args>
-    static void              construct(construct_on_thread&&, Args&&...);
-    static value_type&       instance();
-    static instance_array_t& instances();
+    static unique_ptr_t<this_type>& instance(construct_on_init, Args&&...);
+
     template <typename... Args>
     static value_type& instance(construct_on_thread&&, Args&&...);
-    template <typename... Args>
-    static instance_array_t& instances(construct_on_init, Args&&...);
 
     template <typename... Args>
-    static void construct(Args&&... args)
+    static unique_ptr_t<this_type>& construct(construct_on_init, Args&&...);
+
+    template <typename... Args>
+    static value_type& construct(construct_on_thread&&, Args&&...);
+
+    size_t size() { return m_data.size(); }
+
+    decltype(auto) data() { return m_data; }
+    decltype(auto) data() const { return m_data; }
+
+    decltype(auto) begin() { return m_data.begin(); }
+    decltype(auto) end() { return m_data.end(); }
+
+    decltype(auto) begin() const { return m_data.begin(); }
+    decltype(auto) end() const { return m_data.end(); }
+
+    decltype(auto) at(size_t _idx) { return m_data.at(_idx); }
+    decltype(auto) at(size_t _idx) const { return m_data.at(_idx); }
+
+    decltype(auto) operator[](size_t _idx) { return m_data[_idx]; }
+    decltype(auto) operator[](size_t _idx) const { return m_data[_idx]; }
+
+    decltype(auto) reserve(size_t _n) { return m_data.reserve(_n); }
+    decltype(auto) capacity() const { return m_data.capacity(); }
+    decltype(auto) empty() const { return m_data.empty(); }
+
+    void resize(size_t _n) { container::resize(m_data, _n, m_init()); }
+    void resize(size_t _n, value_type&& _v) { container::resize(m_data, _n, _v); }
+
+    void fill(value_type _v)
     {
-        construct(construct_on_thread{}, std::forward<Args>(args)...);
+        for(auto& itr : m_data)
+            itr = _v;
     }
 
-    template <typename... Args>
-    static value_type& instance(Args&&... args)
-    {
-        return instance(construct_on_thread{}, std::forward<Args>(args)...);
-    }
-
-    static constexpr size_t size() { return MaxThreads; }
-
-    decltype(auto) begin() { return instances().begin(); }
-    decltype(auto) end() { return instances().end(); }
-
-    decltype(auto) begin() const { return instances().begin(); }
-    decltype(auto) end() const { return instances().end(); }
+private:
+    array_type   m_data = {};
+    functor_type m_init = []() { return value_type{}; };
 };
 
 template <typename Tp, typename Tag, size_t MaxThreads>
+unique_ptr_t<thread_data<identity<Tp>, Tag, MaxThreads>>&
+thread_data<identity<Tp>, Tag, MaxThreads>::instance()
+{
+    static auto _v = unique_ptr_t<this_type>{};
+    return _v;
+}
+
+template <typename Tp, typename Tag, size_t MaxThreads>
 template <typename... Args>
-void
+unique_ptr_t<thread_data<identity<Tp>, Tag, MaxThreads>>&
+thread_data<identity<Tp>, Tag, MaxThreads>::instance(construct_on_init, Args&&... _args)
+{
+    static auto& _v = [&]() -> unique_ptr_t<this_type>& {
+        auto& _ref = instance();
+        if(!_ref)
+            _ref = generate<unique_ptr_t<this_type>>{}(std::forward<Args>(_args)...);
+        // _ref = unique_ptr_t<this_type>{ new this_type(std::forward<Args>(_args)...) };
+        if(_ref->size() < MaxThreads) _ref->resize(MaxThreads);
+        return _ref;
+    }();
+    return _v;
+}
+
+template <typename Tp, typename Tag, size_t MaxThreads>
+template <typename... Args>
+unique_ptr_t<thread_data<identity<Tp>, Tag, MaxThreads>>&
+thread_data<identity<Tp>, Tag, MaxThreads>::construct(construct_on_init, Args&&... _args)
+{
+    // construct outside of lambda to prevent data-race
+    static auto& _ref = instance(construct_on_init{});
+    static auto  _v   = [&]() {
+        if(_ref)
+        {
+            for(auto& itr : *_ref)
+                itr = generate<value_type>{}(std::forward<Args>(_args)...);
+        }
+        return (_ref != nullptr);
+    }();
+    return _ref;
+    (void) _v;
+}
+
+template <typename Tp, typename Tag, size_t MaxThreads>
+template <typename... Args>
+Tp&
 thread_data<identity<Tp>, Tag, MaxThreads>::construct(construct_on_thread&& _t,
                                                       Args&&... _args)
 {
     // construct outside of lambda to prevent data-race
-    static auto& _instances   = instances();
-    static auto  _constructed = std::array<bool, MaxThreads>{ false };
+    static auto& _instance    = instance(construct_on_init{});
+    static auto  _constructed = container::stable_vector<bool, MaxThreads>{};
+    static auto  _grow        = []() {
+        container::resize(_constructed, MaxThreads, false);
+        grow_functors().emplace_back([](int64_t _n) -> int64_t {
+            if(static_cast<size_t>(_n) >= _constructed.size())
+            {
+                _constructed.reserve(_constructed.capacity() + 1);
+                container::resize(_constructed, _constructed.capacity(), false);
+            }
+            return _constructed.size();
+        });
+        return true;
+    }();
+
     if(!_constructed.at(_t.index))
-        _constructed.at(_t.index) = (_instances.at(_t.index) = generate<value_type>{}(
+        _constructed.at(_t.index) = (_instance->at(_t.index) = generate<value_type>{}(
                                          std::forward<Args>(_args)...),
                                      true);
-}
 
-template <typename Tp, typename Tag, size_t MaxThreads>
-Tp&
-thread_data<identity<Tp>, Tag, MaxThreads>::instance()
-{
-    return instances().at(threading::get_id());
-}
-
-template <typename Tp, typename Tag, size_t MaxThreads>
-typename thread_data<identity<Tp>, Tag, MaxThreads>::instance_array_t&
-thread_data<identity<Tp>, Tag, MaxThreads>::instances()
-{
-    static auto _v = instance_array_t{};
-    return _v;
+    return _instance->at(_t.index);
+    (void) _grow;
 }
 
 template <typename Tp, typename Tag, size_t MaxThreads>
@@ -371,21 +493,7 @@ thread_data<identity<Tp>, Tag, MaxThreads>::instance(construct_on_thread&& _t,
                                                      Args&&... _args)
 {
     construct(construct_on_thread{ _t }, std::forward<Args>(_args)...);
-    return instances().at(_t.index);
-}
-
-template <typename Tp, typename Tag, size_t MaxThreads>
-template <typename... Args>
-typename thread_data<identity<Tp>, Tag, MaxThreads>::instance_array_t&
-thread_data<identity<Tp>, Tag, MaxThreads>::instances(construct_on_init, Args&&... _args)
-{
-    static auto& _v = [&]() -> instance_array_t& {
-        auto& _internal = instances();
-        for(size_t i = 0; i < MaxThreads; ++i)
-            _internal.at(i) = generate<value_type>{}(std::forward<Args>(_args)...);
-        return _internal;
-    }();
-    return _v;
+    return instance()->at(_t.index);
 }
 
 //--------------------------------------------------------------------------------------//

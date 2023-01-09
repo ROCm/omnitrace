@@ -22,68 +22,26 @@
 
 #pragma once
 
+#include "library/concepts.hpp"
 #include "library/defines.hpp"
-
-#include <timemory/mpl/concepts.hpp>
-
-#include <memory>
-#include <optional>
 
 namespace omnitrace
 {
-namespace concepts = ::tim::concepts;  // NOLINT
-
-static constexpr size_t max_supported_threads = OMNITRACE_MAX_THREADS;
-
-template <typename Tp>
-struct thread_deleter;
-
-// unique ptr type for omnitrace
-template <typename Tp>
-using unique_ptr_t = std::unique_ptr<Tp, thread_deleter<Tp>>;
-
-using construct_on_init = std::true_type;
-}  // namespace omnitrace
-
-namespace tim
+template <>
+struct thread_deleter<void>
 {
-namespace concepts
-{
-template <typename Tp>
-struct is_unique_pointer : std::false_type
-{};
-
-template <typename Tp>
-struct is_unique_pointer<::omnitrace::unique_ptr_t<Tp>> : std::true_type
-{};
-
-template <typename Tp>
-struct is_unique_pointer<std::unique_ptr<Tp>> : std::true_type
-{};
-
-template <typename Tp>
-struct is_optional : std::false_type
-{};
-
-template <typename Tp>
-struct is_optional<std::optional<Tp>> : std::true_type
-{};
-
-template <typename Tp>
-struct can_stringify
-{
-private:
-    static constexpr auto sfinae(int)
-        -> decltype(std::declval<std::ostream&>() << std::declval<Tp>(), bool())
-    {
-        return true;
-    }
-
-    static constexpr auto sfinae(long) { return false; }
-
-public:
-    static constexpr bool value = sfinae(0);
-    constexpr auto        operator()() const { return sfinae(0); }
+    void operator()() const;
 };
-}  // namespace concepts
-}  // namespace tim
+
+extern template struct thread_deleter<void>;
+
+template <typename Tp>
+struct thread_deleter
+{
+    void operator()(Tp* ptr) const
+    {
+        thread_deleter<void>{}();
+        delete ptr;
+    }
+};
+}  // namespace omnitrace
