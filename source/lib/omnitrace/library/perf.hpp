@@ -22,8 +22,8 @@
 
 #pragma once
 
+#include "library/containers/c_array.hpp"
 #include "library/defines.hpp"
-#include "library/utility.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -182,12 +182,12 @@ struct perf_event
         inline bool is_sample() const { return get_type() == record_type::sample; }
         inline bool is_mmap2() const { return get_type() == record_type::mmap2; }
 
-        uint64_t                   get_ip() const;
-        uint64_t                   get_pid() const;
-        uint64_t                   get_tid() const;
-        uint64_t                   get_time() const;
-        uint32_t                   get_cpu() const;
-        utility::c_array<uint64_t> get_callchain() const;
+        uint64_t                     get_ip() const;
+        uint64_t                     get_pid() const;
+        uint64_t                     get_tid() const;
+        uint64_t                     get_time() const;
+        uint32_t                     get_cpu() const;
+        container::c_array<uint64_t> get_callchain() const;
 
     private:
         record(const perf_event& source, struct perf_event_header* header)

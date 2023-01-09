@@ -426,7 +426,7 @@ perf_event::record::get_cpu() const
     return *locate_field<sample::cpu, uint32_t*>();
 }
 
-utility::c_array<uint64_t>
+container::c_array<uint64_t>
 perf_event::record::get_callchain() const
 {
     TIMEMORY_ASSERT(is_sample() && m_source.is_sampling(sample::callchain))
@@ -436,7 +436,7 @@ perf_event::record::get_callchain() const
     uint64_t  _size = *_base;
     // Advance the callchain array pointer past the size
     _base++;
-    return utility::wrap_c_array(_base, _size);
+    return container::wrap_c_array(_base, _size);
 }
 
 template <sample SampleT, typename Tp>

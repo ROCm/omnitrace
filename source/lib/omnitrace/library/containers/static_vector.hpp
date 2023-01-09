@@ -23,6 +23,8 @@
 #pragma once
 
 #include "library/common.hpp"
+#include "library/debug.hpp"
+#include "library/exception.hpp"
 
 #include <timemory/utility/demangle.hpp>
 
@@ -53,23 +55,34 @@ struct static_vector
 
     static_vector& operator=(std::initializer_list<Tp>&& _v)
     {
+        if(OMNITRACE_UNLIKELY(_v.size() > N))
+        {
+            throw exception<std::out_of_range>(
+                std::string{ "static_vector::operator=(initializer_list) size > " } +
+                std::to_string(N));
+        }
+
         clear();
         for(auto&& itr : _v)
-        {
-            OMNITRACE_CONDITIONAL_THROW(m_size == N, "Error! %s has reached its capacity",
-                                        demangle<static_vector>().c_str());
             m_data[m_size++] = itr;
-        }
         return *this;
     }
 
     template <typename... Args>
     auto& emplace_back(Args&&... _v)
     {
-        OMNITRACE_CONDITIONAL_THROW(m_size == N, "Error! %s has reached its capacity",
-                                    demangle<static_vector>().c_str());
-        auto _idx    = m_size++;
-        m_data[_idx] = { std::forward<Args>(_v)... };
+        if(m_size.load(std::memory_order_relaxed) >= N)
+        {
+            throw exception<std::out_of_range>(
+                std::string{ "static_vector::emplace_back - reached capacity " } +
+                std::to_string(N));
+        }
+
+        auto _idx = m_size++;
+        if constexpr(std::is_assignable<Tp, decltype(std::forward<Args>(_v))...>::value)
+            m_data[_idx] = { std::forward<Args>(_v)... };
+        else
+            m_data[_idx] = Tp{ std::forward<Args>(_v)... };
         return m_data[_idx];
     }
 
@@ -110,8 +123,11 @@ struct static_vector
 
     void swap(this_type& _v)
     {
+        auto _t_size = m_size.load();
+        auto _v_size = _v.m_size.load();
         std::swap(m_data, _v.m_data);
-        std::swap(m_size, _v.m_size);
+        m_size.store(_v_size);
+        _v.m_size.store(_t_size);
     }
 
     friend void swap(this_type& _lhs, this_type& _rhs) { _lhs.swap(_rhs); }

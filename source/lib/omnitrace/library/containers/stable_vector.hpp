@@ -22,7 +22,9 @@
 
 #pragma once
 
+#include "library/containers/operators.hpp"
 #include "library/containers/static_vector.hpp"
+#include "library/defines.hpp"
 
 #include <algorithm>
 #include <initializer_list>
@@ -32,19 +34,11 @@
 #include <type_traits>
 #include <vector>
 
-#if !defined(OMNITRACE_LIKELY_FALSE)
-#    define OMNITRACE_LIKELY_FALSE(x) __builtin_expect((x), 0)
-#endif
-
-#if !defined(OMNITRACE_LIKELY_TRUE)
-#    define OMNITRACE_LIKELY_TRUE(x) __builtin_expect((x), 1)
-#endif
-
 namespace omnitrace
 {
 namespace container
 {
-template <typename Tp, size_t ChunkSizeV = 1024>
+template <typename Tp, size_t ChunkSizeV = OMNITRACE_MAX_THREADS>
 class stable_vector
 {
 public:
@@ -65,6 +59,7 @@ private:
         static constexpr bool value = (N & (N - 1)) == 0;
     };
 
+    static_assert(ChunkSizeV > 0, "ChunkSize needs to be greater than zero");
     static_assert(is_pow2<ChunkSizeV>::value, "ChunkSize needs to be a power of 2");
 
     using this_type       = stable_vector<Tp, ChunkSizeV>;
@@ -125,12 +120,10 @@ public:
 
     struct iterator
     : public iterator_base<this_type>
-    , std::iterator<std::random_access_iterator_tag, value_type>
-    //, public boost::random_access_iterator_helper<iterator, value_type>
+    //, std::iterator<std::random_access_iterator_tag, value_type>
+    , public random_access_iterator_helper<iterator, value_type>
     {
         using iterator_base<this_type>::iterator_base;
-        using difference_type = typename std::iterator<std::random_access_iterator_tag,
-                                                       value_type>::difference_type;
         friend struct const_iterator;
 
         reference operator*() { return (*this->m_container)[this->m_index]; }
@@ -138,12 +131,10 @@ public:
 
     struct const_iterator
     : public iterator_base<const_this_type>
-    , std::iterator<std::random_access_iterator_tag, const value_type>
-    //, public boost::random_access_iterator_helper<const_iterator, const value_type>
+    //, std::iterator<std::random_access_iterator_tag, const value_type>
+    , public random_access_iterator_helper<const_iterator, const value_type>
     {
         using iterator_base<const_this_type>::iterator_base;
-        using difference_type = typename std::iterator<std::random_access_iterator_tag,
-                                                       const value_type>::difference_type;
 
         const_iterator(const iterator& it)
         : iterator_base<const_this_type>(it.m_container, it.m_index)
@@ -309,7 +300,7 @@ template <typename Tp, size_t ChunkSizeV>
 typename stable_vector<Tp, ChunkSizeV>::chunk_type&
 stable_vector<Tp, ChunkSizeV>::last_chunk()
 {
-    if(OMNITRACE_LIKELY_FALSE(m_chunks.empty() || m_chunks.back()->size() == ChunkSizeV))
+    if(OMNITRACE_UNLIKELY(m_chunks.empty() || m_chunks.back()->size() == ChunkSizeV))
     {
         add_chunk();
     }
@@ -368,9 +359,11 @@ template <typename Tp, size_t ChunkSizeV>
 typename stable_vector<Tp, ChunkSizeV>::reference
 stable_vector<Tp, ChunkSizeV>::at(size_type i)
 {
-    if(OMNITRACE_LIKELY_FALSE(i >= size()))
+    if(OMNITRACE_UNLIKELY(i >= size()))
     {
-        throw std::out_of_range("stable_vector::at");
+        throw ::omnitrace::exception<std::out_of_range>(
+            "stable_vector::at(" + std::to_string(i) + "). size is " +
+            std::to_string(size()));
     }
 
     return operator[](i);
@@ -381,6 +374,18 @@ typename stable_vector<Tp, ChunkSizeV>::const_reference
 stable_vector<Tp, ChunkSizeV>::at(size_type i) const
 {
     return const_cast<this_type&>(*this).at(i);
+}
+
+template <typename Tp, size_t ChunkSizeV, typename... Args>
+auto
+resize(stable_vector<Tp, ChunkSizeV>& _v, size_t _n, Args&&... args)
+{
+    if(_n > _v.capacity()) _v.reserve(_n);
+
+    while(_v.size() < _n)
+        _v.emplace_back(std::forward<Args>(args)...);
+
+    return _v.size();
 }
 }  // namespace container
 }  // namespace omnitrace
