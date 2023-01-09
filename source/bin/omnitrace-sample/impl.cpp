@@ -337,6 +337,8 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
     };
 
     parser.enable_help();
+    parser.enable_version("omnitrace-sample", "v" OMNITRACE_VERSION_STRING,
+                          OMNITRACE_GIT_DESCRIBE, OMNITRACE_GIT_REVISION);
 
     auto _cols = std::get<0>(tim::utility::console::get_columns());
     if(_cols > parser.get_help_width() + 8)
