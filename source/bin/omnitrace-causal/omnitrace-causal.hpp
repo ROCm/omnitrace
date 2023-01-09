@@ -22,6 +22,8 @@
 
 #pragma once
 
+#define TIMEMORY_PROJECT_NAME "omnitrace-causal"
+
 #include <csignal>
 #include <map>
 #include <sched.h>
@@ -30,13 +32,16 @@
 #include <string_view>
 #include <vector>
 
+int
+get_verbose();
+
 std::string
 get_realpath(const std::string&);
 
 void
-print_command(const std::vector<char*>& _argv);
+print_command(const std::vector<char*>& _argv, std::string_view);
 
-void print_updated_environment(std::vector<char*>);
+void print_updated_environment(std::vector<char*>, std::string_view);
 
 std::vector<char*>
 get_initial_environment();

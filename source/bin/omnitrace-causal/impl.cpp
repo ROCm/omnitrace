@@ -32,12 +32,15 @@
 #include <timemory/log/color.hpp>
 #include <timemory/utility/argparse.hpp>
 #include <timemory/utility/console.hpp>
+#include <timemory/utility/filepath.hpp>
 #include <timemory/utility/join.hpp>
 
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
@@ -48,19 +51,23 @@
 #include <unistd.h>
 #include <vector>
 
-#if !defined(OMNITRACE_USE_ROCTRACER)
-#    define OMNITRACE_USE_ROCTRACER 0
-#endif
-
-#if !defined(OMNITRACE_USE_ROCPROFILER)
-#    define OMNITRACE_USE_ROCPROFILER 0
-#endif
-
-namespace color = tim::log::color;
+namespace color    = ::tim::log::color;
+namespace filepath = ::tim::filepath;
+namespace console  = ::tim::utility::console;
+namespace argparse = ::tim::argparse;
 using namespace timemory::join;
 using tim::get_env;
 using tim::log::colorized;
 using tim::log::stream;
+
+namespace std
+{
+std::string
+to_string(bool _v)
+{
+    return (_v) ? "true" : "false";
+}
+}  // namespace std
 
 namespace
 {
@@ -95,8 +102,7 @@ forward_signal(int sig)
 {
     for(auto itr : child_pids)
     {
-        TIMEMORY_PRINTF_WARNING(stderr, "[%i] Killing pid=%i with signal %i...\n",
-                                getpid(), itr, sig);
+        TIMEMORY_PRINTF_WARNING(stderr, "Killing pid=%i with signal %i...\n", itr, sig);
         kill(itr, sig);
         diagnose_status(itr, wait_pid(itr));
     }
@@ -104,6 +110,17 @@ forward_signal(int sig)
     kill(getpid(), sig);
 }
 }  // namespace
+
+int
+get_verbose()
+{
+    verbose = get_env("OMNITRACE_CAUSAL_VERBOSE",
+                      get_env<int>("OMNITRACE_VERBOSE", verbose, false));
+    auto _debug =
+        get_env("OMNITRACE_CAUSAL_DEBUG", get_env<bool>("OMNITRACE_DEBUG", false, false));
+    if(_debug) verbose += 8;
+    return verbose;
+}
 
 void
 forward_signals(const std::set<int>& _signals)
@@ -142,85 +159,102 @@ wait_pid(pid_t _pid, int _opts)
 int
 diagnose_status(pid_t _pid, int _status)
 {
-    auto _verbose = get_env<int>("OMNITRACE_VERBOSE", 0);
-    auto _debug   = get_env<bool>("OMNITRACE_DEBUG", false);
+    auto _verbose = get_verbose();
+    if(_verbose >= 3)
+    {
+        fflush(stderr);
+        fflush(stdout);
+        std::cout << std::flush;
+        std::cerr << std::flush;
+    }
+
+    bool _normal_exit      = (WIFEXITED(_status) > 0);
+    bool _unhandled_signal = (WIFSIGNALED(_status) > 0);
+    bool _core_dump        = (WCOREDUMP(_status) > 0);
+    bool _stopped          = (WIFSTOPPED(_status) > 0);
+    int  _exit_status      = WEXITSTATUS(_status);
+    int  _stop_signal      = (_stopped) ? WSTOPSIG(_status) : 0;
+    int  _ec               = (_unhandled_signal) ? WTERMSIG(_status) : 0;
 
     if(_verbose >= 4)
-        TIMEMORY_PRINTF(stderr, "[omnitrace-causal][%i] diagnosing status %i...\n", _pid,
-                        _status);
-
-    if(WIFEXITED(_status) && WEXITSTATUS(_status) == EXIT_SUCCESS)
     {
-        if(_verbose >= 4 || (_debug && _verbose >= 2))
-        {
-            TIMEMORY_PRINTF(
-                stderr,
-                "[omnitrace-causal][%i] program terminated normally with exit code: %i\n",
-                _pid, WEXITSTATUS(_status));
-        }
-        // normal terminatation
-        return 0;
+        TIMEMORY_PRINTF_INFO(
+            stderr,
+            "diagnosing status for process %i :: status: %i... normal exit: %s, "
+            "unhandled signal: %s, core dump: %s, stopped: %s, exit status: %i, stop "
+            "signal: %i, exit code: %i\n",
+            _pid, _status, std::to_string(_normal_exit).c_str(),
+            std::to_string(_unhandled_signal).c_str(), std::to_string(_core_dump).c_str(),
+            std::to_string(_stopped).c_str(), _exit_status, _stop_signal, _ec);
+    }
+    else if(_verbose >= 3)
+    {
+        TIMEMORY_PRINTF_INFO(stderr,
+                             "diagnosing status for process %i :: status: %i ...\n", _pid,
+                             _status);
     }
 
-    int ret = WEXITSTATUS(_status);
-    if(WIFSTOPPED(_status))
+    if(!_normal_exit)
     {
-        int sig = WSTOPSIG(_status);
-        // stopped with signal 'sig'
+        if(_ec == 0) _ec = EXIT_FAILURE;
         if(_verbose >= 5)
         {
-            TIMEMORY_PRINTF_WARNING(
-                stderr,
-                "[omnitrace-causal][%i] program stopped with signal %i. Exit code: %i\n",
-                _pid, sig, ret);
+            TIMEMORY_PRINTF_FATAL(
+                stderr, "process %i terminated abnormally. exit code: %i\n", _pid, _ec);
         }
-    }
-    else if(WCOREDUMP(_status))
-    {
-        if(_verbose >= 5)
-        {
-            TIMEMORY_PRINTF_WARNING(stderr,
-                                    "[omnitrace-causal][%i] program terminated and "
-                                    "produced a core dump. Exit code: %i\n",
-                                    _pid, ret);
-        }
-    }
-    else if(WIFSIGNALED(_status))
-    {
-        ret = WTERMSIG(_status);
-        if(_verbose >= 5)
-        {
-            TIMEMORY_PRINTF_WARNING(
-                stderr,
-                "[omnitrace-causal][%i] program terminated because it received a signal "
-                "(%i) that was not handled. Exit code: %i\n",
-                _pid, WTERMSIG(_status), ret);
-        }
-    }
-    else if(WIFEXITED(_status) && WEXITSTATUS(_status))
-    {
-        if(ret == 127 && (_verbose >= 5))
-        {
-            TIMEMORY_PRINTF_WARNING(stderr, "[omnitrace-causal][%i] execv failed\n",
-                                    _pid);
-        }
-        else if(_verbose >= 5)
-        {
-            TIMEMORY_PRINTF_WARNING(stderr,
-                                    "[omnitrace-causal][%i] program terminated with a "
-                                    "non-zero status. Exit code: %i\n",
-                                    _pid, ret);
-        }
-    }
-    else
-    {
-        if(_verbose >= 5)
-            TIMEMORY_PRINTF_WARNING(
-                stderr, "[omnitrace-causal][%i] program terminated abnormally.\n", _pid);
-        ret = EXIT_FAILURE;
     }
 
-    return ret;
+    if(_stopped)
+    {
+        if(_verbose >= 5)
+        {
+            TIMEMORY_PRINTF_FATAL(stderr,
+                                  "process %i stopped with signal %i. exit code: %i\n",
+                                  _pid, _stop_signal, _ec);
+        }
+    }
+
+    if(_core_dump)
+    {
+        if(_verbose >= 5)
+        {
+            TIMEMORY_PRINTF_FATAL(
+                stderr, "process %i terminated and produced a core dump. exit code: %i\n",
+                _pid, _ec);
+        }
+    }
+
+    if(_unhandled_signal)
+    {
+        if(_verbose >= 5)
+        {
+            TIMEMORY_PRINTF_FATAL(stderr,
+                                  "process %i terminated because it received a signal "
+                                  "(%i) that was not handled. exit code: %i\n",
+                                  _pid, _ec, _ec);
+        }
+    }
+
+    if(!_normal_exit && _exit_status > 0)
+    {
+        if(_verbose >= 5)
+        {
+            if(_exit_status == 127)
+            {
+                TIMEMORY_PRINTF_FATAL(
+                    stderr, "execv in process %i failed. exit code: %i\n", _pid, _ec);
+            }
+            else
+            {
+                TIMEMORY_PRINTF_FATAL(
+                    stderr,
+                    "process %i terminated with a non-zero status. exit code: %i\n", _pid,
+                    _ec);
+            }
+        }
+    }
+
+    return _ec;
 }
 
 std::string
@@ -233,11 +267,13 @@ get_realpath(const std::string& _v)
 }
 
 void
-print_command(const std::vector<char*>& _argv)
+print_command(const std::vector<char*>& _argv, std::string_view _prefix)
 {
     if(verbose >= 1)
         stream(std::cout, color::info())
-            << "Executing '" << join(array_config{ " " }, _argv) << "'...\n";
+            << _prefix << "Executing '" << join(array_config{ " " }, _argv) << "'...\n";
+
+    std::cerr << color::end() << std::flush;
 }
 
 std::vector<char*>
@@ -258,40 +294,12 @@ get_initial_environment()
     update_env(_env, "LD_PRELOAD",
                get_realpath(get_internal_libpath("libomnitrace-dl.so")), true);
 
-    auto* _dl_libpath =
-        realpath(get_internal_libpath("libomnitrace-dl.so").c_str(), nullptr);
-    auto* _omni_libpath =
-        realpath(get_internal_libpath("libomnitrace.so").c_str(), nullptr);
-
     update_env(_env, "OMNITRACE_USE_SAMPLING", true);
     update_env(_env, "OMNITRACE_USE_CAUSAL", true);
     update_env(_env, "OMNITRACE_USE_PERFETTO", false);
     update_env(_env, "OMNITRACE_USE_TIMEMORY", false);
     update_env(_env, "OMNITRACE_USE_PROCESS_SAMPLING", false);
     update_env(_env, "OMNITRACE_CRITICAL_TRACE", false);
-
-    // update_env(_env, "OMNITRACE_USE_PID", false);
-    // update_env(_env, "OMNITRACE_TIME_OUTPUT", false);
-    // update_env(_env, "OMNITRACE_OUTPUT_PATH", "omnitrace-output/%tag%/%launch_time%");
-
-#if defined(OMNITRACE_USE_ROCTRACER) || defined(OMNITRACE_USE_ROCPROFILER)
-    update_env(_env, "HSA_TOOLS_LIB", _dl_libpath);
-    if(!getenv("HSA_TOOLS_REPORT_LOAD_FAILURE"))
-        update_env(_env, "HSA_TOOLS_REPORT_LOAD_FAILURE", "1");
-#endif
-
-#if defined(OMNITRACE_USE_ROCPROFILER)
-    update_env(_env, "ROCP_TOOL_LIB", _omni_libpath);
-    if(!getenv("ROCP_HSA_INTERCEPT")) update_env(_env, "ROCP_HSA_INTERCEPT", "1");
-#endif
-
-#if defined(OMNITRACE_USE_OMPT)
-    if(!getenv("OMP_TOOL_LIBRARIES"))
-        update_env(_env, "OMP_TOOL_LIBRARIES", _dl_libpath, true);
-#endif
-
-    free(_dl_libpath);
-    free(_omni_libpath);
 
     return _env;
 }
@@ -307,11 +315,9 @@ get_internal_libpath(const std::string& _lib)
 }
 
 void
-print_updated_environment(std::vector<char*> _env)
+print_updated_environment(std::vector<char*> _env, std::string_view _prefix)
 {
-    // if(get_env<int>("OMNITRACE_VERBOSE", 0) < 0 &&
-    //   !get_env<bool>("OMNITRACE_DEBUG", false))
-    //    return;
+    if(get_verbose() < 0) return;
 
     std::sort(_env.begin(), _env.end(), [](auto* _lhs, auto* _rhs) {
         if(!_lhs) return false;
@@ -319,8 +325,8 @@ print_updated_environment(std::vector<char*> _env)
         return std::string_view{ _lhs } < std::string_view{ _rhs };
     });
 
-    std::vector<char*> _updates = {};
-    std::vector<char*> _general = {};
+    std::vector<std::string_view> _updates = {};
+    std::vector<std::string_view> _general = {};
 
     for(auto* itr : _env)
     {
@@ -348,11 +354,11 @@ print_updated_environment(std::vector<char*> _env)
     std::cerr << std::endl;
 
     for(auto& itr : _general)
-        stream(std::cerr, color::source()) << itr << "\n";
+        stream(std::cerr, color::source()) << _prefix << itr << "\n";
     for(auto& itr : _updates)
-        stream(std::cerr, color::source()) << itr << "\n";
+        stream(std::cerr, color::source()) << _prefix << itr << "\n";
 
-    std::cerr << std::endl;
+    std::cerr << color::end() << std::flush;
 }
 
 template <typename Tp>
@@ -411,7 +417,7 @@ std::vector<char*>
 parse_args(int argc, char** argv, std::vector<char*>& _env,
            std::vector<std::map<std::string_view, std::string>>& _causal_envs)
 {
-    using parser_t     = tim::argparse::argument_parser;
+    using parser_t     = argparse::argument_parser;
     using parser_err_t = typename parser_t::result_type;
 
     auto help_check = [](parser_t& p, int _argc, char** _argv) {
@@ -437,43 +443,56 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         exit(_pec);
     };
 
-    auto* _dl_libpath =
-        realpath(get_internal_libpath("libomnitrace-dl.so").c_str(), nullptr);
-    auto* _omni_libpath =
-        realpath(get_internal_libpath("libomnitrace.so").c_str(), nullptr);
+    const auto* _desc = R"desc(
+    Causal profiling usually requires multiple runs to reliably resolve the speedup estimates.
+    This executable is designed to streamline that process.
+    For example (assume all commands end with '-- <exe> <args>'):
 
-    auto parser = parser_t(argv[0]);
+        omnitrace-causal -n 5 -- <exe>                  # runs <exe> 5x with causal profiling enabled
+
+        omnitrace-causal -s 0 5,10,15,20                # runs <exe> 2x with virtual speedups:
+                                                        #   - 0
+                                                        #   - randomly selected from 5, 10, 15, and 20
+
+        omnitrace-causal -F func_A func_B func_(A|B)    # runs <exe> 3x with the function scope limited to:
+                                                        #   1. func_A
+                                                        #   2. func_B
+                                                        #   3. func_A or func_B
+    General tips:
+    - Insert progress points at hotspots in your code or use omnitrace's runtime instrumentation
+        - Note: binary rewrite will produce a incompatible new binary
+    - Collect a flat profile via sampling
+        - E.g., omnitrace-sample -F -- <exe> <args>
+        - Inspect sampling_wall_clock.txt and sampling_cpu_clock.txt for functions to target
+    - Run omnitrace-causal in "function" mode first (does not require debug info)
+    - Run omnitrace-causal in "line" mode when you are targeting one function (requires debug info)
+        - Preferably, use predictions from the "function" mode to determine which function to target
+    - Limit the virtual speedups to a smaller pool, e.g., 0,5,10,25,50, to get reliable predictions quicker
+    - Make use of the binary, source, and function scope to limit the functions/lines selected for experiments
+        - Note: source scope requires debug info
+    )desc";
+
+    auto parser = parser_t{ basename(argv[0]), _desc };
 
     parser.on_error([](parser_t&, const parser_err_t& _err) {
         stream(std::cerr, color::fatal()) << _err << "\n";
         exit(EXIT_FAILURE);
     });
 
-    auto _realtime_reqs = (get_env("HSA_ENABLE_INTERRUPT", std::string{}, false).empty())
-                              ? std::vector<std::string>{ "hsa-interrupt" }
-                              : std::vector<std::string>{};
-
-#if OMNITRACE_USE_ROCTRACER == 0 && OMNITRACE_USE_ROCPROFILER == 0
-    _realtime_reqs.clear();
-#endif
-
-    const auto* _trace_policy_desc =
-        R"(Policy for new data when the buffer size limit is reached:
-    %{INDENT}%- discard     : new data is ignored
-    %{INDENT}%- ring_buffer : new data overwrites oldest data)";
-
     auto _add_separator = [&](std::string _v, const std::string& _desc) {
         parser.add_argument({ "" }, "");
         parser
             .add_argument({ join("", "[", _v, "]") },
                           (_desc.empty()) ? _desc : join({ "", "(", ")" }, _desc))
-            .color(tim::log::color::info());
+            .color(color::info());
         parser.add_argument({ "" }, "");
     };
 
     parser.enable_help();
+    parser.enable_version("omnitrace-causal", "v" OMNITRACE_VERSION_STRING,
+                          OMNITRACE_GIT_DESCRIBE, OMNITRACE_GIT_REVISION);
 
-    auto _cols = std::get<0>(tim::utility::console::get_columns());
+    auto _cols = std::get<0>(console::get_columns());
     if(_cols > parser.get_help_width() + 8)
         parser.set_description_width(
             std::min<int>(_cols - parser.get_help_width() - 8, 120));
@@ -502,25 +521,34 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
             update_env(_env, "OMNITRACE_VERBOSE", _v);
         });
 
+    std::string _config_file      = {};
+    std::string _config_folder    = "omnitrace-causal-config";
+    bool        _generate_configs = false;
+
     _add_separator("GENERAL OPTIONS", "");
     parser.add_argument({ "-c", "--config" }, "Base configuration file")
         .min_count(0)
         .dtype("filepath")
         .action([&](parser_t& p) {
-            update_env(
-                _env, "OMNITRACE_CONFIG_FILE",
-                join(array_config{ ":" }, p.get<std::vector<std::string>>("config")));
+            _config_file =
+                join(array_config{ ":" }, p.get<std::vector<std::string>>("config"));
+        });
+    parser
+        .add_argument({ "-g", "--generate-configs" },
+                      "Generate config files instead of passing environment variables "
+                      "directly. If no arguments are provided, the config files will be "
+                      "placed in ${PWD}/omnitrace-causal-config folder")
+        .min_count(0)
+        .max_count(1)
+        .dtype("folder")
+        .action([&](parser_t& p) {
+            _generate_configs = true;
+            auto _dir         = p.get<std::string>("generate-configs");
+            if(!_dir.empty()) _config_folder = std::move(_dir);
+            if(!filepath::exists(_config_folder)) filepath::makedir(_config_folder);
         });
 
-    int64_t _niterations      = 1;
-    auto    _virtual_speedups = std::vector<std::string>{};
-    auto    _fileline_scopes  = std::vector<std::string>{};
-    auto    _function_scopes  = std::vector<std::string>{};
-    auto    _binary_scopes    = std::vector<std::string>{};
-    auto    _source_scopes    = std::vector<std::string>{};
-
-    _add_separator("CAUSAL PROFILING OPTIONS", "");
-
+    _add_separator("CAUSAL PROFILING OPTIONS (General)", "");
     parser.add_argument({ "-m", "--mode" }, "Causal profiling mode")
         .count(1)
         .dtype("string")
@@ -547,6 +575,14 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
             update_env(_env, "OMNITRACE_CAUSAL_END_TO_END", p.get<bool>("end-to-end"));
         });
 
+    int64_t _niterations      = 1;
+    auto    _virtual_speedups = std::vector<std::string>{};
+    auto    _fileline_scopes  = std::vector<std::string>{};
+    auto    _function_scopes  = std::vector<std::string>{};
+    auto    _binary_scopes    = std::vector<std::string>{};
+    auto    _source_scopes    = std::vector<std::string>{};
+
+    _add_separator("CAUSAL PROFILING OPTIONS (Multi-run)", "");
     parser
         .add_argument({ "-n", "--iterations" }, "Number of times to repeat the variants")
         .count(1)
@@ -617,7 +653,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
             _source_scopes = p.get<std::vector<std::string>>("source-scope");
         });
 
-#if OMNITRACE_HIP_VERSION < 50300
+#if OMNITRACE_HIP_VERSION > 0 && OMNITRACE_HIP_VERSION < 50300
     update_env(_env, "HSA_ENABLE_INTERRUPT", 0);
 #endif
 
@@ -646,28 +682,126 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
     else if(_cerr)
         throw std::runtime_error(_cerr.what());
 
-    free(_dl_libpath);
-    free(_omni_libpath);
-
     if(_niterations < 1) _niterations = 1;
     auto _get_size = [](const auto& _v) { return std::max<size_t>(_v.size(), 1); };
-    _causal_envs.resize(_niterations * _get_size(_virtual_speedups) *
-                        _get_size(_fileline_scopes) * _get_size(_function_scopes) *
-                        _get_size(_binary_scopes) * _get_size(_source_scopes));
 
-    auto _fill = [&_causal_envs](std::string_view _env_var, const auto& _data) {
+    auto _causal_envs_tmp = std::vector<std::map<std::string_view, std::string>>{};
+    auto _fill = [&_causal_envs_tmp](std::string_view _env_var, const auto& _data,
+                                     bool _quote) {
         if(_data.empty()) return;
-        auto   _modulo = _data.size();
-        size_t _n      = 0;
-        for(auto& eitr : _causal_envs)
-            eitr[_env_var] = _data.at(_n++ % _modulo);
+        if(_causal_envs_tmp.empty()) _causal_envs_tmp.emplace_back();
+        auto _tmp = _causal_envs_tmp;
+        _causal_envs_tmp.clear();
+        _causal_envs_tmp.reserve(_data.size() * _tmp.size());
+        for(auto ditr : _data)
+        {
+            // ensure that all backslashes are properly escaped
+            auto _pos = ditr.find('\\');
+            while(_pos != std::string::npos)
+            {
+                if(_pos > 0 && ditr.at(_pos - 1) != '\\') ditr = ditr.insert(_pos, "\\");
+                if(_pos + 2 < ditr.length())
+                    _pos = ditr.find('\\', _pos + 2);
+                else
+                    break;
+            }
+
+            if(_quote)
+            {
+                ditr.insert(0, "\"");
+                ditr += "\"";
+            }
+
+            // duplicate the env, add the env variable, emplace back
+            for(auto itr : _tmp)
+            {
+                itr[_env_var] = ditr;
+                _causal_envs_tmp.emplace_back(itr);
+            }
+        }
     };
 
-    _fill("OMNITRACE_CAUSAL_FIXED_SPEEDUP", _virtual_speedups);
-    _fill("OMNITRACE_CAUSAL_FILELINE_SCOPE", _fileline_scopes);
-    _fill("OMNITRACE_CAUSAL_FUNCTION_SCOPE", _function_scopes);
-    _fill("OMNITRACE_CAUSAL_BINARY_SCOPE", _binary_scopes);
-    _fill("OMNITRACE_CAUSAL_SOURCE_SCOPE", _source_scopes);
+    _fill("OMNITRACE_CAUSAL_BINARY_SCOPE", _binary_scopes, _generate_configs);
+    _fill("OMNITRACE_CAUSAL_SOURCE_SCOPE", _source_scopes, _generate_configs);
+    _fill("OMNITRACE_CAUSAL_FIXED_SPEEDUP", _virtual_speedups, false);
+    _fill("OMNITRACE_CAUSAL_FILELINE_SCOPE", _fileline_scopes, _generate_configs);
+    _fill("OMNITRACE_CAUSAL_FUNCTION_SCOPE", _function_scopes, _generate_configs);
+
+    // make sure at least one env exists
+    if(_causal_envs_tmp.empty()) _causal_envs_tmp.emplace_back();
+
+    // duplicate for the number of iterations
+    _causal_envs.clear();
+    _causal_envs.reserve(_niterations * _causal_envs_tmp.size());
+    for(int64_t i = 0; i < _niterations; ++i)
+    {
+        for(const auto& itr : _causal_envs_tmp)
+            _causal_envs.emplace_back(itr);
+    }
+
+    if(_generate_configs)
+    {
+        auto _is_omni_env = [](std::string_view itr) {
+            return (itr.find("OMNITRACE") == 0 &&
+                    itr.find("OMNITRACE_CONFIG_FILE") != 0 &&
+                    itr.find('=') < itr.length());
+        };
+
+        auto _omni_env = std::map<std::string, std::string>{};
+        for(auto* itr : _env)
+        {
+            if(_is_omni_env(itr))
+            {
+                auto _env_var = std::string{ itr };
+                auto _pos     = _env_var.find('=');
+                auto _env_val = _env_var.substr(_pos + 1);
+                _env_var      = _env_var.substr(0, _pos);
+                _omni_env.emplace(_env_var, _env_val);
+            }
+        }
+
+        _env.erase(std::remove_if(_env.begin(), _env.end(), _is_omni_env), _env.end());
+
+        _causal_envs_tmp = std::move(_causal_envs);
+        _causal_envs.clear();
+        auto _write_config =
+            [_omni_env](std::ostream&                                  _os,
+                        const std::map<std::string_view, std::string>& _data) {
+                size_t _width = 0;
+                for(const auto& itr : _omni_env)
+                    _width = std::max(_width, itr.first.length());
+
+                for(const auto& itr : _data)
+                    _width = std::max(_width, itr.first.length());
+
+                _os << "# omnitrace common settings\n";
+                for(const auto& itr : _omni_env)
+                    _os << std::setw(_width + 1) << std::left << itr.first << " = "
+                        << itr.second << "\n";
+
+                _os << "\n# omnitrace causal settings\n";
+                for(const auto& itr : _data)
+                    _os << std::setw(_width + 1) << std::left << itr.first << " = "
+                        << itr.second << "\n";
+            };
+
+        int nwidth = (std::log10(_causal_envs_tmp.size()) + 1);
+        for(size_t i = 0; i < _causal_envs_tmp.size(); ++i)
+        {
+            std::stringstream fname{};
+            fname.fill('0');
+            fname << _config_folder << "/causal-" << std::setw(nwidth) << i << ".cfg";
+            std::ofstream _ofs{ fname.str() };
+            _write_config(_ofs, _causal_envs_tmp.at(i));
+            auto _cfg_name = (_config_file.empty())
+                                 ? fname.str()
+                                 : join(array_config{ ":" }, _config_file, fname.str());
+            auto _cfg =
+                std::map<std::string_view, std::string>{ { "OMNITRACE_CONFIG_FILE",
+                                                           _cfg_name } };
+            _causal_envs.emplace_back(_cfg);
+        }
+    }
 
     return _outv;
 }

@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string_view>
 #include <unistd.h>
 
@@ -40,7 +41,8 @@ main(int argc, char** argv)
     for(int i = 1; i < argc; ++i)
     {
         auto _arg = std::string_view{ argv[i] };
-        if(_arg == "--" || _arg == "-?" || _arg == "-h" || _arg == "--help")
+        if(_arg == "--" || _arg == "-?" || _arg == "-h" || _arg == "--help" ||
+           _arg == "--version")
             _has_double_hyphen = true;
     }
 
@@ -57,22 +59,58 @@ main(int argc, char** argv)
         _causal_env.resize(1);
     }
 
-    if(!_argv.empty())
+    if(get_verbose() >= 3)
     {
-        forward_signals({ SIGINT, SIGTERM, SIGQUIT });
+        TIMEMORY_PRINTF_INFO(stderr, "causal environments to be executed:\n");
+        size_t _n = 0;
         for(auto& citr : _causal_env)
         {
-            auto _pid = fork();
-            TIMEMORY_PRINTF_WARNING(
-                stderr, "[omnitrace-causal][%i] PID=%i returned %i from fork...\n",
-                getppid(), getpid(), _pid);
+            auto _env = _base_env;
+            for(const auto& eitr : citr)
+                update_env(_env, eitr.first, eitr.second);
+            auto _prefix = std::to_string(_n++) + ":  ";
+            print_updated_environment(_env, _prefix);
+        }
+    }
+
+    if(!_argv.empty())
+    {
+        if(_causal_env.size() == 1)
+        {
+            auto _env = _base_env;
+            for(const auto& eitr : _causal_env.front())
+                update_env(_env, eitr.first, eitr.second);
+            print_updated_environment(_env, "0: ");
+            print_command(_argv, "0: ");
+            _argv.emplace_back(nullptr);
+            _env.emplace_back(nullptr);
+            return execvpe(_argv.front(), _argv.data(), _env.data());
+        }
+
+        forward_signals({ SIGINT, SIGTERM, SIGQUIT });
+        size_t _ncount = 0;
+        for(auto& citr : _causal_env)
+        {
+            auto _n        = _ncount++;
+            auto _main_pid = getpid();
+            auto _pid      = fork();
+
+            if(get_verbose() >= 3)
+            {
+                TIMEMORY_PRINTF_INFO(stderr, "process %i returned %i from fork...\n",
+                                     getpid(), _pid);
+            }
+
             if(_pid == 0)
             {
+                auto _prefix = std::stringstream{};
+                _prefix << _n << ": [" << _main_pid << " -> " << getpid() << "] ";
+
                 auto _env = _base_env;
                 for(const auto& eitr : citr)
                     update_env(_env, eitr.first, eitr.second);
-                print_updated_environment(_env);
-                print_command(_argv);
+                print_updated_environment(_env, _prefix.str());
+                print_command(_argv, _prefix.str());
                 _argv.emplace_back(nullptr);
                 _env.emplace_back(nullptr);
                 return execvpe(_argv.front(), _argv.data(), _env.data());
