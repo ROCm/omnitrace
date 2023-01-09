@@ -152,8 +152,9 @@ blocking_gotcha::set_data(const comp::gotcha_data& _data)
     auto   _hash  = tim::add_hash_id(_data.tool_id);
     auto&& _ident = tim::get_hash_identifier(_hash);
     if(_ident != _data.tool_id)
-        throw std::runtime_error(JOIN("", "Error! resolving hash for \"", _data.tool_id,
-                                      "\" (", _hash, ") returns ", _ident.c_str()));
+        throw ::omnitrace::exception<std::runtime_error>(
+            JOIN("", "Error! resolving hash for \"", _data.tool_id, "\" (", _hash,
+                 ") returns ", _ident.c_str()));
 #if defined(OMNITRACE_CI)
     OMNITRACE_VERBOSE_F(3, "data set for '%s'...\n", _data.tool_id.c_str());
 #endif

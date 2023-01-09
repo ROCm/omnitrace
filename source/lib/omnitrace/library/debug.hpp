@@ -23,6 +23,7 @@
 #pragma once
 
 #include "library/defines.hpp"
+#include "library/exception.hpp"
 
 #include <timemory/api.hpp>
 #include <timemory/backends/dmp.hpp>
@@ -310,7 +311,7 @@ get_chars(T&& _c, std::index_sequence<Idx...>)
 
 //--------------------------------------------------------------------------------------//
 
-#define OMNITRACE_CONDITIONAL_THROW(COND, ...)                                           \
+#define OMNITRACE_CONDITIONAL_THROW_E(COND, TYPE, ...)                                   \
     if(COND)                                                                             \
     {                                                                                    \
         char _msg_buffer[OMNITRACE_DEBUG_BUFFER_LEN];                                    \
@@ -320,11 +321,11 @@ get_chars(T&& _c, std::index_sequence<Idx...>)
                  ::omnitrace::debug::is_bracket(__VA_ARGS__) ? "" : " ");                \
         auto len = strlen(_msg_buffer);                                                  \
         snprintf(_msg_buffer + len, OMNITRACE_DEBUG_BUFFER_LEN - len, __VA_ARGS__);      \
-        throw std::runtime_error(                                                        \
+        throw ::omnitrace::exception<TYPE>(                                              \
             ::tim::log::string(::tim::log::color::fatal(), _msg_buffer));                \
     }
 
-#define OMNITRACE_CONDITIONAL_BASIC_THROW(COND, ...)                                     \
+#define OMNITRACE_CONDITIONAL_BASIC_THROW_E(COND, TYPE, ...)                             \
     if(COND)                                                                             \
     {                                                                                    \
         char _msg_buffer[OMNITRACE_DEBUG_BUFFER_LEN];                                    \
@@ -333,17 +334,31 @@ get_chars(T&& _c, std::index_sequence<Idx...>)
                  ::omnitrace::debug::is_bracket(__VA_ARGS__) ? "" : " ");                \
         auto len = strlen(_msg_buffer);                                                  \
         snprintf(_msg_buffer + len, OMNITRACE_DEBUG_BUFFER_LEN - len, __VA_ARGS__);      \
-        throw std::runtime_error(                                                        \
+        throw ::omnitrace::exception<TYPE>(                                              \
             ::tim::log::string(::tim::log::color::fatal(), _msg_buffer));                \
     }
 
+#define OMNITRACE_CI_THROW_E(COND, TYPE, ...)                                            \
+    OMNITRACE_CONDITIONAL_THROW_E(                                                       \
+        ::omnitrace::get_is_continuous_integration() && (COND), TYPE, __VA_ARGS__)
+
+#define OMNITRACE_CI_BASIC_THROW_E(COND, TYPE, ...)                                      \
+    OMNITRACE_CONDITIONAL_BASIC_THROW_E(                                                 \
+        ::omnitrace::get_is_continuous_integration() && (COND), TYPE, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+#define OMNITRACE_CONDITIONAL_THROW(COND, ...)                                           \
+    OMNITRACE_CONDITIONAL_THROW_E((COND), std::runtime_error, __VA_ARGS__)
+
+#define OMNITRACE_CONDITIONAL_BASIC_THROW(COND, ...)                                     \
+    OMNITRACE_CONDITIONAL_BASIC_THROW_E((COND), std::runtime_error, __VA_ARGS__)
+
 #define OMNITRACE_CI_THROW(COND, ...)                                                    \
-    OMNITRACE_CONDITIONAL_THROW(::omnitrace::get_is_continuous_integration() && (COND),  \
-                                __VA_ARGS__)
+    OMNITRACE_CI_THROW_E((COND), std::runtime_error, __VA_ARGS__)
 
 #define OMNITRACE_CI_BASIC_THROW(COND, ...)                                              \
-    OMNITRACE_CONDITIONAL_BASIC_THROW(                                                   \
-        ::omnitrace::get_is_continuous_integration() && (COND), __VA_ARGS__)
+    OMNITRACE_CI_BASIC_THROW_E((COND), std::runtime_error, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
