@@ -36,7 +36,7 @@ from yaml import parse
 from collections import OrderedDict
 
 from . import gui
-from .parser import parseFile
+from .parser import parseFiles
 from .parser import getSpeedupData
 
 
@@ -44,57 +44,61 @@ def causal(args):
     app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 
     # TODO This will become a glob to look for subfolders with coz files
-    workload_path = os.path.join(args.path, "profile.coz")
+    workload_path = [os.path.join(args.path, "experiments.json")]
+    #workload_path = [os.path.join(args.path, "experiments.coz")]
 
-    f = open(workload_path, "r")
-    new_df = parseFile(workload_path)
-    speedup_df = getSpeedupData(new_df).rename(
+    CLI = args.cli
+    new_df = parseFiles(workload_path, CLI)
+    workload_path = workload_path[0]
+    speedup_df = new_df.rename(
         columns={"speedup": "Line Speedup", "progress_speedup": "Program Speedup"}
     )
+    if not CLI:
 
-    runs = OrderedDict({workload_path: speedup_df})
-    kernel_names = ["program1", "program2"]
-    max_points = 9
-    sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
-    input_filters = [
-        {
-            "Name": "Sort by",
-            "filter": [],
-            "values": list(
-                map(
-                    str,
-                    sortOptions,
-                )
-            ),
-            "type": "Name",
-        },
-        {
-            "Name": "kernel",
-            "filter": [],
-            "values": list(
-                map(
-                    str,
-                    kernel_names,
-                )
-            ),
-            "type": "Kernel Name",
-        },
-        {
-            "Name": "points",
-            "filter": [],
-            "values": max_points,
-            "type": "int",
-        },
-    ]
-    gui.build_causal_layout(
-        app,
-        runs,
-        input_filters,
-        workload_path,
-        speedup_df,
-        args.verbose,
-    )
-    app.run_server(debug=False, host="0.0.0.0", port=8051)
+        runs = OrderedDict({workload_path: speedup_df})
+        kernel_names = ["program1", "program2"]
+        max_points = 9
+        sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
+        input_filters = [
+            {
+                "Name": "Sort by",
+                "filter": [],
+                "values": list(
+                    map(
+                        str,
+                        sortOptions,
+                    )
+                ),
+                "type": "Name",
+            },
+            {
+                "Name": "kernel",
+                "filter": [],
+                "values": list(
+                    map(
+                        str,
+                        kernel_names,
+                    )
+                ),
+                "type": "Kernel Name",
+            },
+            {
+                "Name": "points",
+                "filter": [],
+                "values": max_points,
+                "type": "int",
+            },
+        ]
+        
+        gui.build_causal_layout(
+            app,
+            runs,
+            input_filters,
+            workload_path,
+            speedup_df,
+            args.verbose,
+        )
+        app.run_server(debug=False, host="0.0.0.0", port=8051)
 
 
 def main():
@@ -106,6 +110,16 @@ def main():
         ver_path = os.path.join(f"{this_dir}", "VERSION")
     f = open(ver_path, "r")
     VER = f.read()
+
+    settings={}
+    if os.path.basename(this_dir) == "source":
+        settings_path = os.path.join(f"{this_dir.parent}", "settings.json")
+    else:
+        settings_path = os.path.join(f"{this_dir}", "settings.json")
+    with open(settings_path, "r") as f:
+            settings = json.load(f)
+
+    
 
     my_parser = argparse.ArgumentParser(
         description="AMD's OmniTrace GUI",
@@ -140,12 +154,23 @@ def main():
         metavar="",
         type=str,
         dest="path",
-        default=os.path.join(os.path.dirname(__file__), "workloads", "toy"),
+        #default=os.path.join(os.path.dirname(__file__), "workloads", "toy"),
+        default=settings["path"],
         required=False,
         help="\t\t\tSpecify path to save workload.\n\t\t\t(DEFAULT: {}/workloads/<name>)".format(
             os.getcwd()
         ),
     )
+
+    #only CLI
+    my_parser.add_argument(
+        "-c",
+        "--cli",
+        action="store_true",
+        default=settings["cli"],
+        required=False,
+    )
+
 
     args = my_parser.parse_args()
     causal(args)

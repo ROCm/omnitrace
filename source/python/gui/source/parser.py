@@ -4,7 +4,168 @@ import jsondiff
 import pandas as pd
 import numpy as np
 from math import isnan, isinf, isclose
+from collections import OrderedDict
 
+class experiment_data(object):
+    def __init__(self, _speedup):
+        self.speedup = _speedup
+        self.duration = []
+    def __iadd__(self, _val):
+        self.duration += [float(_val)]
+    def __len__(self):
+        return len(self.duration)
+    def __eq__(self, rhs):
+        return self.speedup == rhs.speedup
+    def __neq__(self, rhs):
+        return not self == rhs
+    def __lt__(self, rhs):
+        return self.speedup < rhs.speedup
+    def mean(self):
+        #print(self.duration)
+        if len(self.duration) == 0:
+            return 0
+        return sum(self.duration) / float(len(self.duration))
+class line_speedup(object):
+    def __init__(self, _name="", _prog="", _exp_data=None, _exp_base=None):
+        self.name = _name
+        self.prog = _prog
+        self.data = _exp_data
+        self.base = _exp_base
+    def get(self):
+        if self.data is None or self.base is None:
+            return 0.0
+        return ((self.base.mean() - self.data.mean()) / self.base.mean()) * 100
+    def __str__(self):
+        if self.data is None or self.base is None:
+            return f"{self.name}"
+        _line_speedup = self.get()
+        return f"[{self.name}][{self.prog}][{self.data.speedup:3}] speedup: {_line_speedup:6.1f} %"
+    def __eq__(self, rhs):
+        return (
+            self.name == rhs.name
+            and self.prog == rhs.prog
+            and self.data == rhs.data
+            and self.base == rhs.base
+        )
+    def __neq__(self, rhs):
+        return not self == rhs
+    def __lt__(self, rhs):
+        if self.name != rhs.name:
+            return self.name < rhs.name
+        elif self.prog != rhs.prog:
+            return self.prog < rhs.prog
+        elif self.data != rhs.data:
+            return self.data < rhs.data
+        elif self.base != rhs.base:
+            return self.base < rhs.base
+        return False
+def find_or_insert(_data, _value):
+    if _value not in _data:
+        _data[_value] = experiment_data(_value)
+    return _data[_value]
+def longest_common_prefix(_inp):
+    a = list(set(_inp))
+    # if size is 0, return empty string
+    # if size is 1, return first string
+    if len(a) < 2:
+        return ""
+    # sort the array of strings
+    a.sort()
+    # if all the same, return empty string
+    if a[0] == a[-1]:
+        return ""
+    # find the minimum length from first and last string
+    end = min(len(a[0]), len(a[-1]))
+    # find the common prefix between the first and last string
+    i = 0
+    while i < end and a[0][i] == a[-1][i]:
+        i += 1
+    pre = a[0][0:i]
+    return pre
+def process_data(data, _data):
+    if not _data:
+        return data
+    for record in _data["omnitrace"]["causal"]["records"]:
+        for exp in record["experiments"]:
+            _speedup = exp["virtual_speedup"]
+            _duration = exp["duration"]
+            _file = exp["selection"]["info"]["file"]
+            _line = exp["selection"]["info"]["line"]
+            _func = exp["selection"]["info"]["dfunc"]
+            _sym_addr = exp["selection"]["symbol_address"]
+            _selected = ":".join([_file, f"{_line}"]) if _sym_addr == 0 else _func
+            if _selected not in data:
+                data[_selected] = {}
+            for pts in exp["progress_points"]:
+                _name = pts["name"]
+                if _name not in data[_selected]:
+                    data[_selected][_name] = {}
+                itr = find_or_insert(data[_selected][_name], _speedup)
+                if "delta" in pts:
+                    _delt = pts["delta"]
+                else:
+                    _delt = pts["laps"]
+                if _delt > 0:
+                        #delt=1
+                        itr += float(_duration) / float(_delt)
+                else:
+                        _diff = pts["arrival"] - pts["departure"] + 1
+                        _rate = pts["arrival"] / float(_duration)
+                        if _rate != 0:
+                            itr += float(_diff) / float(_rate)
+                #else:
+                #    _delt = pts["laps"]
+    return data
+
+def compute_speedups(_data, CLI):
+    data = {}
+    out = pd.DataFrame()
+    for selected, pitr in _data.items():
+        if selected not in data:
+            data[selected] = {}
+        for progpt, ditr in pitr.items():
+            data[selected][progpt] = OrderedDict(sorted(ditr.items()))
+    from os.path import dirname
+    ret = []
+    _slcp = longest_common_prefix(
+        [dirname(x.split(":")[0]) if ":" in x else x for x in _data.keys()]
+    )
+    for selected, pitr in _data.items():
+        selected = selected.replace(_slcp, "", 1) if len(_slcp) > 0 else selected
+        if len(selected) > 0 and selected[0] == "/":
+            selected = selected[1:]
+        _plcp = longest_common_prefix(
+            [dirname(x.split(":")[0]) if ":" in x else x for x in pitr.keys()]
+        )
+        for progpt, ditr in pitr.items():
+            progpt = progpt.replace(_plcp, "", 1) if len(_plcp) > 0 else progpt
+            if len(progpt) > 0 and progpt[0] == "/":
+                progpt = progpt[1:]
+            if 0 not in ditr.keys() or len(ditr[0]) == 0:
+                #print(f"missing baseline data for {progpt} in {selected}...")
+                continue
+            _baseline = ditr[0].mean()
+            for speedup, itr in ditr.items():
+                if speedup != itr.speedup:
+                    raise ValueError(f"in {selected}: {speedup} != {itr.speedup}")
+                _val = line_speedup(selected, progpt, itr, ditr[0])
+                ret.append(_val)
+    ret.sort()
+    _last_name = None
+    _last_prog = None
+    for itr in ret:
+        if CLI:
+            if itr.name != _last_name or itr.prog != _last_prog:
+                print("")
+            #print(f"{itr}")
+        if len(itr.data.duration) != 0:
+            out = pd.concat([
+                    out,
+                    pd.DataFrame({"idx":[(itr.prog, itr.name)], "progress points":[itr.prog], "point":[itr.name], "speedup":[itr.data.speedup], "progress_speedup":[itr.get()]})
+                ])
+        _last_name = itr.name
+        _last_prog = itr.prog
+    return out
 
 def isValidDataPoint(data):
     return isnan(data) == False and isinf(data) == False
@@ -13,7 +174,7 @@ def isValidDataPoint(data):
 def getValue(splice):
     if "type" in splice:
         # Something might happen here later
-        print("type found in coz file")
+        print("type found in coz file, finish adding code")
         sys.exit(1)
     if "difference" in splice or "speedup" in splice:
         return float(splice[1])
@@ -41,7 +202,6 @@ def addThroughput(df, experiment, value):
         df["delta"][ix] = df["delta"][ix] + float(value["delta"])
         df["duration"][ix] = df["duration"][ix] + float(experiment["duration"])
     return df
-
 
 def addLatency(df, experiment, value):
     ix = (experiment["selected"], experiment["speedup"])
@@ -73,19 +233,78 @@ def addLatency(df, experiment, value):
 
     return df
 
+def reformat_data(dict_data):
+    df = pd.DataFrame(dict_data)
+    out = pd.DataFrame()
+    for key,value in df.iteritems():
+        #print(key)
+        _speedup=[]
+        for speedup, itr in value.items():
+            out = pd.concat([
+                out, 
+                pd.DataFrame(data={"point":[key], "speedup": [speedup]})
+            ])
+        what  = pd.DataFrame(value)
+        #df[i] = j
 
-def parseFile(file):
-    f = open(file, "r")
-    lines = f.readlines()
+def parseFiles(files, CLI):
+    
     data = pd.DataFrame()
-    if "{" in lines:
-        data = pd.read_json(file)
-    else:
-        # Parse lines
-        experiment = None
+    out = pd.DataFrame()
+    dict_data={}
+    for file in files:
+        if "json" in file:
+            with open(file, 'r') as j:
+                data_experiments = json.load(j)
+                dict_data = process_data(dict_data, data_experiments)
+                dict_data = compute_speedups(dict_data, CLI)#.sort_index()
+            
+        else:
+            f = open(file, "r")
+            lines = f.readlines()
+            # Parse lines
+            experiment = None
 
-        for line in lines:
-            if line != "\n":
+            for line in lines:
+                if line != "\n":
+                    isExperiment = False
+                    data_type = ""
+                    value = {}
+                    sections = line.split("\t")
+                    value["type"] = sections[0]
+                    for section in sections:
+                        splice = section.split("\n")[0].split("=")
+                        if len(splice) > 1:
+                            val = getValue(splice)
+                            if isinstance(val,str) and  '/' in val:
+                                val = val[val.rfind('/')+1:]
+                            value[splice[0]] = val
+                        else:
+                            data_type = splice[0]
+                    if data_type == "experiment":
+                        experiment = value
+                    elif data_type == "throughput-point" or data_type == "progress-point":
+                        experiment["speedup"] = 100 * experiment["speedup"]
+                        data = addThroughput(data, experiment, value)
+                    elif data_type == "latency-point":
+                        data = addLatency(data, experiment, value)
+                    elif data_type not in ["startup", "shutdown", "samples", "runtime"]:
+                        print("Invalid profile")
+            out = getSpeedupData(data.sort_index())
+    return pd.concat([out, dict_data])
+
+
+def parseUploadedFile(file, CLI):
+    data = pd.DataFrame()
+    if '{' in file:
+        dict_data={}
+        data_experiments = json.loads(file)
+        dict_data = process_data(dict_data, data_experiments)
+        data = compute_speedups(dict_data, CLI)#.sort_index()
+    else:
+        #coz
+        for line in file.split("\n"):
+            if len(line) > 0:
                 isExperiment = False
                 data_type = ""
                 value = {}
@@ -100,40 +319,15 @@ def parseFile(file):
                 if data_type == "experiment":
                     experiment = value
                 elif data_type == "throughput-point" or data_type == "progress-point":
+                    experiment["speedup"] = 100 * experiment["speedup"]
                     data = addThroughput(data, experiment, value)
                 elif data_type == "latency-point":
                     data = addLatency(data, experiment, value)
                 elif data_type not in ["startup", "shutdown", "samples", "runtime"]:
                     print("Invalid profile")
                     # sys.exit(1)
+        data = getSpeedupData(data.sort_index())
     return data
-
-
-def parseUploadedFile(file):
-    data = pd.DataFrame()
-    for line in file.split("\n"):
-        if len(line) > 0:
-            isExperiment = False
-            data_type = ""
-            value = {}
-            sections = line.split("\t")
-            value["type"] = sections[0]
-            for section in sections:
-                splice = section.split("\n")[0].split("=")
-                if len(splice) > 1:
-                    value[splice[0]] = getValue(splice)
-                else:
-                    data_type = splice[0]
-            if data_type == "experiment":
-                experiment = value
-            elif data_type == "throughput-point" or data_type == "progress-point":
-                data = addThroughput(data, experiment, value)
-            elif data_type == "latency-point":
-                data = addLatency(data, experiment, value)
-            elif data_type not in ["startup", "shutdown", "samples", "runtime"]:
-                print("Invalid profile")
-                # sys.exit(1)
-    return data.sort_index()
 
 
 def getDataPoint(data):
@@ -194,8 +388,8 @@ def getSpeedupData(data):
                         pd.DataFrame.from_dict(
                             data={
                                 "point": [name],
-                                "speedup": [100 * speedup],
-                                "progress_speedup": [100 * progress_speedup],
+                                "speedup": [speedup],
+                                "progress_speedup": [100*progress_speedup],
                             },
                         ),
                         speedup_df,

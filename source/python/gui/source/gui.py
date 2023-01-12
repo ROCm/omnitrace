@@ -44,7 +44,7 @@ from dash import dcc
 from os.path import exists
 
 from .header import get_header
-from .parser import parseFile
+from .parser import parseFiles
 from .parser import parseUploadedFile
 from .parser import getSpeedupData
 
@@ -64,27 +64,30 @@ IS_DARK = True  # default dark theme
 def build_line_graph(data, KernelName, points_filt):
     data_options = sorted(list(set(data.point)))
     layout1 = html.Div(
-        [
+        id = "graph_all",
+        children = [
             html.H4("All Causal Profiles", style={"color": "white"}),
-            dcc.Graph(
-                id="graph_all",
-                config={"responsive": True},
-            ),
-            dcc.Checklist(
-                id="checklist_all", options=data_options, value=data_options, inline=True
-            ),
+            #dcc.Graph(id="graph_all"),
+            #dcc.Checklist(
+            #    id="checklist_select",
+            #    options=data_options,
+            #    value=data_options,
+            #    inline=True,
+            #)
         ]
     )
+
     layout2 = html.Div(
-        [
+        id = "graph_select",
+        children = [
             html.H4("Selected Causal Profiles", style={"color": "white"}),
-            dcc.Graph(id="graph_select"),
-            dcc.Checklist(
-                id="checklist_select",
-                options=data_options,
-                value=data_options,
-                inline=True,
-            ),
+            #dcc.Graph(id="graph_select"),
+            #dcc.Checklist(
+            #    id="checklist_select",
+            #    options=data_options,
+            #    value=data_options,
+            #    inline=True,
+            #),
         ]
     )
 
@@ -158,7 +161,8 @@ def update_line_graph(sort_filt, selected_all, selected_select, data, points_fil
     # what = data[mask_all]
     # fig_data1 = data[mask_all]
     # fig_data2 = data[mask_select]
-    fig1 = px.line(
+    
+    fig1 = dcc.Graph(figure = px.line(
         mask_all,
         x="Line Speedup",
         y="Program Speedup",
@@ -168,21 +172,61 @@ def update_line_graph(sort_filt, selected_all, selected_select, data, points_fil
         # margin={l:50, r:50},
         color="point",
         markers=True,
-        line_shape="spline",
-    )
-    fig2 = px.line(
-        mask_select,
-        x="Line Speedup",
-        y="Program Speedup",
-        # height=700, width=700,
-        color="point",
-        markers=True,
-        facet_col="point",
-        facet_col_wrap=3,
-        line_shape="spline",
-    )
+        #line_shape="spline",
+    ).update_layout(legend=dict(
+    orientation="h",
+    itemwidth=70,
+    yanchor="bottom",
+    y=1.02,
+    xanchor="right",
+    x=1
+)))
+    layout2  = [
+            html.H4("Selected Causal Profiles", style={"color": "white"}),
+        ]
+    for point in sorted(list(mask_select.point.unique())):
+        subplots = []
+        #for experiment in list(mask_select.experiment)[0:3]:
+        sub_data = mask_select[mask_select["point"] == point]
+        #sub_data = mask_select[mask_select["point"] == point]
+        #    sub_data = sub_data[sub_data["experiment"] == experiment]
+            
+        subplots= px.line(
+                        sub_data,
+                        x="Line Speedup",
+                        y="Program Speedup",
+                        height=500, #* len(sufficient_points)/2, 
+                        #width=700,
+                        color="progress points",
+                        markers=True,
+                        #facet_col="point",
+                        #facet_col_wrap=2,
+                        #line_shape="spline",
+            ).update_layout(legend=dict(
+                orientation="h",
+                itemwidth=50,
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ))
+        layout2.append(html.H4(point, style={"color": "white"}))
+        layout2.append(dcc.Graph(figure = subplots))
+    
+    #layout2 = html.Div(
+    #    id = "graph_select",
+    #    children = [
+    #        html.H4("Selected Causal Profiles", style={"color": "white"}),
+    #    ].append(fig2)
+    #)
+    layout1  = [
+            html.H4("Selected Causal Profiles", style={"color": "white"}),
+            fig1
+        ]
 
-    return mask_all, fig1, fig2
+    #fig2.layout.autosize = 
+
+    return mask_all, layout1, layout2
 
 
 def reset_Input_filters(kernel_names, max_points):
@@ -270,25 +314,25 @@ def build_causal_layout(
             ),
             html.Div(id="container", children=[]),
             line_graph1,
-            line_graph2,
+            line_graph2
         ]
     )
 
     @app.callback(
         Output("container", "children"),
         Output("nav-wrap", "children"),
-        Output("graph_all", "figure"),
-        Output("graph_select", "figure"),
-        Output("checklist_all", "options"),
-        Output("checklist_select", "options"),
-        Output("checklist_all", "value"),
-        Output("checklist_select", "value"),
+        Output("graph_all", "children"),
+        Output("graph_select", "children"),
+        #Output("checklist_all", "options"),
+        #Output("checklist_select", "options"),
+        #Output("checklist_all", "value"),
+        #Output("checklist_select", "value"),
         [Input("nav-wrap", "children")],
         [Input("Sort by-filt", "value")],
         [Input("point-regex", "value")],
         [Input("points-filt", "value")],
-        [Input("checklist_all", "value")],
-        [Input("checklist_select", "value")],
+        #[Input("checklist_all", "value")],
+        #[Input("checklist_select", "value")],
         [Input("file-path", "value")],
         [Input("upload-drag", "contents")],
         [State("upload-drag", "filename")],
@@ -299,8 +343,8 @@ def build_causal_layout(
         sort_filt,
         point_regex,
         points_filt,
-        checklist_all_values,
-        checklist_select_values,
+        #checklist_all_values,
+        #checklist_select_values,
         workload_path,
         list_of_contents,
         filename,
@@ -311,31 +355,36 @@ def build_causal_layout(
         global input_filters
         global checklist_options
         global checklist_values
-
+        CLI = False
+    
+        
         # change to if debug
         if True:
             print("Sort by is ", sort_filt)
             print("point_regex is ", point_regex)
             print("points is: ", points_filt)
-            print("checklist_all is: ", checklist_all_values)
-            print("checklist_select is: ", checklist_select_values)
+            #print("checklist_all is: ", checklist_all_values)
+            #print("checklist_select is: ", checklist_select_values)
 
         div_children = []
         files = []
         fig1 = None
         fig2 = None
         global new_data
+        checklist_options = checklist_values = checklist_all_values = checklist_select_values= sorted(list(data.point.unique()))
 
         if workload_path is not None and os.path.isdir(workload_path):
-            files = glob.glob(os.path.join(workload_path, "*.coz"))
-            subfiles = glob.glob(os.path.join(workload_path, "*/*.coz"))
+            #files = glob.glob(os.path.join(workload_path, "*.coz")) + 
+            files = glob.glob(os.path.join(workload_path, "*.json"))
+            #subfiles = glob.glob(os.path.join(workload_path, "*/*.coz")) + 
+            subfiles = glob.glob(os.path.join(workload_path, "*/*.json"))
             metadata = glob.glob(os.path.join(workload_path, "*/metadata*.json"))
 
             all_files = files + subfiles
             new_data = pd.DataFrame()
-            for profile_path in all_files:
-                new_data = new_data.append(parseFile(profile_path))
-            new_data = getSpeedupData(new_data).rename(
+            #for profile_path in all_files:
+            new_data = new_data.append(parseFiles(all_files, CLI))
+            new_data = new_data.rename(
                 columns={"speedup": "Line Speedup", "progress_speedup": "Program Speedup"}
             )
             data = new_data
@@ -358,19 +407,17 @@ def build_causal_layout(
                 header,
                 fig1,
                 fig2,
-                checklist_options,
-                checklist_options,
-                checklist_options,
-                checklist_options,
             )
         # div_children.append()
         elif list_of_contents is not None:
-            if ".coz" in filename:
+            if ".coz" in filename or ".json" in filename:
                 new_data_file = base64.decodebytes(
                     list_of_contents.encode("utf-8").split(b";base64,")[1]
                 ).decode("utf-8")
-                new_data = parseUploadedFile(new_data_file)
-                new_data = getSpeedupData(new_data).rename(
+                # change to if debug
+                
+                new_data = parseUploadedFile(new_data_file, CLI)
+                new_data = new_data.rename(
                     columns={
                         "speedup": "Line Speedup",
                         "progress_speedup": "Program Speedup",
@@ -379,7 +426,7 @@ def build_causal_layout(
                 data = new_data
 
                 # reset checklists
-                checklist_options = checklist_values = sorted(list(data.point.unique()))
+                #checklist_options = checklist_values = sorted(list(data.point.unique()))
 
                 max_points = new_data.point.value_counts().max().max()
 
@@ -397,11 +444,8 @@ def build_causal_layout(
                     header,
                     fig1,
                     fig2,
-                    checklist_options,
-                    checklist_options,
-                    checklist_options,
-                    checklist_options,
                 )
+
 
         elif point_regex is not None:
             # filter options and values
@@ -430,10 +474,10 @@ def build_causal_layout(
                 header,
                 fig1,
                 fig2,
-                checklist_all_options,
-                checklist_select_options,
-                checklist_all_values,
-                checklist_select_values,
+                #checklist_all_options,
+                #checklist_select_options,
+                #checklist_all_values,
+                #checklist_select_values,
             )
 
         else:
@@ -445,31 +489,14 @@ def build_causal_layout(
                 data,
                 points_filt,
             )
-            screen_data_points = sorted(list(screen_data.point.unique()))
 
-            # First run, checklist options not populated yet
-            if checklist_options is None:
-                checklist_all_values = (
-                    checklist_select_values
-                ) = (
-                    checklist_select_options
-                ) = (
-                    checklist_all_options
-                ) = checklist_values = checklist_options = screen_data_points
-
-            else:
-                # TODO filter checklist_options to include only screen_data_points...maybe values also
-                checklist_all_values = checklist_all_values
-                checklist_select_values = checklist_select_values
-                checklist_select_options = checklist_all_options = checklist_options
-            # TODO keep min points value..........
             return (
                 div_children,
                 header,
                 fig1,
                 fig2,
-                checklist_all_options,
-                checklist_select_options,
-                checklist_all_values,
-                checklist_select_values,
+                #checklist_all_options,
+                #checklist_select_options,
+                #checklist_all_values,
+                #checklist_select_values,
             )
