@@ -41,6 +41,7 @@
 #include <timemory/tpls/cereal/cereal.hpp>
 #include <timemory/tpls/cereal/cereal/archives/json.hpp>
 #include <timemory/tpls/cereal/types.hpp>
+#include <timemory/units.hpp>
 
 #include <chrono>
 #include <ratio>
@@ -57,12 +58,12 @@ namespace
 using backtrace_causal = omnitrace::component::backtrace_causal;
 namespace cereal       = ::tim::cereal;
 
-auto    current_experiment_value = experiment{};
-auto    current_selected_count   = std::atomic<uint64_t>{ 0 };
-auto    current_experiment       = std::atomic<experiment*>{ nullptr };
-auto    experiment_history       = std::vector<experiment>{};
-auto    ignored_stacks           = std::vector<unwind_stack_t>{};
-int64_t global_scaling           = 1;
+auto    current_experiment_value  = experiment{};
+auto    current_selected_count    = std::atomic<uint64_t>{ 0 };
+auto    current_experiment        = std::atomic<experiment*>{ nullptr };
+auto    experiment_history        = std::vector<experiment>{};
+int64_t global_scaling            = 1;
+int64_t global_scaling_increments = 0;
 }  // namespace
 
 bool
@@ -207,7 +208,7 @@ experiment::start()
     init_progress   = get_progress_points();
     start_time      = tracing::now();
 
-    OMNITRACE_VERBOSE(0, "Starting causal experiment #%u: %s\n", index,
+    OMNITRACE_VERBOSE(0, "Starting causal experiment #%3u: %s\n", index,
                       as_string().c_str());
 
     current_experiment_value = *this;
@@ -261,9 +262,28 @@ experiment::stop()
     }
 
     if(_num < 5)
+    {
         global_scaling *= 2;
+        ++global_scaling_increments;  // keep track of how many successive increments have
+                                      // been performed
+    }
     else if(_num > 10 && global_scaling > 1)
+    {
         global_scaling /= 2;
+        global_scaling_increments = 0;
+    }
+
+    if(OMNITRACE_UNLIKELY(global_scaling_increments >= 5))
+    {
+        OMNITRACE_WARNING(
+            0,
+            "Warning! causal experimentation hasn't seen at least 5 progress points "
+            "in the last %li experiments. Progress points are necessary for measuring "
+            "the effect of the virtual speed-up. Please visit "
+            "https://amdresearch.github.io/omnitrace/ for documentation on progress "
+            "points and how to add them\n",
+            global_scaling_increments);
+    }
 
     if(_num > 0) experiment_history.emplace_back(*this);
 
@@ -276,13 +296,18 @@ experiment::as_string() const
 {
     std::stringstream _ss{};
     auto _dur = static_cast<double>(experiment_time) / static_cast<double>(units::sec);
-    auto _addr =
-        selection.symbol_address > 0 ? selection.symbol_address : selection.address;
-    _ss << std::boolalpha << "virtual speed-up: " << std::setw(3) << virtual_speedup
-        << "%, delay: " << std::setw(6) << sample_delay << ", duration: " << std::setw(6)
-        << std::fixed << std::setprecision(3) << _dur
-        << " sec :: experiment: " << as_hex(_addr) << " ['"
-        << demangle(selection.info.func) << "']";
+    _ss << std::boolalpha << "speed-up: " << std::setw(3) << virtual_speedup
+        << "%, period: " << std::setw(4) << std::fixed << std::setprecision(2)
+        << (sampling_period / static_cast<double>(units::msec))
+        << " msec, duration: " << std::setw(5) << std::fixed << std::setprecision(3)
+        << _dur << " sec :: experiment: " << as_hex(selection.address) << " ";
+    if(selection.symbol_address > 0 && selection.address != selection.symbol_address)
+        _ss << "(symbol@" << as_hex(selection.symbol_address) << ") ";
+    _ss << "['" << demangle(selection.info.func) << "']";
+    if(!selection.info.file.empty() && selection.info.line > 0)
+        _ss << "[" << filepath::basename(selection.info.file) << ":"
+            << selection.info.line << "]";
+
     return _ss.str();
 }
 
@@ -326,14 +351,12 @@ experiment::is_selected(unwind_stack_t _stack)
 }
 
 bool
-experiment::is_selected(container::c_array<void*> _stack)
+experiment::is_selected(unwind_addr_t _stack)
 {
     if(is_active())
     {
-        for(auto* itr : _stack)
-            if(itr && current_experiment_value.selection.contains(
-                          reinterpret_cast<uintptr_t>(itr)))
-                return true;
+        for(auto itr : _stack)
+            if(current_experiment_value.selection.contains(itr)) return true;
     }
     return false;
 }
@@ -419,9 +442,11 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
         {
             if(itr.count > 0)
             {
-                for(const auto& iitr : get_line_info(itr.address, false))
+                auto _linfo = get_line_info(itr.address, false);
+                if(_linfo.size() > 1) _linfo.pop_front();
+                for(const auto& iitr : _linfo)
                 {
-                    auto _sample = sample{ itr.count, iitr.name(), iitr };
+                    auto _sample = sample{ itr.count, iitr.second.name(), iitr.second };
                     auto fitr    = current_record.samples.find(_sample);
                     if(fitr != current_record.samples.end())
                         *fitr += _sample;
@@ -512,8 +537,8 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
                 _name.empty(),
                 "Error! causal experiment selection has no name: address=%s, file=%s, "
                 "line=%u, func=%s",
-                JOIN("", "0x", std::hex, _line_info.address).c_str(),
-                _line_info.file.c_str(), _line_info.line, _line_info.func.c_str());
+                as_hex(_line_info.address).c_str(), _line_info.file.c_str(),
+                _line_info.line, _line_info.func.c_str());
 
             ofs << "experiment\tselected=" << demangle(_name)
                 << "\tspeedup=" << std::setprecision(2)

@@ -72,7 +72,7 @@ OMNITRACE_DEFINE_CONCRETE_TRAIT(provide_backtrace, causal::sampling::causal_samp
                                 std::false_type)
 
 OMNITRACE_DEFINE_CONCRETE_TRAIT(buffer_size, causal::sampling::causal_sampler_t,
-                                TIMEMORY_ESC(std::integral_constant<size_t, 512>))
+                                TIMEMORY_ESC(std::integral_constant<size_t, 4096>))
 
 namespace omnitrace
 {
@@ -164,8 +164,7 @@ causal_offload_buffer(int64_t, causal_sampler_buffer_t&& _buf)
         {
             for(auto&& itr : _bt_causal->get_stack())
             {
-                if(itr && itr->address() > 0x0)
-                    _processed[_bt_causal->get_index()].emplace_back(itr->address());
+                if(itr > 0) _processed[_bt_causal->get_index()].emplace_back(itr);
             }
         }
     }
@@ -364,9 +363,8 @@ post_process_causal(int64_t, const std::vector<causal_bundle_t>& _data)
         const auto* _bt_causal = itr.get<component::backtrace_causal>();
         for(auto&& ditr : _bt_causal->get_stack())
         {
-            if(ditr && ditr->address() > 0x0)
-                component::backtrace_causal::add_sample(_bt_causal->get_index(),
-                                                        ditr->address());
+            if(ditr > 0)
+                component::backtrace_causal::add_sample(_bt_causal->get_index(), ditr);
         }
     }
 }

@@ -105,9 +105,9 @@ struct backtrace_causal
     static void                     reset_period_stats();
 
 private:
-    bool                   m_selected = false;
-    uint32_t               m_index    = 0;
-    causal::unwind_stack_t m_stack    = {};
+    bool                  m_selected = false;
+    uint32_t              m_index    = 0;
+    causal::unwind_addr_t m_stack    = {};
 };
 }  // namespace component
 }  // namespace omnitrace

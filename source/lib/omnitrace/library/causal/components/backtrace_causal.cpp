@@ -24,6 +24,7 @@
 #include "library/causal/data.hpp"
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
+#include "library/concepts.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/runtime.hpp"
@@ -51,13 +52,18 @@ namespace component
 {
 namespace
 {
-using ::tim::backtrace::get_unw_signal_frame_stack;
+using ::tim::backtrace::get_unw_signal_frame_stack_raw;
 
 auto&
 get_delay_statistics()
 {
     using thread_data_t =
         thread_data<identity<tim::statistics<int64_t>>, category::sampling>;
+
+    static_assert(
+        use_placement_new_when_generating_unique_ptr<thread_data_t>::value,
+        "delay statistics thread data should use placement new to allocate unique_ptr");
+
     static auto& _v = thread_data_t::instance(construct_on_init{});
     return _v;
 }
@@ -66,7 +72,12 @@ auto&
 get_in_use()
 {
     using thread_data_t = thread_data<identity<bool>, category::sampling>;
-    static auto& _v     = thread_data_t::instance(construct_on_init{});
+
+    static_assert(
+        use_placement_new_when_generating_unique_ptr<thread_data_t>::value,
+        "sampling is_use thread data should use placement new to allocate unique_ptr");
+
+    static auto& _v = thread_data_t::instance(construct_on_init{});
     return _v;
 }
 
@@ -120,7 +131,7 @@ backtrace_causal::sample(int _sig)
     scoped_in_use _in_use{};
 
     m_index = causal::experiment::get_index();
-    m_stack = get_unw_signal_frame_stack<depth, ignore_depth>();
+    m_stack = get_unw_signal_frame_stack_raw<depth, ignore_depth>();
 
     // the batch handler timer delivers a signal according to the thread CPU
     // clock, ensuring that setting the current selection and processing the
