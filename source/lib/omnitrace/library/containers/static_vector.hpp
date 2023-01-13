@@ -36,10 +36,12 @@ namespace omnitrace
 {
 namespace container
 {
-template <typename Tp, size_t N>
+template <typename Tp, size_t N, bool AtomicSizeV = false>
 struct static_vector
 {
-    using this_type = static_vector<Tp, N>;
+    using count_type = std::conditional_t<AtomicSizeV, std::atomic<size_t>, size_t>;
+    using this_type  = static_vector<Tp, N>;
+    using value_type = Tp;
 
     static_vector()                         = default;
     static_vector(const static_vector&)     = default;
@@ -47,44 +49,13 @@ struct static_vector
     static_vector& operator=(const static_vector&) = default;
     static_vector& operator=(static_vector&&) noexcept = default;
 
-    static_vector(size_t _n, Tp _v = {})
-    {
-        m_size.store(_n);
-        m_data.fill(_v);
-    }
+    static_vector(size_t _n, Tp _v = {});
 
-    static_vector& operator=(std::initializer_list<Tp>&& _v)
-    {
-        if(OMNITRACE_UNLIKELY(_v.size() > N))
-        {
-            throw exception<std::out_of_range>(
-                std::string{ "static_vector::operator=(initializer_list) size > " } +
-                std::to_string(N));
-        }
-
-        clear();
-        for(auto&& itr : _v)
-            m_data[m_size++] = itr;
-        return *this;
-    }
+    static_vector& operator=(std::initializer_list<Tp>&& _v);
+    static_vector& operator=(std::pair<std::array<Tp, N>, size_t>&&);
 
     template <typename... Args>
-    auto& emplace_back(Args&&... _v)
-    {
-        if(m_size.load(std::memory_order_relaxed) >= N)
-        {
-            throw exception<std::out_of_range>(
-                std::string{ "static_vector::emplace_back - reached capacity " } +
-                std::to_string(N));
-        }
-
-        auto _idx = m_size++;
-        if constexpr(std::is_assignable<Tp, decltype(std::forward<Args>(_v))...>::value)
-            m_data[_idx] = { std::forward<Args>(_v)... };
-        else
-            m_data[_idx] = Tp{ std::forward<Args>(_v)... };
-        return m_data[_idx];
-    }
+    value_type& emplace_back(Args&&... _v);
 
     template <typename Up>
     decltype(auto) push_back(Up&& _v)
@@ -94,21 +65,21 @@ struct static_vector
 
     void pop_back() { --m_size; }
 
-    void clear() { m_size.store(0); }
+    void clear();
     void reserve(size_t) noexcept {}
     void shrink_to_fit() noexcept {}
     auto capacity() noexcept { return N; }
 
-    bool empty() const { return (m_size.load() == 0); }
-    auto size() const { return m_size.load(); }
+    size_t size() const { return m_size; }
+    bool   empty() const { return (size() == 0); }
 
     auto begin() { return m_data.begin(); }
     auto begin() const { return m_data.begin(); }
     auto cbegin() const { return m_data.cbegin(); }
 
-    auto end() { return m_data.begin() + m_size.load(); }
-    auto end() const { return m_data.begin() + m_size.load(); }
-    auto cend() const { return m_data.cbegin() + m_size.load(); }
+    auto end() { return m_data.begin() + size(); }
+    auto end() const { return m_data.begin() + size(); }
+    auto cend() const { return m_data.cbegin() + size(); }
 
     decltype(auto) operator[](size_t _idx) { return m_data[_idx]; }
     decltype(auto) operator[](size_t _idx) const { return m_data[_idx]; }
@@ -118,23 +89,106 @@ struct static_vector
 
     decltype(auto) front() { return m_data.front(); }
     decltype(auto) front() const { return m_data.front(); }
-    decltype(auto) back() { return *(m_data.begin() + m_size - 1); }
-    decltype(auto) back() const { return *(m_data.begin() + m_size - 1); }
+    decltype(auto) back() { return *(m_data.begin() + size() - 1); }
+    decltype(auto) back() const { return *(m_data.begin() + size() - 1); }
 
-    void swap(this_type& _v)
-    {
-        auto _t_size = m_size.load();
-        auto _v_size = _v.m_size.load();
-        std::swap(m_data, _v.m_data);
-        m_size.store(_v_size);
-        _v.m_size.store(_t_size);
-    }
+    void swap(this_type& _v);
 
     friend void swap(this_type& _lhs, this_type& _rhs) { _lhs.swap(_rhs); }
 
 private:
-    std::atomic<size_t> m_size = 0;
-    std::array<Tp, N>   m_data = {};
+    count_type        m_size = count_type{ 0 };
+    std::array<Tp, N> m_data = {};
 };
+
+template <typename Tp, size_t N, bool AtomicSizeV>
+static_vector<Tp, N, AtomicSizeV>::static_vector(size_t _n, Tp _v)
+{
+    m_size.store(_n);
+    m_data.fill(_v);
+}
+
+template <typename Tp, size_t N, bool AtomicSizeV>
+static_vector<Tp, N, AtomicSizeV>&
+static_vector<Tp, N, AtomicSizeV>::operator=(std::initializer_list<Tp>&& _v)
+{
+    if(OMNITRACE_UNLIKELY(_v.size() > N))
+    {
+        throw exception<std::out_of_range>(
+            std::string{ "static_vector::operator=(initializer_list) size > " } +
+            std::to_string(N));
+    }
+
+    clear();
+    for(auto&& itr : _v)
+        m_data[m_size++] = itr;
+    return *this;
+}
+
+template <typename Tp, size_t N, bool AtomicSizeV>
+static_vector<Tp, N, AtomicSizeV>&
+static_vector<Tp, N, AtomicSizeV>::operator=(std::pair<std::array<Tp, N>, size_t>&& _v)
+{
+    if constexpr(AtomicSizeV) m_size.store(0);
+
+    m_data = std::move(_v.first);
+
+    if constexpr(AtomicSizeV)
+        m_size.store(_v.second);
+    else
+        m_size = _v.second;
+
+    return *this;
+}
+
+template <typename Tp, size_t N, bool AtomicSizeV>
+void
+static_vector<Tp, N, AtomicSizeV>::clear()
+{
+    if constexpr(AtomicSizeV)
+        m_size.store(0);
+    else
+        m_size = 0;
+}
+
+template <typename Tp, size_t N, bool AtomicSizeV>
+void
+static_vector<Tp, N, AtomicSizeV>::swap(this_type& _v)
+{
+    if constexpr(AtomicSizeV)
+    {
+        auto _t_size = m_size;
+        auto _v_size = _v.m_size;
+        std::swap(m_data, _v.m_data);
+        m_size.store(_v_size);
+        _v.m_size.store(_t_size);
+    }
+    else
+    {
+        std::swap(m_size, _v.m_size);
+        std::swap(m_data, _v.m_data);
+    }
+}
+
+template <typename Tp, size_t N, bool AtomicSizeV>
+template <typename... Args>
+Tp&
+static_vector<Tp, N, AtomicSizeV>::emplace_back(Args&&... _v)
+{
+    auto _idx = m_size++;
+    if(_idx >= N)
+    {
+        throw exception<std::out_of_range>(
+            std::string{ "static_vector::emplace_back - reached capacity " } +
+            std::to_string(N));
+    }
+
+    if constexpr(std::is_assignable<Tp, decltype(std::forward<Args>(_v))...>::value)
+        m_data[_idx] = { std::forward<Args>(_v)... };
+    else
+        m_data[_idx] = Tp{ std::forward<Args>(_v)... };
+    return m_data[_idx];
+}
+
 }  // namespace container
 }  // namespace omnitrace

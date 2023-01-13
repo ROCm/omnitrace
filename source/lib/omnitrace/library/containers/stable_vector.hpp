@@ -221,7 +221,7 @@ public:
     const_reference at(size_type i) const;
 
 private:
-    using chunk_type   = container::static_vector<Tp, ChunkSizeV>;
+    using chunk_type   = container::static_vector<Tp, ChunkSizeV, true>;
     using storage_type = std::vector<std::unique_ptr<chunk_type>>;
 
     void        add_chunk();
