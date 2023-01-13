@@ -22,22 +22,25 @@
 
 #pragma once
 
-#define STR2(x) #x
-#define STR(x)  STR2(x)
-#define LABEL   __FILE__ ":" STR(__LINE__)
+#define CAUSAL_STR2(x) #x
+#define CAUSAL_STR(x)  CAUSAL_STR2(x)
+#define CAUSAL_LABEL   __FILE__ ":" CAUSAL_STR(__LINE__)
 
 #if defined(USE_OMNI) && USE_OMNI > 0
 #    include <omnitrace/user.h>
-#    define CAUSAL_PROGRESS     omnitrace_user_progress(LABEL);
-#    define CAUSAL_BEGIN(LABEL) omnitrace_user_push_region(LABEL);
-#    define CAUSAL_END(LABEL)   omnitrace_user_pop_region(LABEL);
+#    define CAUSAL_PROGRESS              omnitrace_user_progress(CAUSAL_LABEL);
+#    define CAUSAL_PROGRESS_NAMED(LABEL) omnitrace_user_progress(LABEL);
+#    define CAUSAL_BEGIN(LABEL)          omnitrace_user_push_region(LABEL);
+#    define CAUSAL_END(LABEL)            omnitrace_user_pop_region(LABEL);
 #elif defined(USE_COZ) && USE_COZ > 0
 #    include <coz.h>
-#    define CAUSAL_PROGRESS     COZ_PROGRESS_NAMED(LABEL)
-#    define CAUSAL_BEGIN(LABEL) COZ_BEGIN(LABEL)
-#    define CAUSAL_END(LABEL)   COZ_END(LABEL)
+#    define CAUSAL_PROGRESS              COZ_PROGRESS_NAMED(CAUSAL_LABEL)
+#    define CAUSAL_PROGRESS_NAMED(LABEL) COZ_PROGRESS_NAMED(LABEL)
+#    define CAUSAL_BEGIN(LABEL)          COZ_BEGIN(LABEL)
+#    define CAUSAL_END(LABEL)            COZ_END(LABEL)
 #else
 #    define CAUSAL_PROGRESS
+#    define CAUSAL_PROGRESS_NAMED(LABEL)
 #    define CAUSAL_BEGIN(LABEL)
 #    define CAUSAL_END(LABEL)
 #endif
