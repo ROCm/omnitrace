@@ -104,7 +104,9 @@ get_initial_environment()
     auto* _omni_libpath =
         realpath(get_internal_libpath("libomnitrace.so").c_str(), nullptr);
 
-    update_env(_env, "OMNITRACE_USE_SAMPLING", true);
+    auto _mode = get_env<std::string>("OMNITRACE_MODE", "sampling", false);
+
+    update_env(_env, "OMNITRACE_USE_SAMPLING", (_mode != "causal"));
     update_env(_env, "OMNITRACE_CRITICAL_TRACE", false);
     update_env(_env, "OMNITRACE_USE_PROCESS_SAMPLING", false);
 
