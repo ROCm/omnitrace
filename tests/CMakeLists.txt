@@ -217,7 +217,7 @@ endif()
 
 function(OMNITRACE_WRITE_TEST_CONFIG _FILE _ENV)
     set(_ENV_ONLY
-        "OMNITRACE_(USE_MPIP|DEBUG_SETTINGS|FORCE_ROCPROFILER_INIT|DEFAULT_MIN_INSTRUCTIONS|COLORIZED_LOG)="
+        "OMNITRACE_(MODE|USE_MPIP|DEBUG_SETTINGS|FORCE_ROCPROFILER_INIT|DEFAULT_MIN_INSTRUCTIONS|COLORIZED_LOG)="
         )
     set(_FILE_CONTENTS)
     set(_ENV_CONTENTS)
@@ -1254,15 +1254,26 @@ omnitrace_add_test(
     RUNTIME_PASS_REGEX "(\\\[[0-9]+\\\]) function coverage ::  66.67%"
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) function coverage ::  66.67%")
 
+set(_causal_environment
+    "OMNITRACE_MODE=causal"
+    "OMNITRACE_USE_CAUSAL=ON"
+    "OMNITRACE_USE_PERFETTO=OFF"
+    "OMNITRACE_USE_TIMEMORY=OFF"
+    "OMNITRACE_USE_SAMPLING=OFF"
+    "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
+    "OMNITRACE_USE_RCCLP=ON"
+    "OMNITRACE_TIME_OUTPUT=OFF"
+    "OMNITRACE_USE_PID=OFF"
+    "${_test_openmp_env}"
+    "${_test_library_path}")
+
 omnitrace_add_test(
     SKIP_RUNTIME SKIP_REWRITE SKIP_SAMPLING
     NAME causal-profiling
     TARGET causal-omni-cpu
     LABELS "causal-profiling"
     RUN_ARGS 70 100
-    ENVIRONMENT
-        "${_base_environment};OMNITRACE_USE_CAUSAL=ON;OMNITRACE_USE_PERFETTO=OFF;OMNITRACE_USE_PROCESS_SAMPLING=OFF"
-    )
+    ENVIRONMENT "${_causal_environment}")
 
 omnitrace_add_test(
     SKIP_REWRITE SKIP_SAMPLING SKIP_PRELOAD
@@ -1282,9 +1293,7 @@ omnitrace_add_test(
         std::operator
     LABELS "causal-profiling"
     RUN_ARGS 70 100
-    ENVIRONMENT
-        "${_base_environment};OMNITRACE_USE_CAUSAL=ON;OMNITRACE_USE_PERFETTO=OFF;OMNITRACE_USE_PROCESS_SAMPLING=OFF"
-    )
+    ENVIRONMENT "${_causal_environment}")
 
 # -------------------------------------------------------------------------------------- #
 #
