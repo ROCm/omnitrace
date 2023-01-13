@@ -398,6 +398,22 @@ update_env(std::vector<char*>& _environ, std::string_view _env_var, Tp&& _env_va
         strdup(omnitrace::common::join('=', _env_var, _env_val).c_str()));
 }
 
+template <typename Tp>
+void
+add_default_env(std::vector<char*>& _environ, std::string_view _env_var, Tp&& _env_val)
+{
+    auto _key = join("", _env_var, "=");
+    for(auto& itr : _environ)
+    {
+        if(!itr) continue;
+        if(std::string_view{ itr }.find(_key) == 0) return;
+    }
+
+    updated_envs.emplace(_env_var);
+    _environ.emplace_back(
+        strdup(omnitrace::common::join('=', _env_var, _env_val).c_str()));
+}
+
 void
 remove_env(std::vector<char*>& _environ, std::string_view _env_var)
 {
@@ -525,6 +541,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
     std::string _config_file      = {};
     std::string _config_folder    = "omnitrace-causal-config";
     bool        _generate_configs = false;
+    bool        _add_defaults     = true;
 
     _add_separator("GENERAL OPTIONS", "");
     parser.add_argument({ "-c", "--config" }, "Base configuration file")
@@ -548,12 +565,24 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
             if(!_dir.empty()) _config_folder = std::move(_dir);
             if(!filepath::exists(_config_folder)) filepath::makedir(_config_folder);
         });
+    parser
+        .add_argument({ "--no-defaults" },
+                      "Do not activate default features which are recommended for causal "
+                      "profiling. For example, Kokkos tools support is added by default "
+                      "(OMNITRACE_USE_KOKKOSP=ON) because, for Kokkos applicaitons, the "
+                      "Kokkos-Tools callbacks are used for progress points. Activation "
+                      "of OpenMP tools support is similar")
+        .min_count(0)
+        .max_count(1)
+        .dtype("bool")
+        .action([&](parser_t& p) { _add_defaults = !p.get<bool>("no-defaults"); });
 
     _add_separator("CAUSAL PROFILING OPTIONS (General)", "");
     parser.add_argument({ "-m", "--mode" }, "Causal profiling mode")
         .count(1)
         .dtype("string")
         .choices({ "function", "line" })
+        .choice_alias("function", { "func" })
         .action([&](parser_t& p) {
             update_env(_env, "OMNITRACE_CAUSAL_MODE", p.get<std::string>("mode"));
         });
@@ -566,6 +595,15 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         .action([&](parser_t& p) {
             update_env(_env, "OMNITRACE_CAUSAL_FILE", p.get<std::string>("output-name"));
         });
+
+    bool _clobber = false;
+
+    parser
+        .add_argument({ "-C", "--clobber" },
+                      "Overwrite any existing experiment results during the first run")
+        .max_count(1)
+        .dtype("bool")
+        .action([&](parser_t& p) { _clobber = p.get<bool>("clobber"); });
 
     parser
         .add_argument({ "-e", "--end-to-end" },
@@ -711,6 +749,29 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         }
     };
 
+    if(_add_defaults)
+    {
+        add_default_env(_env, "OMNITRACE_USE_KOKKOSP", true);
+
+#if defined(OMNITRACE_USE_OMPT) && OMNITRACE_USE_OMPT > 0
+        add_default_env(_env, "OMNITRACE_USE_OMPT", true);
+#endif
+
+#if(defined(OMNITRACE_USE_MPI) && OMNITRACE_USE_MPI > 0) ||                              \
+    (defined(OMNITRACE_USE_MPI_HEADERS) && OMNITRACE_USE_MPI_HEADERS > 0)
+        add_default_env(_env, "OMNITRACE_USE_MPIP", true);
+#endif
+
+#if defined(OMNITRACE_USE_ROCTRACER) && OMNITRACE_USE_ROCTRACER > 0
+        add_default_env(_env, "OMNITRACE_ROCTRACER_HIP_API", true);
+        add_default_env(_env, "OMNITRACE_ROCTRACER_HSA_API", true);
+#endif
+
+#if defined(OMNITRACE_USE_RCCL) && OMNITRACE_USE_RCCL > 0
+        add_default_env(_env, "OMNITRACE_USE_RCCLP", true);
+#endif
+    }
+
     _fill("OMNITRACE_CAUSAL_BINARY_SCOPE", _binary_scopes, _generate_configs);
     _fill("OMNITRACE_CAUSAL_SOURCE_SCOPE", _source_scopes, _generate_configs);
     _fill("OMNITRACE_CAUSAL_FIXED_SPEEDUP", _virtual_speedups, false);
@@ -793,8 +854,9 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         }
     }
 
-    //_causal_envs.front().emplace(std::string_view{ "OMNITRACE_CAUSAL_FILE_CLOBBER" },
-    //                             std::string{ "true" });
+    if(_clobber)
+        _causal_envs.front().emplace(std::string_view{ "OMNITRACE_CAUSAL_FILE_CLOBBER" },
+                                     std::string{ "true" });
 
     return _outv;
 }

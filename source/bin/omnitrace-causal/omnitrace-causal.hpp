@@ -54,6 +54,10 @@ void
 update_env(std::vector<char*>&, std::string_view, Tp&&, bool _append = false,
            std::string_view _join_delim = ":");
 
+template <typename Tp>
+void
+add_default_env(std::vector<char*>&, std::string_view, Tp&&);
+
 void
 remove_env(std::vector<char*>&, std::string_view);
 
