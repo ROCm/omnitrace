@@ -47,6 +47,8 @@ from .header import get_header
 from .parser import parseFiles
 from .parser import parseUploadedFile
 from .parser import getSpeedupData
+import plotly.graph_objects as go
+
 
 file_timestamp = 0
 data = pd.DataFrame()
@@ -173,43 +175,47 @@ def update_line_graph(sort_filt, selected_all, selected_select, data, points_fil
         color="point",
         markers=True,
         #line_shape="spline",
-    ).update_layout(legend=dict(
-    orientation="h",
-    itemwidth=70,
-    yanchor="bottom",
-    y=1.02,
-    xanchor="right",
-    x=1
-)))
+    ))
     layout2  = [
             html.H4("Selected Causal Profiles", style={"color": "white"}),
         ]
     for point in sorted(list(mask_select.point.unique())):
-        subplots = []
+        subplots = go.Figure()
         #for experiment in list(mask_select.experiment)[0:3]:
         sub_data = mask_select[mask_select["point"] == point]
-        #sub_data = mask_select[mask_select["point"] == point]
-        #    sub_data = sub_data[sub_data["experiment"] == experiment]
-            
-        subplots= px.line(
-                        sub_data,
-                        x="Line Speedup",
-                        y="Program Speedup",
-                        height=500, #* len(sufficient_points)/2, 
-                        #width=700,
-                        color="progress points",
-                        markers=True,
-                        #facet_col="point",
-                        #facet_col_wrap=2,
-                        #line_shape="spline",
-            ).update_layout(legend=dict(
-                orientation="h",
-                itemwidth=50,
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            ))
+        line_number = point[point.rfind(':'):].isnumeric()
+        if line_number:
+            #untested
+            for prog in list(sub_data["progress points"].unique()):
+                sub_data_prog = sub_data[sub_data["progress points"] == prog]
+                subplots.add_trace(
+                    go.Scatter(
+                    x = sub_data_prog["Line Speedup"],
+                    y = sub_data_prog["Program Speedup"],
+                    line_shape='spline',
+                    name = prog,
+                    mode='lines+markers',
+                    )
+                ).update_layout(
+                    xaxis={"title":"Line Speedup"},
+                    yaxis={"title":"Program Speedup"}
+                    )
+        else:
+            #sub_data = sub_data.rename(columns={"Line Speedup":"Function Speedup"})
+            for prog in list(sub_data["progress points"].unique()):
+                sub_data_prog = sub_data[sub_data["progress points"] == prog]
+                subplots.add_trace(
+                    go.Scatter(
+                    x = sub_data_prog["Line Speedup"],
+                    y = sub_data_prog["Program Speedup"],
+                    line_shape='spline',
+                    name = prog,
+                    mode='lines+markers',
+                    )
+                ).update_layout(
+                    xaxis={"title":"Function Speedup"},
+                    yaxis={"title":"Program Speedup"}
+                    )
         layout2.append(html.H4(point, style={"color": "white"}))
         layout2.append(dcc.Graph(figure = subplots))
     
