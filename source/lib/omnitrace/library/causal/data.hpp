@@ -24,17 +24,19 @@
 
 #include "library/code_object.hpp"
 #include "library/containers/c_array.hpp"
+#include "library/containers/static_vector.hpp"
 #include "library/defines.hpp"
 #include "library/thread_data.hpp"
 #include "library/utility.hpp"
 
 #include <timemory/hash/types.hpp>
 #include <timemory/tpls/cereal/cereal/cereal.hpp>
+#include <timemory/utility/procfs/maps.hpp>
 #include <timemory/utility/unwind.hpp>
 
+#include <deque>
 #include <dlfcn.h>
 #include <map>
-#include <vector>
 
 namespace omnitrace
 {
@@ -42,15 +44,11 @@ namespace unwind = ::tim::unwind;
 
 namespace causal
 {
-static constexpr size_t unwind_depth  = 6;
+static constexpr size_t unwind_depth  = 8;
 static constexpr size_t unwind_offset = 0;
 using unwind_stack_t                  = unwind::stack<unwind_depth>;
-using unwind_cache_t                  = typename unwind_stack_t::cache_type;
+using unwind_addr_t                   = container::static_vector<uintptr_t, unwind_depth>;
 using hash_value_t                    = tim::hash_value_t;
-
-template <typename Tp>
-std::string
-as_hex(Tp _v, size_t _width = 16);
 
 struct selected_entry
 {
@@ -65,38 +63,26 @@ struct selected_entry
     template <typename ArchiveT>
     void serialize(ArchiveT&, const unsigned int);
 
-    bool contains(uintptr_t) const;
-    bool operator==(const selected_entry&) const;
-    bool operator!=(const selected_entry&) const;
-         operator bool() const { return (address > 0 && info.address > 0); }
+    bool     contains(uintptr_t) const;
+    bool     operator==(const selected_entry&) const;
+    bool     operator!=(const selected_entry&) const;
+    explicit operator bool() const { return (address > 0 && info.address); }
 };
-
-inline hash_value_t
-selected_entry::hash() const
-{
-    return tim::get_combined_hash_id(tim::hash_value_t{ address }, info.hash());
-}
-
-template <typename ArchiveT>
-void
-selected_entry::serialize(ArchiveT& ar, const unsigned int)
-{
-    using ::tim::cereal::make_nvp;
-    ar(make_nvp("address", address), make_nvp("symbol_address", symbol_address),
-       make_nvp("info", info));
-}
 
 void
 save_line_info(const settings::compose_filename_config&);
 
-std::vector<code_object::basic::line_info>
+using line_mapping_info_t =
+    std::pair<code_object::procfs::maps, code_object::basic::line_info>;
+
+std::deque<line_mapping_info_t>
 get_line_info(uintptr_t _addr, bool include_discarded = true);
 
 bool is_eligible_address(uintptr_t);
 
-void set_current_selection(container::c_array<void*>);
-
 void set_current_selection(unwind_stack_t);
+
+void set_current_selection(unwind_addr_t);
 
 selected_entry
 sample_selection(size_t _nitr = 1000, size_t _wait_ns = 10000);
@@ -108,7 +94,7 @@ void pop_progress_point(std::string_view);
 void mark_progress_point(std::string_view);
 
 uint16_t
-sample_virtual_speedup(int64_t _tid = utility::get_thread_index());
+sample_virtual_speedup();
 
 void
 start_experimenting();

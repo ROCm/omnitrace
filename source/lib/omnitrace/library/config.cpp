@@ -43,6 +43,7 @@
 #include <timemory/settings/types.hpp>
 #include <timemory/utility/argparse.hpp>
 #include <timemory/utility/declaration.hpp>
+#include <timemory/utility/filepath.hpp>
 #include <timemory/utility/join.hpp>
 #include <timemory/utility/signals.hpp>
 
@@ -713,27 +714,68 @@ configure_settings(bool _init)
                              "sample from for causal profiling",
                              std::string{}, "causal", "analysis", "advanced");
 
-    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FUNCTION_SCOPE",
-                             "List of <function> regex entries for causal "
-                             "profiling (separated by tabs or semi-colons)",
-                             std::string{}, "causal", "analysis", "advanced");
-
-    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FILELINE_SCOPE",
-                             "List of <file>:<line> regex entries for causal "
-                             "profiling (separated by tabs or semi-colons)",
-                             std::string{}, "causal", "analysis", "advanced");
-
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_CAUSAL_BINARY_SCOPE",
         "Limits causal experiments to the binaries matching the provided list of regular "
-        "expressions (delim: tab and/or semi-colon)",
-        std::string{ ".*" }, "causal", "analysis", "advanced");
+        "expressions (separated by tab, semi-colon, and/or quotes (single or double))",
+        std::string{ "%MAIN%" }, "causal", "analysis");
 
     OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_SOURCE_SCOPE",
                              "Limits causal experiments to the source files matching the "
-                             "provided list of regular "
-                             "expressions (delim: tab and/or semi-colon)",
-                             std::string{ ".*" }, "causal", "analysis", "advanced");
+                             "provided list of regular expressions (separated by tab, "
+                             "semi-colon, and/or quotes (single or double))",
+                             std::string{ ".*" }, "causal", "analysis");
+
+    OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_CAUSAL_FUNCTION_SCOPE",
+        "List of <function> regex entries for causal profiling (separated by tab, "
+        "semi-colon, and/or quotes (single or double))",
+        std::string{}, "causal", "analysis");
+
+    OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_CAUSAL_FILELINE_SCOPE",
+        "List of <file>:<line> regex entries for causal profiling (separated by tab, "
+        "semi-colon, and/or quotes (single or double))",
+        std::string{}, "causal", "analysis");
+
+    OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_CAUSAL_BINARY_EXCLUDE",
+        "Excludes binaries matching the list of provided regexes from causal experiments "
+        "(separated by tab, semi-colon, and/or quotes (single or double))",
+        std::string{}, "causal", "analysis");
+
+    OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_CAUSAL_SOURCE_EXCLUDE",
+        "Excludes source files matching the list of provided regexes from causal "
+        "experiments (separated by tab, semi-colon, and/or quotes (single or double))",
+        std::string{}, "causal", "analysis");
+
+    OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_CAUSAL_FUNCTION_EXCLUDE",
+        "Excludes functions matching the list of provided regexes from causal "
+        "experiments (separated by tab, semi-colon, and/or quotes (single or double))",
+        std::string{}, "causal", "analysis");
+
+    OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_CAUSAL_FILELINE_EXCLUDE",
+        "Excludes <file>:<line> combos matching the list of provided regexes from causal "
+        "experiments (separated by tab, semi-colon, and/or quotes (single or double))",
+        std::string{}, "causal", "analysis");
+
+    OMNITRACE_CONFIG_SETTING(
+        bool, "OMNITRACE_CAUSAL_FUNCTION_EXCLUDE_DEFAULTS",
+        "This controls adding a series of function exclude regexes to avoid "
+        "experimenting on lambdas, function call operators, STL implementation "
+        "functions, etc. which are, generally, not helpful or informative (compiler "
+        "generated, obscure implementation details, etc.). For example: it can be hard "
+        "to ascertain which lambda is being experimented because the \"name\" is "
+        "compiler generated; function call operators are tied to an instance of an "
+        "object, potentially making the operator's workload highly variable (and thus, "
+        "experimenting on the function(s) creating/using the object's function operator "
+        "far more informative). Details: excludes demangled function names starting with "
+        "'_', ending with '.cold', containing '::<lambda', '::{lambda', 'operator()', or "
+        "'::_M'.",
+        true, "causal", "analysis", "advanced");
 
     // set the defaults
     _config->get_flamegraph_output()     = false;
@@ -872,8 +914,9 @@ configure_settings(bool _init)
     auto _cmd     = tim::read_command_line(process::get_id());
     auto _cmd_env = tim::get_env<std::string>("OMNITRACE_COMMAND_LINE", "");
     if(!_cmd_env.empty()) _cmd = tim::delimit(_cmd_env, " ");
-    auto _exe = (_cmd.empty()) ? "exe" : _cmd.front();
-    auto _pos = _exe.find_last_of('/');
+    auto _exe          = (_cmd.empty()) ? "exe" : _cmd.front();
+    get_exe_realpath() = filepath::realpath(_exe, nullptr, false);
+    auto _pos          = _exe.find_last_of('/');
     if(_pos < _exe.length() - 1) _exe = _exe.substr(_pos + 1);
     get_exe_name() = _exe;
     _config->set_tag(_exe);
@@ -1501,6 +1544,18 @@ std::string&
 get_exe_name()
 {
     static std::string _v = {};
+    return _v;
+}
+
+std::string&
+get_exe_realpath()
+{
+    static std::string _v = []() {
+        auto _cmd_line = tim::read_command_line(process::get_id());
+        if(!_cmd_line.empty())
+            return filepath::realpath(_cmd_line.front(), nullptr, false);
+        return std::string{};
+    }();
     return _v;
 }
 
@@ -2364,12 +2419,50 @@ get_causal_output_clobber()
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
-std::vector<std::string>
-get_causal_fileline_scope()
+namespace
 {
-    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FILELINE_SCOPE");
+std::vector<std::string>
+format_causal_scopes(std::vector<std::string> _value, const std::string& _tag)
+{
+    const auto _config   = get_config();
+    const auto _main_re  = std::regex{ "(^|[^a-zA-Z])(MAIN|%MAIN%)($|[^a-zA-Z])" };
+    const auto _space_re = std::regex{ "^([ ]*)(.*)([ ]*)$" };
+    for(auto& itr : _value)
+    {
+        // replace any output/input keys, e.g. %argv0%
+        itr = settings::format(itr, _tag);
+        // replace MAIN or %MAIN% with (<exe_basename>|<exe_realpath>)
+        if(std::regex_search(itr, _main_re))
+        {
+            itr = std::regex_replace(
+                itr, _main_re,
+                join("", "$1", "(", get_exe_name(), "|", get_exe_realpath(), ")", "$3"));
+        }
+        // trim leading and trailing spaces since we didn't delimit spaces
+        if(std::regex_search(itr, _space_re))
+            itr = std::regex_replace(itr, _space_re, "$2");
+    }
+    return _value;
+}
+}  // namespace
+
+std::vector<std::string>
+get_causal_binary_scope()
+{
+    auto&&      _config = get_config();
+    static auto _v      = _config->find("OMNITRACE_CAUSAL_BINARY_SCOPE");
+    return format_causal_scopes(
+        tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
+                     "\t\"';"),
+        _config->get_tag());
+}
+
+std::vector<std::string>
+get_causal_source_scope()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_SOURCE_SCOPE");
     return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
-                        "\t;");
+                        "\t\"';");
 }
 
 std::vector<std::string>
@@ -2377,29 +2470,50 @@ get_causal_function_scope()
 {
     static auto _v = get_config()->find("OMNITRACE_CAUSAL_FUNCTION_SCOPE");
     return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
-                        "\t;");
+                        "\t\"';");
 }
 
-std::string
-get_causal_binary_scope()
+std::vector<std::string>
+get_causal_fileline_scope()
 {
-    static auto _v = get_config()->find("OMNITRACE_CAUSAL_BINARY_SCOPE");
-    namespace join = timemory::join;
-    return join::join(
-        join::array_config{ "|", "(", ")" },
-        tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
-                     "\t;"));
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FILELINE_SCOPE");
+    return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
+                        "\t\"';");
 }
 
-std::string
-get_causal_source_scope()
+std::vector<std::string>
+get_causal_binary_exclude()
 {
-    static auto _v = get_config()->find("OMNITRACE_CAUSAL_SOURCE_SCOPE");
-    namespace join = timemory::join;
-    return join::join(
-        join::array_config{ "|", "(", ")" },
+    auto&&      _config = get_config();
+    static auto _v      = _config->find("OMNITRACE_CAUSAL_BINARY_EXCLUDE");
+    return format_causal_scopes(
         tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
-                     "\t;"));
+                     "\t\"';"),
+        _config->get_tag());
+}
+
+std::vector<std::string>
+get_causal_source_exclude()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_SOURCE_EXCLUDE");
+    return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
+                        "\t\"';");
+}
+
+std::vector<std::string>
+get_causal_function_exclude()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FUNCTION_EXCLUDE");
+    return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
+                        "\t\"';");
+}
+
+std::vector<std::string>
+get_causal_fileline_exclude()
+{
+    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FILELINE_EXCLUDE");
+    return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
+                        "\t\"';");
 }
 }  // namespace config
 }  // namespace omnitrace
