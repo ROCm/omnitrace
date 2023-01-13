@@ -24,6 +24,7 @@
 #include "common/defines.h"
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
+#include "library/causal/sampling.hpp"
 #include "library/code_object.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
@@ -38,6 +39,7 @@
 #include <timemory/hash/types.hpp>
 #include <timemory/log/logger.hpp>
 #include <timemory/mpl/concepts.hpp>
+#include <timemory/units.hpp>
 #include <timemory/unwind/dlinfo.hpp>
 #include <timemory/unwind/processed_entry.hpp>
 
@@ -411,6 +413,10 @@ get_eligible_lines()
 void
 perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
 {
+    using clock_type      = std::chrono::high_resolution_clock;
+    using duration_nsec_t = std::chrono::duration<double, std::nano>;
+    using duration_sec_t  = std::chrono::duration<double, std::ratio<1>>;
+
     const auto& _thr_info = thread_info::init(true);
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
     OMNITRACE_CONDITIONAL_THROW(!_thr_info->is_offset,
@@ -425,7 +431,41 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
     _cfg.subdirectory = "causal";
     save_line_info(_cfg);
 
-    auto _impl_count = 0;
+    double _delay_sec =
+        config::get_setting_value<double>("OMNITRACE_CAUSAL_DELAY").second;
+    double _duration_sec =
+        config::get_setting_value<double>("OMNITRACE_CAUSAL_DURATION").second;
+    auto _duration_nsec = duration_nsec_t{ _duration_sec * units::sec };
+
+    if(_delay_sec > 0.0)
+    {
+        OMNITRACE_VERBOSE(1, "[causal] delaying experimentation for %.2f seconds...\n",
+                          _delay_sec);
+        uint64_t _delay_nsec = _delay_sec * units::sec;
+        std::this_thread::sleep_for(std::chrono::nanoseconds{ _delay_nsec });
+    }
+
+    auto _start_time        = clock_type::now();
+    auto _impl_count        = 0;
+    auto _exceeded_duration = [&]() {
+        if(_duration_sec > 1.0e-3)
+        {
+            auto _elapsed = clock_type::now() - _start_time;
+            if(_elapsed >= _duration_nsec)
+            {
+                OMNITRACE_VERBOSE(
+                    1,
+                    "[causal] stopping experimentation after %.2f seconds "
+                    "(elapsed: %.2f seconds)...\n",
+                    _duration_sec,
+                    std::chrono::duration_cast<duration_sec_t>(_elapsed).count());
+                causal::sampling::post_process();
+                return true;
+            }
+        }
+        return false;
+    };
+
     while(get_state() < State::Finalized)
     {
         auto _impl_no = _impl_count++;
@@ -448,6 +488,7 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
             {
                 std::this_thread::yield();
                 std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
+                if(_exceeded_duration()) return;
             }
         }
         else
@@ -459,6 +500,8 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
         {
             if(get_state() == State::Finalized) return;
         }
+
+        if(_exceeded_duration()) return;
     }
 }
 

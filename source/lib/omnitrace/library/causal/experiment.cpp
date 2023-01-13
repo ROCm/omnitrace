@@ -459,10 +459,13 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
 
     save_line_info(_cfg);
 
+    bool _causal_output_reset =
+        config::get_setting_value<bool>("OMNITRACE_CAUSAL_FILE_RESET").second;
+
     if(current_record.experiments.empty()) return;
 
     {
-        auto _saved_experiments = (config::get_causal_output_clobber())
+        auto _saved_experiments = (_causal_output_reset)
                                       ? std::vector<experiment::record>{}
                                       : load_experiments(_fname_base, _cfg, false);
         _saved_experiments.emplace_back(current_record);
@@ -499,8 +502,8 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
     auto _fname = tim::settings::compose_output_filename(_fname_base, "coz", _cfg);
 
     // read in existing data
-    std::stringstream _existing{};
-    if(!config::get_causal_output_clobber())
+    auto _existing = std::stringstream{};
+    if(!_causal_output_reset)
     {
         std::ifstream ifs{ _fname };
         if(ifs)

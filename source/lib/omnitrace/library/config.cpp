@@ -695,6 +695,20 @@ configure_settings(bool _init)
         std::string{ "function" }, "causal", "analysis", "advanced");
 
     OMNITRACE_CONFIG_SETTING(
+        double, "OMNITRACE_CAUSAL_DELAY",
+        "Length of time to wait (in seconds) before starting the first causal experiment",
+        0.0, "causal", "analysis");
+
+    OMNITRACE_CONFIG_SETTING(
+        double, "OMNITRACE_CAUSAL_DURATION",
+        "Length of time to perform causal experimentation (in seconds) after the first "
+        "experiment has started. After this amount of time has elapsed, no more causal "
+        "experiments will be performed and the application will continue without any "
+        "overhead from causal profiling. Any value <= 0 means until the application "
+        "completes",
+        0.0, "causal", "analysis");
+
+    OMNITRACE_CONFIG_SETTING(
         bool, "OMNITRACE_CAUSAL_END_TO_END",
         "Perform causal experiment over the length of the entire application", false,
         "causal", "analysis", "advanced");
@@ -705,7 +719,7 @@ configure_settings(bool _init)
                              "advanced", "io");
 
     OMNITRACE_CONFIG_SETTING(
-        bool, "OMNITRACE_CAUSAL_FILE_CLOBBER",
+        bool, "OMNITRACE_CAUSAL_FILE_RESET",
         "Overwrite any existing causal output file instead of appending to it", false,
         "causal", "analysis", "advanced", "io");
 
@@ -2410,13 +2424,6 @@ get_causal_output_filename()
             _fname = _fname.substr(0, _fname.length() - itr.length());
     }
     return _fname;
-}
-
-bool
-get_causal_output_clobber()
-{
-    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FILE_CLOBBER");
-    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
 namespace

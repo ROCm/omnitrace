@@ -568,16 +568,18 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
     parser
         .add_argument({ "--no-defaults" },
                       "Do not activate default features which are recommended for causal "
-                      "profiling. For example, Kokkos tools support is added by default "
-                      "(OMNITRACE_USE_KOKKOSP=ON) because, for Kokkos applicaitons, the "
-                      "Kokkos-Tools callbacks are used for progress points. Activation "
-                      "of OpenMP tools support is similar")
+                      "profiling. For example: PID-tagging of output files and "
+                      "timestamped subdirectories are disabled by default. Kokkos tools "
+                      "support is added by default (OMNITRACE_USE_KOKKOSP=ON) because, "
+                      "for Kokkos applications, the Kokkos-Tools callbacks are used for "
+                      "progress points. Activation of OpenMP tools support is similar")
         .min_count(0)
         .max_count(1)
         .dtype("bool")
         .action([&](parser_t& p) { _add_defaults = !p.get<bool>("no-defaults"); });
 
-    _add_separator("CAUSAL PROFILING OPTIONS (General)", "");
+    _add_separator("CAUSAL PROFILING OPTIONS (General)",
+                   "These settings will be applied to all causal profiling runs");
     parser.add_argument({ "-m", "--mode" }, "Causal profiling mode")
         .count(1)
         .dtype("string")
@@ -596,14 +598,14 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
             update_env(_env, "OMNITRACE_CAUSAL_FILE", p.get<std::string>("output-name"));
         });
 
-    bool _clobber = false;
+    bool _reset = false;
 
     parser
-        .add_argument({ "-C", "--clobber" },
+        .add_argument({ "-r", "--reset" },
                       "Overwrite any existing experiment results during the first run")
         .max_count(1)
         .dtype("bool")
-        .action([&](parser_t& p) { _clobber = p.get<bool>("clobber"); });
+        .action([&](parser_t& p) { _reset = p.get<bool>("reset"); });
 
     parser
         .add_argument({ "-e", "--end-to-end" },
@@ -614,19 +616,53 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
             update_env(_env, "OMNITRACE_CAUSAL_END_TO_END", p.get<bool>("end-to-end"));
         });
 
-    int64_t _niterations      = 1;
-    auto    _virtual_speedups = std::vector<std::string>{};
-    auto    _fileline_scopes  = std::vector<std::string>{};
-    auto    _function_scopes  = std::vector<std::string>{};
-    auto    _binary_scopes    = std::vector<std::string>{};
-    auto    _source_scopes    = std::vector<std::string>{};
-
-    _add_separator("CAUSAL PROFILING OPTIONS (Multi-run)", "");
     parser
-        .add_argument({ "-n", "--iterations" }, "Number of times to repeat the variants")
+        .add_argument({ "-w", "--wait" },
+                      "Set the wait time (i.e. delay) before starting the first causal "
+                      "experiment (in seconds)")
+        .count(1)
+        .dtype("seconds")
+        .action([&](parser_t& p) {
+            update_env(_env, "OMNITRACE_CAUSAL_DELAY", p.get<double>("wait"));
+        });
+
+    parser
+        .add_argument(
+            { "-d", "--duration" },
+            "Set the length of time (in seconds) to perform causal experimentationafter "
+            "the first experiment is started. Once this amount of time has elapsed, no "
+            "more causal experiments will be started but any currently running "
+            "experiment will be allowed to finish.")
+        .count(1)
+        .dtype("seconds")
+        .action([&](parser_t& p) {
+            update_env(_env, "OMNITRACE_CAUSAL_DURATION", p.get<double>("duration"));
+        });
+
+    int64_t _niterations       = 1;
+    auto    _virtual_speedups  = std::vector<std::string>{};
+    auto    _fileline_scopes   = std::vector<std::string>{};
+    auto    _function_scopes   = std::vector<std::string>{};
+    auto    _binary_scopes     = std::vector<std::string>{};
+    auto    _source_scopes     = std::vector<std::string>{};
+    auto    _fileline_excludes = std::vector<std::string>{};
+    auto    _function_excludes = std::vector<std::string>{};
+    auto    _binary_excludes   = std::vector<std::string>{};
+    auto    _source_excludes   = std::vector<std::string>{};
+
+    parser
+        .add_argument({ "-n", "--iterations" },
+                      "Number of times to repeat the combination of run configurations")
         .count(1)
         .dtype("int")
         .action([&](parser_t& p) { _niterations = p.get<int64_t>("iterations"); });
+
+    _add_separator(
+        "CAUSAL PROFILING OPTIONS (Combinatorial)",
+        "Each individual argument to these options will multiply the number runs by the "
+        "number of arguments and the number of iterations. E.g. -n 2 -B \"MAIN\" -F "
+        "\"foo\" \"bar\" will produce 4 runs: 2 iterations x 1 binary scope x 2 function "
+        "scopes (MAIN+foo, MAIN+bar, MAIN+foo, MAIN+bar)");
 
     parser
         .add_argument({ "-s", "--speedups" },
@@ -639,32 +675,6 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         .dtype("integers")
         .action([&](parser_t& p) {
             _virtual_speedups = p.get<std::vector<std::string>>("speedups");
-        });
-
-    parser
-        .add_argument({ "-L", "--fileline-scope" },
-                      "Restricts causal experiments to the <file>:<line> combos matching "
-                      "the list of "
-                      "regular expressions. Each space designates a group and multiple "
-                      "scopes can be grouped together with a semi-colon")
-        .min_count(0)
-        .max_count(-1)
-        .dtype("regex-list")
-        .action([&](parser_t& p) {
-            _fileline_scopes = p.get<std::vector<std::string>>("fileline-scope");
-        });
-
-    parser
-        .add_argument(
-            { "-F", "--function-scope" },
-            "Restricts causal experiments to the functions matching the list of "
-            "regular expressions. Each space designates a group and multiple "
-            "scopes can be grouped together with a semi-colon")
-        .min_count(0)
-        .max_count(-1)
-        .dtype("regex-list")
-        .action([&](parser_t& p) {
-            _function_scopes = p.get<std::vector<std::string>>("function-scope");
         });
 
     parser
@@ -690,6 +700,83 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         .dtype("integers")
         .action([&](parser_t& p) {
             _source_scopes = p.get<std::vector<std::string>>("source-scope");
+        });
+
+    parser
+        .add_argument(
+            { "-F", "--function-scope" },
+            "Restricts causal experiments to the functions matching the list of "
+            "regular expressions. Each space designates a group and multiple "
+            "scopes can be grouped together with a semi-colon")
+        .min_count(0)
+        .max_count(-1)
+        .dtype("regex-list")
+        .action([&](parser_t& p) {
+            _function_scopes = p.get<std::vector<std::string>>("function-scope");
+        });
+
+    parser
+        .add_argument({ "-L", "--fileline-scope" },
+                      "Restricts causal experiments to the <file>:<line> combos matching "
+                      "the list of regular expressions. Each space designates a group "
+                      "and multiple scopes can be grouped together with a semi-colon")
+        .min_count(0)
+        .max_count(-1)
+        .dtype("regex-list")
+        .action([&](parser_t& p) {
+            _fileline_scopes = p.get<std::vector<std::string>>("fileline-scope");
+        });
+
+    parser
+        .add_argument(
+            { "-BE", "--binary-exclude" },
+            "Excludes causal experiments from being performed on the binaries matching "
+            "the list of regular expressions. Each space designates a group and multiple "
+            "excludes can be grouped together with a semi-colon")
+        .min_count(0)
+        .max_count(-1)
+        .dtype("integers")
+        .action([&](parser_t& p) {
+            _binary_excludes = p.get<std::vector<std::string>>("binary-exclude");
+        });
+
+    parser
+        .add_argument({ "-SE", "--source-exclude" },
+                      "Excludes causal experiments from being performed on the code from "
+                      "the source files matching the list of regular expressions. Each "
+                      "space designates a group and multiple excludes can be grouped "
+                      "together with a semi-colon")
+        .min_count(0)
+        .max_count(-1)
+        .dtype("integers")
+        .action([&](parser_t& p) {
+            _source_excludes = p.get<std::vector<std::string>>("source-exclude");
+        });
+
+    parser
+        .add_argument(
+            { "-FE", "--function-exclude" },
+            "Excludes causal experiments from being performed on the functions matching "
+            "the list of regular expressions. Each space designates a group and multiple "
+            "excludes can be grouped together with a semi-colon")
+        .min_count(0)
+        .max_count(-1)
+        .dtype("regex-list")
+        .action([&](parser_t& p) {
+            _function_excludes = p.get<std::vector<std::string>>("function-exclude");
+        });
+
+    parser
+        .add_argument(
+            { "-LE", "--fileline-exclude" },
+            "Excludes causal experiments from being performed on <file>:<line> combos "
+            "matching the list of regular expressions. Each space designates a group and "
+            "multiple excludes can be grouped together with a semi-colon")
+        .min_count(0)
+        .max_count(-1)
+        .dtype("regex-list")
+        .action([&](parser_t& p) {
+            _fileline_excludes = p.get<std::vector<std::string>>("fileline-exclude");
         });
 
 #if OMNITRACE_HIP_VERSION > 0 && OMNITRACE_HIP_VERSION < 50300
@@ -751,6 +838,8 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
 
     if(_add_defaults)
     {
+        add_default_env(_env, "OMNITRACE_TIME_OUTPUT", false);
+        add_default_env(_env, "OMNITRACE_USE_PID", false);
         add_default_env(_env, "OMNITRACE_USE_KOKKOSP", true);
 
 #if defined(OMNITRACE_USE_OMPT) && OMNITRACE_USE_OMPT > 0
@@ -772,11 +861,17 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
 #endif
     }
 
+    _fill("OMNITRACE_CAUSAL_BINARY_EXCLUDE", _binary_excludes, _generate_configs);
+    _fill("OMNITRACE_CAUSAL_SOURCE_EXCLUDE", _source_excludes, _generate_configs);
+    _fill("OMNITRACE_CAUSAL_FUNCTION_EXCLUDE", _function_excludes, _generate_configs);
+    _fill("OMNITRACE_CAUSAL_FILELINE_EXCLUDE", _fileline_excludes, _generate_configs);
+
     _fill("OMNITRACE_CAUSAL_BINARY_SCOPE", _binary_scopes, _generate_configs);
     _fill("OMNITRACE_CAUSAL_SOURCE_SCOPE", _source_scopes, _generate_configs);
-    _fill("OMNITRACE_CAUSAL_FIXED_SPEEDUP", _virtual_speedups, false);
-    _fill("OMNITRACE_CAUSAL_FILELINE_SCOPE", _fileline_scopes, _generate_configs);
     _fill("OMNITRACE_CAUSAL_FUNCTION_SCOPE", _function_scopes, _generate_configs);
+    _fill("OMNITRACE_CAUSAL_FILELINE_SCOPE", _fileline_scopes, _generate_configs);
+
+    _fill("OMNITRACE_CAUSAL_FIXED_SPEEDUP", _virtual_speedups, false);
 
     // make sure at least one env exists
     if(_causal_envs_tmp.empty()) _causal_envs_tmp.emplace_back();
@@ -854,8 +949,8 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         }
     }
 
-    if(_clobber)
-        _causal_envs.front().emplace(std::string_view{ "OMNITRACE_CAUSAL_FILE_CLOBBER" },
+    if(_reset)
+        _causal_envs.front().emplace(std::string_view{ "OMNITRACE_CAUSAL_FILE_RESET" },
                                      std::string{ "true" });
 
     return _outv;

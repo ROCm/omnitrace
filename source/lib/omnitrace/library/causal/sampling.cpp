@@ -333,6 +333,8 @@ post_process()
         if(_causal) _causal->stop();
     }
 
+    configure(false, 0);
+
     for(size_t i = 0; i < max_supported_threads; ++i)
     {
         auto& _causal = get_causal_sampler(i);
