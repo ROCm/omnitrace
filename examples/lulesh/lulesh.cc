@@ -48,7 +48,7 @@ TimeIncrement(Domain& domain)
 
     if((domain.dtfixed() <= Real_t(0.0)) && (domain.cycle() != Int_t(0)))
     {
-        CAUSAL_BEGIN("TimeIncrement_Iteration")
+        // CAUSAL_BEGIN("TimeIncrement_Iteration")
         Real_t ratio;
         Real_t olddt = domain.deltatime();
 
@@ -89,7 +89,8 @@ TimeIncrement(Domain& domain)
             newdt = domain.dtmax();
         }
         domain.deltatime() = newdt;
-        CAUSAL_END("TimeIncrement_Iteration")
+        CAUSAL_PROGRESS_NAMED("TimeIncrement_Iteration");
+        // CAUSAL_END("TimeIncrement_Iteration")
     }
 
     if((targetdt > domain.deltatime()) &&
@@ -2245,14 +2246,15 @@ main(int argc, char* argv[])
         while((locDom.time() < locDom.stoptime()) && (locDom.cycle() < opts.its))
         {
             Kokkos::Tools::startSection(_time_incrp);
-            CAUSAL_BEGIN("Iteration")
+            //CAUSAL_BEGIN("Iteration")
             TimeIncrement(locDom);
             Kokkos::Tools::stopSection(_time_incrp);
 
             Kokkos::Tools::startSection(_leap_frogp);
             LagrangeLeapFrog(locDom);
             Kokkos::Tools::stopSection(_leap_frogp);
-            CAUSAL_END("Iteration")
+            CAUSAL_PROGRESS_NAMED("Iteration")
+            //CAUSAL_END("Iteration")
 
             if((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0))
             {
