@@ -58,6 +58,23 @@ namespace omnitrace
 {
 namespace component
 {
+using tim::is_one_of;
+using tim::type_list;
+
+// these categories increment push/pop counts, which are used for sanity checks since
+// they should ALWAYS be popped if they were pushed
+using tracing_count_categories_t =
+    type_list<category::host, category::mpi, category::pthread, category::rocm_hip,
+              category::rocm_hsa, category::rocm_rccl>;
+
+// these categories are added to the critical trace
+using critical_trace_categories_t = type_list<category::host>;
+
+// convert these categories to throughput points
+using causal_throughput_categories_t =
+    type_list<category::kokkos, category::ompt, category::rocm_hip, category::rocm_hsa,
+              category::rocm_rccl, category::rocm_roctx>;
+
 // define this outside of category region functions so that the
 // static thread_local is global instead of per-template instantiation
 inline ThreadState
@@ -127,16 +144,13 @@ category_region<CategoryT>::start(std::string_view name, Args&&... args)
     if(get_thread_status() == ThreadState::Disabled) return;
 
     constexpr bool _ct_use_timemory =
-        (sizeof...(OptsT) == 0 ||
-         tim::is_one_of<quirk::timemory, tim::type_list<OptsT...>>::value);
+        (sizeof...(OptsT) == 0 || is_one_of<quirk::timemory, type_list<OptsT...>>::value);
 
     constexpr bool _ct_use_perfetto =
-        (sizeof...(OptsT) == 0 ||
-         tim::is_one_of<quirk::perfetto, tim::type_list<OptsT...>>::value);
+        (sizeof...(OptsT) == 0 || is_one_of<quirk::perfetto, type_list<OptsT...>>::value);
 
     constexpr bool _ct_use_causal =
-        (sizeof...(OptsT) == 0 ||
-         tim::is_one_of<quirk::causal, tim::type_list<OptsT...>>::value);
+        (sizeof...(OptsT) == 0 || is_one_of<quirk::causal, type_list<OptsT...>>::value);
 
     OMNITRACE_CONDITIONAL_PRINT(
         tracing::debug_push,
@@ -144,16 +158,17 @@ category_region<CategoryT>::start(std::string_view name, Args&&... args)
         category_name, process::get_id(), std::to_string(get_state()).c_str(),
         std::to_string(get_thread_state()).c_str(), name.data());
 
-    if constexpr(tim::is_one_of<CategoryT, tim::type_list<category::host, category::mpi,
-                                                          category::pthread,
-                                                          category::rocm_hip>>::value)
+    if constexpr(is_one_of<CategoryT, tracing_count_categories_t>::value)
     {
         ++tracing::push_count();
     }
 
     if constexpr(_ct_use_causal)
     {
-        if(get_use_causal()) causal::push_progress_point(name);
+        if constexpr(!is_one_of<CategoryT, causal_throughput_categories_t>::value)
+        {
+            if(get_use_causal()) causal::push_progress_point(name);
+        }
     }
 
     if constexpr(_ct_use_perfetto)
@@ -172,7 +187,7 @@ category_region<CategoryT>::start(std::string_view name, Args&&... args)
         }
     }
 
-    if constexpr(tim::is_one_of<CategoryT, tim::type_list<category::host>>::value)
+    if constexpr(is_one_of<CategoryT, critical_trace_categories_t>::value)
     {
         using Device = critical_trace::Device;
         using Phase  = critical_trace::Phase;
@@ -204,16 +219,13 @@ category_region<CategoryT>::stop(std::string_view name, Args&&... args)
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
 
     constexpr bool _ct_use_timemory =
-        (sizeof...(OptsT) == 0 ||
-         tim::is_one_of<quirk::timemory, tim::type_list<OptsT...>>::value);
+        (sizeof...(OptsT) == 0 || is_one_of<quirk::timemory, type_list<OptsT...>>::value);
 
     constexpr bool _ct_use_perfetto =
-        (sizeof...(OptsT) == 0 ||
-         tim::is_one_of<quirk::perfetto, tim::type_list<OptsT...>>::value);
+        (sizeof...(OptsT) == 0 || is_one_of<quirk::perfetto, type_list<OptsT...>>::value);
 
     constexpr bool _ct_use_causal =
-        (sizeof...(OptsT) == 0 ||
-         tim::is_one_of<quirk::causal, tim::type_list<OptsT...>>::value);
+        (sizeof...(OptsT) == 0 || is_one_of<quirk::causal, type_list<OptsT...>>::value);
 
     OMNITRACE_CONDITIONAL_PRINT(
         tracing::debug_pop,
@@ -224,10 +236,7 @@ category_region<CategoryT>::stop(std::string_view name, Args&&... args)
     // only execute when active
     if(get_state() == State::Active)
     {
-        if constexpr(tim::is_one_of<
-                         CategoryT,
-                         tim::type_list<category::host, category::mpi, category::pthread,
-                                        category::rocm_hip>>::value)
+        if constexpr(is_one_of<CategoryT, tracing_count_categories_t>::value)
         {
             ++tracing::pop_count();
         }
@@ -252,10 +261,17 @@ category_region<CategoryT>::stop(std::string_view name, Args&&... args)
 
         if constexpr(_ct_use_causal)
         {
-            if(get_use_causal()) causal::pop_progress_point(name);
+            if constexpr(is_one_of<CategoryT, causal_throughput_categories_t>::value)
+            {
+                if(get_use_causal()) causal::mark_progress_point(name);
+            }
+            else
+            {
+                if(get_use_causal()) causal::pop_progress_point(name);
+            }
         }
 
-        if constexpr(tim::is_one_of<CategoryT, tim::type_list<category::host>>::value)
+        if constexpr(is_one_of<CategoryT, critical_trace_categories_t>::value)
         {
             using Device = critical_trace::Device;
             using Phase  = critical_trace::Phase;
@@ -294,8 +310,9 @@ void
 category_region<CategoryT>::mark(std::string_view name, Args&&...)
 {
     constexpr bool _ct_use_causal =
-        (sizeof...(OptsT) == 0 ||
-         tim::is_one_of<quirk::causal, tim::type_list<OptsT...>>::value);
+        (sizeof...(OptsT) == 0 || is_one_of<quirk::causal, type_list<OptsT...>>::value);
+
+    if constexpr(!_ct_use_causal) return;
 
     // skip if category is disabled
     if(!trait::runtime_enabled<CategoryT>::get()) return;
@@ -308,12 +325,7 @@ category_region<CategoryT>::mark(std::string_view name, Args&&...)
 
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
 
-    if constexpr(!_ct_use_causal)
-    {
-        if(!get_use_causal()) return;
-    }
-
-    causal::mark_progress_point(name);
+    if(!get_use_causal()) causal::mark_progress_point(name);
 }
 
 template <typename CategoryT>
@@ -412,6 +424,13 @@ struct local_category_region : comp::base<local_category_region<CategoryT>, void
     {
         if(m_prefix.empty()) return;
         return impl_type::template stop<OptsT...>(m_prefix, std::forward<Args>(args)...);
+    }
+
+    template <typename... OptsT, typename... Args>
+    auto mark(Args&&... args)
+    {
+        if(m_prefix.empty()) return;
+        return impl_type::template mark<OptsT...>(m_prefix, std::forward<Args>(args)...);
     }
 
     template <typename... OptsT, typename... Args>
