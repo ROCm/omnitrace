@@ -46,6 +46,8 @@ enum
 
 namespace omnitrace
 {
+namespace causal
+{
 namespace perf
 {
 /// An enum class with all the available sampling data
@@ -250,4 +252,5 @@ private:
     uint64_t m_read_format = 0;
 };
 }  // namespace perf
+}  // namespace causal
 }  // namespace omnitrace

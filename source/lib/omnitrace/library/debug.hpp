@@ -127,6 +127,27 @@ get_chars(T&& _c, std::index_sequence<Idx...>)
 }
 }  // namespace
 }  // namespace debug
+
+namespace code_object
+{
+struct address_range;
+}
+
+using address_range_t = code_object::address_range;
+
+template <typename Tp>
+std::string
+as_hex(Tp, size_t _wdith = 16);
+
+template <>
+std::string as_hex<address_range_t>(address_range_t, size_t);
+
+extern template std::string as_hex<int32_t>(int32_t, size_t);
+extern template std::string as_hex<uint32_t>(uint32_t, size_t);
+extern template std::string as_hex<int64_t>(int64_t, size_t);
+extern template std::string as_hex<uint64_t>(uint64_t, size_t);
+extern template std::string
+as_hex<void*>(void*, size_t);
 }  // namespace omnitrace
 
 #if !defined(OMNITRACE_DEBUG_BUFFER_LEN)

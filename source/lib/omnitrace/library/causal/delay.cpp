@@ -22,7 +22,6 @@
 
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
-#include "library/helpers.hpp"
 #include "library/runtime.hpp"
 #include "library/state.hpp"
 #include "library/thread_data.hpp"

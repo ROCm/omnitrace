@@ -25,9 +25,11 @@
 #include "library/defines.hpp"
 
 #include <timemory/mpl/concepts.hpp>
+#include <timemory/utility/types.hpp>
 
 #include <memory>
 #include <optional>
+#include <type_traits>
 
 namespace omnitrace
 {
@@ -43,6 +45,13 @@ template <typename Tp>
 using unique_ptr_t = std::unique_ptr<Tp, thread_deleter<Tp>>;
 
 using construct_on_init = std::true_type;
+
+using tim::identity;    // NOLINT
+using tim::identity_t;  // NOLINT
+
+template <typename Tp>
+struct use_placement_new_when_generating_unique_ptr : std::false_type
+{};
 }  // namespace omnitrace
 
 namespace tim

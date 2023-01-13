@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "library/perf.hpp"
+#include "library/causal/perf.hpp"
 #include "library/timemory.hpp"
 #include "library/utility.hpp"
 
@@ -43,6 +43,8 @@
 #include <unistd.h>
 
 namespace omnitrace
+{
+namespace causal
 {
 namespace perf
 {
@@ -549,4 +551,5 @@ perf_event::record::locate_field() const
     TIMEMORY_FATAL << "Unsupported sample field requested!";
 }
 }  // namespace perf
+}  // namespace causal
 }  // namespace omnitrace

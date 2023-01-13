@@ -28,13 +28,12 @@
 #include "library/config.hpp"
 #include "library/containers/stable_vector.hpp"
 #include "library/defines.hpp"
-#include "library/helpers.hpp"
 #include "library/state.hpp"
 #include "library/thread_deleter.hpp"
 #include "library/timemory.hpp"
-#include "timemory/utility/macros.hpp"
+#include "library/utility.hpp"
 
-#include <bits/stdint-intn.h>
+#include <timemory/utility/macros.hpp>
 #include <timemory/utility/types.hpp>
 
 #include <array>
@@ -126,7 +125,8 @@ thread_data<Tp, Tag, MaxThreads>::construct(construct_on_thread&& _t, Args&&... 
     // construct outside of lambda to prevent data-race
     static auto& _instances = instances();
     if(!_instances.at(_t.index))
-        _instances.at(_t.index) = generate<value_type>{}(std::forward<Args>(_args)...);
+        _instances.at(_t.index) =
+            utility::generate<value_type>{}(std::forward<Args>(_args)...);
 }
 
 template <typename Tp, typename Tag, size_t MaxThreads>
@@ -161,11 +161,22 @@ thread_data<Tp, Tag, MaxThreads>::instances(construct_on_init, Args&&... _args)
     static auto& _v = [&]() -> instance_array_t& {
         auto& _internal = instances();
         for(size_t i = 0; i < MaxThreads; ++i)
-            _internal.at(i) = generate<value_type>{}(std::forward<Args>(_args)...);
+            _internal.at(i) =
+                utility::generate<value_type>{}(std::forward<Args>(_args)...);
         return _internal;
     }();
     return _v;
 }
+
+template <typename Tp, typename Tag, size_t MaxThreads>
+struct use_placement_new_when_generating_unique_ptr<
+    thread_data<std::optional<Tp>, Tag, MaxThreads>> : std::true_type
+{};
+
+template <typename Tp, typename Tag, size_t MaxThreads>
+struct use_placement_new_when_generating_unique_ptr<
+    thread_data<identity<Tp>, Tag, MaxThreads>> : std::true_type
+{};
 
 //--------------------------------------------------------------------------------------//
 //
@@ -262,8 +273,8 @@ thread_data<std::optional<Tp>, Tag, MaxThreads>::instance(construct_on_init,
     static auto& _v = [&]() -> unique_ptr_t<this_type>& {
         auto& _ref = instance();
         if(!_ref)
-            _ref = generate<unique_ptr_t<this_type>>{}(std::forward<Args>(_args)...);
-        //_ref = unique_ptr_t<this_type>{ new this_type(std::forward<Args>(_args)...) };
+            _ref = utility::generate<unique_ptr_t<this_type>>{}(
+                std::forward<Args>(_args)...);
         if(_ref->size() < MaxThreads) _ref->resize(MaxThreads);
         return _ref;
     }();
@@ -282,7 +293,7 @@ thread_data<std::optional<Tp>, Tag, MaxThreads>::construct(construct_on_init,
         if(_ref)
         {
             for(auto& itr : *_ref)
-                itr = generate<value_type>{}(std::forward<Args>(_args)...);
+                itr = utility::generate<value_type>{}(std::forward<Args>(_args)...);
         }
         return (_ref != nullptr);
     }();
@@ -313,9 +324,10 @@ thread_data<std::optional<Tp>, Tag, MaxThreads>::construct(construct_on_thread&&
     }();
 
     if(!_constructed.at(_t.index))
-        _constructed.at(_t.index) = (_instance->at(_t.index) = generate<value_type>{}(
-                                         std::forward<Args>(_args)...),
-                                     true);
+        _constructed.at(_t.index) =
+            (_instance->at(_t.index) =
+                 utility::generate<value_type>{}(std::forward<Args>(_args)...),
+             true);
 
     return _instance->at(_t.index);
 
@@ -337,9 +349,6 @@ thread_data<std::optional<Tp>, Tag, MaxThreads>::instance(construct_on_thread&& 
 //          thread_data with raw data (no pointer)
 //
 //--------------------------------------------------------------------------------------//
-
-using tim::identity;
-using tim::identity_t;
 
 template <typename Tp, typename Tag, size_t MaxThreads>
 struct thread_data<identity<Tp>, Tag, MaxThreads>
@@ -428,8 +437,8 @@ thread_data<identity<Tp>, Tag, MaxThreads>::instance(construct_on_init, Args&&..
     static auto& _v = [&]() -> unique_ptr_t<this_type>& {
         auto& _ref = instance();
         if(!_ref)
-            _ref = generate<unique_ptr_t<this_type>>{}(std::forward<Args>(_args)...);
-        // _ref = unique_ptr_t<this_type>{ new this_type(std::forward<Args>(_args)...) };
+            _ref = utility::generate<unique_ptr_t<this_type>>{}(
+                std::forward<Args>(_args)...);
         if(_ref->size() < MaxThreads) _ref->resize(MaxThreads);
         return _ref;
     }();
@@ -447,7 +456,7 @@ thread_data<identity<Tp>, Tag, MaxThreads>::construct(construct_on_init, Args&&.
         if(_ref)
         {
             for(auto& itr : *_ref)
-                itr = generate<value_type>{}(std::forward<Args>(_args)...);
+                itr = utility::generate<value_type>{}(std::forward<Args>(_args)...);
         }
         return (_ref != nullptr);
     }();
@@ -478,9 +487,10 @@ thread_data<identity<Tp>, Tag, MaxThreads>::construct(construct_on_thread&& _t,
     }();
 
     if(!_constructed.at(_t.index))
-        _constructed.at(_t.index) = (_instance->at(_t.index) = generate<value_type>{}(
-                                         std::forward<Args>(_args)...),
-                                     true);
+        _constructed.at(_t.index) =
+            (_instance->at(_t.index) =
+                 utility::generate<value_type>{}(std::forward<Args>(_args)...),
+             true);
 
     return _instance->at(_t.index);
     (void) _grow;
