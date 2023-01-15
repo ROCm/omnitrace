@@ -66,26 +66,25 @@ IS_DARK = True  # default dark theme
 def build_line_graph(data, KernelName, points_filt):
     data_options = sorted(list(set(data.point)))
     layout1 = html.Div(
-        id = "graph_all",
-        className = 'graph_all',
-        children = [
+        id="graph_all",
+        className="graph_all",
+        children=[
             html.H4("All Causal Profiles", style={"color": "white"}),
-        ]
+        ],
     )
 
     layout2 = html.Div(
-        id = "graph_select",
-        className = 'graph_select',
-        children = [
+        id="graph_select",
+        className="graph_select",
+        children=[
             html.H4("Selected Causal Profiles", style={"color": "white"}),
-        ]
+        ],
     )
 
     return layout1, layout2
 
 
 def update_line_graph(sort_filt, func_list, exp_list, data, points_filt):
-
     # df = px.data.gapminder() # replace with your own data source
     if "Alphabetical" in sort_filt:
         data = data.sort_values(by="point")
@@ -154,85 +153,83 @@ def update_line_graph(sort_filt, func_list, exp_list, data, points_filt):
     # what = data[mask_all]
     # fig_data1 = data[mask_all]
     # fig_data2 = data[mask_select]
-    
+
     fig1 = go.Figure()
 
     for point in sorted(list(mask_all.point.unique())):
-        #for experiment in list(mask_select.experiment)[0:3]:
+        # for experiment in list(mask_select.experiment)[0:3]:
         sub_data = mask_all[mask_all["point"] == point]
         fig1.add_trace(
-                    go.Scatter(
-                    x = sub_data["Line Speedup"],
-                    y = sub_data["Program Speedup"],
-                    line_shape='spline',
-                    name = point[0:50],
-                    mode='lines+markers',
-                    )
-                ).update_layout(
-                    xaxis={"title":"Function Speedup"},
-                    yaxis={"title":"Program Speedup"}
-                    )
+            go.Scatter(
+                x=sub_data["Line Speedup"],
+                y=sub_data["Program Speedup"],
+                line_shape="spline",
+                name=point[0:50],
+                mode="lines+markers",
+            )
+        ).update_layout(
+            xaxis={"title": "Function Speedup"}, yaxis={"title": "Program Speedup"}
+        )
     _points = list(mask_all["progress points"])
-    _pointsidx = list(range(0,len(_points)))
-    _count=[]
+    _pointsidx = list(range(0, len(_points)))
+    _count = []
     Hist_df = px.data.tips()
     for point in _points:
         _count.append(len(list(mask_all["progress points"] == point)))
-    HIST_DATA = pd.DataFrame(data= {"Function":_points})
+    HIST_DATA = pd.DataFrame(data={"Function": _points})
     fig3 = px.histogram(
-            HIST_DATA,
-            x="Function",
-            marginal="rug",
-            color = "Function",
-            #labels={'Function':'# of experiments'},
-            height=800,
-            nbins = 5
-            )
-    layout2  = [
-            html.H4("Selected Causal Profiles", style={"color": "white"}),
-        ]
+        HIST_DATA,
+        x="Function",
+        marginal="rug",
+        color="Function",
+        # labels={'Function':'# of experiments'},
+        height=800,
+        nbins=5,
+    )
+    layout2 = [
+        html.H4("Selected Causal Profiles", style={"color": "white"}),
+    ]
     for point in sorted(list(mask_select.point.unique())):
         subplots = go.Figure()
         sub_data = mask_select[mask_select["point"] == point]
-        line_number = point[point.rfind(':'):].isnumeric()
+        line_number = point[point.rfind(":") :].isnumeric()
         if line_number:
-            #untested
+            # untested
             for prog in list(sub_data["progress points"].unique()):
                 sub_data_prog = sub_data[sub_data["progress points"] == prog]
                 subplots.add_trace(
                     go.Scatter(
-                    x = sub_data_prog["Line Speedup"],
-                    y = sub_data_prog["Program Speedup"],
-                    line_shape='spline',
-                    name = prog,
-                    mode='lines+markers',
+                        x=sub_data_prog["Line Speedup"],
+                        y=sub_data_prog["Program Speedup"],
+                        line_shape="spline",
+                        name=prog,
+                        mode="lines+markers",
                     )
                 ).update_layout(
-                    xaxis={"title":"Line Speedup"},
-                    yaxis={"title":"Program Speedup"}
-                    )
+                    xaxis={"title": "Line Speedup"}, yaxis={"title": "Program Speedup"}
+                )
         else:
             for prog in list(sub_data["progress points"].unique()):
                 sub_data_prog = sub_data[sub_data["progress points"] == prog]
                 subplots.add_trace(
                     go.Scatter(
-                    x = sub_data_prog["Line Speedup"],
-                    y = sub_data_prog["Program Speedup"],
-                    line_shape='spline',
-                    name = prog,
-                    mode='lines+markers',
+                        x=sub_data_prog["Line Speedup"],
+                        y=sub_data_prog["Program Speedup"],
+                        line_shape="spline",
+                        name=prog,
+                        mode="lines+markers",
                     )
                 ).update_layout(
-                    xaxis={"title":"Function Speedup"},
-                    yaxis={"title":"Program Speedup"}
-                    )
+                    xaxis={"title": "Function Speedup"},
+                    yaxis={"title": "Program Speedup"},
+                )
         layout2.append(html.H4(point, style={"color": "white"}))
-        layout2.append(dcc.Graph(figure = subplots))
-    
-    layout1  = [
-            html.H4("All Causal Profiles", style={"color": "white"}),
-            dcc.Graph(figure = fig3)
-        ]
+        layout2.append(dcc.Graph(figure=subplots))
+
+    layout1 = [
+        html.H4("All Causal Profiles", style={"color": "white"}),
+        dcc.Graph(figure=fig3),
+    ]
     return mask_all, layout1, layout2
 
 
@@ -321,7 +318,7 @@ def build_causal_layout(
             ),
             html.Div(id="container", children=[]),
             line_graph1,
-            line_graph2
+            line_graph2,
         ]
     )
 
@@ -356,8 +353,7 @@ def build_causal_layout(
         global input_filters
 
         CLI = False
-    
-        
+
         # change to if debug
         if True:
             print("Sort by is ", sort_filt)
@@ -374,17 +370,17 @@ def build_causal_layout(
         global exp_list
         func_list = sorted(list(data.point.unique()))
         exp_list = sorted(list(data["progress points"].unique()))
-        
+
         if workload_path is not None and os.path.isdir(workload_path):
-            #files = glob.glob(os.path.join(workload_path, "*.coz")) + 
+            # files = glob.glob(os.path.join(workload_path, "*.coz")) +
             files = glob.glob(os.path.join(workload_path, "*.json"))
-            #subfiles = glob.glob(os.path.join(workload_path, "*/*.coz")) + 
+            # subfiles = glob.glob(os.path.join(workload_path, "*/*.coz")) +
             subfiles = glob.glob(os.path.join(workload_path, "*/*.json"))
             metadata = glob.glob(os.path.join(workload_path, "*/metadata*.json"))
 
             all_files = files + subfiles
             new_data = pd.DataFrame()
-            #for profile_path in all_files:
+            # for profile_path in all_files:
             new_data = new_data.append(parseFiles(all_files, CLI))
             new_data = new_data.rename(
                 columns={"speedup": "Line Speedup", "progress_speedup": "Program Speedup"}
@@ -418,7 +414,7 @@ def build_causal_layout(
                     list_of_contents.encode("utf-8").split(b";base64,")[1]
                 ).decode("utf-8")
                 # change to if debug
-                
+
                 new_data = parseUploadedFile(new_data_file, CLI)
                 new_data = new_data.rename(
                     columns={
@@ -429,7 +425,7 @@ def build_causal_layout(
                 data = new_data
 
                 # reset checklists
-                #checklist_options = checklist_values = sorted(list(data.point.unique()))
+                # checklist_options = checklist_values = sorted(list(data.point.unique()))
 
                 max_points = new_data.point.value_counts().max().max()
 
@@ -449,15 +445,12 @@ def build_causal_layout(
                     fig2,
                 )
 
-
         elif func_regex is not None or exp_regex is not None:
             # filter options and values
             if func_regex is not None:
                 p = re.compile(func_regex, flags=0)
 
-                func_list = [
-                    s for s in list(data["point"].unique()) if p.match(s)
-                ]
+                func_list = [s for s in list(data["point"].unique()) if p.match(s)]
             if exp_regex is not None:
                 p = re.compile(exp_regex, flags=0)
 
@@ -475,13 +468,7 @@ def build_causal_layout(
             )
 
             # TODO keep min points value...
-            return (
-                div_children,
-                header,
-                fig1,
-                fig2
-            )
-
+            return (div_children, header, fig1, fig2)
 
         else:
             # change to update checklist after points selection

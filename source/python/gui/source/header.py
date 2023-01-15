@@ -27,6 +27,7 @@ import dash_bootstrap_components as dbc
 from dash import html, dash_table, dcc
 from matplotlib.style import available
 
+
 # List all the unique column values for desired column in df, 'target_col'
 def list_unique(orig_list, is_numeric):
     list_set = set(orig_list)
@@ -247,7 +248,7 @@ def get_header(raw_pmc, dropDownMenuItems, input_filters, kernel_names):
                     },
                 )
             )
-        #elif filter["type"] == "Function Name":
+        # elif filter["type"] == "Function Name":
         #    header_nav.append(
         #        function_filter(
         #            filter["Name"],
@@ -258,7 +259,7 @@ def get_header(raw_pmc, dropDownMenuItems, input_filters, kernel_names):
         #                "height": "34px",
         #            },
         #        )
-        #id    )
+        # id    )
         else:
             print("type not supported")
             # sys.exit(1)

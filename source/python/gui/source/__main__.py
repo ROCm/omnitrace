@@ -45,7 +45,7 @@ def causal(args):
 
     # TODO This will become a glob to look for subfolders with coz files
     workload_path = [os.path.join(args.path, "experiments.json")]
-    #workload_path = [os.path.join(args.path, "experiments.coz")]
+    # workload_path = [os.path.join(args.path, "experiments.coz")]
 
     CLI = args.cli
     new_df = parseFiles(workload_path, CLI)
@@ -54,7 +54,6 @@ def causal(args):
         columns={"speedup": "Line Speedup", "progress_speedup": "Program Speedup"}
     )
     if not CLI:
-
         runs = OrderedDict({workload_path: speedup_df})
         kernel_names = ["program1", "program2"]
         max_points = 9
@@ -78,7 +77,7 @@ def causal(args):
                 "type": "int",
             },
         ]
-        
+
         gui.build_causal_layout(
             app,
             runs,
@@ -87,10 +86,7 @@ def causal(args):
             speedup_df,
             args.verbose,
         )
-        app.run_server(
-                debug=True,
-                host="0.0.0.0", 
-                port=8051)
+        app.run_server(debug=True, host="0.0.0.0", port=8051)
 
 
 def main():
@@ -103,15 +99,13 @@ def main():
     f = open(ver_path, "r")
     VER = f.read()
 
-    settings={}
+    settings = {}
     if os.path.basename(this_dir) == "source":
         settings_path = os.path.join(f"{this_dir.parent}", "settings.json")
     else:
         settings_path = os.path.join(f"{this_dir}", "settings.json")
     with open(settings_path, "r") as f:
-            settings = json.load(f)
-
-    
+        settings = json.load(f)
 
     my_parser = argparse.ArgumentParser(
         description="AMD's OmniTrace GUI",
@@ -137,7 +131,11 @@ def main():
     )
 
     my_parser.add_argument(
-        "-V", "--verbose", help="Increase output verbosity", default=0, type=int,
+        "-V",
+        "--verbose",
+        help="Increase output verbosity",
+        default=0,
+        type=int,
     )
 
     my_parser.add_argument(
@@ -146,7 +144,7 @@ def main():
         metavar="",
         type=str,
         dest="path",
-        #default=os.path.join(os.path.dirname(__file__), "workloads", "toy"),
+        # default=os.path.join(os.path.dirname(__file__), "workloads", "toy"),
         default=settings["path"],
         required=False,
         help="\t\t\tSpecify path to save workload.\n\t\t\t(DEFAULT: {}/workloads/<name>)".format(
@@ -154,7 +152,7 @@ def main():
         ),
     )
 
-    #only CLI
+    # only CLI
     my_parser.add_argument(
         "-c",
         "--cli",
@@ -162,7 +160,6 @@ def main():
         default=settings["cli"],
         required=False,
     )
-
 
     args = my_parser.parse_args()
     causal(args)

@@ -6,46 +6,61 @@ import numpy as np
 from math import isnan, isinf, isclose
 from collections import OrderedDict
 
+
 class experiment_data(object):
     def __init__(self, _speedup):
         self.speedup = _speedup
         self.duration = []
-        self.delta=[]
+        self.delta = []
+
     def __iadd__(self, _val):
         self.duration += [float(_val[0])]
         self.delta += [float(_val[1])]
+
     def __len__(self):
         return len(self.duration)
+
     def __eq__(self, rhs):
         return self.speedup == rhs.speedup
+
     def __neq__(self, rhs):
         return not self == rhs
+
     def __lt__(self, rhs):
         return self.speedup < rhs.speedup
+
     def mean(self):
-        #print(self.duration)
+        # print(self.duration)
         return sum(self.duration) / float(len(self.duration))
+
     def thorughput(self):
         if len(self.delta) < 1:
             return float("nan")
         return sum(self.duration) / sum(self.delta)
+
+
 class line_speedup(object):
     def __init__(self, _name="", _prog="", _exp_data=None, _exp_base=None):
         self.name = _name
         self.prog = _prog
         self.data = _exp_data
         self.base = _exp_base
+
     def get(self):
         if self.data is None or self.base is None:
             return 0.0
         if len(self.data.delta) > 0:
-            return ((self.base.thorughput() - self.data.thorughput()) / self.base.thorughput()) * 100
+            return (
+                (self.base.thorughput() - self.data.thorughput()) / self.base.thorughput()
+            ) * 100
         return ((self.base.mean() - self.data.mean()) / self.base.mean()) * 100
+
     def __str__(self):
         if self.data is None or self.base is None:
             return f"{self.name}"
         _line_speedup = self.get()
         return f"[{self.name}][{self.prog}][{self.data.speedup:3}] speedup: {_line_speedup:6.1f} %"
+
     def __eq__(self, rhs):
         return (
             self.name == rhs.name
@@ -53,8 +68,10 @@ class line_speedup(object):
             and self.data == rhs.data
             and self.base == rhs.base
         )
+
     def __neq__(self, rhs):
         return not self == rhs
+
     def __lt__(self, rhs):
         if self.name != rhs.name:
             return self.name < rhs.name
@@ -65,10 +82,14 @@ class line_speedup(object):
         elif self.base != rhs.base:
             return self.base < rhs.base
         return False
+
+
 def find_or_insert(_data, _value):
     if _value not in _data:
         _data[_value] = experiment_data(_value)
     return _data[_value]
+
+
 def longest_common_prefix(_inp):
     a = list(set(_inp))
     # if size is 0, return empty string
@@ -88,6 +109,8 @@ def longest_common_prefix(_inp):
         i += 1
     pre = a[0][0:i]
     return pre
+
+
 def process_data(data, _data):
     if not _data:
         return data
@@ -112,16 +135,17 @@ def process_data(data, _data):
                 else:
                     _delt = pts["laps"]
                 if _delt > 0:
-                        #_delt=1
-                        itr += [float(_duration), float(_delt)]
+                    # _delt=1
+                    itr += [float(_duration), float(_delt)]
                 else:
-                        _diff = pts["arrival"] - pts["departure"] + 1
-                        _rate = pts["arrival"] / float(_duration)
-                        if _rate != 0:
-                            itr += float(_diff) / float(_rate)
-                #else:
+                    _diff = pts["arrival"] - pts["departure"] + 1
+                    _rate = pts["arrival"] / float(_duration)
+                    if _rate != 0:
+                        itr += float(_diff) / float(_rate)
+                # else:
                 #    _delt = pts["laps"]
     return data
+
 
 def compute_speedups(_data, CLI):
     data = {}
@@ -132,6 +156,7 @@ def compute_speedups(_data, CLI):
         for progpt, ditr in pitr.items():
             data[selected][progpt] = OrderedDict(sorted(ditr.items()))
     from os.path import dirname
+
     ret = []
     _slcp = longest_common_prefix(
         [dirname(x.split(":")[0]) if ":" in x else x for x in _data.keys()]
@@ -148,7 +173,7 @@ def compute_speedups(_data, CLI):
             if len(progpt) > 0 and progpt[0] == "/":
                 progpt = progpt[1:]
             if 0 not in ditr.keys() or len(ditr[0]) == 0:
-                #print(f"missing baseline data for {progpt} in {selected}...")
+                # print(f"missing baseline data for {progpt} in {selected}...")
                 continue
             _baseline = ditr[0].mean()
             for speedup, itr in ditr.items():
@@ -163,16 +188,27 @@ def compute_speedups(_data, CLI):
         if CLI:
             if itr.name != _last_name or itr.prog != _last_prog:
                 print("")
-            #print(f"{itr}")
+            # print(f"{itr}")
         if len(itr.data.duration) != 0:
             if itr.get() <= 200 and itr.get() >= -100:
-                out = pd.concat([
+                out = pd.concat(
+                    [
                         out,
-                        pd.DataFrame({"idx":[(itr.prog, itr.name)], "progress points":[itr.prog], "point":[itr.name], "speedup":[itr.data.speedup], "progress_speedup":[itr.get()]})
-                    ])
+                        pd.DataFrame(
+                            {
+                                "idx": [(itr.prog, itr.name)],
+                                "progress points": [itr.prog],
+                                "point": [itr.name],
+                                "speedup": [itr.data.speedup],
+                                "progress_speedup": [itr.get()],
+                            }
+                        ),
+                    ]
+                )
         _last_name = itr.name
         _last_prog = itr.prog
     return out
+
 
 def isValidDataPoint(data):
     return isnan(data) == False and isinf(data) == False
@@ -210,6 +246,7 @@ def addThroughput(df, experiment, value):
         df["duration"][ix] = df["duration"][ix] + float(experiment["duration"])
     return df
 
+
 def addLatency(df, experiment, value):
     ix = (experiment["selected"], experiment["speedup"])
     df_points = list(df.index)
@@ -240,32 +277,32 @@ def addLatency(df, experiment, value):
 
     return df
 
+
 def reformat_data(dict_data):
     df = pd.DataFrame(dict_data)
     out = pd.DataFrame()
-    for key,value in df.iteritems():
-        #print(key)
-        _speedup=[]
+    for key, value in df.iteritems():
+        # print(key)
+        _speedup = []
         for speedup, itr in value.items():
-            out = pd.concat([
-                out, 
-                pd.DataFrame(data={"point":[key], "speedup": [speedup]})
-            ])
-        what  = pd.DataFrame(value)
-        #df[i] = j
+            out = pd.concat(
+                [out, pd.DataFrame(data={"point": [key], "speedup": [speedup]})]
+            )
+        what = pd.DataFrame(value)
+        # df[i] = j
+
 
 def parseFiles(files, CLI):
-    
     data = pd.DataFrame()
     out = pd.DataFrame()
-    dict_data={}
+    dict_data = {}
     for file in files:
         if "json" in file:
-            with open(file, 'r') as j:
+            with open(file, "r") as j:
                 data_experiments = json.load(j)
                 dict_data = process_data(dict_data, data_experiments)
-                dict_data = compute_speedups(dict_data, CLI)#.sort_index()
-            
+                dict_data = compute_speedups(dict_data, CLI)  # .sort_index()
+
         else:
             f = open(file, "r")
             lines = f.readlines()
@@ -283,8 +320,8 @@ def parseFiles(files, CLI):
                         splice = section.split("\n")[0].split("=")
                         if len(splice) > 1:
                             val = getValue(splice)
-                            if isinstance(val,str) and  '/' in val:
-                                val = val[val.rfind('/')+1:]
+                            if isinstance(val, str) and "/" in val:
+                                val = val[val.rfind("/") + 1 :]
                             value[splice[0]] = val
                         else:
                             data_type = splice[0]
@@ -303,13 +340,13 @@ def parseFiles(files, CLI):
 
 def parseUploadedFile(file, CLI):
     data = pd.DataFrame()
-    if '{' in file:
-        dict_data={}
+    if "{" in file:
+        dict_data = {}
         data_experiments = json.loads(file)
         dict_data = process_data(dict_data, data_experiments)
-        data = compute_speedups(dict_data, CLI)#.sort_index()
+        data = compute_speedups(dict_data, CLI)  # .sort_index()
     else:
-        #coz
+        # coz
         for line in file.split("\n"):
             if len(line) > 0:
                 isExperiment = False
@@ -376,7 +413,6 @@ def getSpeedupData(data):
             # for speedup in row:
             data_point = getDataPoint(row)
             if not isnan(data_point):
-
                 progress_speedup = (
                     baseline_data_point - data_point
                 ) / baseline_data_point
@@ -396,7 +432,7 @@ def getSpeedupData(data):
                             data={
                                 "point": [name],
                                 "speedup": [speedup],
-                                "progress_speedup": [100*progress_speedup],
+                                "progress_speedup": [100 * progress_speedup],
                             },
                         ),
                         speedup_df,
