@@ -25,6 +25,8 @@
 #include <timemory/log/macros.hpp>
 
 #include <algorithm>
+#include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <sstream>
@@ -89,6 +91,7 @@ main(int argc, char** argv)
 
         forward_signals({ SIGINT, SIGTERM, SIGQUIT });
         size_t _ncount = 0;
+        size_t _width  = std::log10(_causal_env.size()) + 1;
         for(auto& citr : _causal_env)
         {
             auto _n        = _ncount++;
@@ -104,7 +107,9 @@ main(int argc, char** argv)
             if(_pid == 0)
             {
                 auto _prefix = std::stringstream{};
-                _prefix << _n << ": [" << _main_pid << " -> " << getpid() << "] ";
+                _prefix << std::setw(_width) << std::right << _n << "/"
+                        << std::setw(_width) << std::left << _causal_env.size() << ": ["
+                        << _main_pid << " -> " << getpid() << "] ";
 
                 auto _env = _base_env;
                 for(const auto& eitr : citr)
