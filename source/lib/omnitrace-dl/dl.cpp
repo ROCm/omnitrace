@@ -1075,7 +1075,7 @@ omnitrace_preload()
                          ::omnitrace::join(::omnitrace::QuoteStrings{}, ", ", _mode,
                                            false, "omnitrace")
                              .c_str());
-        omnitrace_init(_mode.c_str(), false, "omnitrace");
+        omnitrace_init(_mode.c_str(), false, nullptr);
         omnitrace_init_tooling();
     }
 

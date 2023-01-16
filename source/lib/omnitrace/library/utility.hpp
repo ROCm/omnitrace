@@ -23,8 +23,8 @@
 #pragma once
 
 #include "library/concepts.hpp"
-#include "timemory/mpl/concepts.hpp"
 
+#include <timemory/mpl/concepts.hpp>
 #include <timemory/utility/join.hpp>
 
 #include <algorithm>

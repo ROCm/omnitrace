@@ -317,15 +317,26 @@ category_region<CategoryT>::mark(std::string_view name, Args&&...)
     // skip if category is disabled
     if(!trait::runtime_enabled<CategoryT>::get()) return;
 
-    // only mark when in active state (do not activate to mark)
-    if(get_state() != State::Active) return;
+    // the expectation here is that if the state is not active then the call
+    // to omnitrace_init_tooling_hidden will activate all the appropriate
+    // tooling one time and as it exits set it to active and return true.
+    if(get_state() != State::Active && !omnitrace_init_tooling_hidden()) return;
 
     // unconditionally return if thread is disabled or finalized
     if(get_thread_state() >= ThreadState::Completed) return;
 
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
 
-    if(!get_use_causal()) causal::mark_progress_point(name);
+    if(get_use_causal())
+    {
+        OMNITRACE_CONDITIONAL_PRINT(
+            tracing::debug_mark,
+            "[%s][PID=%i][state=%s][thread_state=%s] omnitrace_progress(%s)\n",
+            category_name, process::get_id(), std::to_string(get_state()).c_str(),
+            std::to_string(get_thread_state()).c_str(), name.data());
+
+        causal::mark_progress_point(name);
+    }
 }
 
 template <typename CategoryT>

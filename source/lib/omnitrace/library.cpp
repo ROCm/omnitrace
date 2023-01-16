@@ -549,13 +549,14 @@ omnitrace_init_tooling_hidden()
 //======================================================================================//
 
 extern "C" void
-omnitrace_init_hidden(const char* _mode, bool _is_binary_rewrite, const char* _argv0)
+omnitrace_init_hidden(const char* _mode, bool _is_binary_rewrite, const char* _argv0_c)
 {
     static int  _total_count = 0;
     static auto _args = std::make_pair(std::string_view{ _mode }, _is_binary_rewrite);
 
     auto _count   = _total_count++;
     auto _mode_sv = std::string_view{ _mode };
+    auto _argv0   = (_argv0_c) ? std::string{ _argv0_c } : config::get_exe_name();
     // this function may be called multiple times if multiple libraries are instrumented
     // we want to guard against multiple calls which with different arguments
     if(_count > 0 &&
@@ -587,21 +588,23 @@ omnitrace_init_hidden(const char* _mode, bool _is_binary_rewrite, const char* _a
                 "called after omnitrace was initialized. state = %s. Mode-based settings "
                 "(via -M <MODE> passed to omnitrace exe) may not be properly "
                 "configured.\n",
-                _mode, std::to_string(_is_binary_rewrite).c_str(), _argv0,
+                _mode, std::to_string(_is_binary_rewrite).c_str(), _argv0.c_str(),
                 std::to_string(get_state()).c_str());
         }
     }
 
-    tracing::get_finalization_functions().emplace_back([_argv0]() {
+    tracing::get_finalization_functions().emplace_back([_argv0_c]() {
         OMNITRACE_CI_THROW(get_state() != State::Active,
                            "Finalizer function for popping main invoked in non-active "
                            "state :: state = %s\n",
                            std::to_string(get_state()).c_str());
         if(get_state() == State::Active)
         {
+            auto _name = (_argv0_c) ? std::string{ _argv0_c } : config::get_exe_name();
             // if main hasn't been popped yet, pop it
-            OMNITRACE_BASIC_VERBOSE(2, "Running omnitrace_pop_trace(%s)...\n", _argv0);
-            omnitrace_pop_trace_hidden(_argv0);
+            OMNITRACE_BASIC_VERBOSE(2, "Running omnitrace_pop_trace(%s)...\n",
+                                    _name.c_str());
+            omnitrace_pop_trace_hidden(_name.c_str());
         }
     });
 
@@ -613,7 +616,7 @@ omnitrace_init_hidden(const char* _mode, bool _is_binary_rewrite, const char* _a
     OMNITRACE_CONDITIONAL_BASIC_PRINT_F(
         get_debug_env() || get_verbose_env() > 2,
         "mode: %s | is binary rewrite: %s | command: %s\n", _mode,
-        (_is_binary_rewrite) ? "y" : "n", _argv0);
+        (_is_binary_rewrite) ? "y" : "n", _argv0.c_str());
 
     tim::set_env("OMNITRACE_MODE", _mode, 0);
     config::is_binary_rewrite() = _is_binary_rewrite;

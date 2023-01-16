@@ -65,6 +65,7 @@ using hash_value_t            = tim::hash_value_t;
 extern OMNITRACE_HIDDEN_API bool debug_push;
 extern OMNITRACE_HIDDEN_API bool debug_pop;
 extern OMNITRACE_HIDDEN_API bool debug_user;
+extern OMNITRACE_HIDDEN_API bool debug_mark;
 
 std::unordered_map<hash_value_t, std::string>&
 get_perfetto_track_uuids();
