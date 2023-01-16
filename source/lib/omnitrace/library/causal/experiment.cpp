@@ -297,9 +297,11 @@ experiment::as_string() const
     auto _dur = static_cast<double>(experiment_time) / static_cast<double>(units::sec);
     _ss << std::boolalpha << "speed-up: " << std::setw(3) << virtual_speedup
         << "%, period: " << std::setw(4) << std::fixed << std::setprecision(2)
-        << (sampling_period / static_cast<double>(units::msec))
-        << " msec, duration: " << std::setw(5) << std::fixed << std::setprecision(3)
-        << _dur << " sec :: experiment: " << as_hex(selection.address) << " ";
+        << (sampling_period / static_cast<double>(units::msec)) << " msec";
+    if(!config::get_causal_end_to_end())
+        _ss << ", duration: " << std::setw(5) << std::fixed << std::setprecision(3)
+            << _dur << " sec";
+    _ss << " :: experiment: " << as_hex(selection.address) << " ";
     if(selection.symbol_address > 0 && selection.address != selection.symbol_address)
         _ss << "(symbol@" << as_hex(selection.symbol_address) << ") ";
     if(!selection.info.file.empty() && selection.info.line > 0)
@@ -310,8 +312,9 @@ experiment::as_string() const
         auto _pos       = std::string::npos;
         using strpair_t = std::pair<std::string_view, std::string>;
         for(const auto& itr :
-            { strpair_t{ "::basic_string<char, std::char_traits<char>, std::allocator<char> > ",
-                         "::string" },
+            { strpair_t{
+                  "::basic_string<char, std::char_traits<char>, std::allocator<char> > ",
+                  "::string" },
               strpair_t{ "::__cxx11::", "::" } })
         {
             while((_pos = _v.find(itr.first)) != std::string::npos)

@@ -237,6 +237,10 @@ get_line_info(const std::vector<scope_filter>& _filters, line_info_t* _discarded
         return _satisfies_filter(scope_filter::FUNCTION_FILTER, _value);
     };
 
+    auto _satisfies_fileline_filter = [&_satisfies_filter](const std::string& _value) {
+        return _satisfies_filter(scope_filter::FILELINE_FILTER, _value);
+    };
+
     // filter function used by procfs::get_contiguous_maps
     // ensures that we do not process omnitrace/gotcha/libunwind libraries
     // and do not process the libraries outside of the binary scope
@@ -279,9 +283,10 @@ get_line_info(const std::vector<scope_filter>& _filters, line_info_t* _discarded
             {
                 const auto& _file = vitr.file;
                 const auto& _func = vitr.func;
+                const auto& _line = vitr.line;
                 if(!_satisfies_source_filter(_file) ||
-                   (!_satisfies_function_filter(_func) &&
-                    !_satisfies_function_filter(demangle(_func))))
+                   !_satisfies_function_filter(demangle(_func)) ||
+                   !_satisfies_fileline_filter(join(":", _file, _line)))
                 {
                     // insert into discarded if does not match source scope regex
                     if(_discarded) _discarded->at(mitr).data.emplace_back(vitr);

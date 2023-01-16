@@ -506,9 +506,12 @@ save_line_info(const settings::compose_filename_config& _cfg)
         }
     };
 
-    _write(tim::settings::compose_output_filename("line-info-included", "txt", _cfg),
+    _write(tim::settings::compose_output_filename(
+               config::get_causal_output_filename() + "-line-info-included", "txt", _cfg),
            get_cached_line_info().first);
-    _write(tim::settings::compose_output_filename("line-info-discarded", "txt", _cfg),
+    _write(tim::settings::compose_output_filename(config::get_causal_output_filename() +
+                                                      "-line-info-discarded",
+                                                  "txt", _cfg),
            get_cached_line_info().second);
 }
 
