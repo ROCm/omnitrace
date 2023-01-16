@@ -22,54 +22,50 @@
 
 #pragma once
 
-#include "library/binary/analysis.hpp"
-#include "library/binary/basic_line_info.hpp"
+#include "library/binary/address_range.hpp"
 #include "library/binary/fwd.hpp"
-#include "library/causal/fwd.hpp"
-#include "library/containers/c_array.hpp"
-#include "library/containers/static_vector.hpp"
-#include "library/defines.hpp"
-#include "library/thread_data.hpp"
 #include "library/utility.hpp"
 
-#include <timemory/hash/types.hpp>
-#include <timemory/tpls/cereal/cereal/cereal.hpp>
-#include <timemory/utility/procfs/maps.hpp>
-#include <timemory/utility/unwind.hpp>
-
 #include <deque>
-#include <dlfcn.h>
-#include <map>
+#include <memory>
+#include <vector>
 
 namespace omnitrace
 {
-namespace causal
+namespace binary
 {
+template <typename DataT>
+struct line_info
+{
+    using value_type = DataT;
+
+    std::shared_ptr<bfd_file>  file   = {};
+    std::deque<value_type>     data   = {};
+    std::vector<address_range> ranges = {};
+
+    auto begin() const { return data.begin(); }
+    auto end() const { return data.end(); }
+    auto begin() { return data.begin(); }
+    auto end() { return data.end(); }
+    auto size() const { return data.size(); }
+    auto empty() const { return data.empty(); }
+
+    auto range_begin() const { return ranges.begin(); }
+    auto range_end() const { return ranges.end(); }
+    auto range_begin() { return ranges.begin(); }
+    auto range_end() { return ranges.end(); }
+    auto range_size() const { return ranges.size(); }
+    auto range_empty() const { return ranges.empty(); }
+
+    void sort();
+};
+
+template <typename DataT>
 void
-save_line_info(const settings::compose_filename_config&);
-
-std::deque<line_mapping_info_t>
-get_line_info(uintptr_t _addr, bool include_discarded = true);
-
-bool is_eligible_address(uintptr_t);
-
-void set_current_selection(unwind_stack_t);
-
-void set_current_selection(unwind_addr_t);
-
-selected_entry
-sample_selection(size_t _nitr = 1000, size_t _wait_ns = 10000);
-
-void push_progress_point(std::string_view);
-
-void pop_progress_point(std::string_view);
-
-void mark_progress_point(std::string_view);
-
-uint16_t
-sample_virtual_speedup();
-
-void
-start_experimenting();
-}  // namespace causal
+line_info<DataT>::sort()
+{
+    utility::filter_sort_unique(data);
+    utility::filter_sort_unique(ranges);
+}
+}  // namespace binary
 }  // namespace omnitrace

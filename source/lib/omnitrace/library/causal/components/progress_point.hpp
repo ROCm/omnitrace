@@ -40,6 +40,8 @@ namespace omnitrace
 {
 namespace causal
 {
+namespace component
+{
 struct progress_point : comp::base<progress_point, void>
 {
     using base_type     = comp::base<progress_point, void>;
@@ -97,6 +99,8 @@ struct progress_point : comp::base<progress_point, void>
         ar(cereal::make_nvp("departure", m_departure));
     }
 
+    static std::unordered_map<tim::hash_value_t, progress_point> get_progress_points();
+
 private:
     hash_type       m_hash      = 0;
     int64_t         m_delta     = 0;
@@ -104,25 +108,27 @@ private:
     int64_t         m_departure = 0;
     progress_point* m_iterator  = nullptr;
 };
-
-std::unordered_map<tim::hash_value_t, progress_point>
-get_progress_points();
+}  // namespace component
 }  // namespace causal
 }  // namespace omnitrace
 
-OMNITRACE_DEFINE_CONCRETE_TRAIT(uses_storage, causal::progress_point, false_type)
-OMNITRACE_DEFINE_CONCRETE_TRAIT(flat_storage, causal::progress_point, true_type)
-OMNITRACE_DEFINE_CONCRETE_TRAIT(uses_timing_units, causal::progress_point, true_type)
-OMNITRACE_DEFINE_CONCRETE_TRAIT(is_timing_category, causal::progress_point, true_type)
+OMNITRACE_DEFINE_CONCRETE_TRAIT(uses_storage, causal::component::progress_point,
+                                false_type)
+OMNITRACE_DEFINE_CONCRETE_TRAIT(flat_storage, causal::component::progress_point,
+                                true_type)
+OMNITRACE_DEFINE_CONCRETE_TRAIT(uses_timing_units, causal::component::progress_point,
+                                true_type)
+OMNITRACE_DEFINE_CONCRETE_TRAIT(is_timing_category, causal::component::progress_point,
+                                true_type)
 
 namespace tim
 {
 namespace operation
 {
 template <>
-struct push_node<omnitrace::causal::progress_point>
+struct push_node<omnitrace::causal::component::progress_point>
 {
-    using type = omnitrace::causal::progress_point;
+    using type = omnitrace::causal::component::progress_point;
 
     TIMEMORY_DEFAULT_OBJECT(push_node)
 
@@ -137,9 +143,9 @@ struct push_node<omnitrace::causal::progress_point>
 };
 
 template <>
-struct pop_node<omnitrace::causal::progress_point>
+struct pop_node<omnitrace::causal::component::progress_point>
 {
-    using type = omnitrace::causal::progress_point;
+    using type = omnitrace::causal::component::progress_point;
 
     TIMEMORY_DEFAULT_OBJECT(pop_node)
 

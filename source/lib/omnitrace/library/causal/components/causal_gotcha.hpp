@@ -33,6 +33,8 @@ namespace omnitrace
 {
 namespace causal
 {
+namespace component
+{
 struct causal_gotcha : tim::component::base<causal_gotcha, void>
 {
     TIMEMORY_DEFAULT_OBJECT(causal_gotcha)
@@ -47,5 +49,6 @@ struct causal_gotcha : tim::component::base<causal_gotcha, void>
     static void start();
     static void stop();
 };
+}  // namespace component
 }  // namespace causal
 }  // namespace omnitrace

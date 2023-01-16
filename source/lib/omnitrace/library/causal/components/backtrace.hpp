@@ -23,6 +23,7 @@
 #pragma once
 
 #include "library/causal/data.hpp"
+#include "library/causal/sample_data.hpp"
 #include "library/common.hpp"
 #include "library/components/fwd.hpp"
 #include "library/defines.hpp"
@@ -40,46 +41,30 @@
 
 namespace omnitrace
 {
+namespace causal
+{
 namespace component
 {
-struct backtrace_causal
+struct backtrace
 : tim::component::empty_base
 , tim::concepts::component
 {
-    using value_type = void;
-    struct sample_data
-    {
-        uintptr_t        address = 0x0;
-        mutable uint64_t count   = 0;
+    using value_type        = void;
+    using sample_data_set_t = std::set<sample_data>;
 
-        bool operator==(sample_data _v) const { return (address == _v.address); }
-        bool operator!=(sample_data _v) const { return !(*this == _v); }
-        bool operator<(sample_data _v) const { return (address < _v.address); }
-        bool operator>(sample_data _v) const { return (address > _v.address); }
-        bool operator<=(sample_data _v) const { return (address <= _v.address); }
-        bool operator>=(sample_data _v) const { return (address >= _v.address); }
-
-        template <typename ArchiveT>
-        void serialize(ArchiveT& ar, const unsigned)
-        {
-            ar(tim::cereal::make_nvp("address", address),
-               tim::cereal::make_nvp("count", count));
-        }
-    };
-
-    static std::string label() { return "backtrace_causal"; }
+    static std::string label() { return "causal::backtrace"; }
     static std::string description()
     {
         return "Causal profiling data collected in backtrace";
     }
 
-    backtrace_causal()                            = default;
-    ~backtrace_causal()                           = default;
-    backtrace_causal(const backtrace_causal&)     = default;
-    backtrace_causal(backtrace_causal&&) noexcept = default;
+    backtrace()                     = default;
+    ~backtrace()                    = default;
+    backtrace(const backtrace&)     = default;
+    backtrace(backtrace&&) noexcept = default;
 
-    backtrace_causal& operator=(const backtrace_causal&) = default;
-    backtrace_causal& operator=(backtrace_causal&&) noexcept = default;
+    backtrace& operator=(const backtrace&) = default;
+    backtrace& operator=(backtrace&&) noexcept = default;
 
     static void start();
     static void stop();
@@ -93,14 +78,6 @@ struct backtrace_causal
     template <typename Tp = uint64_t>
     static Tp get_period(uint64_t _units = units::nsec);
 
-    using sample_data_set_t = std::set<sample_data>;
-
-    static std::map<uint32_t, sample_data_set_t> get_samples();
-    static std::set<sample_data>                 get_samples(uint32_t);
-
-    static void add_sample(uint32_t, uintptr_t);
-    static void add_samples(uint32_t, const std::vector<uintptr_t>&);
-
     static tim::statistics<int64_t> get_period_stats();
     static void                     reset_period_stats();
 
@@ -110,4 +87,5 @@ private:
     causal::unwind_addr_t m_stack    = {};
 };
 }  // namespace component
+}  // namespace causal
 }  // namespace omnitrace

@@ -22,9 +22,11 @@
 
 #pragma once
 
-#include "library/causal/components/backtrace_causal.hpp"
+#include "library/causal/components/backtrace.hpp"
 #include "library/causal/components/progress_point.hpp"
 #include "library/causal/data.hpp"
+#include "library/causal/sample_data.hpp"
+#include "library/causal/selected_entry.hpp"
 #include "library/containers/c_array.hpp"
 #include "library/defines.hpp"
 #include "library/utility.hpp"
@@ -47,16 +49,16 @@ using hash_value_t = ::tim::hash_value_t;
 
 struct experiment
 {
-    using progress_points_t = std::unordered_map<tim::hash_value_t, progress_point>;
+    using progress_points_t =
+        std::unordered_map<tim::hash_value_t, component::progress_point>;
     using experiments_t     = std::vector<experiment>;
     using filename_config_t = settings::compose_filename_config;
-    using sample_data_t     = component::backtrace_causal::sample_data;
-    using sample_dataset_t  = std::set<sample_data_t>;
+    using sample_dataset_t  = std::set<sample_data>;
     using period_stats_t    = tim::statistics<int64_t>;
 
     struct sample
     {
-        using line_info = code_object::basic::line_info;
+        using line_info = binary::basic_line_info;
 
         mutable uint64_t count    = 0;
         std::string      location = {};

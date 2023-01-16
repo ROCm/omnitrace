@@ -63,7 +63,7 @@ delay::label()
 std::string
 delay::description()
 {
-    return "Tracks delays and handles implementing delays for casual profiling";
+    return "Tracks delays and handles implementing delays for causal profiling";
 }
 
 void

@@ -128,12 +128,12 @@ get_chars(T&& _c, std::index_sequence<Idx...>)
 }  // namespace
 }  // namespace debug
 
-namespace code_object
+namespace binary
 {
 struct address_range;
 }
 
-using address_range_t = code_object::address_range;
+using address_range_t = binary::address_range;
 
 template <typename Tp>
 std::string

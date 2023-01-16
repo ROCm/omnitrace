@@ -22,54 +22,43 @@
 
 #pragma once
 
-#include "library/common.hpp"
 #include "library/defines.hpp"
 #include "library/timemory.hpp"
 
-#include <timemory/components/gotcha/backends.hpp>
-#include <timemory/mpl/macros.hpp>
-
-#include <array>
-#include <cstddef>
-#include <string>
+#include <chrono>
+#include <cstdint>
 
 namespace omnitrace
 {
 namespace causal
 {
-namespace component
+struct sample_data
 {
-using timespec_t = struct timespec;
-// this is used to wrap pthread_mutex()
-struct blocking_gotcha : comp::base<blocking_gotcha, void>
-{
-    static constexpr size_t gotcha_capacity = 13;
+    uintptr_t        address = 0x0;
+    mutable uint64_t count   = 0;
 
-    TIMEMORY_DEFAULT_OBJECT(blocking_gotcha)
+    bool operator==(sample_data _v) const { return (address == _v.address); }
+    bool operator!=(sample_data _v) const { return !(*this == _v); }
+    bool operator<(sample_data _v) const { return (address < _v.address); }
+    bool operator>(sample_data _v) const { return (address > _v.address); }
+    bool operator<=(sample_data _v) const { return (address <= _v.address); }
+    bool operator>=(sample_data _v) const { return (address >= _v.address); }
 
-    // string id for component
-    static std::string label();
-    static std::string description();
-    static void        preinit();
-
-    // generate the gotcha wrappers
-    static void configure();
-    static void shutdown();
-
-    static void start();
-    static void stop();
-
-    static void set_data(const comp::gotcha_data&);
+    template <typename ArchiveT>
+    void serialize(ArchiveT& ar, const unsigned)
+    {
+        ar(cereal::make_nvp("address", address), cereal::make_nvp("count", count));
+    }
 };
 
-using blocking_gotcha_t =
-    comp::gotcha<blocking_gotcha::gotcha_capacity,
-                 tim::lightweight_tuple<blocking_gotcha>, category::causal>;
-}  // namespace component
+std::map<uint32_t, std::set<sample_data>>
+get_samples();
+
+void
+add_samples(uint32_t, const std::vector<uintptr_t>&);
+
+std::set<sample_data> get_samples(uint32_t);
+
+void add_sample(uint32_t, uintptr_t);
 }  // namespace causal
 }  // namespace omnitrace
-
-OMNITRACE_DEFINE_CONCRETE_TRAIT(prevent_reentry, causal::component::blocking_gotcha_t,
-                                false_type)
-OMNITRACE_DEFINE_CONCRETE_TRAIT(static_data, causal::component::blocking_gotcha_t,
-                                true_type)

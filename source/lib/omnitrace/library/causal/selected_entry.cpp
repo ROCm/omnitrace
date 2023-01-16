@@ -20,56 +20,39 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
+#include "library/causal/selected_entry.hpp"
 #include "library/common.hpp"
-#include "library/defines.hpp"
 #include "library/timemory.hpp"
-
-#include <timemory/components/gotcha/backends.hpp>
-#include <timemory/mpl/macros.hpp>
-
-#include <array>
-#include <cstddef>
-#include <string>
 
 namespace omnitrace
 {
 namespace causal
 {
-namespace component
+hash_value_t
+selected_entry::hash() const
 {
-using timespec_t = struct timespec;
-// this is used to wrap pthread_mutex()
-struct blocking_gotcha : comp::base<blocking_gotcha, void>
+    return tim::get_combined_hash_id(tim::hash_value_t{ address }, info.hash());
+}
+
+template <typename ArchiveT>
+void
+selected_entry::serialize(ArchiveT& ar, const unsigned int)
 {
-    static constexpr size_t gotcha_capacity = 13;
+    using ::tim::cereal::make_nvp;
+    ar(make_nvp("address", address), make_nvp("symbol_address", symbol_address),
+       make_nvp("info", info));
+}
 
-    TIMEMORY_DEFAULT_OBJECT(blocking_gotcha)
+template void
+selected_entry::serialize<cereal::JSONInputArchive>(cereal::JSONInputArchive&,
+                                                    const unsigned int);
 
-    // string id for component
-    static std::string label();
-    static std::string description();
-    static void        preinit();
+template void
+selected_entry::serialize<cereal::MinimalJSONOutputArchive>(
+    cereal::MinimalJSONOutputArchive&, const unsigned int);
 
-    // generate the gotcha wrappers
-    static void configure();
-    static void shutdown();
-
-    static void start();
-    static void stop();
-
-    static void set_data(const comp::gotcha_data&);
-};
-
-using blocking_gotcha_t =
-    comp::gotcha<blocking_gotcha::gotcha_capacity,
-                 tim::lightweight_tuple<blocking_gotcha>, category::causal>;
-}  // namespace component
+template void
+selected_entry::serialize<cereal::PrettyJSONOutputArchive>(
+    cereal::PrettyJSONOutputArchive&, const unsigned int);
 }  // namespace causal
 }  // namespace omnitrace
-
-OMNITRACE_DEFINE_CONCRETE_TRAIT(prevent_reentry, causal::component::blocking_gotcha_t,
-                                false_type)
-OMNITRACE_DEFINE_CONCRETE_TRAIT(static_data, causal::component::blocking_gotcha_t,
-                                true_type)

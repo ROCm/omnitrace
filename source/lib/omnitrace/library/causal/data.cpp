@@ -21,11 +21,17 @@
 // SOFTWARE.
 
 #include "library/causal/data.hpp"
-#include "common/defines.h"
+#include "library/binary/address_multirange.hpp"
+#include "library/binary/analysis.hpp"
+#include "library/binary/basic_line_info.hpp"
+#include "library/binary/bfd_line_info.hpp"
+#include "library/binary/fwd.hpp"
+#include "library/binary/line_info.hpp"
+#include "library/binary/scope_filter.hpp"
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
 #include "library/causal/sampling.hpp"
-#include "library/code_object.hpp"
+#include "library/causal/selected_entry.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/ptl.hpp"
@@ -42,6 +48,7 @@
 #include <timemory/units.hpp>
 #include <timemory/unwind/dlinfo.hpp>
 #include <timemory/unwind/processed_entry.hpp>
+#include <timemory/utility/procfs/maps.hpp>
 
 #include <algorithm>
 #include <atomic>
@@ -63,7 +70,7 @@ namespace causal
 namespace
 {
 using random_engine_t    = std::mt19937_64;
-using progress_bundles_t = component_bundle_cache<progress_point>;
+using progress_bundles_t = component_bundle_cache<component::progress_point>;
 
 auto speedup_seeds     = std::vector<size_t>{};
 auto speedup_divisions = get_env<uint16_t>("OMNITRACE_CAUSAL_SPEEDUP_DIVISIONS", 5);
@@ -88,87 +95,18 @@ get_engine()
     return _v;
 }
 
-struct domain_address_range
-{};
-
-struct coarse_address_range
-{
-    TIMEMORY_DEFAULT_OBJECT(coarse_address_range)
-
-    coarse_address_range& operator+=(std::pair<domain_address_range, uintptr_t>&& _v)
-    {
-        domain = address_range_t{ std::min(domain.low, _v.second),
-                                  std::max(domain.high, _v.second) };
-        return *this;
-    }
-
-    coarse_address_range& operator+=(
-        std::pair<domain_address_range, address_range_t>&& _v)
-    {
-        domain = address_range_t{ std::min(domain.low, _v.second.low),
-                                  std::max(domain.high, _v.second.high) };
-
-        return *this;
-    }
-
-    coarse_address_range& operator+=(uintptr_t _v)
-    {
-        *this += std::make_pair(domain_address_range{}, _v);
-
-        for(auto&& itr : m_fine_ranges)
-            if(itr.contains(_v)) return *this;
-
-        m_fine_ranges.emplace(address_range_t{ _v });
-        return *this;
-    }
-
-    coarse_address_range& operator+=(address_range_t _v)
-    {
-        *this += std::make_pair(domain_address_range{}, _v);
-
-        for(auto&& itr : m_fine_ranges)
-            if(itr.contains(_v)) return *this;
-
-        m_fine_ranges.emplace(_v);
-        return *this;
-    }
-
-    template <typename Tp>
-    bool contains(Tp&& _v) const
-    {
-        using type = concepts::unqualified_type_t<Tp>;
-        static_assert(std::is_integral<type>::value ||
-                          std::is_same<type, address_range_t>::value,
-                      "Error! operator+= supports only integrals or address_ranges");
-
-        if(!domain.contains(_v)) return false;
-        return std::any_of(m_fine_ranges.begin(), m_fine_ranges.end(),
-                           [_v](auto&& itr) { return itr.contains(_v); });
-    }
-
-    address_range_t domain = {};
-
-    auto    size() const { return m_fine_ranges.size(); }
-    int64_t range_size() const { return domain.high - domain.low + 1; }
-
-private:
-    std::set<address_range_t> m_fine_ranges = {};
-};
-
-coarse_address_range&
+binary::address_multirange&
 get_eligible_address_ranges()
 {
-    static auto _v = coarse_address_range{};
+    static auto _v = binary::address_multirange{};
     return _v;
 }
-
-using line_info_map_t = code_object::line_info_map<code_object::ext_line_info>;
 
 auto
 get_filters()
 {
-    using sf      = code_object::scope_filter;
-    auto _filters = std::vector<code_object::scope_filter>{};
+    using sf      = binary::scope_filter;
+    auto _filters = std::vector<binary::scope_filter>{};
 
     // exclude internal libraries used by omnitrace
     _filters.emplace_back(
@@ -310,12 +248,12 @@ get_filters()
     return _filters;
 }
 
-std::pair<line_info_map_t, line_info_map_t>&
+std::pair<binary::line_info_t, binary::line_info_t>&
 get_cached_line_info()
 {
     static auto _v = []() {
-        auto _discarded = line_info_map_t{};
-        auto _requested = code_object::get_ext_line_info(get_filters(), &_discarded);
+        auto _discarded = binary::line_info_t{};
+        auto _requested = binary::get_line_info(get_filters(), &_discarded);
         return std::make_pair(_requested, _discarded);
     }();
     return _v;
@@ -325,7 +263,7 @@ auto
 compute_eligible_lines()
 {
     const auto& _line_info = get_cached_line_info().first;
-    auto _v = std::unordered_map<uintptr_t, std::deque<code_object::basic::line_info>>{};
+    auto        _v = std::unordered_map<uintptr_t, std::deque<binary::basic_line_info>>{};
 
     auto _add_line_info = [&_v](auto _ip_val, const auto& _bfd_val) {
         auto _basic_val = _bfd_val.get_basic();
@@ -348,7 +286,7 @@ compute_eligible_lines()
         return true;
     };
 
-    using sf = code_object::scope_filter;
+    using sf = binary::scope_filter;
 
     bool _use_custom_filters = false;
     for(const auto& itr : _filters)
@@ -385,20 +323,24 @@ compute_eligible_lines()
 
             _add_line_info(_ip, ditr);
             if(!_valid)
-                _valid = (_eligible_ar += std::make_pair(domain_address_range{}, _range),
+                _valid = (_eligible_ar +=
+                          std::make_pair(binary::address_multirange::coarse{}, _range),
                           true);
 
             _eligible_ar += _ip;
         }
     }
 
-    int64_t _range_size = _eligible_ar.range_size();
-
     OMNITRACE_VERBOSE(0,
                       "[causal] eligible addresses: %zu, eligible address ranges: %zu, "
                       "total range: %zu, [%s]\n",
-                      _v.size(), _eligible_ar.size(), _range_size,
-                      _eligible_ar.domain.as_string().c_str());
+                      _v.size(), _eligible_ar.size(), _eligible_ar.range_size(),
+                      _eligible_ar.coarse_range.as_string().c_str());
+
+    OMNITRACE_CONDITIONAL_THROW(
+        _eligible_ar.empty(),
+        "Error! binary analysis (after filters) resulted in zero eligible instruction "
+        "pointer addresses for causal experimentation");
 
     return _v;
 }
@@ -520,33 +462,6 @@ auto latest_eligible_pc = []() {
 
 //--------------------------------------------------------------------------------------//
 
-hash_value_t
-selected_entry::hash() const
-{
-    return tim::get_combined_hash_id(tim::hash_value_t{ address }, info.hash());
-}
-
-template <typename ArchiveT>
-void
-selected_entry::serialize(ArchiveT& ar, const unsigned int)
-{
-    using ::tim::cereal::make_nvp;
-    ar(make_nvp("address", address), make_nvp("symbol_address", symbol_address),
-       make_nvp("info", info));
-}
-
-template void
-selected_entry::serialize<cereal::JSONInputArchive>(cereal::JSONInputArchive&,
-                                                    const unsigned int);
-
-template void
-selected_entry::serialize<cereal::MinimalJSONOutputArchive>(
-    cereal::MinimalJSONOutputArchive&, const unsigned int);
-
-template void
-selected_entry::serialize<cereal::PrettyJSONOutputArchive>(
-    cereal::PrettyJSONOutputArchive&, const unsigned int);
-
 bool
 is_eligible_address(uintptr_t _v)
 {
@@ -556,8 +471,8 @@ is_eligible_address(uintptr_t _v)
 void
 save_line_info(const settings::compose_filename_config& _cfg)
 {
-    auto _write_impl = [](std::ofstream& _ofs, const auto& _data) {
-        for(auto& itr : _data)
+    auto _write_impl = [](std::ofstream& _ofs, const binary::line_info_t& _data) {
+        for(const auto& itr : _data)
         {
             _ofs << itr.first.pathname << " [" << as_hex(itr.first.load_address) << " - "
                  << as_hex(itr.first.last_address) << "]\n";
@@ -581,7 +496,7 @@ save_line_info(const settings::compose_filename_config& _cfg)
         if(tim::filepath::open(_ofs, ofname))
         {
             if(config::get_verbose() >= 0)
-                operation::file_output_message<code_object::basic_line_info>{}(
+                operation::file_output_message<binary::basic_line_info>{}(
                     ofname, std::string{ "causal_line_info" });
             _write_impl(_ofs, _data);
         }

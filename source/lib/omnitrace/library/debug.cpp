@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 #include "library/debug.hpp"
-#include "library/code_object.hpp"
+#include "library/binary/address_range.hpp"
 #include "library/runtime.hpp"
 #include "library/state.hpp"
 

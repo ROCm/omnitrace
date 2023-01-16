@@ -20,75 +20,52 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "library/causal/components/causal_gotcha.hpp"
-#include "library/causal/components/blocking_gotcha.hpp"
-#include "library/causal/components/unblocking_gotcha.hpp"
-#include "library/config.hpp"
+#include "library/causal/sample_data.hpp"
 
-#include <timemory/backends/threading.hpp>
-#include <timemory/utility/macros.hpp>
-#include <timemory/utility/types.hpp>
-
-#include <array>
-#include <vector>
+#include <chrono>
+#include <cstdint>
+#include <map>
+#include <set>
 
 namespace omnitrace
 {
 namespace causal
 {
-namespace component
-{
 namespace
 {
-using bundle_t = tim::lightweight_tuple<blocking_gotcha_t, unblocking_gotcha_t>;
-
-auto&
-get_bundle()
-{
-    static auto _v = std::unique_ptr<bundle_t>{};
-    if(!_v) _v = std::make_unique<bundle_t>("causal_gotcha");
-    return _v;
+auto samples = std::map<uint32_t, std::set<sample_data>>{};
 }
 
-bool is_configured = false;
-}  // namespace
-
-//--------------------------------------------------------------------------------------//
-
-void
-causal_gotcha::configure()
+std::set<sample_data>
+get_samples(uint32_t _index)
 {
-    if(!is_configured)
-    {
-        blocking_gotcha::configure();
-        unblocking_gotcha::configure();
-        is_configured = true;
-    }
+    return samples[_index];
+}
+
+std::map<uint32_t, std::set<sample_data>>
+get_samples()
+{
+    return samples;
 }
 
 void
-causal_gotcha::shutdown()
+add_sample(uint32_t _index, uintptr_t _v)
 {
-    if(is_configured)
-    {
-        blocking_gotcha::shutdown();
-        unblocking_gotcha::shutdown();
-        is_configured = false;
-    }
+    auto& _samples = samples[_index];
+    auto  _value   = sample_data{ _v };
+    _value.count   = 1;
+    auto itr       = _samples.find(_value);
+    if(itr == _samples.end())
+        _samples.emplace(_value);
+    else
+        itr->count += 1;
 }
 
 void
-causal_gotcha::start()
+add_samples(uint32_t _index, const std::vector<uintptr_t>& _v)
 {
-    configure();
-    get_bundle()->start();
+    for(const auto& itr : _v)
+        add_sample(_index, itr);
 }
-
-void
-causal_gotcha::stop()
-{
-    get_bundle()->stop();
-}
-}  // namespace component
 }  // namespace causal
 }  // namespace omnitrace

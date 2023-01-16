@@ -40,6 +40,8 @@ namespace omnitrace
 {
 namespace causal
 {
+namespace component
+{
 std::string
 blocking_gotcha::label()
 {
@@ -159,7 +161,8 @@ blocking_gotcha::set_data(const comp::gotcha_data& _data)
     OMNITRACE_VERBOSE_F(3, "data set for '%s'...\n", _data.tool_id.c_str());
 #endif
 }
+}  // namespace component
 }  // namespace causal
 }  // namespace omnitrace
 
-TIMEMORY_INVOKE_PREINIT(omnitrace::causal::blocking_gotcha)
+TIMEMORY_INVOKE_PREINIT(omnitrace::causal::component::blocking_gotcha)

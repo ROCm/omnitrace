@@ -22,54 +22,35 @@
 
 #pragma once
 
-#include "library/binary/analysis.hpp"
-#include "library/binary/basic_line_info.hpp"
-#include "library/binary/fwd.hpp"
-#include "library/causal/fwd.hpp"
-#include "library/containers/c_array.hpp"
-#include "library/containers/static_vector.hpp"
-#include "library/defines.hpp"
-#include "library/thread_data.hpp"
-#include "library/utility.hpp"
-
-#include <timemory/hash/types.hpp>
-#include <timemory/tpls/cereal/cereal/cereal.hpp>
-#include <timemory/utility/procfs/maps.hpp>
-#include <timemory/utility/unwind.hpp>
-
-#include <deque>
-#include <dlfcn.h>
-#include <map>
+#include <cstdint>
+#include <string>
 
 namespace omnitrace
 {
-namespace causal
+namespace binary
 {
-void
-save_line_info(const settings::compose_filename_config&);
+struct scope_filter
+{
+    enum filter_mode : uint8_t
+    {
+        FILTER_INCLUDE = 0,
+        FILTER_EXCLUDE
+    };
 
-std::deque<line_mapping_info_t>
-get_line_info(uintptr_t _addr, bool include_discarded = true);
+    enum filter_scope : uint8_t
+    {
+        UNIVERSAL_FILTER = (1 << 0),
+        BINARY_FILTER    = (1 << 1),
+        SOURCE_FILTER    = (1 << 2),
+        FUNCTION_FILTER  = (1 << 3),
+        FILELINE_FILTER  = (1 << 4)
+    };
 
-bool is_eligible_address(uintptr_t);
+    filter_mode  mode       = FILTER_INCLUDE;
+    filter_scope scope      = UNIVERSAL_FILTER;
+    std::string  expression = {};
 
-void set_current_selection(unwind_stack_t);
-
-void set_current_selection(unwind_addr_t);
-
-selected_entry
-sample_selection(size_t _nitr = 1000, size_t _wait_ns = 10000);
-
-void push_progress_point(std::string_view);
-
-void pop_progress_point(std::string_view);
-
-void mark_progress_point(std::string_view);
-
-uint16_t
-sample_virtual_speedup();
-
-void
-start_experimenting();
-}  // namespace causal
+    bool operator()(const std::string& _value) const;
+};
+}  // namespace binary
 }  // namespace omnitrace

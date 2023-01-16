@@ -22,54 +22,68 @@
 
 #pragma once
 
-#include "library/binary/analysis.hpp"
 #include "library/binary/basic_line_info.hpp"
 #include "library/binary/fwd.hpp"
 #include "library/causal/fwd.hpp"
-#include "library/containers/c_array.hpp"
-#include "library/containers/static_vector.hpp"
 #include "library/defines.hpp"
-#include "library/thread_data.hpp"
-#include "library/utility.hpp"
 
 #include <timemory/hash/types.hpp>
-#include <timemory/tpls/cereal/cereal/cereal.hpp>
+#include <timemory/unwind/dlinfo.hpp>
+#include <timemory/unwind/stack.hpp>
 #include <timemory/utility/procfs/maps.hpp>
-#include <timemory/utility/unwind.hpp>
 
-#include <deque>
+#include <cstddef>
+#include <cstdint>
 #include <dlfcn.h>
 #include <map>
+#include <utility>
 
 namespace omnitrace
 {
 namespace causal
 {
-void
-save_line_info(const settings::compose_filename_config&);
+struct selected_entry
+{
+    using line_info = binary::basic_line_info;
 
-std::deque<line_mapping_info_t>
-get_line_info(uintptr_t _addr, bool include_discarded = true);
+    uintptr_t address        = 0x0;
+    uintptr_t symbol_address = 0x0;
+    line_info info           = {};
 
-bool is_eligible_address(uintptr_t);
+    hash_value_t hash() const;
 
-void set_current_selection(unwind_stack_t);
+    template <typename ArchiveT>
+    void serialize(ArchiveT&, const unsigned int);
 
-void set_current_selection(unwind_addr_t);
+    bool     contains(uintptr_t) const;
+    bool     operator==(const selected_entry&) const;
+    bool     operator!=(const selected_entry&) const;
+    explicit operator bool() const { return (address > 0 && info.address); }
+};
 
-selected_entry
-sample_selection(size_t _nitr = 1000, size_t _wait_ns = 10000);
+inline bool
+selected_entry::contains(uintptr_t _v) const
+{
+    if(symbol_address > 0)
+    {
+        Dl_info _dl_info{};
+        if(dladdr(reinterpret_cast<void*>(_v), &_dl_info) != 0 && _dl_info.dli_saddr)
+            return (symbol_address == reinterpret_cast<uintptr_t>(_dl_info.dli_saddr));
+    }
+    return (address == _v);
+}
 
-void push_progress_point(std::string_view);
+inline bool
+selected_entry::operator==(const selected_entry& _v) const
+{
+    return (address == _v.address && symbol_address == _v.symbol_address &&
+            info == _v.info);
+}
 
-void pop_progress_point(std::string_view);
-
-void mark_progress_point(std::string_view);
-
-uint16_t
-sample_virtual_speedup();
-
-void
-start_experimenting();
+inline bool
+selected_entry::operator!=(const selected_entry& _v) const
+{
+    return !(*this == _v);
+}
 }  // namespace causal
 }  // namespace omnitrace

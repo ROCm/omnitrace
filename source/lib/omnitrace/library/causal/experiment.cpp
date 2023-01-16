@@ -22,11 +22,10 @@
 
 #include "library/causal/experiment.hpp"
 #include "common/defines.h"
-#include "library/causal/components/backtrace_causal.hpp"
+#include "library/causal/components/backtrace.hpp"
 #include "library/causal/components/progress_point.hpp"
 #include "library/causal/data.hpp"
 #include "library/causal/delay.hpp"
-#include "library/code_object.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
 #include "library/state.hpp"
@@ -34,6 +33,7 @@
 #include "library/thread_info.hpp"
 #include "library/tracing.hpp"
 
+#include <string>
 #include <timemory/components/timing/backends.hpp>
 #include <timemory/hash/types.hpp>
 #include <timemory/mpl/policy.hpp>
@@ -55,7 +55,7 @@ namespace causal
 {
 namespace
 {
-using backtrace_causal = omnitrace::component::backtrace_causal;
+using backtrace_causal = omnitrace::causal::component::backtrace;
 namespace cereal       = ::tim::cereal;
 
 auto    current_experiment_value  = experiment{};
@@ -141,7 +141,7 @@ experiment::serialize(ArchiveT& ar, const unsigned)
 
     if constexpr(concepts::is_input_archive<ArchiveT>::value)
     {
-        auto _ppts = std::vector<progress_point>{};
+        auto _ppts = std::vector<component::progress_point>{};
         init_progress.clear();
         fini_progress.clear();
         ar(cereal::make_nvp("progress_points", _ppts));
@@ -150,7 +150,7 @@ experiment::serialize(ArchiveT& ar, const unsigned)
     }
     else
     {
-        auto _ppts = std::vector<progress_point>{};
+        auto _ppts = std::vector<component::progress_point>{};
         {
             auto ppts = fini_progress;
             for(auto& pitr : ppts)
@@ -170,13 +170,13 @@ experiment::serialize(ArchiveT& ar, const unsigned)
 std::string
 experiment::label()
 {
-    return "casual_experiment";
+    return "causal_experiment";
 }
 
 std::string
 experiment::description()
 {
-    return "Records an experiment for casual profiling";
+    return "Records an experiment for causal profiling";
 }
 
 const std::atomic<experiment*>&
@@ -196,7 +196,7 @@ experiment::start()
     // sampling period in nanoseconds
     sampling_period = backtrace_causal::get_period(units::nsec);
     // adjust for the real sampling period
-    period_stats = component::backtrace_causal::get_period_stats();
+    period_stats = causal::component::backtrace::get_period_stats();
     if(period_stats.get_count() > 10) sampling_period = period_stats.get_mean();
 
     index           = experiment_history.size() + 1;
@@ -205,10 +205,10 @@ experiment::start()
     delay_scaling   = virtual_speedup / 100.0;
     sample_delay    = sampling_period * delay_scaling;
     total_delay     = delay::sync();
-    init_progress   = get_progress_points();
+    init_progress   = component::progress_point::get_progress_points();
     start_time      = tracing::now();
 
-    OMNITRACE_VERBOSE(0, "Starting causal experiment #%3u: %s\n", index,
+    OMNITRACE_VERBOSE(0, "Starting causal experiment #%-3u: %s\n", index,
                       as_string().c_str());
 
     current_experiment_value = *this;
@@ -246,12 +246,11 @@ experiment::stop()
     global_delay    = delay::compute_total_delay(0);
     total_delay     = (global_delay - total_delay);
     duration      = (experiment_time > total_delay) ? (experiment_time - total_delay) : 0;
-    fini_progress = get_progress_points();
-    period_stats  = component::backtrace_causal::get_period_stats();
+    fini_progress = component::progress_point::get_progress_points();
+    period_stats  = causal::component::backtrace::get_period_stats();
 
     // sync data
     delay::sync();
-    // component::backtrace_causal::reset_period_stats();
 
     int64_t _num = 0;
     for(auto fitr : fini_progress)
@@ -303,10 +302,25 @@ experiment::as_string() const
         << _dur << " sec :: experiment: " << as_hex(selection.address) << " ";
     if(selection.symbol_address > 0 && selection.address != selection.symbol_address)
         _ss << "(symbol@" << as_hex(selection.symbol_address) << ") ";
-    _ss << "['" << demangle(selection.info.func) << "']";
     if(!selection.info.file.empty() && selection.info.line > 0)
         _ss << "[" << filepath::basename(selection.info.file) << ":"
             << selection.info.line << "]";
+
+    auto _patch = [](std::string _v) {
+        auto _pos       = std::string::npos;
+        using strpair_t = std::pair<std::string_view, std::string>;
+        for(const auto& itr :
+            { strpair_t{ "::basic_string<char, std::char_traits<char>, std::allocator<char> > ",
+                         "::string" },
+              strpair_t{ "::__cxx11::", "::" } })
+        {
+            while((_pos = _v.find(itr.first)) != std::string::npos)
+                _v = _v.replace(_pos, itr.first.length(), itr.second);
+        }
+        return _v;
+    };
+    auto _func = _patch(demangle(selection.info.func));
+    _ss << "['" << _func << "']";
 
     return _ss.str();
 }
@@ -430,7 +444,7 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
             }
         };
 
-        auto _samples = component::backtrace_causal::get_samples();
+        auto _samples = get_samples();
         for(auto& itr : current_record.experiments)
             _merge_samples(itr.samples, _samples[itr.index]);
 

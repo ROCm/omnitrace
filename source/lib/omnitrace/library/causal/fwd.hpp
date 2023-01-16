@@ -22,54 +22,32 @@
 
 #pragma once
 
-#include "library/common.hpp"
+#include "library/binary/fwd.hpp"
+#include "library/containers/static_vector.hpp"
 #include "library/defines.hpp"
-#include "library/timemory.hpp"
 
-#include <timemory/components/gotcha/backends.hpp>
-#include <timemory/mpl/macros.hpp>
+#include <timemory/hash/types.hpp>
+#include <timemory/unwind/stack.hpp>
+#include <timemory/utility/procfs/maps.hpp>
 
-#include <array>
 #include <cstddef>
-#include <string>
+#include <cstdint>
+#include <map>
+#include <utility>
 
 namespace omnitrace
 {
+namespace unwind = ::tim::unwind;
+
 namespace causal
 {
-namespace component
-{
-using timespec_t = struct timespec;
-// this is used to wrap pthread_mutex()
-struct blocking_gotcha : comp::base<blocking_gotcha, void>
-{
-    static constexpr size_t gotcha_capacity = 13;
+static constexpr size_t unwind_depth  = 8;
+static constexpr size_t unwind_offset = 0;
+using unwind_stack_t                  = unwind::stack<unwind_depth>;
+using unwind_addr_t                   = container::static_vector<uintptr_t, unwind_depth>;
+using hash_value_t                    = tim::hash_value_t;
+using line_mapping_info_t = std::pair<binary::procfs::maps, binary::basic_line_info>;
 
-    TIMEMORY_DEFAULT_OBJECT(blocking_gotcha)
-
-    // string id for component
-    static std::string label();
-    static std::string description();
-    static void        preinit();
-
-    // generate the gotcha wrappers
-    static void configure();
-    static void shutdown();
-
-    static void start();
-    static void stop();
-
-    static void set_data(const comp::gotcha_data&);
-};
-
-using blocking_gotcha_t =
-    comp::gotcha<blocking_gotcha::gotcha_capacity,
-                 tim::lightweight_tuple<blocking_gotcha>, category::causal>;
-}  // namespace component
+struct selected_entry;
 }  // namespace causal
 }  // namespace omnitrace
-
-OMNITRACE_DEFINE_CONCRETE_TRAIT(prevent_reentry, causal::component::blocking_gotcha_t,
-                                false_type)
-OMNITRACE_DEFINE_CONCRETE_TRAIT(static_data, causal::component::blocking_gotcha_t,
-                                true_type)

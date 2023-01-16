@@ -37,6 +37,8 @@ namespace omnitrace
 {
 namespace causal
 {
+namespace component
+{
 using timespec_t = struct timespec;
 // this is used to wrap pthread_mutex()
 struct unblocking_gotcha : comp::base<unblocking_gotcha, void>
@@ -63,8 +65,11 @@ struct unblocking_gotcha : comp::base<unblocking_gotcha, void>
 using unblocking_gotcha_t =
     comp::gotcha<unblocking_gotcha::gotcha_capacity,
                  tim::lightweight_tuple<unblocking_gotcha>, category::causal>;
+}  // namespace component
 }  // namespace causal
 }  // namespace omnitrace
 
-OMNITRACE_DEFINE_CONCRETE_TRAIT(prevent_reentry, causal::unblocking_gotcha_t, false_type)
-OMNITRACE_DEFINE_CONCRETE_TRAIT(static_data, causal::unblocking_gotcha_t, true_type)
+OMNITRACE_DEFINE_CONCRETE_TRAIT(prevent_reentry, causal::component::unblocking_gotcha_t,
+                                false_type)
+OMNITRACE_DEFINE_CONCRETE_TRAIT(static_data, causal::component::unblocking_gotcha_t,
+                                true_type)

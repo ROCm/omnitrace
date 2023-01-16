@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 #include "library/causal/sampling.hpp"
-#include "library/causal/components/backtrace_causal.hpp"
+#include "library/causal/components/backtrace.hpp"
 #include "library/causal/data.hpp"
 #include "library/common.hpp"
 #include "library/concepts.hpp"
@@ -59,7 +59,7 @@ namespace sampling
 using ::tim::sampling::dynamic;
 using ::tim::sampling::timer;
 
-using causal_bundle_t  = tim::lightweight_tuple<component::backtrace_causal>;
+using causal_bundle_t  = tim::lightweight_tuple<causal::component::backtrace>;
 using causal_sampler_t = tim::sampling::sampler<causal_bundle_t, dynamic>;
 }  // namespace sampling
 }  // namespace causal
@@ -159,7 +159,7 @@ causal_offload_buffer(int64_t, causal_sampler_buffer_t&& _buf)
     {
         auto _bundle = causal_sampler_bundle_t{};
         _data.read(&_bundle);
-        auto* _bt_causal = _bundle.get<component::backtrace_causal>();
+        auto* _bt_causal = _bundle.get<causal::component::backtrace>();
         if(_bt_causal)
         {
             for(auto&& itr : _bt_causal->get_stack())
@@ -176,7 +176,7 @@ causal_offload_buffer(int64_t, causal_sampler_buffer_t&& _buf)
             static std::mutex _mutex;
             auto              _lk = std::scoped_lock<std::mutex>{ _mutex };
             for(const auto& itr : _processed)
-                component::backtrace_causal::add_samples(itr.first, itr.second);
+                add_samples(itr.first, itr.second);
         });
     }
 }
@@ -232,7 +232,7 @@ configure(bool _setup, int64_t _tid)
                                   threading::get_sys_tid() });
 
         _running = true;
-        if(_tid == 0) component::backtrace_causal::start();
+        if(_tid == 0) causal::component::backtrace::start();
         _causal->start();
     }
     else if(!_setup && _causal && _running)
@@ -362,11 +362,10 @@ post_process_causal(int64_t, const std::vector<causal_bundle_t>& _data)
 {
     for(const auto& itr : _data)
     {
-        const auto* _bt_causal = itr.get<component::backtrace_causal>();
+        const auto* _bt_causal = itr.get<causal::component::backtrace>();
         for(auto&& ditr : _bt_causal->get_stack())
         {
-            if(ditr > 0)
-                component::backtrace_causal::add_sample(_bt_causal->get_index(), ditr);
+            if(ditr > 0) add_sample(_bt_causal->get_index(), ditr);
         }
     }
 }

@@ -27,22 +27,21 @@
 #include "library/debug.hpp"
 #include "library/thread_data.hpp"
 #include "library/timemory.hpp"
-#include "timemory/mpl/type_traits.hpp"
 
-#include <bits/stdint-intn.h>
 #include <timemory/hash/types.hpp>
+#include <timemory/mpl/type_traits.hpp>
 #include <timemory/units.hpp>
-
-using progress_map_t =
-    std::unordered_map<tim::hash_value_t, omnitrace::causal::progress_point*>;
 
 namespace omnitrace
 {
 namespace causal
 {
+namespace component
+{
 namespace
 {
 using progress_allocator_t = tim::data::ring_buffer_allocator<progress_point>;
+using progress_map_t       = std::unordered_map<tim::hash_value_t, progress_point*>;
 
 auto&
 get_progress_map()
@@ -67,7 +66,7 @@ get_progress_allocator(int64_t _tid)
 }  // namespace
 
 std::unordered_map<tim::hash_value_t, progress_point>
-get_progress_points()
+progress_point::get_progress_points()
 {
     auto _data = std::unordered_map<tim::hash_value_t, progress_point>{};
     if(!get_progress_map()) return _data;
@@ -96,7 +95,7 @@ progress_point::label()
 std::string
 progress_point::description()
 {
-    return "Tracks progress point latency and throughput for casual profiling";
+    return "Tracks progress point latency and throughput for causal profiling";
 }
 
 void
@@ -201,6 +200,7 @@ progress_point::print(std::ostream& os) const
     os << tim::get_hash_identifier(m_hash) << " :: ";
     tim::operation::base_printer<progress_point>(os, *this);
 }
+}  // namespace component
 }  // namespace causal
 }  // namespace omnitrace
 
@@ -211,13 +211,14 @@ namespace operation
 namespace causal = omnitrace::causal;
 
 void
-push_node<causal::progress_point>::operator()(type&        _obj, scope::config,
-                                              hash_value_t _hash, int64_t _tid) const
+push_node<causal::component::progress_point>::operator()(type&        _obj, scope::config,
+                                                         hash_value_t _hash,
+                                                         int64_t      _tid) const
 {
-    auto itr = causal::get_progress_map(_tid).emplace(_hash, nullptr);
+    auto itr = causal::component::get_progress_map(_tid).emplace(_hash, nullptr);
     if(itr.second && !itr.first->second)
     {
-        auto& _alloc = causal::get_progress_allocator(_tid);
+        auto& _alloc = causal::component::get_progress_allocator(_tid);
         auto* _val   = _alloc->allocate(1);
         _alloc->construct(_val);
         _val->set_hash(_hash);
@@ -228,7 +229,7 @@ push_node<causal::progress_point>::operator()(type&        _obj, scope::config,
 }
 
 void
-pop_node<causal::progress_point>::operator()(type& _obj, int64_t) const
+pop_node<causal::component::progress_point>::operator()(type& _obj, int64_t) const
 {
     auto* itr = _obj.get_iterator();
     if(itr && !(_obj.get_is_invalid() || _obj.get_is_running()))

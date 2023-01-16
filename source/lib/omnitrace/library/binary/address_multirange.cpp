@@ -20,56 +20,56 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+#include "library/binary/address_multirange.hpp"
 
-#include "library/binary/analysis.hpp"
-#include "library/binary/basic_line_info.hpp"
-#include "library/binary/fwd.hpp"
-#include "library/causal/fwd.hpp"
-#include "library/containers/c_array.hpp"
-#include "library/containers/static_vector.hpp"
-#include "library/defines.hpp"
-#include "library/thread_data.hpp"
-#include "library/utility.hpp"
-
-#include <timemory/hash/types.hpp>
-#include <timemory/tpls/cereal/cereal/cereal.hpp>
-#include <timemory/utility/procfs/maps.hpp>
-#include <timemory/utility/unwind.hpp>
-
-#include <deque>
-#include <dlfcn.h>
-#include <map>
+#include <algorithm>
+#include <cstdint>
+#include <string>
+#include <utility>
 
 namespace omnitrace
 {
-namespace causal
+namespace binary
 {
-void
-save_line_info(const settings::compose_filename_config&);
+address_multirange&
+address_multirange::operator+=(std::pair<coarse, uintptr_t>&& _v)
+{
+    coarse_range = address_range{ std::min(coarse_range.low, _v.second),
+                                  std::max(coarse_range.high, _v.second) };
+    return *this;
+}
 
-std::deque<line_mapping_info_t>
-get_line_info(uintptr_t _addr, bool include_discarded = true);
+address_multirange&
+address_multirange::operator+=(std::pair<coarse, address_range>&& _v)
+{
+    coarse_range = address_range{ std::min(coarse_range.low, _v.second.low),
+                                  std::max(coarse_range.high, _v.second.high) };
 
-bool is_eligible_address(uintptr_t);
+    return *this;
+}
 
-void set_current_selection(unwind_stack_t);
+address_multirange&
+address_multirange::operator+=(uintptr_t _v)
+{
+    *this += std::make_pair(coarse{}, _v);
 
-void set_current_selection(unwind_addr_t);
+    for(auto&& itr : m_fine_ranges)
+        if(itr.contains(_v)) return *this;
 
-selected_entry
-sample_selection(size_t _nitr = 1000, size_t _wait_ns = 10000);
+    m_fine_ranges.emplace(address_range{ _v });
+    return *this;
+}
 
-void push_progress_point(std::string_view);
+address_multirange&
+address_multirange::operator+=(address_range _v)
+{
+    *this += std::make_pair(coarse{}, _v);
 
-void pop_progress_point(std::string_view);
+    for(auto&& itr : m_fine_ranges)
+        if(itr.contains(_v)) return *this;
 
-void mark_progress_point(std::string_view);
-
-uint16_t
-sample_virtual_speedup();
-
-void
-start_experimenting();
-}  // namespace causal
+    m_fine_ranges.emplace(_v);
+    return *this;
+}
+}  // namespace binary
 }  // namespace omnitrace

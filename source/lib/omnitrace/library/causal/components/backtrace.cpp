@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "library/causal/components/backtrace_causal.hpp"
+#include "library/causal/components/backtrace.hpp"
 #include "library/causal/data.hpp"
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
@@ -47,6 +47,8 @@
 #include <type_traits>
 
 namespace omnitrace
+{
+namespace causal
 {
 namespace component
 {
@@ -99,26 +101,25 @@ is_in_use(int64_t _tid = threading::get_id())
     return get_in_use()->at(_tid);
 }
 
-auto samples = std::map<uint32_t, std::set<backtrace_causal::sample_data>>{};
 }  // namespace
 
 void
-backtrace_causal::start()
+backtrace::start()
 {
     set_causal_state(CausalState::Enabled);
 }
 
 void
-backtrace_causal::stop()
+backtrace::stop()
 {
     set_causal_state(CausalState::Disabled);
 }
 
 void
-backtrace_causal::sample(int _sig)
+backtrace::sample(int _sig)
 {
-    constexpr size_t  depth        = causal::unwind_depth;
-    constexpr int64_t ignore_depth = causal::unwind_offset;
+    constexpr size_t  depth        = ::omnitrace::causal::unwind_depth;
+    constexpr int64_t ignore_depth = ::omnitrace::causal::unwind_offset;
 
     // update the last sample for backtrace signal(s) even when in use
     static thread_local int64_t _last_sample = 0;
@@ -172,7 +173,7 @@ backtrace_causal::sample(int _sig)
 
 template <typename Tp>
 Tp
-backtrace_causal::get_period(uint64_t _units)
+backtrace::get_period(uint64_t _units)
 {
     using cast_type = std::conditional_t<std::is_floating_point<Tp>::value, Tp, double>;
 
@@ -187,7 +188,7 @@ backtrace_causal::get_period(uint64_t _units)
 }
 
 tim::statistics<int64_t>
-backtrace_causal::get_period_stats()
+backtrace::get_period_stats()
 {
     scoped_in_use _in_use{};
     auto          _data = tim::statistics<int64_t>{};
@@ -202,7 +203,7 @@ backtrace_causal::get_period_stats()
 }
 
 void
-backtrace_causal::reset_period_stats()
+backtrace::reset_period_stats()
 {
     scoped_in_use _in_use{};
     for(size_t i = 0; i < get_delay_statistics()->size(); ++i)
@@ -211,43 +212,12 @@ backtrace_causal::reset_period_stats()
         get_delay_statistics()->at(i).reset();
     }
 }
-
-std::set<backtrace_causal::sample_data>
-backtrace_causal::get_samples(uint32_t _index)
-{
-    return samples[_index];
-}
-
-std::map<uint32_t, std::set<backtrace_causal::sample_data>>
-backtrace_causal::get_samples()
-{
-    return samples;
-}
-
-void
-backtrace_causal::add_sample(uint32_t _index, uintptr_t _v)
-{
-    auto& _samples = samples[_index];
-    auto  _value   = sample_data{ _v };
-    _value.count   = 1;
-    auto itr       = _samples.find(_value);
-    if(itr == _samples.end())
-        _samples.emplace(_value);
-    else
-        itr->count += 1;
-}
-
-void
-backtrace_causal::add_samples(uint32_t _index, const std::vector<uintptr_t>& _v)
-{
-    for(const auto& itr : _v)
-        add_sample(_index, itr);
-}
 }  // namespace component
+}  // namespace causal
 }  // namespace omnitrace
 
 #define INSTANTIATE_BT_CAUSAL_PERIOD(TYPE)                                               \
-    template TYPE omnitrace::component::backtrace_causal::get_period<TYPE>(uint64_t);
+    template TYPE omnitrace::causal::component::backtrace::get_period<TYPE>(uint64_t);
 
 INSTANTIATE_BT_CAUSAL_PERIOD(float)
 INSTANTIATE_BT_CAUSAL_PERIOD(double)
