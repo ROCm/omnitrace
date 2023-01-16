@@ -371,8 +371,14 @@ configure_settings(bool _init)
         false, "rocm", "rccl", "backend");
 
     OMNITRACE_CONFIG_CL_SETTING(
-        bool, "OMNITRACE_KOKKOS_KERNEL_LOGGER", "Enables kernel logging", false,
+        bool, "OMNITRACE_KOKKOSP_KERNEL_LOGGER", "Enables kernel logging", false,
         "--omnitrace-kokkos-kernel-logger", "kokkos", "debugging", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(int64_t, "OMNITRACE_KOKKOSP_NAME_LENGTH_MAX",
+                             "Set this to a value > 0 to help avoid unnamed Kokkos Tools "
+                             "callbacks. Generally, unnamed callbacks are the demangled "
+                             "name of the function, which is very long",
+                             0, "kokkos", "debugging", "advanced");
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_OMPT",
                              "Enable support for OpenMP-Tools", false, "openmp", "ompt",
@@ -1818,7 +1824,7 @@ get_use_kokkosp()
 bool
 get_use_kokkosp_kernel_logger()
 {
-    static auto _v = get_config()->find("OMNITRACE_KOKKOS_KERNEL_LOGGER");
+    static auto _v = get_config()->find("OMNITRACE_KOKKOSP_KERNEL_LOGGER");
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
