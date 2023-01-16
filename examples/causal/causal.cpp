@@ -32,23 +32,25 @@ consume_variables(Args&&...)
 {}
 }  // namespace
 
+template <bool>
 bool
 rng_func_impl(int64_t n, uint64_t rseed);
 
+template <bool>
 bool
 cpu_func_impl(int64_t n, int nloop);
 
-int64_t
-rng_slow_func(int64_t n, uint64_t rseed);
-
-int64_t
-rng_fast_func(int64_t n, uint64_t rseed);
+void
+rng_slow_func(int64_t n, uint64_t rseed) __attribute__((noinline));
 
 void
-cpu_slow_func(int64_t n, int nloop);
+rng_fast_func(int64_t n, uint64_t rseed) __attribute__((noinline));
 
 void
-cpu_fast_func(int64_t n, int nloop);
+cpu_slow_func(int64_t n, int nloop) __attribute__((noinline));
+
+void
+cpu_fast_func(int64_t n, int nloop) __attribute__((noinline));
 
 #if USE_CPU > 0
 #    define CPU_SLOW_FUNC(...) cpu_slow_func(__VA_ARGS__)
@@ -70,7 +72,7 @@ int
 main(int argc, char** argv)
 {
     uint64_t rseed    = std::random_device{}();
-    int      nitr     = 150;
+    int      nitr     = 200;
     double   frac     = 70;
     int64_t  slow_val = 100000000L;
 
@@ -94,13 +96,17 @@ main(int argc, char** argv)
             printf("executing iteration: %i\n", i);
         //
         auto&& _slow_func = [](auto _nsec, auto _seed, auto _nloop) {
+            auto _t = clock_type::now();
             CPU_SLOW_FUNC(_nsec, _nloop);
             RNG_SLOW_FUNC(_nsec / 5, _seed);
+            slow_ms += (clock_type::now() - _t);
         };
         //
         auto&& _fast_func = [](auto _nsec, auto _seed, auto _nloop) {
+            auto _t = clock_type::now();
             CPU_FAST_FUNC(_nsec, _nloop);
             RNG_FAST_FUNC(_nsec / 5, _seed);
+            fast_ms += (clock_type::now() - _t);
         };
         //
         CAUSAL_BEGIN("main_iteration");
@@ -121,53 +127,43 @@ main(int argc, char** argv)
     printf("ratio is %18.3f %s\n", 100.0 * rms, "%");
     printf("rdiff is %18.3f %s\n", 100.0 * (rms - rfrac), "%");
 }
-
 //
-//  This implementation works well for Omnitrace
-//  while COZ makes poor predictions
 //
-int64_t
+//
+void
 rng_slow_func(int64_t n, uint64_t rseed)
 {
-    auto _t = clock_type::now();
     // clang-format off
-    while(!rng_func_impl(n, rseed)) {}
+    while(rng_func_impl<false>(n, rseed) != false) {}
     // clang-format on
-    slow_ms += clock_type::now() - _t;
-    return slow_ms.count();
 }
-
-int64_t
+//
+//
+//
+void
 rng_fast_func(int64_t n, uint64_t rseed)
 {
-    auto _t = clock_type::now();
     // clang-format off
-    while(!rng_func_impl(n, rseed)) {}
+    while(rng_func_impl<true>(n, rseed) != true) {}
     // clang-format on
-    fast_ms += clock_type::now() - _t;
-    return fast_ms.count();
 }
-
 //
-//  This implementation works well for COZ
-//  while Omnitrace makes poor predictions
+//
 //
 void
 cpu_slow_func(int64_t n, int nloop)
 {
-    auto _t = clock_type::now();
     // clang-format off
-    while(!cpu_func_impl(n, nloop)) {}
+    while(cpu_func_impl<false>(n, nloop) != false) {}
     // clang-format on
-    slow_ms += clock_type::now() - _t;
 }
-
+//
+//
+//
 void
 cpu_fast_func(int64_t n, int nloop)
 {
-    auto _t = clock_type::now();
     // clang-format off
-    while(!cpu_func_impl(n, nloop)) {}
+    while(cpu_func_impl<true>(n, nloop) != true) {}
     // clang-format on
-    fast_ms += clock_type::now() - _t;
 }

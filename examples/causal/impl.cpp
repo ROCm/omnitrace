@@ -62,6 +62,7 @@ get_clock_cpu_now() noexcept;
 //  This implementation works well for Omnitrace
 //  while COZ makes poor predictions
 //
+template <bool V>
 bool
 rng_func_impl(int64_t n, uint64_t rseed)
 {
@@ -71,13 +72,17 @@ rng_func_impl(int64_t n, uint64_t rseed)
     // clang-format off
     while(_n < n) _n += _dist(_rng);
     // clang-format on
-    return true;
+    return V;
 }
+
+template bool rng_func_impl<true>(int64_t, uint64_t);
+template bool rng_func_impl<false>(int64_t, uint64_t);
 
 //
 //  This implementation works well for COZ
 //  while Omnitrace makes poor predictions
 //
+template <bool V>
 bool
 cpu_func_impl(int64_t n, int nloop)
 {
@@ -87,8 +92,13 @@ cpu_func_impl(int64_t n, int nloop)
     // clang-format off
     while(get_clock_cpu_now() < _cpu_end) { for(volatile int i = 0; i < nloop; ++i) {} }
     // clang-format on
-    return true;
+    return V;
 }
+
+template bool
+cpu_func_impl<true>(int64_t, int);
+template bool
+cpu_func_impl<false>(int64_t, int);
 
 namespace
 {
