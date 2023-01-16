@@ -729,6 +729,14 @@ configure_settings(bool _init)
         "Overwrite any existing causal output file instead of appending to it", false,
         "causal", "analysis", "advanced", "io");
 
+    OMNITRACE_CONFIG_SETTING(
+        uint64_t, "OMNITRACE_CAUSAL_RANDOM_SEED",
+        "Seed for random number generator which selects speedups and experiments -- "
+        "please note that the lines selected for experimentation are not reproducible "
+        "but the speedup selection is. If set to zero, std::random_device{}() will be "
+        "used.",
+        0, "causal", "analysis");
+
     OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_FIXED_SPEEDUP",
                              "List of virtual speedups between 0 and 100 (inclusive) to "
                              "sample from for causal profiling",

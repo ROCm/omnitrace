@@ -224,7 +224,7 @@ configure(bool _setup, int64_t _tid)
         _causal->set_verbose(_verbose);
         _causal->set_offload(&causal_offload_buffer);
 
-        _causal->configure(timer{ get_realtime_signal(), CLOCK_MONOTONIC, SIGEV_THREAD_ID,
+        _causal->configure(timer{ get_realtime_signal(), CLOCK_REALTIME, SIGEV_THREAD_ID,
                                   1000.0, 1.0e-6, _tid, threading::get_sys_tid() });
 
         _causal->configure(timer{ get_cputime_signal(), CLOCK_THREAD_CPUTIME_ID,

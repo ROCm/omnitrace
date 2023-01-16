@@ -117,8 +117,8 @@ read_pc(bfd_file& _bfd, asection* _section, bfd_vma _pc, bfd_vma _pc_len = 0)
             if(_info)
             {
                 _data.emplace_back(_info);
-                if(config::get_sampling_include_inlines())
-                    read_inliner_info(_inp, _data, _pc, _prio);
+                // if(config::get_sampling_include_inlines())
+                read_inliner_info(_inp, _data, _pc, _prio);
             }
         }
     }
@@ -142,8 +142,8 @@ read_pc(bfd_file& _bfd, asection* _section, bfd_vma _pc, bfd_vma _pc_len = 0)
             if(_info)
             {
                 _data.emplace_back(_info);
-                if(config::get_sampling_include_inlines())
-                    read_inliner_info(_inp, _data, _pc, _prio);
+                // if(config::get_sampling_include_inlines())
+                read_inliner_info(_inp, _data, _pc, _prio);
             }
         }
     }

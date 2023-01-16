@@ -72,8 +72,8 @@ using critical_trace_categories_t = type_list<category::host>;
 
 // convert these categories to throughput points
 using causal_throughput_categories_t =
-    type_list<category::kokkos, category::ompt, category::rocm_hip, category::rocm_hsa,
-              category::rocm_rccl, category::rocm_roctx>;
+    type_list<category::host, category::kokkos, category::ompt, category::rocm_hip,
+              category::rocm_hsa, category::rocm_rccl, category::rocm_roctx>;
 
 // define this outside of category region functions so that the
 // static thread_local is global instead of per-template instantiation

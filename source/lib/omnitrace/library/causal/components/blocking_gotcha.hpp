@@ -28,6 +28,7 @@
 
 #include <timemory/components/gotcha/backends.hpp>
 #include <timemory/mpl/macros.hpp>
+#include <timemory/utility/types.hpp>
 
 #include <array>
 #include <cstddef>
@@ -56,10 +57,12 @@ struct blocking_gotcha : comp::base<blocking_gotcha, void>
     static void configure();
     static void shutdown();
 
-    static void start();
-    static void stop();
+    void start();
+    void audit(const comp::gotcha_data&, audit::outgoing, int);
+    void stop();
 
-    static void set_data(const comp::gotcha_data&);
+private:
+    int64_t delay_value = 0;
 };
 
 using blocking_gotcha_t =
@@ -71,5 +74,3 @@ using blocking_gotcha_t =
 
 OMNITRACE_DEFINE_CONCRETE_TRAIT(prevent_reentry, causal::component::blocking_gotcha_t,
                                 false_type)
-OMNITRACE_DEFINE_CONCRETE_TRAIT(static_data, causal::component::blocking_gotcha_t,
-                                true_type)

@@ -165,6 +165,18 @@ address_range::operator-=(uintptr_t _v)
     return *this;
 }
 
+address_range&
+address_range::operator+=(address_range _v)
+{
+    if(!contiguous_with(_v))
+        throw exception<std::runtime_error>(
+            "attempting to add two address ranges that are not contiguous");
+
+    low  = std::min(low, _v.low);
+    high = std::max(high, _v.high);
+    return *this;
+}
+
 hash_value_t
 address_range::hash() const
 {

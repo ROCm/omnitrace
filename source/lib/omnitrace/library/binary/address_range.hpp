@@ -60,6 +60,7 @@ struct address_range
 
     address_range& operator+=(uintptr_t);
     address_range& operator-=(uintptr_t);
+    address_range& operator+=(address_range);
 
     bool         is_range() const;
     hash_value_t hash() const;

@@ -221,7 +221,7 @@ pthread_create_gotcha::wrapper::operator()() const
             // children inherit the parent delay data
             if(_parent_info && _parent_info->index_data)
                 causal::delay::get_local(_tid) =
-                    causal::delay::get_local(_parent_info->index_data->internal_value);
+                    causal::delay::get_local(_parent_info->index_data->sequent_value);
             _is_sampling = true;
             OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
             _signals = causal::sampling::setup();

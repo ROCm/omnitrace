@@ -107,6 +107,11 @@ void
 backtrace::start()
 {
     set_causal_state(CausalState::Enabled);
+    // do not delete these lines. The thread data needs to be allocated
+    // before it is called in sampler or else a deadlock will occur when
+    // the sample interrupts a malloc call
+    (void) get_delay_statistics();
+    (void) get_in_use();
 }
 
 void

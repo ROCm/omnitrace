@@ -106,7 +106,7 @@ ensure_initialization(bool _offset, int64_t _glob_n, int64_t _offset_n)
     if(_exit_info.is_known && _exit_info.exit_code != EXIT_SUCCESS) return _offset;
 
     auto _tid         = utility::get_thread_index();
-    auto _max_threads = grow_data(_tid);
+    auto _max_threads = grow_data(_tid + 1);
 
     if(_tid > 0 && _tid < _max_threads)
     {
@@ -863,6 +863,7 @@ omnitrace_finalize_hidden(void)
     // if they are still running (e.g. thread-pool still alive), the
     // thread-specific data will be wrong if try to stop them from
     // the main thread.
+    auto _thr_verbose = (config::get_use_causal()) ? 1 : 0;
     for(auto& itr : thread_data<thread_bundle_t>::instances())
     {
         if(itr && itr->get<comp::wall_clock>() &&
@@ -871,7 +872,7 @@ omnitrace_finalize_hidden(void)
             std::string _msg = JOIN("", *itr);
             auto        _pos = _msg.find(">>>  ");
             if(_pos != std::string::npos) _msg = _msg.substr(_pos + 5);
-            OMNITRACE_VERBOSE_F(0, "%s\n", _msg.c_str());
+            OMNITRACE_VERBOSE_F(_thr_verbose, "%s\n", _msg.c_str());
         }
     }
 
@@ -886,14 +887,8 @@ omnitrace_finalize_hidden(void)
 
     if(get_use_causal())
     {
-        OMNITRACE_VERBOSE_F(1, "Post-processing the causal samples...\n");
-        causal::sampling::post_process();
-    }
-
-    if(get_use_causal())
-    {
-        OMNITRACE_VERBOSE_F(1, "Saving the causal experiments...\n");
-        causal::experiment::save_experiments();
+        OMNITRACE_VERBOSE_F(1, "Finishing the causal experiments...\n");
+        causal::finish_experimenting();
     }
 
     if(get_use_critical_trace() || (get_use_rocm_smi() && get_use_roctracer()))

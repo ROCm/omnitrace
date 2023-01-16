@@ -88,10 +88,21 @@ auto speedup_dist      = []() {
     return _v;
 }();
 
+auto perform_experiment_impl_completed = std::unique_ptr<std::promise<void>>{};
+
+template <typename ContextT>
 auto&
 get_engine()
 {
-    static thread_local auto _v = random_engine_t{ std::random_device{}() };
+    static auto _seed = []() -> hash_value_t {
+        auto _seed_v =
+            config::get_setting_value<uint64_t>("OMNITRACE_CAUSAL_RANDOM_SEED").second;
+        if(_seed_v == 0) _seed_v = std::random_device{}();
+        return _seed_v;
+    }();
+
+    static thread_local auto _v =
+        random_engine_t{ tim::get_combined_hash_id(_seed, utility::get_thread_index()) };
     return _v;
 }
 
@@ -364,14 +375,22 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
     OMNITRACE_CONDITIONAL_THROW(!_thr_info->is_offset,
                                 "Error! causal profiling thread should be offset");
 
+    if(!perform_experiment_impl_completed)
+        perform_experiment_impl_completed = std::make_unique<std::promise<void>>();
+
+    perform_experiment_impl_completed->set_value_at_thread_exit();
+
     (void) get_eligible_lines();
 
     // notify that thread has started
     if(_started) _started->set_value();
 
+    // pause at least one second to determine sampling rate
+    std::this_thread::sleep_for(std::chrono::seconds{ 1 });
+
     auto _cfg         = settings::compose_filename_config{};
-    _cfg.subdirectory = "causal";
-    save_line_info(_cfg);
+    _cfg.subdirectory = "causal/line-info";
+    save_line_info(_cfg, config::get_verbose());
 
     double _delay_sec =
         config::get_setting_value<double>("OMNITRACE_CAUSAL_DELAY").second;
@@ -469,7 +488,7 @@ is_eligible_address(uintptr_t _v)
 }
 
 void
-save_line_info(const settings::compose_filename_config& _cfg)
+save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
 {
     auto _write_impl = [](std::ofstream& _ofs, const binary::line_info_t& _data) {
         for(const auto& itr : _data)
@@ -477,7 +496,7 @@ save_line_info(const settings::compose_filename_config& _cfg)
             _ofs << itr.first.pathname << " [" << as_hex(itr.first.load_address) << " - "
                  << as_hex(itr.first.last_address) << "]\n";
 
-            for(auto& ditr : itr.second)
+            for(const auto& ditr : itr.second)
             {
                 auto _addr     = ditr.address;
                 auto _addr_off = ditr.address + itr.first.load_address;
@@ -491,11 +510,11 @@ save_line_info(const settings::compose_filename_config& _cfg)
         _ofs << "\n" << std::flush;
     };
 
-    auto _write = [&_write_impl](const std::string& ofname, const auto& _data) {
+    auto _write = [&_write_impl, _verbose](const std::string& ofname, const auto& _data) {
         auto _ofs = std::ofstream{};
         if(tim::filepath::open(_ofs, ofname))
         {
-            if(config::get_verbose() >= 0)
+            if(_verbose >= 0)
                 operation::file_output_message<binary::basic_line_info>{}(
                     ofname, std::string{ "causal_line_info" });
             _write_impl(_ofs, _data);
@@ -507,11 +526,10 @@ save_line_info(const settings::compose_filename_config& _cfg)
     };
 
     _write(tim::settings::compose_output_filename(
-               config::get_causal_output_filename() + "-line-info-included", "txt", _cfg),
+               config::get_causal_output_filename() + "-included", "txt", _cfg),
            get_cached_line_info().first);
-    _write(tim::settings::compose_output_filename(config::get_causal_output_filename() +
-                                                      "-line-info-discarded",
-                                                  "txt", _cfg),
+    _write(tim::settings::compose_output_filename(
+               config::get_causal_output_filename() + "-excluded", "txt", _cfg),
            get_cached_line_info().second);
 }
 
@@ -571,7 +589,7 @@ sample_selection(size_t _nitr, size_t _wait_ns)
         }
         // randomly select an address
         auto _dist = std::uniform_int_distribution<size_t>{ 0, _addresses.size() - 1 };
-        auto _idx  = _dist(get_engine());
+        auto _idx  = _dist(get_engine<selected_entry>());
 
         uintptr_t _addr        = _addresses.at(_idx);
         uintptr_t _sym_addr    = 0;
@@ -763,9 +781,18 @@ mark_progress_point(std::string_view _name)
 uint16_t
 sample_virtual_speedup()
 {
-    auto _dist =
-        std::uniform_int_distribution<size_t>{ size_t{ 0 }, speedup_dist.size() - 1 };
-    return speedup_dist.at(_dist(get_engine()));
+    if(speedup_dist.empty())
+        return 0;
+    else if(speedup_dist.size() == 1)
+        return speedup_dist.front();
+    else
+    {
+        struct virtual_speedup
+        {};
+        auto _dist =
+            std::uniform_int_distribution<size_t>{ size_t{ 0 }, speedup_dist.size() - 1 };
+        return speedup_dist.at(_dist(get_engine<virtual_speedup>()));
+    }
 }
 
 void
@@ -794,8 +821,21 @@ start_experimenting()
         OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
         auto _promise = std::make_shared<std::promise<void>>();
         std::thread{ perform_experiment_impl, _promise }.detach();
-        _promise->get_future().wait_for(std::chrono::seconds{ 2 });
+        _promise->get_future().wait_for(std::chrono::seconds{ 1 });
     }
+}
+
+void
+finish_experimenting()
+{
+    if(perform_experiment_impl_completed)
+    {
+        perform_experiment_impl_completed->get_future().wait_for(
+            std::chrono::seconds{ 5 });
+        perform_experiment_impl_completed.reset();
+    }
+    sampling::post_process();
+    experiment::save_experiments();
 }
 }  // namespace causal
 }  // namespace omnitrace

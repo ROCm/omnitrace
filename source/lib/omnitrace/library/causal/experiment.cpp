@@ -199,10 +199,12 @@ experiment::start()
     period_stats = causal::component::backtrace::get_period_stats();
     if(period_stats.get_count() > 10) sampling_period = period_stats.get_mean();
 
+    // experiment time is scaled up for longer speedups
     index           = experiment_history.size() + 1;
-    experiment_time = global_scaling * scaling_factor * sampling_period * batch_size;
     virtual_speedup = sample_virtual_speedup();
     delay_scaling   = virtual_speedup / 100.0;
+    scaling_factor  = (1.0 + delay_scaling) * scaling_factor;
+    experiment_time = global_scaling * scaling_factor * sampling_period * batch_size;
     sample_delay    = sampling_period * delay_scaling;
     total_delay     = delay::sync();
     init_progress   = component::progress_point::get_progress_points();
@@ -259,6 +261,11 @@ experiment::stop()
         _num     = std::max<int64_t>(
             { _num, _pt.get_laps(), _pt.get_arrival(), _pt.get_departure() });
     }
+
+    // for larger speedups, we increased the experiment time, so we want to artificially
+    // increase num by the same factor. E.g. 10 throughput points at speedup 50 should
+    // really look like 15
+    _num = (1.0 + delay_scaling) * static_cast<double>(_num);
 
     if(_num < 5)
     {
@@ -459,8 +466,8 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
         {
             if(itr.count > 0)
             {
-                auto _linfo = get_line_info(itr.address, false);
-                if(_linfo.size() > 1) _linfo.pop_front();
+                auto _linfo = get_line_info(itr.address, true);
+                // if(_linfo.size() > 1) _linfo.pop_front();
                 for(const auto& iitr : _linfo)
                 {
                     auto _sample = sample{ itr.count, iitr.second.name(), iitr.second };
@@ -473,8 +480,6 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
             }
         }
     }
-
-    save_line_info(_cfg);
 
     bool _causal_output_reset =
         config::get_setting_value<bool>("OMNITRACE_CAUSAL_FILE_RESET").second;
@@ -579,9 +584,11 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
                     ofs << "throughput-point\tname="
                         << tim::demangle(tim::get_hash_identifier(pitr.first))
                         << "\tdelta=" << pitr.second.get_delta() << "\n";
+                    if(get_causal_end_to_end()) break;
                 }
                 if(pitr.second.is_latency_point())
                 {
+                    if(get_causal_end_to_end()) continue;
                     auto _delta = std::max<int64_t>(pitr.second.get_latency_delta(), 1);
                     ofs << "latency-point\tname="
                         << tim::demangle(tim::get_hash_identifier(pitr.first))
@@ -589,7 +596,6 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
                         << "\tdepartures=" << pitr.second.get_departure()
                         << "\tdifference=" << _delta << "\n";
                 }
-                if(get_causal_end_to_end()) break;
             }
         }
 

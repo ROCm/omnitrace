@@ -337,7 +337,41 @@ get_line_info(const std::vector<scope_filter>& _filters, line_info_t* _discarded
         }
     };
 
+    auto _combine_line_info = [&](auto& _info) {
+        for(auto& litr : _info)
+        {
+            auto _tmp = litr.second.data;
+            _tmp.clear();
+            for(auto ditr = litr.second.begin(); ditr != litr.second.end(); ++ditr)
+            {
+                if(_tmp.empty())
+                {
+                    _tmp.emplace_back(*ditr);
+                    continue;
+                }
+                else
+                {
+                    auto& titr = _tmp.back();
+                    if(titr.file == ditr->file && titr.func == ditr->func &&
+                       titr.line == ditr->line &&
+                       titr.address.contiguous_with(ditr->address))
+                    {
+                        titr.address += ditr->address;
+                    }
+                    else
+                    {
+                        _tmp.emplace_back(*ditr);
+                    }
+                }
+            }
+            litr.second.data = std::move(_tmp);
+            litr.second.sort();
+        }
+    };
+
     _patch_line_info(_data);
+    _combine_line_info(_data);
+
     if(_discarded) _patch_line_info(*_discarded);
 
     return _data;

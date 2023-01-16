@@ -118,48 +118,36 @@ blocking_gotcha::shutdown()
     blocking_gotcha_t::disable();
 }
 
-namespace
-{
-thread_local int64_t global_delay_value = 0;
-}
-
 void
 blocking_gotcha::start()
 {
     if(causal::experiment::is_active() &&
        get_causal_state() < ::omnitrace::CausalState::Disabled &&
-       get_state() == ::omnitrace::State::Active &&
-       get_thread_state() == ::omnitrace::ThreadState::Enabled && global_delay_value == 0)
-        global_delay_value = causal::delay::get_global().load();
+       get_thread_state() == ::omnitrace::ThreadState::Enabled && delay_value == 0)
+        delay_value = causal::delay::get_global().load();
+}
+
+void
+blocking_gotcha::audit(const comp::gotcha_data& _data, audit::outgoing, int _ret)
+{
+    // if one of the try/timed functions did not succeed, reset the delay value to zero
+    if(_ret != 0 && _ret != ETIMEDOUT &&
+       std::set<size_t>{ 1, 3, 5, 8, 11 }.count(_data.index) > 0)
+    {
+        delay_value = 0;
+    }
 }
 
 void
 blocking_gotcha::stop()
 {
-    if(causal::experiment::is_active() &&
+    if(delay_value > 0 && causal::experiment::is_active() &&
        get_causal_state() < ::omnitrace::CausalState::Disabled &&
-       get_state() == ::omnitrace::State::Active &&
        get_thread_state() == ::omnitrace::ThreadState::Enabled)
     {
-        auto _value        = global_delay_value;
-        global_delay_value = 0;
-        causal::delay::postblock(_value);
+        causal::delay::postblock(delay_value);
+        delay_value = 0;
     }
-}
-
-void
-blocking_gotcha::set_data(const comp::gotcha_data& _data)
-{
-    OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
-    auto   _hash  = tim::add_hash_id(_data.tool_id);
-    auto&& _ident = tim::get_hash_identifier(_hash);
-    if(_ident != _data.tool_id)
-        throw ::omnitrace::exception<std::runtime_error>(
-            JOIN("", "Error! resolving hash for \"", _data.tool_id, "\" (", _hash,
-                 ") returns ", _ident.c_str()));
-#if defined(OMNITRACE_CI)
-    OMNITRACE_VERBOSE_F(3, "data set for '%s'...\n", _data.tool_id.c_str());
-#endif
 }
 }  // namespace component
 }  // namespace causal

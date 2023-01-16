@@ -285,7 +285,7 @@ extern "C"
         auto pname =
             (devid > std::numeric_limits<uint16_t>::max())  // junk device number
                 ? std::string{ name }
-                : TIMEMORY_JOIN(" ", name, TIMEMORY_JOIN("", "[dev", devid, ']'));
+                : TIMEMORY_JOIN(" ", name, TIMEMORY_JOIN("", "[for][dev", devid, ']'));
         *kernid = kokkosp::get_unique_id();
         kokkosp::logger_t{}.mark(1, __FUNCTION__, name, *kernid);
         kokkosp::create_profiler<kokkosp_region>(pname, *kernid);
@@ -312,7 +312,7 @@ extern "C"
         auto pname =
             (devid > std::numeric_limits<uint16_t>::max())  // junk device number
                 ? std::string{ name }
-                : TIMEMORY_JOIN(" ", name, TIMEMORY_JOIN("", "[dev", devid, ']'));
+                : TIMEMORY_JOIN(" ", name, TIMEMORY_JOIN("", "[reduce][dev", devid, ']'));
         *kernid = kokkosp::get_unique_id();
         kokkosp::logger_t{}.mark(1, __FUNCTION__, name, *kernid);
         kokkosp::create_profiler<kokkosp_region>(pname, *kernid);
@@ -339,7 +339,7 @@ extern "C"
         auto pname =
             (devid > std::numeric_limits<uint16_t>::max())  // junk device number
                 ? std::string{ name }
-                : TIMEMORY_JOIN(" ", name, TIMEMORY_JOIN("", "[dev", devid, ']'));
+                : TIMEMORY_JOIN(" ", name, TIMEMORY_JOIN("", "[scan][dev", devid, ']'));
         *kernid = kokkosp::get_unique_id();
         kokkosp::logger_t{}.mark(1, __FUNCTION__, name, *kernid);
         kokkosp::create_profiler<kokkosp_region>(pname, *kernid);
@@ -366,7 +366,7 @@ extern "C"
         auto pname =
             (devid > std::numeric_limits<uint16_t>::max())  // junk device number
                 ? std::string{ name }
-                : TIMEMORY_JOIN(" ", name, TIMEMORY_JOIN("", "[dev", devid, ']'));
+                : TIMEMORY_JOIN(" ", name, TIMEMORY_JOIN("", "[fence][dev", devid, ']'));
         *kernid = kokkosp::get_unique_id();
         kokkosp::logger_t{}.mark(1, __FUNCTION__, name, *kernid);
         kokkosp::create_profiler<kokkosp_region>(pname, *kernid);
@@ -432,7 +432,7 @@ extern "C"
     {
         OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
         kokkosp::logger_t{}.mark(-1, __FUNCTION__, secid);
-        kokkosp::start_profiler<kokkosp_region>(secid);
+        kokkosp::stop_profiler<kokkosp_region>(secid);
     }
 
     //----------------------------------------------------------------------------------//
@@ -481,7 +481,7 @@ extern "C"
                                  src_name, TIMEMORY_JOIN("", '[', src_ptr, ']'), size);
 
         auto name =
-            TIMEMORY_JOIN(" ", TIMEMORY_JOIN('=', dst_handle.name, dst_name),
+            TIMEMORY_JOIN(" ", TIMEMORY_JOIN('=', dst_handle.name, dst_name), "<-",
                           TIMEMORY_JOIN('=', src_handle.name, src_name), "[deep_copy]");
 
         auto& _data = kokkosp::get_profiler_stack<kokkosp_region>();
@@ -494,11 +494,11 @@ extern "C"
 
     void kokkosp_end_deep_copy()
     {
+        if(omnitrace::config::get_use_causal()) return;
         OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
         kokkosp::logger_t{}.mark(-1, __FUNCTION__);
         auto& _data = kokkosp::get_profiler_stack<kokkosp_region>();
         if(_data.empty()) return;
-        kokkosp::profiler_t<kokkosp_region>{ _data.back().prefix() }.mark();
         _data.back().store(std::minus<int64_t>{}, 0);
         _data.back().stop();
         _data.pop_back();

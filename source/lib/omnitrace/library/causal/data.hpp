@@ -46,7 +46,7 @@ namespace omnitrace
 namespace causal
 {
 void
-save_line_info(const settings::compose_filename_config&);
+save_line_info(const settings::compose_filename_config&, int _verbose);
 
 std::deque<line_mapping_info_t>
 get_line_info(uintptr_t _addr, bool include_discarded = true);
@@ -71,5 +71,8 @@ sample_virtual_speedup();
 
 void
 start_experimenting();
+
+void
+finish_experimenting();
 }  // namespace causal
 }  // namespace omnitrace

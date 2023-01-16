@@ -32,6 +32,7 @@
 #include <timemory/components/macros.hpp>
 #include <timemory/mpl/concepts.hpp>
 #include <timemory/mpl/types.hpp>
+#include <timemory/process/threading.hpp>
 
 #include <atomic>
 #include <random>
@@ -70,9 +71,8 @@ void
 delay::preinit()
 {
     using random_engine_t = std::mt19937_64;
-
     random_engine_t                        _engine{ std::random_device{}() };
-    std::uniform_int_distribution<int64_t> _dist{ 1, 10 };
+    std::uniform_int_distribution<int64_t> _dist{ 0, 5 };
     size_t                                 _ntot  = 250;
     size_t                                 _nwarm = 50;
     tim::statistics<double>                _stats{};
@@ -97,6 +97,8 @@ delay::preinit()
     tim::manager::instance()->add_metadata([_stats](auto& ar) {
         ar(tim::cereal::make_nvp("causal thread sleep overhead [nsec]", _stats));
     });
+
+    (void) get_delay_data();
 }
 
 void
@@ -116,7 +118,7 @@ delay::stop()
 }
 
 static auto _delay_sample_interval =
-    get_env<int64_t>("OMNITRACE_CAUSAL_DELAY_INTERVAL", 8);
+    get_env<int64_t>("OMNITRACE_CAUSAL_DELAY_INTERVAL", 1);
 
 void
 delay::sample(int)
@@ -134,7 +136,7 @@ delay::process()
     if(!trait::runtime_enabled<delay>::get()) return;
     if(get_state() >= ::omnitrace::State::Finalized) return;
 
-    // if(causal::experiment::is_active())
+    if(causal::experiment::is_active())
     {
         if(get_global() < get_local())
         {
@@ -143,20 +145,15 @@ delay::process()
         }
         else if(get_global() > get_local())
         {
-            // using clock_type    = std::chrono::steady_clock;
-            // using duration_type = std::chrono::duration<clock_type::rep, std::nano>;
-            // auto _tp            = clock_type::now() + duration_type{ _global - _local
-            // };
             auto _beg = tracing::now();
-            // std::this_thread::sleep_until(_tp);
             std::this_thread::sleep_for(
                 std::chrono::nanoseconds{ get_global() - get_local() });
             get_local() += (tracing::now() - _beg);
         }
     }
-    // else
+    else
     {
-        // get_local() = get_global();
+        get_local() = get_global();
     }
 }
 
@@ -216,7 +213,7 @@ delay::get_local(int64_t _tid)
     auto&                    _data     = get_delay_data();
     static thread_local auto _thr_init = []() {
         using thread_data_t = thread_data<identity<int64_t>, delay>;
-        thread_data_t::construct(construct_on_thread{ utility::get_thread_index() },
+        thread_data_t::construct(construct_on_thread{ threading::get_id() },
                                  get_global().load());
         return true;
     }();
@@ -227,12 +224,7 @@ delay::get_local(int64_t _tid)
 uint64_t
 delay::compute_total_delay(uint64_t _baseline)
 {
-    // this function assumes that baseline is <= all entries due to call to sync
     return get_global().load() - _baseline;
-    // uint64_t _sum = 0;
-    // for(auto itr : delay_thread_data::instances())
-    //    _sum += (itr - _baseline);
-    // return _sum;
 }
 }  // namespace causal
 }  // namespace omnitrace
