@@ -24,21 +24,19 @@ target_link_libraries(causal-interface-library INTERFACE Threads::Threads
                                                          ${CMAKE_DL_LIBS})
 
 omnitrace_causal_example_executable(
-    "causal"
+    "causal-both"
     SOURCES causal.cpp impl.cpp
     LINK_LIBRARIES causal-interface-library
     DEFINITIONS USE_RNG=1 USE_CPU=1)
 
 omnitrace_causal_example_executable(
-    "causal"
-    TAG "rng"
+    "causal-rng"
     SOURCES causal.cpp impl.cpp
     LINK_LIBRARIES causal-interface-library
     DEFINITIONS USE_RNG=1 USE_CPU=0)
 
 omnitrace_causal_example_executable(
-    "causal"
-    TAG "cpu"
+    "causal-cpu"
     SOURCES causal.cpp impl.cpp
     LINK_LIBRARIES causal-interface-library
     DEFINITIONS USE_RNG=0 USE_CPU=1)
