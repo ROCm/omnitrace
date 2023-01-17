@@ -71,7 +71,7 @@ parse_line_info(const std::string& _fname)
 {
     auto _bfd = std::make_shared<bfd_file>(_fname);
 
-    OMNITRACE_VERBOSE(0, "Reading line info for '%s'...\n", _fname.c_str());
+    OMNITRACE_VERBOSE(0, "[binary] Reading line info for '%s'...\n", _fname.c_str());
 
     auto _info = line_info<bfd_line_info>{};
     _info.file = _bfd;
@@ -143,77 +143,18 @@ parse_line_info(const std::string& _fname)
         _info.sort();
     }
 
-    OMNITRACE_VERBOSE(1, "Reading line info for '%s'... %zu entries\n", _fname.c_str(),
-                      _info.data.size());
+    OMNITRACE_VERBOSE(1, "[binary] Reading line info for '%s'... %zu entries\n",
+                      _fname.c_str(), _info.data.size());
 
     return _info;
 }
 }  // namespace
 
 line_info_t
-get_line_info(const std::vector<scope_filter>& _filters, line_info_t* _discarded)
+get_line_info(const std::vector<std::string>&  _files,
+              const std::vector<scope_filter>& _filters, line_info_t* _discarded)
 {
     using value_type = typename line_info_t::mapped_type;
-
-    auto _get_chain = [](const char* _name) {
-        void* _handle = dlopen(_name, RTLD_LAZY | RTLD_NOLOAD);
-        auto  _chain  = std::set<std::string>{};
-        if(_handle)
-        {
-            struct link_map* _link_map = nullptr;
-            dlinfo(_handle, RTLD_DI_LINKMAP, &_link_map);
-            struct link_map* _next = _link_map;
-            while(_next)
-            {
-                if(_name == nullptr && _next == _link_map &&
-                   std::string_view{ _next->l_name }.empty())
-                {
-                    // only insert exe name if dlopened the exe and
-                    // empty name is first entry
-                    _chain.emplace(config::get_exe_realpath());
-                }
-                else if(!std::string_view{ _next->l_name }.empty())
-                {
-                    _chain.emplace(_next->l_name);
-                }
-                _next = _next->l_next;
-            }
-        }
-        return _chain;
-    };
-
-    auto _add_basenames = [](auto& _data) {
-        auto _tmp = _data;
-        for(auto&& itr : _tmp)
-        {
-            _data.emplace(filepath::basename(itr));
-            _data.emplace(filepath::realpath(itr, nullptr, false));
-        }
-        return _data;
-    };
-
-    auto _full_chain = _get_chain(nullptr);            // all libraries loaded
-    auto _omni_chain = _get_chain("libomnitrace.so");  // libraries loaded by omnitrace
-    auto _main_chain = std::set<std::string>{};        // libraries loaded by main program
-
-    for(const auto& itr : _full_chain)
-    {
-        if(_omni_chain.find(itr) == _omni_chain.end()) _main_chain.emplace(itr);
-    }
-
-    for(const auto& itr : _main_chain)
-    {
-        OMNITRACE_VERBOSE(2, "[library][%s]: %s\n", config::get_exe_realpath().c_str(),
-                          itr.c_str());
-    }
-
-    for(const auto& itr : _omni_chain)
-    {
-        OMNITRACE_VERBOSE(3, "[library][libomnitrace]: %s\n", itr.c_str());
-    }
-
-    _add_basenames(_main_chain);
-    _add_basenames(_omni_chain);
 
     auto _satisfies_filter = [&_filters](auto _scope, const std::string& _value) {
         for(const auto& itr : _filters)  // NOLINT
@@ -247,24 +188,19 @@ get_line_info(const std::vector<scope_filter>& _filters, line_info_t* _discarded
     auto _filter = [&_satisfies_binary_filter](const procfs::maps& _v) {
         if(_v.pathname.empty()) return false;
         auto _path = filepath::realpath(_v.pathname, nullptr, false);
-        return (filepath::exists(_path) &&
-                //_main_chain.find(filepath::basename(_path)) != _main_chain.end() &&
-                _satisfies_binary_filter(_path));
+        return (filepath::exists(_path) && _satisfies_binary_filter(_path));
     };
-
-    // get the memory maps and create a unique set of filenames
-    auto _maps  = procfs::get_contiguous_maps(process::get_id(), _filter, true);
-    auto _files = std::set<std::string>{};
-    for(const auto& itr : _maps)
-        _files.emplace(filepath::realpath(itr.pathname, nullptr, false));
 
     // get the line info for the set of files
     auto _fdata = std::map<std::string, value_type>{};
     for(auto itr : _files)
     {
-        if(_main_chain.count(itr) > 0 || _main_chain.count(basename(itr.c_str())) > 0)
+        if(filepath::exists(itr) && _satisfies_binary_filter(itr))
             _fdata.emplace(itr, parse_line_info(itr));
     }
+
+    // get the memory maps
+    auto _maps = procfs::get_contiguous_maps(process::get_id(), _filter, true);
 
     // sort the line info into one map which contains only the line info
     // in the source scope and another map which contains the line info

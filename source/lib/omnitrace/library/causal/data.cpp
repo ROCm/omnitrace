@@ -27,6 +27,7 @@
 #include "library/binary/bfd_line_info.hpp"
 #include "library/binary/fwd.hpp"
 #include "library/binary/line_info.hpp"
+#include "library/binary/link_map.hpp"
 #include "library/binary/scope_filter.hpp"
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
@@ -263,8 +264,15 @@ std::pair<binary::line_info_t, binary::line_info_t>&
 get_cached_line_info()
 {
     static auto _v = []() {
+        // get the linked binaries for the exe (excluding ones from libomnitrace)
+        auto _link_map = binary::get_link_map();
+        auto _files    = std::vector<std::string>{};
+        _files.reserve(_link_map.size());
+        for(const auto& itr : _link_map)
+            _files.emplace_back(itr.real());
+
         auto _discarded = binary::line_info_t{};
-        auto _requested = binary::get_line_info(get_filters(), &_discarded);
+        auto _requested = binary::get_line_info(_files, get_filters(), &_discarded);
         return std::make_pair(_requested, _discarded);
     }();
     return _v;

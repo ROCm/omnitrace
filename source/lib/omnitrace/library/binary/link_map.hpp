@@ -22,41 +22,33 @@
 
 #pragma once
 
-#include "common/defines.h"
-#include "library/binary/fwd.hpp"
-#include "library/common.hpp"
-#include "library/defines.hpp"
-#include "library/exception.hpp"
-
-#include <timemory/hash/types.hpp>
-#include <timemory/mpl/concepts.hpp>
-#include <timemory/tpls/cereal/cereal/cereal.hpp>
-#include <timemory/unwind/bfd.hpp>
-#include <timemory/unwind/types.hpp>
-#include <timemory/utility/procfs/maps.hpp>
-
 #include <cstdint>
-#include <deque>
-#include <map>
-#include <memory>
-#include <regex>
+#include <set>
 #include <string>
-#include <tuple>
-#include <variant>
+#include <string_view>
 
 namespace omnitrace
 {
 namespace binary
 {
-namespace procfs = ::tim::procfs;
+struct link_file
+{
+    link_file(std::string_view&& _v)
+    : name{ _v }
+    {}
 
-using bfd_file     = ::tim::unwind::bfd_file;
-using hash_value_t = ::tim::hash_value_t;
+    std::string_view base() const;
+    std::string      real() const;
+    bool             operator<(const link_file&) const;
 
-using line_info_t = std::map<procfs::maps, line_info<bfd_line_info>>;
+    std::string name = {};
+};
 
-line_info_t
-get_line_info(const std::vector<std::string>&, const std::vector<scope_filter>&,
-              line_info_t* _discarded = nullptr);
+// default parameters: get the linked binaries for the exe but exclude the linked binaries
+// from libomnitrace
+std::set<link_file>
+get_link_map(const char*        _lib               = nullptr,
+             const std::string& _exclude_linked_by = "libomnitrace.so",
+             const std::string& _exclude_re        = "libomnitrace-([a-zA-Z]+)\\.so");
 }  // namespace binary
 }  // namespace omnitrace
