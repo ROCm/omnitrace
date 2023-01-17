@@ -753,7 +753,7 @@ configure_settings(bool _init)
         "Limits causal experiments to the source files or source file + lineno pair "
         "(i.e. <file> or <file>:<line>) matching the provided list of regular "
         "expressions (separated by tab, semi-colon, and/or quotes (single or double))",
-        std::string{ ".*" }, "causal", "analysis");
+        std::string{}, "causal", "analysis");
 
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_CAUSAL_FUNCTION_SCOPE",
@@ -783,16 +783,9 @@ configure_settings(bool _init)
     OMNITRACE_CONFIG_SETTING(
         bool, "OMNITRACE_CAUSAL_FUNCTION_EXCLUDE_DEFAULTS",
         "This controls adding a series of function exclude regexes to avoid "
-        "experimenting on lambdas, function call operators, STL implementation "
-        "functions, etc. which are, generally, not helpful or informative (compiler "
-        "generated, obscure implementation details, etc.). For example: it can be hard "
-        "to ascertain which lambda is being experimented because the \"name\" is "
-        "compiler generated; function call operators are tied to an instance of an "
-        "object, potentially making the operator's workload highly variable (and thus, "
-        "experimenting on the function(s) creating/using the object's function operator "
-        "far more informative). Details: excludes demangled function names starting with "
-        "'_', ending with '.cold', containing '::<lambda', '::{lambda', 'operator()', or "
-        "'::_M'.",
+        "experimenting on STL implementation functions, etc. which are, generally, not "
+        "helpful. Details: excludes demangled function names starting with '_', ending "
+        "with '.cold', containing '::_M'.",
         true, "causal", "analysis", "advanced");
 
     // set the defaults

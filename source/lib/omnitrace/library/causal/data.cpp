@@ -145,11 +145,11 @@ get_filters()
         _filters.emplace_back(
             sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER, "(^_|\\.cold(|\\.[0-9]+)$)" });
 
-        // exclude lambdas, function call operators, and STL implementation functions
-        _filters.emplace_back(sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER,
-                                  "::(<|\\{)lambda\\(|operator\\(\\)|::_M" });
-
-        _filters.emplace_back(sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER, "^_" });
+        if(config::get_causal_mode() == CausalMode::Function)
+        {
+            // exclude STL implementation functions
+            _filters.emplace_back(sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER, "::_M" });
+        }
     }
 
     // in function mode, it generally doesn't help to claim
@@ -336,9 +336,16 @@ compute_eligible_lines()
 
     OMNITRACE_VERBOSE(0,
                       "[causal] eligible addresses: %zu, eligible address ranges: %zu, "
-                      "total range: %zu, [%s]\n",
+                      "total range: %zu [%s]\n",
                       _v.size(), _eligible_ar.size(), _eligible_ar.range_size(),
                       _eligible_ar.coarse_range.as_string().c_str());
+
+    if(_eligible_ar.empty())
+    {
+        auto _cfg         = settings::compose_filename_config{};
+        _cfg.subdirectory = "causal/line-info";
+        save_line_info(_cfg, config::get_verbose());
+    }
 
     OMNITRACE_CONDITIONAL_THROW(
         _eligible_ar.empty(),
@@ -627,8 +634,10 @@ sample_selection(size_t _nitr, size_t _wait_ns)
         }
 
         return (config::get_causal_mode() == CausalMode::Function)
-                   ? selected_entry{ _addr, _sym_addr, linfo.front().second }
-                   : selected_entry{ _addr, _sym_addr, linfo.back().second };
+                   ? selected_entry{ _addr, _sym_addr, linfo.front().first.load_address,
+                                     linfo.front().second }
+                   : selected_entry{ _addr, _sym_addr, linfo.front().first.load_address,
+                                     linfo.back().second };
     };
 
     while(_n++ < _nitr)

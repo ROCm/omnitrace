@@ -25,11 +25,13 @@
 #include "library/binary/basic_line_info.hpp"
 #include "library/binary/fwd.hpp"
 #include "library/causal/fwd.hpp"
+#include "library/debug.hpp"
 #include "library/defines.hpp"
 
 #include <timemory/hash/types.hpp>
 #include <timemory/unwind/dlinfo.hpp>
 #include <timemory/unwind/stack.hpp>
+#include <timemory/utility/macros.hpp>
 #include <timemory/utility/procfs/maps.hpp>
 
 #include <cstddef>
@@ -46,9 +48,15 @@ struct selected_entry
 {
     using line_info = binary::basic_line_info;
 
-    uintptr_t address        = 0x0;
-    uintptr_t symbol_address = 0x0;
-    line_info info           = {};
+    TIMEMORY_DEFAULT_OBJECT(selected_entry)
+
+    selected_entry(uintptr_t, uintptr_t, uintptr_t, const line_info&);
+
+    uintptr_t       address        = 0x0;
+    uintptr_t       symbol_address = 0x0;
+    uintptr_t       binary_address = {};
+    address_range_t range          = {};
+    line_info       info           = {};
 
     hash_value_t hash() const;
 
@@ -64,20 +72,15 @@ struct selected_entry
 inline bool
 selected_entry::contains(uintptr_t _v) const
 {
-    if(symbol_address > 0)
-    {
-        Dl_info _dl_info{};
-        if(dladdr(reinterpret_cast<void*>(_v), &_dl_info) != 0 && _dl_info.dli_saddr)
-            return (symbol_address == reinterpret_cast<uintptr_t>(_dl_info.dli_saddr));
-    }
-    return (address == _v);
+    auto _addr = (symbol_address > 0) ? symbol_address : address;
+    return (_addr == _v || range.contains(_v));
 }
 
 inline bool
 selected_entry::operator==(const selected_entry& _v) const
 {
     return (address == _v.address && symbol_address == _v.symbol_address &&
-            info == _v.info);
+            binary_address == _v.binary_address && info == _v.info);
 }
 
 inline bool
