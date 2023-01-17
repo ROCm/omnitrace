@@ -66,10 +66,14 @@ extern "C"
         /// @brief callback for starting a trace region
         /// @var pop_region
         /// @brief callback for ending a trace region
+        /// @var progress
+        /// @brief callback for marking an causal profiling event
         /// @var push_annotated_region
         /// @brief callback for starting a trace region + annotations
         /// @var pop_annotated_region
         /// @brief callback for ending a trace region + annotations
+        /// @var annotated_progress
+        /// @brief callback for marking an causal profiling event + annotations
     } omnitrace_user_callbacks_t;
 
     /// @enum OMNITRACE_USER_CONFIGURE_MODE

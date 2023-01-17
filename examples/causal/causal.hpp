@@ -27,11 +27,11 @@
 #define CAUSAL_LABEL   __FILE__ ":" CAUSAL_STR(__LINE__)
 
 #if defined(USE_OMNI) && USE_OMNI > 0
-#    include <omnitrace/user.h>
-#    define CAUSAL_PROGRESS              omnitrace_user_progress(CAUSAL_LABEL);
-#    define CAUSAL_PROGRESS_NAMED(LABEL) omnitrace_user_progress(LABEL);
-#    define CAUSAL_BEGIN(LABEL)          omnitrace_user_push_region(LABEL);
-#    define CAUSAL_END(LABEL)            omnitrace_user_pop_region(LABEL);
+#    include <omnitrace/causal.h>
+#    define CAUSAL_PROGRESS              OMNITRACE_CAUSAL_PROGRESS
+#    define CAUSAL_PROGRESS_NAMED(LABEL) OMNITRACE_CAUSAL_PROGRESS_NAMED(LABEL)
+#    define CAUSAL_BEGIN(LABEL)          OMNITRACE_CAUSAL_BEGIN(LABEL)
+#    define CAUSAL_END(LABEL)            OMNITRACE_CAUSAL_END(LABEL)
 #elif defined(USE_COZ) && USE_COZ > 0
 #    include <coz.h>
 #    define CAUSAL_PROGRESS              COZ_PROGRESS_NAMED(CAUSAL_LABEL)
