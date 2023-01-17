@@ -53,12 +53,17 @@ class line_speedup(object):
         self.data = _exp_data
         self.base = _exp_base
 
-    def get(self):
+    def get_speedup(self):
+        if self.data is None or self.base is None:
+            return 0.0
+        return self.data.speedup
+
+    def compute_speedup(self):
         if self.data is None or self.base is None:
             return 0.0
         return ((self.base.mean() - self.data.mean()) / self.base.mean()) * 100
 
-    def get_stddev(self):
+    def compute_speedup_stddev(self):
         if self.data is None or self.base is None:
             return 0.0
         _data = []
@@ -67,18 +72,21 @@ class line_speedup(object):
             _data += [((_base - ditr) / _base) * 100]
         return stddev(_data)
 
-    def __str__(self):
-        if self.data is None or self.base is None:
-            return f"{self.name}"
-        _line_speedup = self.get()
-        _line_stddev = 1.0 * self.get_stddev()  # 3 stddev == 99.87%
-        _name = ":".join(
+    def get_name(self):
+        return ":".join(
             [
                 os.path.basename(x) if os.path.isfile(x) else x
                 for x in self.name.split(":")
             ]
         )
-        return f"[{_name}][{self.prog}][{self.data.speedup:3}] speedup: {_line_speedup:6.1f} +/- {_line_stddev:4.2f} %"
+
+    def __str__(self):
+        if self.data is None or self.base is None:
+            return f"{self.name}"
+        _line_speedup = self.compute_speedup()
+        _line_stddev = 1.0 * self.compute_speedup_stddev()  # 3 stddev == 99.87%
+        _name = self.get_name()
+        return f"[{_name}][{self.prog}][{self.data.speedup:3}] speedup: {_line_speedup:6.1f} +/- {_line_stddev:6.2f} %"
 
     def __eq__(self, rhs):
         return (
@@ -101,6 +109,44 @@ class line_speedup(object):
         elif self.base != rhs.base:
             return self.base < rhs.base
         return False
+
+
+class experiment_progress(object):
+    def __init__(self, _data):
+        self.data = _data
+
+    def get_impact(self):
+        """
+        speedup_c = [x.compute_speedup() for x in self.data]
+        speedup_v = [x.get_speedup() for x in self.data]
+        impact = []
+        for i in range(len(self.data) - 1):
+            x = speedup_v[i + 1] - speedup_v[i]
+            y_low = speedup_c[i]
+            y_upp = speedup_c[i + 1]
+            a_low = x * min([y_low, y_upp])
+            a_high = 0.5 * x * (max([y_low, y_upp]) - min([y_low, y_upp]))
+            impact += [a_low + a_high]
+        """
+        impact = [x.compute_speedup() for x in self.data]
+        return [sum(impact), mean(impact), stddev(impact)]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __str__(self):
+        _impact_v = self.get_impact()
+        _name = self.data[0].get_name()
+        _prog = self.data[0].prog
+        _impact = [
+            f"[{_name}][{_prog}][sum]  impact: {_impact_v[0]:6.1f}",
+            f"[{_name}][{_prog}][avg]  impact: {_impact_v[1]:6.1f} +/- {_impact_v[2]:6.2f}",
+        ]
+        return "\n".join(_impact + [f"{x}" for x in self.data])
+
+    def __lt__(self, rhs):
+        self.data.sort()
+        return self.get_impact()[0] < rhs.get_impact()[0]
 
 
 def find_or_insert(_data, _value):
@@ -183,14 +229,18 @@ def compute_speedups(_data):
         _last_name = itr.name
         _last_prog = itr.prog
 
+    _data = []
     for itr in result:
+        _data.append(experiment_progress(itr))
+
+    _data.sort()
+    for itr in _data:
         if len(itr) < 2:
             continue
         print("")
-        for ritr in itr:
-            print(f"{ritr}")
+        print(f"{itr}")
 
-    return result
+    return _data
 
 
 if __name__ == "__main__":
