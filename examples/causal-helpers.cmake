@@ -21,6 +21,7 @@ function(omnitrace_causal_example_executable _NAME)
 
     function(omnitrace_causal_example_interface _TARGET)
         if(NOT TARGET ${_TARGET})
+            find_package(Threads REQUIRED)
             add_library(${_TARGET} INTERFACE)
             target_link_libraries(${_TARGET} INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
         endif()
