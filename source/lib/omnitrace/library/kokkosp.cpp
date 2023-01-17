@@ -120,16 +120,28 @@ strlength(Tp&& _v)
                  std::is_same<type, std::string>::value)
         return _v.length();
     else
-        return strnlen(_v, name_len_limit);
+        return strnlen(_v, std::max<size_t>(name_len_limit, 1));
 }
 
-template <typename... Args>
+template <typename Arg, typename... Args>
 bool
-exceeds_name_limit(Args&&... _args)
+violates_name_rules(Arg&& _arg, Args&&... _args)
 {
-    if(name_len_limit == 0) return false;
+    // for causal profiling we only consider callbacks which are explicitly named
+    if(omnitrace::config::get_use_causal() &&
+       (std::string_view{ _arg }.find("Kokkos::") == 0 ||
+        std::string_view{ _arg }.find("Space::") != std::string_view::npos))
+        return true;
 
-    size_t _len = (strlength(std::forward<Args>(_args)) + ...);
+    size_t _len =
+        (strlength(std::forward<Arg>(_arg)) + ... + strlength(std::forward<Args>(_args)));
+
+    // ignore labels without names
+    if(_len == 0)
+        return true;
+    else if(name_len_limit == 0)
+        return false;
+
     return (_len >= name_len_limit);
 }
 }  // namespace
@@ -279,12 +291,12 @@ extern "C"
 
     void kokkosp_begin_parallel_for(const char* name, uint32_t devid, uint64_t* kernid)
     {
-        if(exceeds_name_limit(name)) return set_invalid_id(kernid);
+        if(violates_name_rules(name)) return set_invalid_id(kernid);
 
         OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
         auto pname =
             (devid > std::numeric_limits<uint16_t>::max())  // junk device number
-                ? std::string{ name }
+                ? TIMEMORY_JOIN(" ", name, "[for]")
                 : TIMEMORY_JOIN(" ", name, TIMEMORY_JOIN("", "[for][dev", devid, ']'));
         *kernid = kokkosp::get_unique_id();
         kokkosp::logger_t{}.mark(1, __FUNCTION__, name, *kernid);
@@ -306,12 +318,12 @@ extern "C"
 
     void kokkosp_begin_parallel_reduce(const char* name, uint32_t devid, uint64_t* kernid)
     {
-        if(exceeds_name_limit(name)) return set_invalid_id(kernid);
+        if(violates_name_rules(name)) return set_invalid_id(kernid);
 
         OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
         auto pname =
             (devid > std::numeric_limits<uint16_t>::max())  // junk device number
-                ? std::string{ name }
+                ? TIMEMORY_JOIN(" ", name, "[reduce]")
                 : TIMEMORY_JOIN(" ", name, TIMEMORY_JOIN("", "[reduce][dev", devid, ']'));
         *kernid = kokkosp::get_unique_id();
         kokkosp::logger_t{}.mark(1, __FUNCTION__, name, *kernid);
@@ -333,12 +345,12 @@ extern "C"
 
     void kokkosp_begin_parallel_scan(const char* name, uint32_t devid, uint64_t* kernid)
     {
-        if(exceeds_name_limit(name)) return set_invalid_id(kernid);
+        if(violates_name_rules(name)) return set_invalid_id(kernid);
 
         OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
         auto pname =
             (devid > std::numeric_limits<uint16_t>::max())  // junk device number
-                ? std::string{ name }
+                ? TIMEMORY_JOIN(" ", name, "[scan]")
                 : TIMEMORY_JOIN(" ", name, TIMEMORY_JOIN("", "[scan][dev", devid, ']'));
         *kernid = kokkosp::get_unique_id();
         kokkosp::logger_t{}.mark(1, __FUNCTION__, name, *kernid);
@@ -360,12 +372,12 @@ extern "C"
 
     void kokkosp_begin_fence(const char* name, uint32_t devid, uint64_t* kernid)
     {
-        if(exceeds_name_limit(name)) return set_invalid_id(kernid);
+        if(violates_name_rules(name)) return set_invalid_id(kernid);
 
         OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
         auto pname =
             (devid > std::numeric_limits<uint16_t>::max())  // junk device number
-                ? std::string{ name }
+                ? TIMEMORY_JOIN(" ", name, "[fence]")
                 : TIMEMORY_JOIN(" ", name, TIMEMORY_JOIN("", "[fence][dev", devid, ']'));
         *kernid = kokkosp::get_unique_id();
         kokkosp::logger_t{}.mark(1, __FUNCTION__, name, *kernid);
@@ -440,7 +452,7 @@ extern "C"
     void kokkosp_allocate_data(const SpaceHandle space, const char* label,
                                const void* const ptr, const uint64_t size)
     {
-        if(exceeds_name_limit(label)) return;
+        if(violates_name_rules(label)) return;
         if(omnitrace::config::get_use_causal()) return;
 
         OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
@@ -455,7 +467,7 @@ extern "C"
     void kokkosp_deallocate_data(const SpaceHandle space, const char* label,
                                  const void* const ptr, const uint64_t size)
     {
-        if(exceeds_name_limit(label)) return;
+        if(violates_name_rules(label)) return;
         if(omnitrace::config::get_use_causal()) return;
 
         OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
@@ -473,7 +485,7 @@ extern "C"
                                  const void* dst_ptr, SpaceHandle src_handle,
                                  const char* src_name, const void* src_ptr, uint64_t size)
     {
-        if(exceeds_name_limit(dst_name, src_name)) return;
+        if(violates_name_rules(dst_name, src_name)) return;
 
         OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
         kokkosp::logger_t{}.mark(1, __FUNCTION__, dst_handle.name, dst_name,
@@ -517,7 +529,7 @@ extern "C"
 
     void kokkosp_dual_view_sync(const char* label, const void* const, bool is_device)
     {
-        if(exceeds_name_limit(label)) return;
+        if(violates_name_rules(label)) return;
 
         OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
         if(omnitrace::config::get_use_perfetto())
@@ -537,7 +549,7 @@ extern "C"
 
     void kokkosp_dual_view_modify(const char* label, const void* const, bool is_device)
     {
-        if(exceeds_name_limit(label)) return;
+        if(violates_name_rules(label)) return;
 
         OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
         if(omnitrace::config::get_use_perfetto())
