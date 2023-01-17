@@ -7,6 +7,18 @@ import argparse
 from collections import OrderedDict
 
 
+def mean(_data):
+    return sum(_data) / float(len(_data)) if len(_data) > 0 else 0.0
+
+
+def stddev(_data):
+    if len(_data) == 0:
+        return 0.0
+    _mean = mean(_data)
+    _variance = sum([((x - _mean) ** 2) for x in _data]) / float(len(_data))
+    return _variance**0.5
+
+
 class experiment_data(object):
     def __init__(self, _speedup):
         self.speedup = _speedup
@@ -28,7 +40,10 @@ class experiment_data(object):
         return self.speedup < rhs.speedup
 
     def mean(self):
-        return sum(self.duration) / float(len(self.duration))
+        return mean(self.duration)
+
+    def stddev(self):
+        return stddev(self.duration)
 
 
 class line_speedup(object):
@@ -43,11 +58,27 @@ class line_speedup(object):
             return 0.0
         return ((self.base.mean() - self.data.mean()) / self.base.mean()) * 100
 
+    def get_stddev(self):
+        if self.data is None or self.base is None:
+            return 0.0
+        _data = []
+        _base = self.base.mean()
+        for ditr in self.data.duration:
+            _data += [((_base - ditr) / _base) * 100]
+        return stddev(_data)
+
     def __str__(self):
         if self.data is None or self.base is None:
             return f"{self.name}"
         _line_speedup = self.get()
-        return f"[{self.name}][{self.prog}][{self.data.speedup:3}] speedup: {_line_speedup:6.1f} %"
+        _line_stddev = 1.0 * self.get_stddev()  # 3 stddev == 99.87%
+        _name = ":".join(
+            [
+                os.path.basename(x) if os.path.isfile(x) else x
+                for x in self.name.split(":")
+            ]
+        )
+        return f"[{_name}][{self.prog}][{self.data.speedup:3}] speedup: {_line_speedup:6.1f} +/- {_line_stddev:4.2f} %"
 
     def __eq__(self, rhs):
         return (
@@ -78,33 +109,6 @@ def find_or_insert(_data, _value):
     return _data[_value]
 
 
-def longest_common_prefix(_inp):
-    a = list(set(_inp))
-
-    # if size is 0, return empty string
-    # if size is 1, return first string
-    if len(a) < 2:
-        return ""
-
-    # sort the array of strings
-    a.sort()
-
-    # if all the same, return empty string
-    if a[0] == a[-1]:
-        return ""
-
-    # find the minimum length from first and last string
-    end = min(len(a[0]), len(a[-1]))
-
-    # find the common prefix between the first and last string
-    i = 0
-    while i < end and a[0][i] == a[-1][i]:
-        i += 1
-
-    pre = a[0][0:i]
-    return pre
-
-
 def process_data(data, _data):
     if not _data:
         return data
@@ -124,17 +128,22 @@ def process_data(data, _data):
                 _name = pts["name"]
                 if _name not in data[_selected]:
                     data[_selected][_name] = {}
-                itr = find_or_insert(data[_selected][_name], _speedup)
                 if "delta" in pts:
                     _delt = pts["delta"]
                     if _delt > 0:
+                        itr = find_or_insert(data[_selected][_name], _speedup)
                         itr += float(_duration) / float(_delt)
                     else:
                         _diff = pts["arrival"] - pts["departure"] + 1
                         _rate = pts["arrival"] / float(_duration)
-                        itr += float(_diff) / float(_rate)
+                        if _rate > 0:
+                            itr = find_or_insert(data[_selected][_name], _speedup)
+                            itr += float(_diff) / float(_rate)
                 else:
                     _delt = pts["laps"]
+                    if _delt > 0:
+                        itr = find_or_insert(data[_selected][_name], _speedup)
+                        itr += float(_duration) / float(_delt)
 
     return data
 
@@ -151,22 +160,10 @@ def compute_speedups(_data):
     from os.path import dirname
 
     ret = []
-    _slcp = longest_common_prefix(
-        [dirname(x.split(":")[0]) if ":" in x else x for x in _data.keys()]
-    )
     for selected, pitr in _data.items():
-        selected = selected.replace(_slcp, "", 1) if len(_slcp) > 0 else selected
-        if len(selected) > 0 and selected[0] == "/":
-            selected = selected[1:]
-        _plcp = longest_common_prefix(
-            [dirname(x.split(":")[0]) if ":" in x else x for x in pitr.keys()]
-        )
         for progpt, ditr in pitr.items():
-            progpt = progpt.replace(_plcp, "", 1) if len(_plcp) > 0 else progpt
-            if len(progpt) > 0 and progpt[0] == "/":
-                progpt = progpt[1:]
             if 0 not in ditr.keys():
-                print(f"missing baseline data for {progpt} in {selected}...")
+                # print(f"missing baseline data for {progpt} in {selected}...")
                 continue
             _baseline = ditr[0].mean()
             for speedup, itr in ditr.items():
@@ -178,14 +175,22 @@ def compute_speedups(_data):
     ret.sort()
     _last_name = None
     _last_prog = None
+    result = []
     for itr in ret:
         if itr.name != _last_name or itr.prog != _last_prog:
-            print("")
-        print(f"{itr}")
+            result.append([])
+        result[-1].append(itr)
         _last_name = itr.name
         _last_prog = itr.prog
 
-    return ret
+    for itr in result:
+        if len(itr) < 2:
+            continue
+        print("")
+        for ritr in itr:
+            print(f"{ritr}")
+
+    return result
 
 
 if __name__ == "__main__":
