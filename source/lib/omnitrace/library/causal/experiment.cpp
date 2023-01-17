@@ -254,26 +254,28 @@ experiment::stop()
     // sync data
     delay::sync();
 
-    int64_t _num = 0;
-    for(auto fitr : fini_progress)
-    {
-        auto _pt = fitr.second - init_progress[fitr.first];
-        _num     = std::max<int64_t>(
-            { _num, _pt.get_laps(), _pt.get_arrival(), _pt.get_departure() });
-    }
-
     // for larger speedups, we increased the experiment time, so we want to artificially
     // increase num by the same factor. E.g. 10 throughput points at speedup 50 should
     // really look like 15
-    _num = (1.0 + delay_scaling) * static_cast<double>(_num);
+    double _scale_num  = 1.0 + delay_scaling;
+    auto   _prog_stats = tim::statistics<int64_t>{};
+    for(auto fitr : fini_progress)
+    {
+        auto    _pt = fitr.second - init_progress[fitr.first];
+        int64_t _num =
+            std::max<int64_t>({ _pt.get_laps(), _pt.get_arrival(), _pt.get_departure() });
+        _prog_stats += (_num * _scale_num);
+    }
 
-    if(_num < 5)
+    auto _mean = (_prog_stats.get_count() > 0) ? _prog_stats.get_mean() : 0;
+    auto _high = (_prog_stats.get_count() > 0) ? _prog_stats.get_max() : 0;
+    if(_high < 5 || _mean < 3)
     {
         global_scaling *= 2;
         ++global_scaling_increments;  // keep track of how many successive increments have
                                       // been performed
     }
-    else if(_num > 10 && global_scaling > 1)
+    else if(_mean > 10 && global_scaling > 1)
     {
         global_scaling /= 2;
         global_scaling_increments = 0;
@@ -291,9 +293,9 @@ experiment::stop()
             global_scaling_increments);
     }
 
-    if(_num > 0) experiment_history.emplace_back(*this);
+    if(_high > 0) experiment_history.emplace_back(*this);
 
-    std::this_thread::sleep_for(std::chrono::nanoseconds{ sampling_period });
+    std::this_thread::sleep_for(std::chrono::nanoseconds{ sampling_period * batch_size });
     return true;
 }
 
