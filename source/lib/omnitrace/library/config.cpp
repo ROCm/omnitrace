@@ -748,21 +748,16 @@ configure_settings(bool _init)
         "expressions (separated by tab, semi-colon, and/or quotes (single or double))",
         std::string{ "%MAIN%" }, "causal", "analysis");
 
-    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_CAUSAL_SOURCE_SCOPE",
-                             "Limits causal experiments to the source files matching the "
-                             "provided list of regular expressions (separated by tab, "
-                             "semi-colon, and/or quotes (single or double))",
-                             std::string{ ".*" }, "causal", "analysis");
+    OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_CAUSAL_SOURCE_SCOPE",
+        "Limits causal experiments to the source files or source file + lineno pair "
+        "(i.e. <file> or <file>:<line>) matching the provided list of regular "
+        "expressions (separated by tab, semi-colon, and/or quotes (single or double))",
+        std::string{ ".*" }, "causal", "analysis");
 
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_CAUSAL_FUNCTION_SCOPE",
         "List of <function> regex entries for causal profiling (separated by tab, "
-        "semi-colon, and/or quotes (single or double))",
-        std::string{}, "causal", "analysis");
-
-    OMNITRACE_CONFIG_SETTING(
-        std::string, "OMNITRACE_CAUSAL_FILELINE_SCOPE",
-        "List of <file>:<line> regex entries for causal profiling (separated by tab, "
         "semi-colon, and/or quotes (single or double))",
         std::string{}, "causal", "analysis");
 
@@ -774,19 +769,14 @@ configure_settings(bool _init)
 
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_CAUSAL_SOURCE_EXCLUDE",
-        "Excludes source files matching the list of provided regexes from causal "
-        "experiments (separated by tab, semi-colon, and/or quotes (single or double))",
+        "Excludes source files or source file + lineno pair (i.e. <file> or "
+        "<file>:<line>) matching the list of provided regexes from causal experiments "
+        "(separated by tab, semi-colon, and/or quotes (single or double))",
         std::string{}, "causal", "analysis");
 
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_CAUSAL_FUNCTION_EXCLUDE",
         "Excludes functions matching the list of provided regexes from causal "
-        "experiments (separated by tab, semi-colon, and/or quotes (single or double))",
-        std::string{}, "causal", "analysis");
-
-    OMNITRACE_CONFIG_SETTING(
-        std::string, "OMNITRACE_CAUSAL_FILELINE_EXCLUDE",
-        "Excludes <file>:<line> combos matching the list of provided regexes from causal "
         "experiments (separated by tab, semi-colon, and/or quotes (single or double))",
         std::string{}, "causal", "analysis");
 
@@ -2495,14 +2485,6 @@ get_causal_function_scope()
 }
 
 std::vector<std::string>
-get_causal_fileline_scope()
-{
-    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FILELINE_SCOPE");
-    return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
-                        "\t\"';");
-}
-
-std::vector<std::string>
 get_causal_binary_exclude()
 {
     auto&&      _config = get_config();
@@ -2525,14 +2507,6 @@ std::vector<std::string>
 get_causal_function_exclude()
 {
     static auto _v = get_config()->find("OMNITRACE_CAUSAL_FUNCTION_EXCLUDE");
-    return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
-                        "\t\"';");
-}
-
-std::vector<std::string>
-get_causal_fileline_exclude()
-{
-    static auto _v = get_config()->find("OMNITRACE_CAUSAL_FILELINE_EXCLUDE");
     return tim::delimit(static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
                         "\t\"';");
 }

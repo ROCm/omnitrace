@@ -641,11 +641,9 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
 
     int64_t _niterations       = 1;
     auto    _virtual_speedups  = std::vector<std::string>{};
-    auto    _fileline_scopes   = std::vector<std::string>{};
     auto    _function_scopes   = std::vector<std::string>{};
     auto    _binary_scopes     = std::vector<std::string>{};
     auto    _source_scopes     = std::vector<std::string>{};
-    auto    _fileline_excludes = std::vector<std::string>{};
     auto    _function_excludes = std::vector<std::string>{};
     auto    _binary_excludes   = std::vector<std::string>{};
     auto    _source_excludes   = std::vector<std::string>{};
@@ -690,11 +688,11 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         });
 
     parser
-        .add_argument(
-            { "-S", "--source-scope" },
-            "Restricts causal experiments to the source files matching the list of "
-            "regular expressions. Each space designates a group and multiple "
-            "scopes can be grouped together with a semi-colon")
+        .add_argument({ "-S", "--source-scope" },
+                      "Restricts causal experiments to the source files or source file + "
+                      "lineno pairs (i.e. <file> or <file>:<line>) matching the list of "
+                      "regular expressions. Each space designates a group and multiple "
+                      "scopes can be grouped together with a semi-colon")
         .min_count(0)
         .max_count(-1)
         .dtype("integers")
@@ -716,18 +714,6 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         });
 
     parser
-        .add_argument({ "-L", "--fileline-scope" },
-                      "Restricts causal experiments to the <file>:<line> combos matching "
-                      "the list of regular expressions. Each space designates a group "
-                      "and multiple scopes can be grouped together with a semi-colon")
-        .min_count(0)
-        .max_count(-1)
-        .dtype("regex-list")
-        .action([&](parser_t& p) {
-            _fileline_scopes = p.get<std::vector<std::string>>("fileline-scope");
-        });
-
-    parser
         .add_argument(
             { "-BE", "--binary-exclude" },
             "Excludes causal experiments from being performed on the binaries matching "
@@ -741,11 +727,12 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         });
 
     parser
-        .add_argument({ "-SE", "--source-exclude" },
-                      "Excludes causal experiments from being performed on the code from "
-                      "the source files matching the list of regular expressions. Each "
-                      "space designates a group and multiple excludes can be grouped "
-                      "together with a semi-colon")
+        .add_argument(
+            { "-SE", "--source-exclude" },
+            "Excludes causal experiments from being performed on the code from the "
+            "source files or source file + lineno pair (i.e. <file> or <file>:<line>) "
+            "matching the list of regular expressions. Each space designates a group and "
+            "multiple excludes can be grouped together with a semi-colon")
         .min_count(0)
         .max_count(-1)
         .dtype("integers")
@@ -764,19 +751,6 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         .dtype("regex-list")
         .action([&](parser_t& p) {
             _function_excludes = p.get<std::vector<std::string>>("function-exclude");
-        });
-
-    parser
-        .add_argument(
-            { "-LE", "--fileline-exclude" },
-            "Excludes causal experiments from being performed on <file>:<line> combos "
-            "matching the list of regular expressions. Each space designates a group and "
-            "multiple excludes can be grouped together with a semi-colon")
-        .min_count(0)
-        .max_count(-1)
-        .dtype("regex-list")
-        .action([&](parser_t& p) {
-            _fileline_excludes = p.get<std::vector<std::string>>("fileline-exclude");
         });
 
 #if OMNITRACE_HIP_VERSION > 0 && OMNITRACE_HIP_VERSION < 50300
@@ -864,12 +838,10 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
     _fill("OMNITRACE_CAUSAL_BINARY_EXCLUDE", _binary_excludes, _generate_configs);
     _fill("OMNITRACE_CAUSAL_SOURCE_EXCLUDE", _source_excludes, _generate_configs);
     _fill("OMNITRACE_CAUSAL_FUNCTION_EXCLUDE", _function_excludes, _generate_configs);
-    _fill("OMNITRACE_CAUSAL_FILELINE_EXCLUDE", _fileline_excludes, _generate_configs);
 
     _fill("OMNITRACE_CAUSAL_BINARY_SCOPE", _binary_scopes, _generate_configs);
     _fill("OMNITRACE_CAUSAL_SOURCE_SCOPE", _source_scopes, _generate_configs);
     _fill("OMNITRACE_CAUSAL_FUNCTION_SCOPE", _function_scopes, _generate_configs);
-    _fill("OMNITRACE_CAUSAL_FILELINE_SCOPE", _fileline_scopes, _generate_configs);
 
     _fill("OMNITRACE_CAUSAL_FIXED_SPEEDUP", _virtual_speedups, false);
 

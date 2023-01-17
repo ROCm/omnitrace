@@ -163,19 +163,18 @@ get_filters()
 
     using utility::get_regex_or;
 
-    auto _fileline_end_converter = [](const std::string& _v) { return _v + "$"; };
+    auto _source_end_converter = [](const std::string& _v) { return _v + "$"; };
 
     // include handling
     {
-        auto _binary_include   = get_regex_or(config::get_causal_binary_scope(), "");
-        auto _source_include   = get_regex_or(config::get_causal_source_scope(), "");
+        auto _binary_include = get_regex_or(config::get_causal_binary_scope(), "");
+        auto _source_include =
+            get_regex_or(config::get_causal_source_scope(), _source_end_converter, "");
         auto _function_include = get_regex_or(config::get_causal_function_scope(), "");
-        auto _fileline_include = get_regex_or(config::get_causal_fileline_scope(),
-                                              _fileline_end_converter, "");
 
-        auto        _current_include = std::make_tuple(_binary_include, _source_include,
-                                                _function_include, _fileline_include);
-        static auto _former_include  = decltype(_current_include){};
+        auto _current_include =
+            std::make_tuple(_binary_include, _source_include, _function_include);
+        static auto _former_include = decltype(_current_include){};
 
         if(_former_include != _current_include)
         {
@@ -188,9 +187,6 @@ get_filters()
             if(!_function_include.empty())
                 OMNITRACE_VERBOSE(0, "[causal] function scope   : %s\n",
                                   _function_include.c_str());
-            if(!_fileline_include.empty())
-                OMNITRACE_VERBOSE(0, "[causal] fileline scope   : %s\n",
-                                  _fileline_include.c_str());
             _former_include = _current_include;
         }
 
@@ -205,23 +201,18 @@ get_filters()
         if(!_function_include.empty())
             _filters.emplace_back(
                 sf{ sf::FILTER_INCLUDE, sf::FUNCTION_FILTER, _function_include });
-
-        if(!_fileline_include.empty())
-            _filters.emplace_back(
-                sf{ sf::FILTER_INCLUDE, sf::FILELINE_FILTER, _fileline_include });
     }
 
     // exclude handling
     {
-        auto _binary_exclude   = get_regex_or(config::get_causal_binary_exclude(), "");
-        auto _source_exclude   = get_regex_or(config::get_causal_source_exclude(), "");
+        auto _binary_exclude = get_regex_or(config::get_causal_binary_exclude(), "");
+        auto _source_exclude =
+            get_regex_or(config::get_causal_source_exclude(), _source_end_converter, "");
         auto _function_exclude = get_regex_or(config::get_causal_function_exclude(), "");
-        auto _fileline_exclude = get_regex_or(config::get_causal_fileline_exclude(),
-                                              _fileline_end_converter, "");
 
-        auto        _current_exclude = std::make_tuple(_binary_exclude, _source_exclude,
-                                                _function_exclude, _fileline_exclude);
-        static auto _former_exclude  = decltype(_current_exclude){};
+        auto _current_exclude =
+            std::make_tuple(_binary_exclude, _source_exclude, _function_exclude);
+        static auto _former_exclude = decltype(_current_exclude){};
 
         if(_former_exclude != _current_exclude)
         {
@@ -234,9 +225,6 @@ get_filters()
             if(!_function_exclude.empty())
                 OMNITRACE_VERBOSE(0, "[causal] function exclude : %s\n",
                                   _function_exclude.c_str());
-            if(!_fileline_exclude.empty())
-                OMNITRACE_VERBOSE(0, "[causal] fileline exclude : %s\n",
-                                  _fileline_exclude.c_str());
             _former_exclude = _current_exclude;
         }
 
@@ -251,10 +239,6 @@ get_filters()
         if(!_function_exclude.empty())
             _filters.emplace_back(
                 sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER, _function_exclude });
-
-        if(!_fileline_exclude.empty())
-            _filters.emplace_back(
-                sf{ sf::FILTER_EXCLUDE, sf::FILELINE_FILTER, _fileline_exclude });
     }
 
     return _filters;
@@ -311,7 +295,7 @@ compute_eligible_lines()
     for(const auto& itr : _filters)
     {
         if(itr.mode == sf::FILTER_INCLUDE &&
-           (itr.scope == sf::FUNCTION_FILTER || itr.scope == sf::FILELINE_FILTER))
+           (itr.scope == sf::FUNCTION_FILTER || itr.scope == sf::SOURCE_FILTER))
         {
             _use_custom_filters = true;
             break;
@@ -328,12 +312,12 @@ compute_eligible_lines()
             if(_use_custom_filters)
             {
                 // check both <file> and <file>:<line>
-                if(!satisfies_filter(sf::FILELINE_FILTER, ditr.file) &&
-                   !satisfies_filter(sf::FILELINE_FILTER,
-                                     JOIN(':', ditr.file, ditr.line)))
+                if(!satisfies_filter(sf::SOURCE_FILTER, ditr.file) &&
+                   !satisfies_filter(sf::SOURCE_FILTER, JOIN(':', ditr.file, ditr.line)))
                     continue;
 
-                // check both mangled and demangled function name
+                // only check demangled function name since things like ^_ can
+                // accidentally catch mangled C++ function names
                 if(!satisfies_filter(sf::FUNCTION_FILTER, demangle(ditr.func))) continue;
             }
 

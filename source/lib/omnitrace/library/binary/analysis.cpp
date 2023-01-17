@@ -170,16 +170,14 @@ get_line_info(const std::vector<std::string>&  _files,
         return _satisfies_filter(scope_filter::BINARY_FILTER, _value);
     };
 
-    auto _satisfies_source_filter = [&_satisfies_filter](const std::string& _value) {
-        return _satisfies_filter(scope_filter::SOURCE_FILTER, _value);
+    auto _satisfies_source_filter = [&_satisfies_filter](const std::string& _value,
+                                                         int32_t            _line) {
+        return _satisfies_filter(scope_filter::SOURCE_FILTER, _value) ||
+               _satisfies_filter(scope_filter::SOURCE_FILTER, join(":", _value, _line));
     };
 
     auto _satisfies_function_filter = [&_satisfies_filter](const std::string& _value) {
         return _satisfies_filter(scope_filter::FUNCTION_FILTER, _value);
-    };
-
-    auto _satisfies_fileline_filter = [&_satisfies_filter](const std::string& _value) {
-        return _satisfies_filter(scope_filter::FILELINE_FILTER, _value);
     };
 
     // filter function used by procfs::get_contiguous_maps
@@ -220,9 +218,8 @@ get_line_info(const std::vector<std::string>&  _files,
                 const auto& _file = vitr.file;
                 const auto& _func = vitr.func;
                 const auto& _line = vitr.line;
-                if(!_satisfies_source_filter(_file) ||
-                   !_satisfies_function_filter(demangle(_func)) ||
-                   !_satisfies_fileline_filter(join(":", _file, _line)))
+                if(!_satisfies_function_filter(demangle(_func)) ||
+                   !_satisfies_source_filter(_file, _line))
                 {
                     // insert into discarded if does not match source scope regex
                     if(_discarded) _discarded->at(mitr).data.emplace_back(vitr);

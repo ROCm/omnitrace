@@ -402,9 +402,6 @@ std::vector<std::string>
 get_causal_function_scope();
 
 std::vector<std::string>
-get_causal_fileline_scope();
-
-std::vector<std::string>
 get_causal_binary_exclude();
 
 std::vector<std::string>
@@ -412,8 +409,5 @@ get_causal_source_exclude();
 
 std::vector<std::string>
 get_causal_function_exclude();
-
-std::vector<std::string>
-get_causal_fileline_exclude();
 }  // namespace config
 }  // namespace omnitrace

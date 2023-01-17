@@ -42,8 +42,7 @@ struct scope_filter
         UNIVERSAL_FILTER = (1 << 0),
         BINARY_FILTER    = (1 << 1),
         SOURCE_FILTER    = (1 << 2),
-        FUNCTION_FILTER  = (1 << 3),
-        FILELINE_FILTER  = (1 << 4)
+        FUNCTION_FILTER  = (1 << 3)
     };
 
     filter_mode  mode       = FILTER_INCLUDE;
