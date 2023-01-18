@@ -380,6 +380,10 @@ configure_settings(bool _init)
                              "name of the function, which is very long",
                              0, "kokkos", "debugging", "advanced");
 
+    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_KOKKOSP_PREFIX",
+                             "Set to [kokkos] to maintain old naming convention", "",
+                             "kokkos", "debugging", "advanced");
+
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_OMPT",
                              "Enable support for OpenMP-Tools", false, "openmp", "ompt",
                              "backend");
@@ -2371,7 +2375,9 @@ get_causal_mode()
     }
     static auto _causal_mode = []() {
         auto _m = std::unordered_map<std::string_view, CausalMode>{
-            { "line", CausalMode::Line }, { "function", CausalMode::Function }
+            { "line", CausalMode::Line },
+            { "func", CausalMode::Function },
+            { "function", CausalMode::Function }
         };
         auto _v = get_config()->find("OMNITRACE_CAUSAL_MODE");
         try
