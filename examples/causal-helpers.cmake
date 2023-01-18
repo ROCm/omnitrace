@@ -8,7 +8,7 @@ if(NOT TARGET omnitrace::omnitrace-user-library)
 endif()
 
 if(NOT coz-profiler_FOUND)
-    find_package(coz-profiler)
+    find_package(coz-profiler QUIET)
 endif()
 
 if(NOT TARGET omni-causal-examples)
