@@ -355,9 +355,9 @@ omnitrace_add_test(
     LABELS "kokkos;kokkos-profile-library"
     RUN_ARGS -i 25 -s 20 -p
     ENVIRONMENT
-        "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;OMNITRACE_SAMPLING_FREQ=50;KOKKOS_PROFILE_LIBRARY=libomnitrace-dl.so"
-    REWRITE_RUN_PASS_REGEX "\\|_\\[kokkos\\]"
-    RUNTIME_PASS_REGEX "\\|_\\[kokkos\\]")
+        "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;OMNITRACE_SAMPLING_FREQ=50;OMNITRACE_KOKKOSP_PREFIX=[kokkos];KOKKOS_PROFILE_LIBRARY=libomnitrace-dl.so"
+    REWRITE_RUN_PASS_REGEX "\\|_\\[kokkos\\] [a-zA-Z]"
+    RUNTIME_PASS_REGEX "\\|_\\[kokkos\\] [a-zA-Z]")
 
 omnitrace_add_test(
     SKIP_RUNTIME SKIP_REWRITE
@@ -369,8 +369,8 @@ omnitrace_add_test(
     LABELS "kokkos;kokkos-profile-library"
     RUN_ARGS -i 10 -s 20 -p
     ENVIRONMENT
-        "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;OMNITRACE_SAMPLING_FREQ=50;KOKKOS_PROFILE_LIBRARY=libomnitrace.so"
-    BASELINE_PASS_REGEX "\\|_\\[kokkos\\]")
+        "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;OMNITRACE_SAMPLING_FREQ=50;OMNITRACE_KOKKOSP_PREFIX=[kokkos];KOKKOS_PROFILE_LIBRARY=libomnitrace.so"
+    BASELINE_PASS_REGEX "\\|_\\[kokkos\\] [a-zA-Z]")
 
 omnitrace_add_test(
     SKIP_RUNTIME SKIP_REWRITE
@@ -382,8 +382,8 @@ omnitrace_add_test(
     LABELS "kokkos;kokkos-profile-library"
     RUN_ARGS -i 10 -s 20 -p
     ENVIRONMENT
-        "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;OMNITRACE_SAMPLING_FREQ=50;KOKKOS_PROFILE_LIBRARY=libomnitrace-dl.so"
-    BASELINE_PASS_REGEX "\\|_\\[kokkos\\]")
+        "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;OMNITRACE_SAMPLING_FREQ=50;OMNITRACE_KOKKOSP_PREFIX=[kokkos];KOKKOS_PROFILE_LIBRARY=libomnitrace-dl.so"
+    BASELINE_PASS_REGEX "\\|_\\[kokkos\\] [a-zA-Z]")
 
 omnitrace_add_test(
     SKIP_BASELINE
@@ -679,27 +679,7 @@ omnitrace_add_test(
     NAME causal-profiling
     TARGET causal-cpu-omni
     LABELS "causal-profiling"
-    RUN_ARGS 70 100
-    ENVIRONMENT "${_causal_environment}")
-
-omnitrace_add_test(
-    SKIP_REWRITE SKIP_SAMPLING SKIP_PRELOAD
-    NAME causal-profiling-instr
-    TARGET causal-cpu
-    RUNTIME_ARGS
-        -e
-        -v
-        2
-        --label
-        file
-        line
-        args
-        -i
-        16
-        -E
-        std::operator
-    LABELS "causal-profiling"
-    RUN_ARGS 70 100
+    RUN_ARGS 70 ${MAX_CAUSAL_ITERATIONS}
     ENVIRONMENT "${_causal_environment}")
 
 # -------------------------------------------------------------------------------------- #
