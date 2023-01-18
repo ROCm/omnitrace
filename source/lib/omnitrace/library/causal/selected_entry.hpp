@@ -54,8 +54,8 @@ struct selected_entry
 
     uintptr_t       address        = 0x0;
     uintptr_t       symbol_address = 0x0;
-    uintptr_t       binary_address = {};
-    address_range_t range          = {};
+    uintptr_t       binary_address = 0x0;
+    address_range_t range          = { 0, 0 };
     line_info       info           = {};
 
     hash_value_t hash() const;
