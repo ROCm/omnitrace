@@ -661,27 +661,6 @@ omnitrace_add_test(
     RUNTIME_PASS_REGEX "(\\\[[0-9]+\\\]) function coverage ::  66.67%"
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) function coverage ::  66.67%")
 
-set(_causal_environment
-    "OMNITRACE_MODE=causal"
-    "OMNITRACE_USE_CAUSAL=ON"
-    "OMNITRACE_USE_PERFETTO=OFF"
-    "OMNITRACE_USE_TIMEMORY=OFF"
-    "OMNITRACE_USE_SAMPLING=OFF"
-    "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
-    "OMNITRACE_USE_RCCLP=ON"
-    "OMNITRACE_TIME_OUTPUT=OFF"
-    "OMNITRACE_USE_PID=OFF"
-    "${_test_openmp_env}"
-    "${_test_library_path}")
-
-omnitrace_add_test(
-    SKIP_RUNTIME SKIP_REWRITE SKIP_SAMPLING
-    NAME causal-profiling
-    TARGET causal-cpu-omni
-    LABELS "causal-profiling"
-    RUN_ARGS 70 ${MAX_CAUSAL_ITERATIONS}
-    ENVIRONMENT "${_causal_environment}")
-
 # -------------------------------------------------------------------------------------- #
 #
 # critical-trace tests
@@ -839,6 +818,36 @@ foreach(_TARGET ${RCCL_TEST_TARGETS})
                  1
         ENVIRONMENT "${_rccl_environment}")
 endforeach()
+
+# -------------------------------------------------------------------------------------- #
+#
+# causal profiling tests
+#
+# -------------------------------------------------------------------------------------- #
+
+set(_causal_environment
+    "OMNITRACE_MODE=causal"
+    "OMNITRACE_USE_CAUSAL=ON"
+    "OMNITRACE_USE_PERFETTO=OFF"
+    "OMNITRACE_USE_TIMEMORY=OFF"
+    "OMNITRACE_USE_SAMPLING=OFF"
+    "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
+    "OMNITRACE_USE_RCCLP=ON"
+    "OMNITRACE_TIME_OUTPUT=OFF"
+    "OMNITRACE_USE_PID=OFF"
+    "${_test_openmp_env}"
+    "${_test_library_path}")
+
+omnitrace_add_test(
+    SKIP_RUNTIME SKIP_REWRITE SKIP_SAMPLING
+    NAME causal-profiling
+    TARGET causal-cpu-omni
+    LABELS "causal-profiling"
+    RUN_ARGS 70 10 432525 1000000000
+    ENVIRONMENT "${_causal_environment}"
+    PRELOAD_PASS_REGEX
+        "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
+    )
 
 # -------------------------------------------------------------------------------------- #
 #
