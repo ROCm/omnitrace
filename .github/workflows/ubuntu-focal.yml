@@ -18,7 +18,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  OMNITRACE_VERBOSE: 1
   OMNITRACE_CI: ON
   OMNITRACE_TMPDIR: "%env{PWD}%/testing-tmp"
 
@@ -403,7 +402,6 @@ jobs:
 
     env:
       ELFUTILS_DOWNLOAD_VERSION: 0.186
-      OMNITRACE_VERBOSE: 1
 
     steps:
     - uses: actions/checkout@v3

@@ -18,7 +18,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  OMNITRACE_VERBOSE: 1
   OMNITRACE_CI: ON
   OMNITRACE_TMPDIR: "%env{PWD}%/testing-tmp"
 
