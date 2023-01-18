@@ -7,13 +7,11 @@
 #include <ctime>
 #include <iostream>
 #include <mutex>
-#include <optional>
 #include <random>
-#include <stdexcept>
 #include <string>
-#include <sys/times.h>
 #include <thread>
 #include <unistd.h>
+#include <vector>
 
 using mutex_t     = std::timed_mutex;
 using auto_lock_t = std::unique_lock<mutex_t>;
@@ -111,11 +109,11 @@ main(int argc, char** argv)
         //
         CAUSAL_BEGIN("main_iteration");
         //
-        for(auto& itr : std::array<std::thread, 2>{
-                std::thread{ std::move(_slow_func), slow_val, rseed, 10000 },
-                std::thread{ std::move(_fast_func), fast_val, rseed, 10000 } })
+        auto _threads = std::vector<std::thread>{};
+        _threads.emplace_back(std::move(_slow_func), slow_val, rseed, 10000);
+        _threads.emplace_back(std::move(_fast_func), fast_val, rseed, 10000);
+        for(auto& itr : _threads)
             itr.join();
-        //
         CAUSAL_END("main_iteration");
         CAUSAL_PROGRESS;
     }
