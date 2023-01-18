@@ -102,7 +102,6 @@ struct experiment
     static double        get_delay_scaling();
     static uint32_t      get_index();
     static bool          is_active();
-    static bool          is_selected(unwind_stack_t);
     static bool          is_selected(unwind_addr_t);
     static void          add_selected();
     static experiments_t get_experiments();

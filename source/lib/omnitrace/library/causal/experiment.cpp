@@ -366,17 +366,6 @@ experiment::is_active()
 }
 
 bool
-experiment::is_selected(unwind_stack_t _stack)
-{
-    if(is_active())
-    {
-        for(auto itr : _stack)
-            if(current_experiment_value.selection.contains(itr->address())) return true;
-    }
-    return false;
-}
-
-bool
 experiment::is_selected(unwind_addr_t _stack)
 {
     if(is_active())
