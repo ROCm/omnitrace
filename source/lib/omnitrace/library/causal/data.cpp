@@ -550,26 +550,6 @@ set_current_selection(unwind_addr_t _stack)
     }
 }
 
-void
-set_current_selection(unwind_stack_t _stack)
-{
-    if(experiment::is_active()) return;
-
-    size_t _n = 0;
-    for(auto itr : _stack)
-    {
-        auto& _pcs  = latest_eligible_pc.at(_n);
-        auto  _addr = itr->address();
-
-        if(_pcs && is_eligible_address(_addr))
-        {
-            _pcs->write(&_addr);
-            // increment after valid found -> first valid pc for call-stack
-            ++_n;
-        }
-    }
-}
-
 selected_entry
 sample_selection(size_t _nitr, size_t _wait_ns)
 {
@@ -578,19 +558,19 @@ sample_selection(size_t _nitr, size_t _wait_ns)
     auto&  _eligible_pcs = get_eligible_lines();
     size_t _n            = 0;
 
-    auto _select_address = [&](auto& _addresses) {
+    auto _select_address = [&](auto& _address_vec) {
         // this isn't necessary bc of check before calling this lambda but
         // kept because of size() - 1 in distribution range
-        if(OMNITRACE_UNLIKELY(_addresses.empty()))
+        if(OMNITRACE_UNLIKELY(_address_vec.empty()))
         {
             OMNITRACE_WARNING(0, "no addresses for sample selection...\n");
             return selected_entry{};
         }
         // randomly select an address
-        auto _dist = std::uniform_int_distribution<size_t>{ 0, _addresses.size() - 1 };
+        auto _dist = std::uniform_int_distribution<size_t>{ 0, _address_vec.size() - 1 };
         auto _idx  = _dist(get_engine<selected_entry>());
 
-        uintptr_t _addr        = _addresses.at(_idx);
+        uintptr_t _addr        = _address_vec.at(_idx);
         uintptr_t _sym_addr    = 0;
         uintptr_t _lookup_addr = _addr;
         auto      _dl_info     = unwind::dlinfo::construct(_addr);
