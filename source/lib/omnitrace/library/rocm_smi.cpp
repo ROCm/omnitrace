@@ -454,10 +454,6 @@ device_count()
     {
         OMNITRACE_BASIC_VERBOSE(1, "Exception thrown getting the rocm-smi devices: %s\n",
                                 _e.what());
-    } catch(exception<std::runtime_error>& _e)
-    {
-        OMNITRACE_BASIC_VERBOSE(2, "Exception thrown getting the rocm-smi devices: %s\n",
-                                _e.what());
     }
     return _num_devices;
 }
