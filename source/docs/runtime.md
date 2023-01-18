@@ -201,7 +201,7 @@ OMNITRACE_CRITICAL_TRACE_SERIALIZE_NAMES           = false
 OMNITRACE_DEBUG                                    = false
 OMNITRACE_DL_VERBOSE                               = 0
 OMNITRACE_INSTRUMENTATION_INTERVAL                 = 1
-OMNITRACE_KOKKOS_KERNEL_LOGGER                     = false
+OMNITRACE_KOKKOSP_KERNEL_LOGGER                    = false
 OMNITRACE_PAPI_EVENTS                              = PAPI_TOT_CYC
 OMNITRACE_PERFETTO_BACKEND                         = inprocess
 OMNITRACE_PERFETTO_BUFFER_SIZE_KB                  = 1024000
@@ -302,7 +302,7 @@ $ omnitrace-avail -S -bd
 | OMNITRACE_INPUT_PREFIX                  | Explicitly specify the prefix for in... |
 | OMNITRACE_INSTRUMENTATION_INTERVAL      | Instrumentation only takes measureme... |
 | OMNITRACE_JSON_OUTPUT                   | Write json output files                 |
-| OMNITRACE_KOKKOS_KERNEL_LOGGER          | Enables kernel logging                  |
+| OMNITRACE_KOKKOSP_KERNEL_LOGGER         | Enables kernel logging                  |
 | OMNITRACE_MAX_DEPTH                     | Set the maximum depth of label hiera... |
 | OMNITRACE_MAX_THREAD_BOOKMARKS          | Maximum number of times a worker thr... |
 | OMNITRACE_MAX_WIDTH                     | Set the maximum width for component ... |
