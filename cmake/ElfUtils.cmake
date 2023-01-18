@@ -46,7 +46,7 @@ endif()
 
 # If we didn't find a suitable version on the system, then download one from the web
 set(ElfUtils_DOWNLOAD_VERSION
-    "0.182"
+    "0.188"
     CACHE STRING "Version of elfutils to download and install")
 
 # make sure we are not downloading a version less than minimum
@@ -105,8 +105,9 @@ externalproject_add(
     URL https://sourceware.org/elfutils/ftp/${ElfUtils_DOWNLOAD_VERSION}/elfutils-${ElfUtils_DOWNLOAD_VERSION}.tar.bz2
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND
-        ${CMAKE_COMMAND} -E env CC=${ElfUtils_C_COMPILER} CFLAGS=-fPIC\ -O3\ -g
-        CXX=${ElfUtils_CXX_COMPILER} CXXFLAGS=-fPIC\ -O3\ -g
+        ${CMAKE_COMMAND} -E env CC=${ElfUtils_C_COMPILER}
+        CFLAGS=-fPIC\ -O3\ -Wno-error=null-dereference CXX=${ElfUtils_CXX_COMPILER}
+        CXXFLAGS=-fPIC\ -O3\ -Wno-error=null-dereference
         [=[LDFLAGS=-Wl,-rpath='$$ORIGIN']=] <SOURCE_DIR>/configure --enable-install-elfh
         --prefix=${_eu_root} --disable-libdebuginfod --disable-debuginfod
         --enable-thread-safety
