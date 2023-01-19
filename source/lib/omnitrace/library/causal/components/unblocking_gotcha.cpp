@@ -102,8 +102,6 @@ void
 unblocking_gotcha::start()
 {
     if(causal::experiment::is_active() &&
-       get_causal_state() < ::omnitrace::CausalState::Disabled &&
-       get_state() == ::omnitrace::State::Active &&
        get_thread_state() == ::omnitrace::ThreadState::Enabled)
         causal::delay::process();
 }
@@ -112,8 +110,6 @@ void
 unblocking_gotcha::stop()
 {
     if(causal::experiment::is_active() &&
-       get_causal_state() < ::omnitrace::CausalState::Disabled &&
-       get_state() == ::omnitrace::State::Active &&
        get_thread_state() == ::omnitrace::ThreadState::Enabled)
         causal::delay::credit();
 }

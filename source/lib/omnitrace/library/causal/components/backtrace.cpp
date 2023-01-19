@@ -106,7 +106,6 @@ is_in_use(int64_t _tid = threading::get_id())
 void
 backtrace::start()
 {
-    set_causal_state(CausalState::Enabled);
     // do not delete these lines. The thread data needs to be allocated
     // before it is called in sampler or else a deadlock will occur when
     // the sample interrupts a malloc call
@@ -116,9 +115,7 @@ backtrace::start()
 
 void
 backtrace::stop()
-{
-    set_causal_state(CausalState::Disabled);
-}
+{}
 
 void
 backtrace::sample(int _sig)

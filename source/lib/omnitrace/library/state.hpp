@@ -48,15 +48,6 @@ enum class ThreadState : unsigned short
     Disabled,
 };
 
-// used for specifying the state of omnitrace
-enum class CausalState : uint32_t
-{
-    Enabled = 0,
-    Internal,
-    Selected,
-    Disabled,
-};
-
 enum class Mode : unsigned short
 {
     Trace = 0,
@@ -98,13 +89,6 @@ struct scoped_thread_state
     OMNITRACE_INLINE scoped_thread_state(ThreadState _v) { push_thread_state(_v); }
     OMNITRACE_INLINE ~scoped_thread_state() { pop_thread_state(); }
 };
-
-//--------------------------------------------------------------------------------------//
-
-CausalState
-get_causal_state() OMNITRACE_HOT;
-
-CausalState set_causal_state(CausalState) OMNITRACE_HOT;
 }  // namespace omnitrace
 
 #define OMNITRACE_SCOPED_THREAD_STATE(STATE)                                             \
@@ -120,9 +104,6 @@ to_string(omnitrace::State _v);
 
 std::string
 to_string(omnitrace::ThreadState _v);
-
-std::string
-to_string(omnitrace::CausalState _v);
 
 std::string
 to_string(omnitrace::Mode _v);

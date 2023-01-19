@@ -59,13 +59,6 @@ get_thread_state_history(int64_t _idx = utility::get_thread_index())
 
     return _v.at(_idx);
 }
-
-CausalState&
-get_causal_state_impl()
-{
-    static thread_local auto _v = CausalState::Enabled;
-    return _v;
-}
 }  // namespace
 
 State
@@ -122,30 +115,6 @@ pop_thread_state()
     }
     return get_thread_state();
 }
-
-//--------------------------------------------------------------------------------------//
-//
-//      Causal state
-//
-//--------------------------------------------------------------------------------------//
-
-CausalState
-get_causal_state()
-{
-    return get_causal_state_impl();
-}
-
-CausalState
-set_causal_state(CausalState _v)
-{
-    // if causal state is disabled, immediately return
-    // if causal state is selected, do not change the state. Instead
-    // increment the selected state counter so that the thread
-    // knows it is still in the selected function and does not delay
-    auto& _state = get_causal_state_impl();
-    std::swap(_state, _v);
-    return _v;
-}
 }  // namespace omnitrace
 
 namespace std
@@ -173,19 +142,6 @@ to_string(omnitrace::ThreadState _v)
         case omnitrace::ThreadState::Internal: return "Internal";
         case omnitrace::ThreadState::Completed: return "Completed";
         case omnitrace::ThreadState::Disabled: return "Disabled";
-    }
-    return {};
-}
-
-std::string
-to_string(omnitrace::CausalState _v)
-{
-    switch(_v)
-    {
-        case omnitrace::CausalState::Enabled: return "Enabled";
-        case omnitrace::CausalState::Internal: return "Internal";
-        case omnitrace::CausalState::Selected: return "Selected";
-        case omnitrace::CausalState::Disabled: return "Disabled";
     }
     return {};
 }

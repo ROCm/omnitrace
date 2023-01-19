@@ -88,6 +88,7 @@ void
 causal_gotcha::stop()
 {
     get_bundle()->stop();
+    shutdown();
 }
 }  // namespace component
 }  // namespace causal

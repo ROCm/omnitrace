@@ -122,7 +122,6 @@ void
 blocking_gotcha::start()
 {
     if(causal::experiment::is_active() &&
-       get_causal_state() < ::omnitrace::CausalState::Disabled &&
        get_thread_state() == ::omnitrace::ThreadState::Enabled && delay_value == 0)
         delay_value = causal::delay::get_global().load();
 }
@@ -142,7 +141,6 @@ void
 blocking_gotcha::stop()
 {
     if(delay_value > 0 && causal::experiment::is_active() &&
-       get_causal_state() < ::omnitrace::CausalState::Disabled &&
        get_thread_state() == ::omnitrace::ThreadState::Enabled)
     {
         causal::delay::postblock(delay_value);
