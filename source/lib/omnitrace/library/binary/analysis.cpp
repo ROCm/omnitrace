@@ -49,6 +49,7 @@
 
 #include <timemory/log/macros.hpp>
 #include <timemory/unwind/bfd.hpp>
+#include <timemory/unwind/dlinfo.hpp>
 #include <timemory/utility/filepath.hpp>
 #include <timemory/utility/join.hpp>
 #include <timemory/utility/procfs/maps.hpp>
@@ -227,7 +228,9 @@ get_line_info(const std::vector<std::string>&  _files,
                 else
                 {
                     auto _addr = mitr.load_address + vitr.address;
-                    if(OMNITRACE_LIKELY(mrange.contains(_addr)))
+                    if(!using_load_address_offset())
+                        _data.at(mitr).data.emplace_back(vitr);
+                    else if(mrange.contains(_addr))
                         _data.at(mitr).data.emplace_back(vitr);
                     else if(_discarded)
                     {
@@ -238,6 +241,11 @@ get_line_info(const std::vector<std::string>&  _files,
             }
             _data.at(mitr).sort();
             if(_discarded) _discarded->at(mitr).sort();
+        }
+        else
+        {
+            OMNITRACE_WARNING(1, "[analysis] no line info data for '%s'...\n",
+                              mitr.pathname.c_str());
         }
     }
 
@@ -308,6 +316,44 @@ get_line_info(const std::vector<std::string>&  _files,
     if(_discarded) _patch_line_info(*_discarded);
 
     return _data;
+}
+
+namespace
+{
+bool
+compute_using_aslr()
+{
+    auto _filter = [](const procfs::maps& _v) {
+        if(_v.pathname.empty()) return false;
+        return (filepath::exists(filepath::realpath(_v.pathname, nullptr, false)));
+    };
+
+    auto _maps = procfs::get_contiguous_maps(process::get_id(), _filter, false);
+    for(const auto& itr : _maps)
+    {
+        if(itr.pathname.empty()) continue;
+        if(std::string_view{ filepath::basename(itr.pathname) } ==
+           std::string_view{ filepath::basename(config::get_exe_realpath()) })
+        {
+            auto _dl_info = tim::unwind::dlinfo::construct(itr.last_address + 1);
+            if(!_dl_info.location ||
+               filepath::realpath(std::string{ _dl_info.location.name }, nullptr,
+                                  false) !=
+                   filepath::realpath(itr.pathname, nullptr, false))
+                return false;
+        }
+    }
+
+    throw exception<std::runtime_error>("error locating load address of libomnitrace");
+    return true;
+}
+}  // namespace
+
+bool
+using_load_address_offset()
+{
+    static auto _v = compute_using_aslr();
+    return _v;
 }
 }  // namespace binary
 }  // namespace omnitrace

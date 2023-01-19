@@ -274,6 +274,8 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN
     CACHE BOOL "Visibility preset for inline functions")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+cmake_policy(SET CMP0135 NEW)
+
 include(Formatting) # format target
 include(Packages) # finds third-party libraries
 

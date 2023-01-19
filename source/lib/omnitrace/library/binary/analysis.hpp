@@ -58,5 +58,9 @@ using line_info_t = std::map<procfs::maps, line_info<bfd_line_info>>;
 line_info_t
 get_line_info(const std::vector<std::string>&, const std::vector<scope_filter>&,
               line_info_t* _discarded = nullptr);
+
+// returns whether the system is using address space layout randomization
+bool
+using_load_address_offset();
 }  // namespace binary
 }  // namespace omnitrace

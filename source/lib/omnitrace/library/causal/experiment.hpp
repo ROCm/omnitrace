@@ -61,6 +61,7 @@ struct experiment
         using line_info = binary::basic_line_info;
 
         mutable uint64_t count    = 0;
+        uintptr_t        address  = 0;
         std::string      location = {};
         line_info        info     = {};
 

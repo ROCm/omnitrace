@@ -825,6 +825,10 @@ endforeach()
 #
 # -------------------------------------------------------------------------------------- #
 
+function(omnitrace_add_causal_test)
+    omnitrace_add_test(SKIP_RUNTIME SKIP_REWRITE SKIP_SAMPLING ${ARGN})
+endfunction()
+
 set(_causal_environment
     "OMNITRACE_MODE=causal"
     "OMNITRACE_USE_CAUSAL=ON"
@@ -835,16 +839,38 @@ set(_causal_environment
     "OMNITRACE_USE_RCCLP=ON"
     "OMNITRACE_TIME_OUTPUT=OFF"
     "OMNITRACE_USE_PID=OFF"
+    "OMNITRACE_CAUSAL_FILE_RESET=ON"
     "${_test_openmp_env}"
     "${_test_library_path}")
 
-omnitrace_add_test(
-    SKIP_RUNTIME SKIP_REWRITE SKIP_SAMPLING
-    NAME causal-profiling
+omnitrace_add_causal_test(
+    NAME causal-profiling-func
     TARGET causal-cpu-omni
     LABELS "causal-profiling"
     RUN_ARGS 70 10 432525 1000000000
-    ENVIRONMENT "${_causal_environment}"
+    ENVIRONMENT "${_causal_environment};OMNITRACE_CAUSAL_MODE=function"
+    PRELOAD_PASS_REGEX
+        "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
+    )
+
+omnitrace_add_causal_test(
+    SKIP_BASELINE
+    NAME causal-profiling-func-ndebug
+    TARGET causal-cpu-omni-ndebug
+    LABELS "causal-profiling"
+    RUN_ARGS 70 10 432525 1000000000
+    ENVIRONMENT "${_causal_environment};OMNITRACE_CAUSAL_MODE=function"
+    PRELOAD_PASS_REGEX
+        "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
+    )
+
+omnitrace_add_causal_test(
+    SKIP_BASELINE
+    NAME causal-profiling-line
+    TARGET causal-cpu-omni
+    LABELS "causal-profiling"
+    RUN_ARGS 70 10 432525 1000000000
+    ENVIRONMENT "${_causal_environment};OMNITRACE_CAUSAL_MODE=line"
     PRELOAD_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
     )

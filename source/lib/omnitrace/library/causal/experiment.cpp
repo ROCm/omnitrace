@@ -69,15 +69,15 @@ int64_t global_scaling_increments = 0;
 bool
 experiment::sample::operator==(const sample& _v) const
 {
-    return std::tie(info.line, info.file, info.func, location) ==
-           std::tie(_v.info.line, _v.info.file, _v.info.func, _v.location);
+    return std::tie(address, info.line, info.file, info.func, location) ==
+           std::tie(_v.address, _v.info.line, _v.info.file, _v.info.func, _v.location);
 }
 
 bool
 experiment::sample::operator<(const sample& _v) const
 {
-    return std::tie(info.line, info.file, info.func) <
-           std::tie(_v.info.line, _v.info.file, _v.info.func);
+    return std::tie(address, info.line, info.file, info.func) <
+           std::tie(_v.address, _v.info.line, _v.info.file, _v.info.func);
 }
 
 const auto&
@@ -461,7 +461,18 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
                 // if(_linfo.size() > 1) _linfo.pop_front();
                 for(const auto& iitr : _linfo)
                 {
-                    auto _sample = sample{ itr.count, iitr.second.name(), iitr.second };
+                    auto _sample =
+                        sample{ itr.count, itr.address, iitr.second.name(), iitr.second };
+                    auto fitr = current_record.samples.find(_sample);
+                    if(fitr != current_record.samples.end())
+                        *fitr += _sample;
+                    else
+                        current_record.samples.emplace(std::move(_sample));
+                }
+                if(_linfo.empty())
+                {
+                    auto _sample = sample{ itr.count, itr.address, as_hex(itr.address),
+                                           sample::line_info{} };
                     auto fitr    = current_record.samples.find(_sample);
                     if(fitr != current_record.samples.end())
                         *fitr += _sample;
@@ -475,7 +486,7 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
     bool _causal_output_reset =
         config::get_setting_value<bool>("OMNITRACE_CAUSAL_FILE_RESET").second;
 
-    if(current_record.experiments.empty()) return;
+    // if(current_record.experiments.empty()) return;
 
     {
         auto _saved_experiments = (_causal_output_reset)
@@ -594,7 +605,7 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
 
         for(const auto& itr : current_record.samples)
             ofs << "samples\tlocation=" << itr.location << "\tcount=" << itr.count
-                << "\n";
+                << "\taddress=" << as_hex(itr.address) << "\n";
     }
     else
     {

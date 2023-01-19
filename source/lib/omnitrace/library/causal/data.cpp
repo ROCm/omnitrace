@@ -306,7 +306,10 @@ compute_eligible_lines()
     for(const auto& litr : _line_info)
     {
         bool _valid = false;
-        auto _range = address_range_t{ litr.first.load_address, litr.first.last_address };
+        auto _range =
+            (binary::using_load_address_offset())
+                ? address_range_t{ litr.first.load_address, litr.first.last_address }
+                : address_range_t{ 0, 0 };
         for(const auto& ditr : litr.second)
         {
             if(_use_custom_filters)
@@ -322,7 +325,9 @@ compute_eligible_lines()
             }
 
             // map the instruction pointer address to the line info
-            auto _ip = ditr.address + litr.first.load_address;
+            auto _ip =
+                ditr.address +
+                ((binary::using_load_address_offset()) ? litr.first.load_address : 0);
 
             _add_line_info(_ip, ditr);
             if(!_valid)
@@ -405,8 +410,8 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
         std::this_thread::sleep_for(std::chrono::nanoseconds{ _delay_nsec });
     }
 
-    auto _start_time        = clock_type::now();
     auto _impl_count        = 0;
+    auto _start_time        = clock_type::now();
     auto _exceeded_duration = [&]() {
         if(_duration_sec > 1.0e-3)
         {
@@ -497,8 +502,10 @@ save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
 
             for(const auto& ditr : itr.second)
             {
-                auto _addr     = ditr.address;
-                auto _addr_off = ditr.address + itr.first.load_address;
+                auto _addr = ditr.address;
+                auto _addr_off =
+                    ditr.address +
+                    ((binary::using_load_address_offset()) ? itr.first.load_address : 0);
                 _ofs << "    " << as_hex(_addr_off) << " [" << as_hex(_addr)
                      << "] :: " << ditr.file << ":" << ditr.line;
                 if(!ditr.func.empty()) _ofs << " [" << tim::demangle(ditr.func) << "]";
@@ -510,12 +517,21 @@ save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
     };
 
     auto _write = [&_write_impl, _verbose](const std::string& ofname, const auto& _data) {
+        auto _ifs  = std::ifstream{ join("/", "/proc", process::get_id(), "maps") };
+        auto _maps = std::stringstream{};
+        while(_ifs)
+        {
+            std::string _line{};
+            getline(_ifs, _line);
+            _maps << _line << "\n";
+        }
         auto _ofs = std::ofstream{};
         if(tim::filepath::open(_ofs, ofname))
         {
             if(_verbose >= 0)
                 operation::file_output_message<binary::basic_line_info>{}(
                     ofname, std::string{ "causal_line_info" });
+            _ofs << _maps.str();
             _write_impl(_ofs, _data);
         }
         else
@@ -574,8 +590,6 @@ sample_selection(size_t _nitr, size_t _wait_ns)
         uintptr_t _sym_addr    = 0;
         uintptr_t _lookup_addr = _addr;
         auto      _dl_info     = unwind::dlinfo::construct(_addr);
-        auto      _location =
-            (_dl_info.location) ? _dl_info.location.name : std::string_view{};
 
         if(get_causal_mode() == CausalMode::Function)
             _sym_addr = (_dl_info.symbol) ? _dl_info.symbol.address() : _addr;
@@ -590,6 +604,11 @@ sample_selection(size_t _nitr, size_t _wait_ns)
         if(OMNITRACE_UNLIKELY(config::get_is_continuous_integration() ||
                               config::get_debug()))
         {
+            auto _location =
+                (_dl_info.location)
+                    ? filepath::realpath(std::string{ _dl_info.location.name }, nullptr,
+                                         false)
+                    : std::string{};
             for(const auto& itr : linfo)
             {
                 if(OMNITRACE_UNLIKELY(config::get_debug()))
@@ -608,16 +627,17 @@ sample_selection(size_t _nitr, size_t _wait_ns)
                     itr.first.pathname.find(filepath::basename(_location)) !=
                     std::string::npos))
                     << "Error! pathname (" << itr.first.pathname
-                    << ") does not contain dlinfo location ("
-                    << filepath::basename(_location) << ")";
+                    << ") does not contain dlinfo location "
+                    << filepath::basename(_location) << " (" << _location << ")";
             }
         }
 
-        return (config::get_causal_mode() == CausalMode::Function)
-                   ? selected_entry{ _addr, _sym_addr, linfo.front().first.load_address,
-                                     linfo.front().second }
-                   : selected_entry{ _addr, _sym_addr, linfo.front().first.load_address,
-                                     linfo.back().second };
+        auto&     _linfo_v = (config::get_causal_mode() == CausalMode::Function)
+                                 ? linfo.front()
+                                 : linfo.back();
+        uintptr_t _load_address =
+            (binary::using_load_address_offset()) ? _linfo_v.first.load_address : 0;
+        return selected_entry{ _addr, _sym_addr, _load_address, _linfo_v.second };
     };
 
     while(_n++ < _nitr)
@@ -673,14 +693,17 @@ get_line_info(uintptr_t _addr, bool include_discarded)
         // search for exact matches first
         for(const auto& litr : _info)
         {
-            if(!address_range_t{ litr.first.load_address, litr.first.last_address }
+            if(binary::using_load_address_offset() &&
+               !address_range_t{ litr.first.load_address, litr.first.last_address }
                     .contains(_addr))
                 continue;
 
             auto _local_data = std::deque<line_mapping_info_t>{};
             for(const auto& ditr : litr.second)
             {
-                auto _ip = litr.first.load_address + ditr.address;
+                auto _ip =
+                    ditr.address +
+                    ((binary::using_load_address_offset()) ? litr.first.load_address : 0);
                 if(_ip.contains(_addr))
                 {
                     _local_data.emplace_back(litr.first, ditr.get_basic());
