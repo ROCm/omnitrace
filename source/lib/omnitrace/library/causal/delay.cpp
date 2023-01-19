@@ -35,6 +35,7 @@
 #include <timemory/process/threading.hpp>
 
 #include <atomic>
+#include <chrono>
 #include <random>
 
 namespace omnitrace
@@ -52,30 +53,15 @@ get_delay_data()
     return _v;
 }
 
-int64_t sleep_for_overhead = 0;
-}  // namespace
-
-std::string
-delay::label()
-{
-    return "causal_delay";
-}
-
-std::string
-delay::description()
-{
-    return "Tracks delays and handles implementing delays for causal profiling";
-}
-
-void
-delay::preinit()
+int64_t
+compute_sleep_for_overhead()
 {
     using random_engine_t = std::mt19937_64;
-    random_engine_t                        _engine{ std::random_device{}() };
-    std::uniform_int_distribution<int64_t> _dist{ 0, 5 };
-    size_t                                 _ntot  = 250;
-    size_t                                 _nwarm = 50;
-    tim::statistics<double>                _stats{};
+    auto   _engine        = random_engine_t{ std::random_device{}() };
+    auto   _dist          = std::uniform_int_distribution<int64_t>{ 0, 5 };
+    size_t _ntot          = 250;
+    size_t _nwarm         = 50;
+    auto   _stats         = tim::statistics<double>{};
     for(size_t i = 0; i < _ntot; ++i)
     {
         auto    _val = _dist(_engine);
@@ -88,47 +74,24 @@ delay::preinit()
             _diff < _val, "Error! sleep_for(%zu) [nanoseconds] >= %zu", _val, _diff);
         _stats += (_diff - _val);
     }
-    sleep_for_overhead = _stats.get_mean();
-    OMNITRACE_BASIC_VERBOSE(1,
+
+    OMNITRACE_BASIC_VERBOSE(2,
                             "[causal] overhead of std::this_thread::sleep_for(...) "
                             "invocation = %6.3f usec +/- %e\n",
                             _stats.get_mean() / units::usec,
                             _stats.get_stddev() / units::usec);
+
     tim::manager::instance()->add_metadata([_stats](auto& ar) {
         ar(tim::cereal::make_nvp("causal thread sleep overhead [nsec]", _stats));
     });
 
     (void) get_delay_data();
+
+    return _stats.get_mean();
 }
 
-void
-delay::start()
-{
-    if(!trait::runtime_enabled<delay>::get()) return;
-
-    sample();
-}
-
-void
-delay::stop()
-{
-    if(!trait::runtime_enabled<delay>::get()) return;
-
-    process();
-}
-
-static auto _delay_sample_interval =
-    get_env<int64_t>("OMNITRACE_CAUSAL_DELAY_INTERVAL", 1);
-
-void
-delay::sample(int)
-{
-    if(!trait::runtime_enabled<delay>::get()) return;
-    if(get_state() >= ::omnitrace::State::Finalized) return;
-
-    static thread_local int64_t _n = 0;
-    if(++_n % _delay_sample_interval == 0) process();
-}
+int64_t sleep_for_overhead = compute_sleep_for_overhead();
+}  // namespace
 
 void
 delay::process()
@@ -228,5 +191,3 @@ delay::compute_total_delay(uint64_t _baseline)
 }
 }  // namespace causal
 }  // namespace omnitrace
-
-TIMEMORY_INVOKE_PREINIT(omnitrace::causal::delay)

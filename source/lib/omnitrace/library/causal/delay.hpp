@@ -44,15 +44,8 @@ struct delay
 {
     using value_type = void;
 
-    static std::string label();
-    static std::string description();
-    static void        preinit();
-
     TIMEMORY_DEFAULT_OBJECT(delay)
 
-    static void    start();
-    static void    stop();
-    static void    sample(int = -1);
     static void    process();
     static void    credit();
     static void    preblock();

@@ -54,14 +54,10 @@ struct selected_entry
     uintptr_t symbol_address = 0x0;
     line_info info           = {};
 
-    hash_value_t hash() const;
-
     template <typename ArchiveT>
     void serialize(ArchiveT&, const unsigned int);
 
     bool     contains(uintptr_t) const;
-    bool     operator==(const selected_entry&) const;
-    bool     operator!=(const selected_entry&) const;
     explicit operator bool() const { return (address > 0 && info.address); }
 };
 

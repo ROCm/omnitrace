@@ -28,26 +28,6 @@ namespace omnitrace
 {
 namespace causal
 {
-hash_value_t
-selected_entry::hash() const
-{
-    return tim::get_combined_hash_id(hash_value_t{ address }, symbol_address,
-                                     info.hash());
-}
-
-bool
-selected_entry::operator==(const selected_entry& _v) const
-{
-    return (address == _v.address && symbol_address == _v.symbol_address &&
-            info == _v.info);
-}
-
-bool
-selected_entry::operator!=(const selected_entry& _v) const
-{
-    return !(*this == _v);
-}
-
 template <typename ArchiveT>
 void
 selected_entry::serialize(ArchiveT& ar, const unsigned int)
