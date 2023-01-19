@@ -594,9 +594,10 @@ as_hex<void*>(void*, size_t);
     }
 
 #define OMNITRACE_REQUIRE(...) TIMEMORY_REQUIRE(__VA_ARGS__)
-#define OMNITRACE_PREFER(...)                                                            \
-    ((::omnitrace::get_is_continuous_integration()) ? TIMEMORY_PREFER(__VA_ARGS__)       \
-                                                    : TIMEMORY_REQUIRE(__VA_ARGS__))
+#define OMNITRACE_PREFER(COND)                                                           \
+    (COND)                                           ? ::tim::log::base()                \
+    : (::omnitrace::get_is_continuous_integration()) ? TIMEMORY_FATAL                    \
+                                                     : TIMEMORY_WARNING
 
 //--------------------------------------------------------------------------------------//
 //

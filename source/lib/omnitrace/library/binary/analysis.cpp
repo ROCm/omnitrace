@@ -229,11 +229,13 @@ get_line_info(const std::vector<std::string>&  _files,
                 const auto& _line = vitr.line;
 
                 auto _addr = mitr.load_address + vitr.address;
-                auto _diff = vitr.address.low - mitr.load_address;
-                if(mrange.contains(_addr) && _diff > 0 && !_force_no_offset)
+                if(mrange.contains(_addr) && !_force_no_offset)
                     vitr.load_address = mitr.load_address;
-                else
+                else if(vitr.address.low >= mitr.load_address &&
+                        vitr.address.high <= mitr.last_address)
                     ++_local_no_offset;
+                else
+                    continue;
 
                 if(!_satisfies_function_filter(demangle(_func)) ||
                    !_satisfies_source_filter(_file, _line))
@@ -257,7 +259,7 @@ get_line_info(const std::vector<std::string>&  _files,
             }
 
             auto _max_offsets = (_local_included.size() + _local_excluded.size());
-            OMNITRACE_PREFER(_local_no_offset != 0 && _local_no_offset != _max_offsets)
+            OMNITRACE_PREFER(_local_no_offset == 0 || _local_no_offset == _max_offsets)
                 << "Warning! When mapping binary addresses to instruction pointer "
                    "addresses for "
                 << mitr.pathname << ", " << _local_no_offset

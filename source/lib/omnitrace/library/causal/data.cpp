@@ -138,12 +138,8 @@ get_filters()
 
     if(_use_default_excludes)
     {
-        // exclude _GLOBAL and cold symbols
         // symbols starting with leading underscore are generally system functions
-        // and cold functions are functions (or parts of functions) which the compiler
-        // or user designated as nowhere close to the hotpath
-        _filters.emplace_back(
-            sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER, "(^_|\\.cold(|\\.[0-9]+)$)" });
+        _filters.emplace_back(sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER, "^_" });
 
         if(config::get_causal_mode() == CausalMode::Function)
         {

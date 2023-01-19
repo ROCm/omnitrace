@@ -787,9 +787,9 @@ configure_settings(bool _init)
     OMNITRACE_CONFIG_SETTING(
         bool, "OMNITRACE_CAUSAL_FUNCTION_EXCLUDE_DEFAULTS",
         "This controls adding a series of function exclude regexes to avoid "
-        "experimenting on STL implementation functions, etc. which are, generally, not "
-        "helpful. Details: excludes demangled function names starting with '_', ending "
-        "with '.cold', containing '::_M'.",
+        "experimenting on STL implementation functions, etc. which are, "
+        "generally, not helpful. Details: excludes demangled function names "
+        "starting with '_' or containing '::_M'.",
         true, "causal", "analysis", "advanced");
 
     // set the defaults
