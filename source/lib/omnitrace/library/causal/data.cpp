@@ -129,8 +129,8 @@ get_filters()
     // telling the user to "make the main function" faster is literally useless since it
     // contains everything that could be made faster
     if(config::get_causal_mode() == CausalMode::Function)
-        _filters.emplace_back(
-            sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER, "( main\\(|^main$)" });
+        _filters.emplace_back(sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER,
+                                  "( main\\(|^main$|^main\\.cold$)" });
 
     bool _use_default_excludes =
         config::get_setting_value<bool>("OMNITRACE_CAUSAL_FUNCTION_EXCLUDE_DEFAULTS")
