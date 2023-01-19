@@ -386,12 +386,23 @@ using sampler_buffer_t = tim::data_storage::ring_buffer<sampler_bundle_t>;
 void
 offload_buffer(int64_t _seq, sampler_buffer_t&& _buf)
 {
+    OMNITRACE_REQUIRE(get_use_tmp_files())
+        << "Error! sampling allocator tries to offload buffer of samples but "
+           "omnitrace was configured to not use temporary files\n";
+
     auto  _lk   = std::unique_lock<std::mutex>{ get_offload_mutex() };
     auto& _file = get_offload_file();
-    if(!_file) return;
+
+    OMNITRACE_REQUIRE(_file)
+        << "Error! sampling allocator tried to offload buffer of samples but the "
+           "offload file does not exist\n";
 
     OMNITRACE_VERBOSE_F(3, "Saving sampling buffer for thread %li...\n", _seq);
     auto& _fs = _file->stream;
+
+    OMNITRACE_REQUIRE(_fs.good())
+        << "Error! temporary file for offloading buffer is in an invalid state\n";
+
     _fs.write(reinterpret_cast<char*>(&_seq), sizeof(_seq));
     auto _data = std::move(_buf);
     _data.save(_fs);
@@ -407,12 +418,23 @@ load_offload_buffer()
 
     auto  _lk   = std::unique_lock<std::mutex>{ get_offload_mutex() };
     auto& _file = get_offload_file();
-    if(!_file) return _data;
+    if(!_file)
+    {
+        OMNITRACE_WARNING_F(
+            0, "[sampling] returning no data because the offload file no longer exists");
+        return _data;
+    }
 
     auto& _fs = _file->stream;
 
     _fs.close();
     _file->open(std::ios::binary | std::ios::in);
+
+    if(!_fs)
+    {
+        OMNITRACE_WARNING_F(0, "[sampling] %s failed to open", _file->filename.c_str());
+    }
+
     while(!_fs.eof())
     {
         int64_t _seq = 0;

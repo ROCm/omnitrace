@@ -506,11 +506,26 @@ set(_ompt_preload_environ
     "OMNITRACE_SAMPLING_REALTIME_FREQ=500"
     "OMNITRACE_COLORIZED_LOG=OFF")
 
+set(_ompt_sample_no_tmpfiles_environ
+    "${_ompt_environment}"
+    "OMNITRACE_VERBOSE=2"
+    "OMNITRACE_USE_OMPT=OFF"
+    "OMNITRACE_USE_SAMPLING=ON"
+    "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
+    "OMNITRACE_SAMPLING_CPUTIME=ON"
+    "OMNITRACE_SAMPLING_REALTIME=OFF"
+    "OMNITRACE_SAMPLING_CPUTIME_FREQ=700"
+    "OMNITRACE_USE_TEMPORARY_FILES=OFF"
+    "OMNITRACE_COLORIZED_LOG=OFF")
+
 set(_ompt_preload_samp_regex
     "Sampler for thread 0 will be triggered 1000.0x per second of CPU-time(.*)Sampler for thread 0 will be triggered 500.0x per second of wall-time(.*)Sampling will be disabled after 0.250000 seconds(.*)Sampling duration of 0.250000 seconds has elapsed. Shutting down sampling"
     )
 set(_ompt_preload_file_regex
     "sampling-duration-preload/sampling_percent.(json|txt)(.*)sampling-duration-preload/sampling_cpu_clock.(json|txt)(.*)sampling-duration-preload/sampling_wall_clock.(json|txt)"
+    )
+set(_notmp_preload_file_regex
+    "sampling-no-tmp-files-preload/sampling_percent.(json|txt)(.*)sampling-no-tmp-files-preload/sampling_cpu_clock.(json|txt)(.*)sampling-no-tmp-files-preload/sampling_wall_clock.(json|txt)"
     )
 
 omnitrace_add_test(
@@ -528,6 +543,14 @@ omnitrace_add_test(
     LABELS "openmp;sampling-duration"
     ENVIRONMENT "${_ompt_preload_environ}"
     PRELOAD_PASS_REGEX "${_ompt_preload_samp_regex}(.*)${_ompt_preload_file_regex}")
+
+omnitrace_add_test(
+    SKIP_BASELINE SKIP_RUNTIME SKIP_REWRITE SKIP_SAMPLING
+    NAME openmp-cg-sampling-no-tmp-files
+    TARGET openmp-cg
+    LABELS "openmp;no-tmp-files"
+    ENVIRONMENT "${_ompt_sample_no_tmpfiles_environ}"
+    PRELOAD_PASS_REGEX "${_notmp_preload_file_regex}")
 
 omnitrace_add_test(
     SKIP_BASELINE SKIP_SAMPLING SKIP_PRELOAD
