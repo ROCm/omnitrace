@@ -504,13 +504,18 @@ save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
     };
 
     auto _write = [&_write_impl, _verbose](const std::string& ofname, const auto& _data) {
-        auto _ifs  = std::ifstream{ join("/", "/proc", process::get_id(), "maps") };
-        auto _maps = std::stringstream{};
-        while(_ifs)
+        auto _maps_file = join("/", "/proc", process::get_id(), "maps");
+        auto _ifs       = std::ifstream{ _maps_file };
+        auto _maps      = std::stringstream{};
+        if(_ifs)
         {
-            std::string _line{};
-            getline(_ifs, _line);
-            _maps << _line << "\n";
+            _maps << _maps_file << "\n";
+            while(_ifs)
+            {
+                std::string _line{};
+                getline(_ifs, _line);
+                if(!_line.empty()) _maps << "    " << _line << "\n";
+            }
         }
         auto _ofs = std::ofstream{};
         if(tim::filepath::open(_ofs, ofname))
@@ -518,8 +523,8 @@ save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
             if(_verbose >= 0)
                 operation::file_output_message<binary::basic_line_info>{}(
                     ofname, std::string{ "causal_line_info" });
-            _ofs << _maps.str();
             _write_impl(_ofs, _data);
+            _ofs << _maps.str();
         }
         else
         {
