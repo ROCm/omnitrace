@@ -837,6 +837,8 @@ set(_causal_environment
     "OMNITRACE_USE_SAMPLING=OFF"
     "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
     "OMNITRACE_USE_RCCLP=ON"
+    "OMNITRACE_USE_KOKKOSP=ON"
+    "OMNITRACE_USE_OMPT=ON"
     "OMNITRACE_TIME_OUTPUT=OFF"
     "OMNITRACE_USE_PID=OFF"
     "OMNITRACE_CAUSAL_FILE_RESET=ON"
@@ -871,6 +873,41 @@ omnitrace_add_causal_test(
     LABELS "causal-profiling"
     RUN_ARGS 70 10 432525 1000000000
     ENVIRONMENT "${_causal_environment};OMNITRACE_CAUSAL_MODE=line"
+    PRELOAD_PASS_REGEX
+        "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
+    )
+
+omnitrace_add_causal_test(
+    NAME causal-lulesh-func
+    TARGET lulesh-omni
+    LABELS "causal-profiling"
+    RUN_ARGS -i 35 -s 50 -p
+    ENVIRONMENT
+        "${_causal_environment};OMNITRACE_CAUSAL_MODE=function;OMNITRACE_CAUSAL_FIXED_SPEEDUP=0,10,25,50,75"
+    PRELOAD_PASS_REGEX
+        "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
+    )
+
+omnitrace_add_causal_test(
+    SKIP_BASELINE
+    NAME causal-lulesh-func-ndebug
+    TARGET lulesh-omni-ndebug
+    LABELS "causal-profiling"
+    RUN_ARGS -i 35 -s 50 -p
+    ENVIRONMENT
+        "${_causal_environment};OMNITRACE_CAUSAL_MODE=function;OMNITRACE_CAUSAL_FIXED_SPEEDUP=0,10,25,50,75"
+    PRELOAD_PASS_REGEX
+        "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
+    )
+
+omnitrace_add_causal_test(
+    SKIP_BASELINE
+    NAME causal-lulesh-line
+    TARGET lulesh-omni
+    LABELS "causal-profiling"
+    RUN_ARGS -i 35 -s 50 -p
+    ENVIRONMENT
+        "${_causal_environment};OMNITRACE_CAUSAL_MODE=line;OMNITRACE_CAUSAL_FIXED_SPEEDUP=0,10,25,50,75"
     PRELOAD_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
     )
