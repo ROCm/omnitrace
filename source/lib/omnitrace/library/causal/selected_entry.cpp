@@ -28,20 +28,24 @@ namespace omnitrace
 {
 namespace causal
 {
-selected_entry::selected_entry(uintptr_t _addr, uintptr_t _sym, uintptr_t _bin,
-                               const line_info& _info)
-: address{ _addr }
-, symbol_address{ _sym }
-, binary_address{ _bin }
-, range{ _info.address + _bin }
-, info{ _info }
-{}
-
 hash_value_t
 selected_entry::hash() const
 {
-    return tim::get_combined_hash_id(tim::hash_value_t{ address }, symbol_address,
-                                     binary_address, info.hash());
+    return tim::get_combined_hash_id(hash_value_t{ address }, symbol_address,
+                                     info.hash());
+}
+
+bool
+selected_entry::operator==(const selected_entry& _v) const
+{
+    return (address == _v.address && symbol_address == _v.symbol_address &&
+            info == _v.info);
+}
+
+bool
+selected_entry::operator!=(const selected_entry& _v) const
+{
+    return !(*this == _v);
 }
 
 template <typename ArchiveT>
@@ -50,7 +54,6 @@ selected_entry::serialize(ArchiveT& ar, const unsigned int)
 {
     using ::tim::cereal::make_nvp;
     ar(make_nvp("address", address), make_nvp("symbol_address", symbol_address),
-       make_nvp("binary_address", binary_address), make_nvp("address_range", range),
        make_nvp("info", info));
 }
 

@@ -175,7 +175,8 @@ bfd_line_info::is_valid() const
 basic_line_info
 bfd_line_info::get_basic() const
 {
-    return basic_line_info{ is_weak(), is_inlined(), line, address, file, func };
+    return basic_line_info{ is_weak(), is_inlined(), line, load_address,
+                            address,   file,         func };
 }
 
 std::vector<bfd_line_info>

@@ -31,17 +31,19 @@ namespace binary
 {
 struct basic_line_info
 {
-    bool          inlined = false;  // inlined symbol
-    bool          weak    = false;  // weak symbol
-    unsigned int  line    = 0;
-    address_range address = {};
-    std::string   file    = {};
-    std::string   func    = {};
+    bool          inlined      = false;  // inlined symbol
+    bool          weak         = false;  // weak symbol
+    unsigned int  line         = 0;
+    uintptr_t     load_address = 0;
+    address_range address      = {};
+    std::string   file         = {};
+    std::string   func         = {};
 
-    bool         is_valid() const { return !file.empty() && address > address_range{}; }
-    hash_value_t hash() const;
-    std::string  name() const;
-    explicit     operator bool() const { return is_valid(); }
+    bool          is_valid() const { return !file.empty() && address > address_range{}; }
+    address_range ipaddr() const { return address + load_address; }
+    hash_value_t  hash() const;
+    std::string   name() const;
+    explicit      operator bool() const { return is_valid(); }
 
     friend bool operator<(const basic_line_info& _lhs, const basic_line_info& _rhs)
     {

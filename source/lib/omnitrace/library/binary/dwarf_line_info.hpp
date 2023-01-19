@@ -50,8 +50,6 @@ struct dwarf_line_info
     bool     is_valid() const;
     explicit operator bool() const { return is_valid(); }
 
-    basic_line_info get_basic() const;
-
     friend bool operator<(const dwarf_line_info& _lhs, const dwarf_line_info& _rhs)
     {
         return std::tie(_lhs.address, _lhs.line, _lhs.col, _lhs.discriminator) <

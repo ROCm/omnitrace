@@ -201,6 +201,10 @@ get_line_info(const std::vector<std::string>&  _files,
     // get the memory maps
     auto _maps = procfs::get_contiguous_maps(process::get_id(), _filter, true);
 
+    // environment variable to force not using the load offset
+    auto _force_no_offset =
+        get_env<bool>("OMNITRACE_BINARY_ANALYSIS_DISABLE_LOAD_ADDRESS_OFFSET", false);
+
     // sort the line info into one map which contains only the line info
     // in the source scope and another map which contains the line info
     // outside the source scope
@@ -214,33 +218,64 @@ get_line_info(const std::vector<std::string>&  _files,
             // create an empty entry in data and discarded
             _data.emplace(mitr, value_type{ itr->second.file });
             if(_discarded) _discarded->emplace(mitr, value_type{ itr->second.file });
-            for(const auto& vitr : itr->second.data)
+
+            size_t _local_no_offset = 0;
+            auto   _local_included  = decltype(std::declval<value_type>().data){};
+            auto   _local_excluded  = decltype(std::declval<value_type>().data){};
+            for(auto& vitr : itr->second.data)
             {
                 const auto& _file = vitr.file;
                 const auto& _func = vitr.func;
                 const auto& _line = vitr.line;
+
+                auto _addr = mitr.load_address + vitr.address;
+                auto _diff = vitr.address.low - mitr.load_address;
+                if(mrange.contains(_addr) && _diff > 0 && !_force_no_offset)
+                    vitr.load_address = mitr.load_address;
+                else
+                    ++_local_no_offset;
+
                 if(!_satisfies_function_filter(demangle(_func)) ||
                    !_satisfies_source_filter(_file, _line))
                 {
-                    // insert into discarded if does not match source scope regex
-                    if(_discarded) _discarded->at(mitr).data.emplace_back(vitr);
+                    // store thos which do not satisfy function or source constraints
+                    _local_excluded.emplace_back(vitr);
                 }
                 else
                 {
-                    auto _addr = mitr.load_address + vitr.address;
-                    if(!using_load_address_offset())
-                        _data.at(mitr).data.emplace_back(vitr);
-                    else if(mrange.contains(_addr))
-                        _data.at(mitr).data.emplace_back(vitr);
-                    else if(_discarded)
-                    {
-                        // this is potentially an error. may need to emit a warning
-                        _discarded->at(mitr).data.emplace_back(vitr);
-                    }
+                    _local_included.emplace_back(vitr);
                 }
             }
+
+            utility::combine(_data.at(mitr).data, _local_included);
             _data.at(mitr).sort();
-            if(_discarded) _discarded->at(mitr).sort();
+
+            if(_discarded)
+            {
+                utility::combine(_discarded->at(mitr).data, _local_excluded);
+                _discarded->at(mitr).sort();
+            }
+
+            auto _max_offsets = (_local_included.size() + _local_excluded.size());
+            OMNITRACE_PREFER(_local_no_offset != 0 && _local_no_offset != _max_offsets)
+                << "Warning! When mapping binary addresses to instruction pointer "
+                   "addresses for "
+                << mitr.pathname << ", " << _local_no_offset
+                << " addresses were not contained in the address range of the binary ("
+                << mrange.as_string() << "). Expected either zero (no ASLR) or "
+                << _max_offsets << ".\n"
+                << "Please report this issue on GitHub "
+                   "(https://github.com/AMDResearch/omnitrace/issues/) with the contents "
+                   "of "
+                   "/etc/os-release and the two files in the causal/line-info "
+                   "subdirectory.\n"
+                << "If this value is close to zero, try setting the environment variable "
+                   "OMNITRACE_BINARY_ANALYSIS_DISABLE_LOAD_ADDRESS_OFFSET=ON to "
+                   "forcefully "
+                   "disable "
+                   "offsetting the binary address by the load address and inspect the "
+                   "line "
+                   "info output files afterwards.\n";
         }
         else
         {
@@ -318,42 +353,10 @@ get_line_info(const std::vector<std::string>&  _files,
     return _data;
 }
 
-namespace
-{
-bool
-compute_using_aslr()
-{
-    auto _filter = [](const procfs::maps& _v) {
-        if(_v.pathname.empty()) return false;
-        return (filepath::exists(filepath::realpath(_v.pathname, nullptr, false)));
-    };
-
-    auto _maps = procfs::get_contiguous_maps(process::get_id(), _filter, false);
-    for(const auto& itr : _maps)
-    {
-        if(itr.pathname.empty()) continue;
-        if(std::string_view{ filepath::basename(itr.pathname) } ==
-           std::string_view{ filepath::basename(config::get_exe_realpath()) })
-        {
-            auto _dl_info = tim::unwind::dlinfo::construct(itr.last_address + 1);
-            if(!_dl_info.location ||
-               filepath::realpath(std::string{ _dl_info.location.name }, nullptr,
-                                  false) !=
-                   filepath::realpath(itr.pathname, nullptr, false))
-                return false;
-        }
-    }
-
-    throw exception<std::runtime_error>("error locating load address of libomnitrace");
-    return true;
-}
-}  // namespace
-
 bool
 using_load_address_offset()
 {
-    static auto _v = compute_using_aslr();
-    return _v;
+    return false;
 }
 }  // namespace binary
 }  // namespace omnitrace

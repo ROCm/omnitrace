@@ -306,10 +306,7 @@ compute_eligible_lines()
     for(const auto& litr : _line_info)
     {
         bool _valid = false;
-        auto _range =
-            (binary::using_load_address_offset())
-                ? address_range_t{ litr.first.load_address, litr.first.last_address }
-                : address_range_t{ 0, 0 };
+        auto _range = address_range_t{ litr.first.load_address, litr.first.last_address };
         for(const auto& ditr : litr.second)
         {
             if(_use_custom_filters)
@@ -325,17 +322,13 @@ compute_eligible_lines()
             }
 
             // map the instruction pointer address to the line info
-            auto _ip =
-                ditr.address +
-                ((binary::using_load_address_offset()) ? litr.first.load_address : 0);
-
-            _add_line_info(_ip, ditr);
+            _add_line_info(ditr.ipaddr(), ditr);
             if(!_valid)
                 _valid = (_eligible_ar +=
                           std::make_pair(binary::address_multirange::coarse{}, _range),
                           true);
 
-            _eligible_ar += _ip;
+            _eligible_ar += ditr.ipaddr();
         }
     }
 
@@ -502,10 +495,8 @@ save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
 
             for(const auto& ditr : itr.second)
             {
-                auto _addr = ditr.address;
-                auto _addr_off =
-                    ditr.address +
-                    ((binary::using_load_address_offset()) ? itr.first.load_address : 0);
+                auto _addr     = ditr.address;
+                auto _addr_off = ditr.ipaddr();
                 _ofs << "    " << as_hex(_addr_off) << " [" << as_hex(_addr)
                      << "] :: " << ditr.file << ":" << ditr.line;
                 if(!ditr.func.empty()) _ofs << " [" << tim::demangle(ditr.func) << "]";
@@ -632,12 +623,10 @@ sample_selection(size_t _nitr, size_t _wait_ns)
             }
         }
 
-        auto&     _linfo_v = (config::get_causal_mode() == CausalMode::Function)
-                                 ? linfo.front()
-                                 : linfo.back();
-        uintptr_t _load_address =
-            (binary::using_load_address_offset()) ? _linfo_v.first.load_address : 0;
-        return selected_entry{ _addr, _sym_addr, _load_address, _linfo_v.second };
+        auto& _linfo_v = (config::get_causal_mode() == CausalMode::Function)
+                             ? linfo.front()
+                             : linfo.back();
+        return selected_entry{ _addr, _sym_addr, _linfo_v.second };
     };
 
     while(_n++ < _nitr)
@@ -693,21 +682,15 @@ get_line_info(uintptr_t _addr, bool include_discarded)
         // search for exact matches first
         for(const auto& litr : _info)
         {
-            if(binary::using_load_address_offset() &&
-               !address_range_t{ litr.first.load_address, litr.first.last_address }
+            if(!address_range_t{ litr.first.load_address, litr.first.last_address }
                     .contains(_addr))
                 continue;
 
             auto _local_data = std::deque<line_mapping_info_t>{};
             for(const auto& ditr : litr.second)
             {
-                auto _ip =
-                    ditr.address +
-                    ((binary::using_load_address_offset()) ? litr.first.load_address : 0);
-                if(_ip.contains(_addr))
-                {
+                if(ditr.ipaddr().contains(_addr))
                     _local_data.emplace_back(litr.first, ditr.get_basic());
-                }
             }
 
             if(!_local_data.empty())

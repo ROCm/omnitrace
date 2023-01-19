@@ -111,13 +111,6 @@ dwarf_line_info::is_valid() const
     return valid && !file.empty();
 }
 
-basic_line_info
-dwarf_line_info::get_basic() const
-{
-    return basic_line_info{ false, false,        line, address_range{ address },
-                            file,  std::string{} };
-}
-
 std::deque<dwarf_line_info>
 dwarf_line_info::process_dwarf(int _fd, std::vector<address_range>& _ranges)
 {

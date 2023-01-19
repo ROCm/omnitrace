@@ -31,12 +31,13 @@ namespace binary
 {
 struct bfd_line_info
 {
-    bool          weak     = false;
-    unsigned int  priority = 0;
-    unsigned int  line     = 0;
-    address_range address  = {};
-    std::string   file     = {};
-    std::string   func     = {};
+    bool          weak         = false;
+    unsigned int  priority     = 0;
+    unsigned int  line         = 0;
+    uintptr_t     load_address = 0;
+    address_range address      = {};
+    std::string   file         = {};
+    std::string   func         = {};
 
     bool     is_inlined() const;
     bool     is_weak() const;
@@ -44,19 +45,23 @@ struct bfd_line_info
     explicit operator bool() const { return is_valid(); }
 
     basic_line_info get_basic() const;
+    address_range   ipaddr() const { return address + load_address; }
     auto            low() const { return address.low; }
     auto            high() const { return address.high; }
 
     friend bool operator<(const bfd_line_info& _lhs, const bfd_line_info& _rhs)
     {
-        return (_lhs.address == _rhs.address) ? (_lhs.priority < _rhs.priority)
-                                              : (_lhs.address < _rhs.address);
+        return (_lhs.load_address == _rhs.load_address)
+                   ? ((_lhs.address == _rhs.address) ? (_lhs.priority < _rhs.priority)
+                                                     : (_lhs.address < _rhs.address))
+                   : (_lhs.load_address < _rhs.load_address);
     }
 
     friend bool operator==(const bfd_line_info& _lhs, const bfd_line_info& _rhs)
     {
-        return std::tie(_lhs.address, _lhs.line, _lhs.file, _lhs.func) ==
-               std::tie(_rhs.address, _rhs.line, _rhs.file, _rhs.func);
+        return std::tie(_lhs.load_address, _lhs.address, _lhs.line, _lhs.file,
+                        _lhs.func) ==
+               std::tie(_rhs.load_address, _rhs.address, _rhs.line, _rhs.file, _rhs.func);
     }
 
     friend bool operator!=(const bfd_line_info& _lhs, const bfd_line_info& _rhs)

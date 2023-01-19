@@ -579,6 +579,25 @@ as_hex<void*>(void*, size_t);
 #define OMNITRACE_WARNING_IF_F(COND, ...)                                                \
     OMNITRACE_CONDITIONAL_WARN_F((COND), __VA_ARGS__)
 
+#define OMNITRACE_WARNING_OR_CI_THROW(LEVEL, ...)                                        \
+    {                                                                                    \
+        if(::omnitrace::get_is_continuous_integration())                                 \
+        {                                                                                \
+            OMNITRACE_CI_THROW(true, __VA_ARGS__);                                       \
+        }                                                                                \
+        else                                                                             \
+        {                                                                                \
+            OMNITRACE_CONDITIONAL_WARN(::omnitrace::get_debug() ||                       \
+                                           (::omnitrace::get_verbose() >= LEVEL),        \
+                                       __VA_ARGS__)                                      \
+        }                                                                                \
+    }
+
+#define OMNITRACE_REQUIRE(...) TIMEMORY_REQUIRE(__VA_ARGS__)
+#define OMNITRACE_PREFER(...)                                                            \
+    ((::omnitrace::get_is_continuous_integration()) ? TIMEMORY_PREFER(__VA_ARGS__)       \
+                                                    : TIMEMORY_REQUIRE(__VA_ARGS__))
+
 //--------------------------------------------------------------------------------------//
 //
 //  Basic print macros (basic means it will not provide PID/RANK or TID) and will not

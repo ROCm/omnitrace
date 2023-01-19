@@ -140,7 +140,7 @@ perf_event::open(struct perf_event_attr& _pe, pid_t _pid, int _cpu)
         std::string path = "/proc/sys/kernel/perf_event_paranoid";
 
         FILE* file = fopen(path.c_str(), "r");
-        TIMEMORY_PREFER(file != nullptr)
+        OMNITRACE_PREFER(file != nullptr)
             << "Failed to open " << path << ": " << strerror(errno);
 
         if(file == nullptr) return false;
@@ -168,7 +168,7 @@ perf_event::open(struct perf_event_attr& _pe, pid_t _pid, int _cpu)
         void* ring_buffer =
             mmap(nullptr, sizes.mmap, PROT_READ | PROT_WRITE, MAP_SHARED, m_fd, 0);
 
-        TIMEMORY_PREFER(ring_buffer != MAP_FAILED)
+        OMNITRACE_PREFER(ring_buffer != MAP_FAILED)
             << "Mapping perf_event ring buffer failed. "
             << "Make sure the current user has permission "
                "to invoke the perf tool, and that "

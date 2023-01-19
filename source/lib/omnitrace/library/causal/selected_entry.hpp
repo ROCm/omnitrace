@@ -50,13 +50,9 @@ struct selected_entry
 
     TIMEMORY_DEFAULT_OBJECT(selected_entry)
 
-    selected_entry(uintptr_t, uintptr_t, uintptr_t, const line_info&);
-
-    uintptr_t       address        = 0x0;
-    uintptr_t       symbol_address = 0x0;
-    uintptr_t       binary_address = 0x0;
-    address_range_t range          = { 0, 0 };
-    line_info       info           = {};
+    uintptr_t address        = 0x0;
+    uintptr_t symbol_address = 0x0;
+    line_info info           = {};
 
     hash_value_t hash() const;
 
@@ -72,21 +68,8 @@ struct selected_entry
 inline bool
 selected_entry::contains(uintptr_t _v) const
 {
-    auto _addr = (symbol_address > 0) ? symbol_address : address;
-    return (_addr == _v || range.contains(_v));
-}
-
-inline bool
-selected_entry::operator==(const selected_entry& _v) const
-{
-    return (address == _v.address && symbol_address == _v.symbol_address &&
-            binary_address == _v.binary_address && info == _v.info);
-}
-
-inline bool
-selected_entry::operator!=(const selected_entry& _v) const
-{
-    return !(*this == _v);
+    return (_v == address || (symbol_address > 0 && _v == symbol_address) ||
+            info.ipaddr().contains(_v));
 }
 }  // namespace causal
 }  // namespace omnitrace
