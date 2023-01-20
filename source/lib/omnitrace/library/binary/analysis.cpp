@@ -67,6 +67,8 @@ namespace binary
 {
 namespace
 {
+namespace unwind = ::tim::unwind;
+
 auto
 parse_line_info(const std::string& _fname)
 {
@@ -78,9 +80,9 @@ parse_line_info(const std::string& _fname)
     _info.file = _bfd;
     if(_bfd && _bfd->is_good())
     {
-        auto _section_map = std::map<address_range, asection*>{};
-        auto _section_set = std::set<asection*>{};
-        auto _processed   = std::set<uintptr_t>{};
+        auto& _section_map = _info.sections;
+        auto  _section_set = std::set<asection*>{};
+        auto  _processed   = std::set<uintptr_t>{};
         for(auto&& itr : _bfd->get_symbols())
         {
             if(itr.symsize == 0) continue;
@@ -92,7 +94,7 @@ parse_line_info(const std::string& _fname)
             for(auto&& ditr :
                 bfd_line_info::process_bfd(*_bfd, _section, itr.address, itr.symsize))
             {
-                ditr.weak = (itr.binding == tim::unwind::bfd_binding::Weak);
+                ditr.weak = (itr.binding == unwind::bfd_binding::Weak);
                 _info.data.emplace_back(ditr);
             }
         }
@@ -118,25 +120,12 @@ parse_line_info(const std::string& _fname)
             if(itr.address == 0) continue;
             if(_processed.count(itr.address) > 0) continue;
             auto      _filename = filepath::realpath(itr.file);
-            asection* _section  = nullptr;
-            for(const auto& sitr : _section_map)
-            {
-                if(sitr.first.contains(itr.address))
-                {
-                    _section = sitr.second;
-                    break;
-                }
-            }
+            asection* _section  = _info.find_section<asection>(itr.address);
 
             if(!_section) continue;
 
-            TIMEMORY_REQUIRE(_section != nullptr)
-                << "bfd section not found for address " << as_hex(itr.address) << "\n";
-
             for(auto&& ditr : bfd_line_info::process_bfd(*_bfd, _section, itr.address, 0))
-            {
                 _info.data.emplace_back(ditr);
-            }
 
             _processed.emplace(itr.address);
         }
@@ -200,6 +189,43 @@ get_line_info(const std::vector<std::string>&  _files,
 
     // get the memory maps
     auto _maps = procfs::get_contiguous_maps(process::get_id(), _filter, true);
+
+    for(const auto& mitr : _maps)
+    {
+        auto itr = _fdata.find(mitr.pathname);
+        if(itr != _fdata.end())
+        {
+            uintptr_t _start     = mitr.load_address;
+            auto      _gap_addrs = std::vector<uintptr_t>{};
+            for(auto& ditr : itr->second)
+            {
+                if(_start < ditr.address.low)
+                {
+                    auto _len = ditr.address.low - _start;
+                    _gap_addrs.reserve(_gap_addrs.size() + _len);
+                    for(uintptr_t i = _start; i < ditr.address.low; ++i)
+                        _gap_addrs.emplace_back(i);
+                    _start = ditr.address.high;
+                }
+            }
+
+            OMNITRACE_WARNING(1, "[analysis] found %zu gaps in line info for %s\n",
+                              _gap_addrs.size(), itr->second.file->name.c_str());
+
+            line_info<bfd_line_info>& _bfd_info = itr->second;
+            for(auto gitr : _gap_addrs)
+            {
+                auto* _section = _bfd_info.find_section<asection>(gitr);
+                if(_section)
+                {
+                    for(auto&& ditr :
+                        bfd_line_info::process_bfd(*_bfd_info.file, _section, gitr, 0))
+                        _bfd_info.data.emplace_back(ditr);
+                }
+            }
+            _bfd_info.sort();
+        }
+    }
 
     // environment variable to force not using the load offset
     auto _force_no_offset =
@@ -286,35 +312,6 @@ get_line_info(const std::vector<std::string>&  _files,
         }
     }
 
-    auto _patch_line_info = [&](auto& _info) {
-        for(auto& litr : _info)
-        {
-            const bfd_line_info* _curr_range = nullptr;
-            for(auto ditr = litr.second.begin(); ditr != litr.second.end(); ++ditr)
-            {
-                // ranges are ordered first so store this for future exact entries
-                if(ditr->address.is_range())
-                    _curr_range = &*ditr;
-                else
-                {
-                    auto nitr = ditr + 1;
-                    // if at end of entire range, set to the end of last range
-                    if(nitr == litr.second.end())
-                    {
-                        if(_curr_range) ditr->address.high = _curr_range->address.high;
-                    }
-                    else
-                    {
-                        ditr->address.high =
-                            (_curr_range)
-                                ? std::min(_curr_range->address.high, nitr->address.low)
-                                : nitr->address.low;
-                    }
-                }
-            }
-        }
-    };
-
     auto _combine_line_info = [&](auto& _info) {
         for(auto& litr : _info)
         {
@@ -347,9 +344,37 @@ get_line_info(const std::vector<std::string>&  _files,
         }
     };
 
-    _patch_line_info(_data);
-    _combine_line_info(_data);
+    auto _patch_line_info = [&](auto& _info) {
+        for(auto& litr : _info)
+        {
+            const bfd_line_info* _curr_range = nullptr;
+            for(auto ditr = litr.second.begin(); ditr != litr.second.end(); ++ditr)
+            {
+                // ranges are ordered first so store this for future exact entries
+                if(ditr->address.is_range())
+                    _curr_range = &*ditr;
+                else
+                {
+                    auto nitr = ditr + 1;
+                    // if at end of entire range, set to the end of last range
+                    if(nitr == litr.second.end())
+                    {
+                        if(_curr_range) ditr->address.high = _curr_range->address.high;
+                    }
+                    else
+                    {
+                        ditr->address.high =
+                            (_curr_range)
+                                ? std::min(_curr_range->address.high, nitr->address.low)
+                                : nitr->address.low;
+                    }
+                }
+            }
+        }
+        _combine_line_info(_info);
+    };
 
+    _patch_line_info(_data);
     if(_discarded) _patch_line_info(*_discarded);
 
     return _data;

@@ -39,9 +39,10 @@ struct line_info
 {
     using value_type = DataT;
 
-    std::shared_ptr<bfd_file>  file   = {};
-    std::deque<value_type>     data   = {};
-    std::vector<address_range> ranges = {};
+    std::shared_ptr<bfd_file>                file     = {};
+    std::deque<value_type>                   data     = {};
+    std::vector<address_range>               ranges   = {};
+    std::unordered_map<address_range, void*> sections = {};
 
     auto begin() const { return data.begin(); }
     auto end() const { return data.end(); }
@@ -58,6 +59,9 @@ struct line_info
     auto range_empty() const { return ranges.empty(); }
 
     void sort();
+
+    template <typename RetT = void>
+    RetT* find_section(uintptr_t);
 };
 
 template <typename DataT>
@@ -66,6 +70,18 @@ line_info<DataT>::sort()
 {
     utility::filter_sort_unique(data);
     utility::filter_sort_unique(ranges);
+}
+
+template <typename DataT>
+template <typename RetT>
+RetT*
+line_info<DataT>::find_section(uintptr_t _addr)
+{
+    for(const auto& sitr : sections)
+    {
+        if(sitr.first.contains(_addr)) return static_cast<RetT*>(sitr.second);
+    }
+    return nullptr;
 }
 }  // namespace binary
 }  // namespace omnitrace

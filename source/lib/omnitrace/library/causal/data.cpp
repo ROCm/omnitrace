@@ -266,7 +266,7 @@ compute_eligible_lines()
 
     auto _add_line_info = [&_v](auto _ip_val, const auto& _bfd_val) {
         auto _basic_val = _bfd_val.get_basic();
-        for(uintptr_t i = _ip_val.low; i < _ip_val.high + 1; ++i)
+        for(uintptr_t i = _ip_val.low; i < _ip_val.high; ++i)
         {
             for(const auto& vitr : _v[i])
                 if(vitr == _basic_val) continue;
@@ -301,8 +301,6 @@ compute_eligible_lines()
     auto& _eligible_ar = get_eligible_address_ranges();
     for(const auto& litr : _line_info)
     {
-        bool _valid = false;
-        auto _range = address_range_t{ litr.first.load_address, litr.first.last_address };
         for(const auto& ditr : litr.second)
         {
             if(_use_custom_filters)
@@ -319,11 +317,6 @@ compute_eligible_lines()
 
             // map the instruction pointer address to the line info
             _add_line_info(ditr.ipaddr(), ditr);
-            if(!_valid)
-                _valid = (_eligible_ar +=
-                          std::make_pair(binary::address_multirange::coarse{}, _range),
-                          true);
-
             _eligible_ar += ditr.ipaddr();
         }
     }
