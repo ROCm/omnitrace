@@ -489,6 +489,7 @@ extern "C"
                                  const char* src_name, const void* src_ptr, uint64_t size)
     {
         if(violates_name_rules(dst_name, src_name)) return;
+        if(omnitrace::config::get_use_causal()) return;
 
         OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
         kokkosp::logger_t{}.mark(1, __FUNCTION__, dst_handle.name, dst_name,
