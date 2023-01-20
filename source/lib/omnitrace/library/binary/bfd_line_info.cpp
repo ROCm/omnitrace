@@ -73,8 +73,7 @@ read_inliner_info(bfd* _inp, std::vector<bfd_line_info>& _data, bfd_vma _pc,
         {
             if(_file) _info.file = _file;
             if(_func) _info.func = _func;
-            if(!_file || (_file && strnlen(_file, 1) == 0))
-                _info.file = bfd_get_filename(_inp);
+            if(!_file || strnlen(_file, 1) == 0) _info.file = bfd_get_filename(_inp);
             _info.file = filepath::realpath(_info.file, nullptr, false);
             _data.emplace_back(_info);
         }
@@ -96,10 +95,11 @@ read_pc(bfd_file& _bfd, asection* _section, bfd_vma _pc, bfd_vma _pc_len = 0)
     auto* _inp  = static_cast<bfd*>(_bfd.data);
     auto* _syms = reinterpret_cast<asymbol**>(_bfd.syms);
 
+    // for(bfd_vma i = _pc; i < _pc + _pc_len + 1; ++i)
     {
         auto         _info          = bfd_line_info{};
         unsigned int _prio          = 0;
-        _info.address               = address_range{ _pc, _pc + _pc_len };
+        _info.address               = address_range{ _pc, _pc + _pc_len + 1 };
         _info.priority              = _prio++;
         const char*  _file          = nullptr;
         const char*  _func          = nullptr;
@@ -111,8 +111,7 @@ read_pc(bfd_file& _bfd, asection* _section, bfd_vma _pc, bfd_vma _pc_len = 0)
         {
             if(_file) _info.file = _file;
             if(_func) _info.func = _func;
-            if(!_file || (_file && strnlen(_file, 1) == 0))
-                _info.file = bfd_get_filename(_inp);
+            if(!_file || strnlen(_file, 1) == 0) _info.file = bfd_get_filename(_inp);
             _info.file = filepath::realpath(_info.file, nullptr, false);
             if(_info)
             {
@@ -123,10 +122,11 @@ read_pc(bfd_file& _bfd, asection* _section, bfd_vma _pc, bfd_vma _pc_len = 0)
         }
     }
 
+    // for(bfd_vma i = _pc; i < _pc + _pc_len + 1; ++i)
     {
         auto         _info = bfd_line_info{};
         unsigned int _prio = 0;
-        _info.address      = address_range{ _pc, _pc + _pc_len };
+        _info.address      = address_range{ _pc, _pc + _pc_len + 1 };
         _info.priority     = _prio++;
         const char* _file  = nullptr;
         const char* _func  = nullptr;
@@ -136,8 +136,7 @@ read_pc(bfd_file& _bfd, asection* _section, bfd_vma _pc, bfd_vma _pc_len = 0)
         {
             if(_file) _info.file = _file;
             if(_func) _info.func = _func;
-            if(!_file || (_file && strnlen(_file, 1) == 0))
-                _info.file = bfd_get_filename(_inp);
+            if(!_file || strnlen(_file, 1) == 0) _info.file = bfd_get_filename(_inp);
             _info.file = filepath::realpath(_info.file, nullptr, false);
             if(_info)
             {
