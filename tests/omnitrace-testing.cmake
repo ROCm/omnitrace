@@ -123,6 +123,10 @@ set(_timemory_environment
 
 set(_test_environment ${_base_environment} "OMNITRACE_CRITICAL_TRACE=OFF")
 
+set(_causal_environment
+    "${_test_openmp_env}" "${_test_library_path}" "OMNITRACE_TIME_OUTPUT=OFF"
+    "OMNITRACE_FILE_OUTPUT=ON")
+
 set(_python_environment
     "OMNITRACE_USE_PERFETTO=ON"
     "OMNITRACE_USE_TIMEMORY=ON"
@@ -490,6 +494,144 @@ function(OMNITRACE_ADD_TEST)
                                "${${_SKIP_REGEX}}"
                                ${_props})
             endif()
+        endforeach()
+    endif()
+endfunction()
+
+# -------------------------------------------------------------------------------------- #
+
+function(OMNITRACE_ADD_CAUSAL_TEST)
+    foreach(_PREFIX CAUSAL CAUSAL_VALIDATE)
+        foreach(_TYPE PASS FAIL SKIP)
+            list(APPEND _REGEX_OPTS "${_PREFIX}_${_TYPE}_REGEX")
+        endforeach()
+    endforeach()
+
+    set(_KWARGS CAUSAL_ARGS CAUSAL_VALIDATE_ARGS RUN_ARGS ENVIRONMENT LABELS PROPERTIES
+                ${_REGEX_OPTS})
+
+    cmake_parse_arguments(
+        TEST "SKIP_BASELINE"
+        "NAME;TARGET;CAUSAL_MODE;CAUSAL_TIMEOUT;CAUSAL_VALIDATE_TIMEOUT" "${_KWARGS}"
+        ${ARGN})
+
+    if(NOT DEFINED TEST_CAUSAL_MODE)
+        omnitrace_message(FATAL_ERROR "${TEST_NAME} :: CAUSAL_MODE must be defined")
+    endif()
+
+    if(NOT TEST_CAUSAL_TIMEOUT)
+        set(TEST_CAUSAL_TIMEOUT 300)
+    endif()
+
+    if(NOT TEST_CAUSAL_VALIDATE_TIMEOUT)
+        set(TEST_CAUSAL_VALIDATE_TIMEOUT 60)
+    endif()
+
+    if(NOT DEFINED TEST_ENVIRONMENT OR "${TEST_ENVIRONMENT}" STREQUAL "")
+        set(TEST_ENVIRONMENT "${_causal_environment}")
+    endif()
+
+    list(APPEND TEST_ENVIRONMENT "OMNITRACE_CI=ON")
+    list(APPEND TEST_ENVIRONMENT "OMNITRACE_USE_PID=OFF")
+
+    if(TARGET ${TEST_TARGET})
+        set(COMMAND_PREFIX $<TARGET_FILE:omnitrace-causal> --reset -m ${TEST_CAUSAL_MODE}
+                           ${TEST_CAUSAL_ARGS} --)
+
+        if(NOT TEST_SKIP_BASELINE)
+            add_test(
+                NAME ${TEST_NAME}-baseline
+                COMMAND $<TARGET_FILE:${TEST_TARGET}> ${TEST_RUN_ARGS}
+                WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        endif()
+
+        add_test(
+            NAME causal-${TEST_NAME}
+            COMMAND ${COMMAND_PREFIX} $<TARGET_FILE:${TEST_TARGET}> ${TEST_RUN_ARGS}
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
+        if(NOT "${TEST_CAUSAL_VALIDATE_ARGS}" STREQUAL "")
+            add_test(
+                NAME validate-causal-${TEST_NAME}
+                COMMAND ${CMAKE_CURRENT_LIST_DIR}/validate-causal-json.py
+                        ${TEST_CAUSAL_VALIDATE_ARGS}
+                WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        endif()
+
+        if(TEST validate-causal-${TEST_NAME})
+            set_tests_properties(validate-causal-${TEST_NAME}
+                                 PROPERTIES DEPENDS causal-${TEST_NAME})
+        endif()
+
+        foreach(_TEST baseline causal validate-causal)
+
+            if(NOT TEST ${_TEST}-${TEST_NAME})
+                continue()
+            endif()
+
+            set(_prefix "${_TEST}-${TEST_NAME}/")
+            set(_labels "${_TEST}" "causal-profiling")
+
+            if(TEST_TARGET)
+                list(APPEND _labels "${TEST_TARGET}")
+            endif()
+
+            if(TEST_LABELS)
+                list(APPEND _labels "${TEST_LABELS}")
+            endif()
+
+            set(_environ
+                "${TEST_ENVIRONMENT}" "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output"
+                "OMNITRACE_OUTPUT_PREFIX=${_prefix}")
+
+            set(_timeout ${TEST_CAUSAL_TIMEOUT})
+
+            if("${_TEST}" MATCHES "validate-causal")
+                set(_timeout ${TEST_CAUSAL_VALIDATE_TIMEOUT})
+            endif()
+
+            set(_props)
+
+            if(NOT "${_TEST}" STREQUAL "validate-causal")
+                set(_props ${TEST_PROPERTIES})
+
+                if(NOT "RUN_SERIAL" IN_LIST _props)
+                    list(APPEND _props RUN_SERIAL ON)
+                endif()
+            endif()
+
+            if("${_TEST}" STREQUAL "validate-causal")
+                set(_REGEX_VAR CAUSAL_VALIDATE)
+            elseif("${_TEST}" STREQUAL "causal")
+                set(_REGEX_VAR CAUSAL)
+            else()
+                set(_REGEX_VAR)
+            endif()
+
+            foreach(_TYPE PASS FAIL SKIP)
+                if(_REGEX_VAR)
+                    set(_${_TYPE}_REGEX TEST_${_REGEX_VAR}_${_TYPE}_REGEX)
+                else()
+                    set(_${_TYPE}_REGEX)
+                endif()
+            endforeach()
+
+            omnitrace_write_test_config(${_TEST}-${TEST_NAME}.cfg _environ)
+            set_tests_properties(
+                ${_TEST}-${TEST_NAME}
+                PROPERTIES ENVIRONMENT
+                           "${_environ}"
+                           TIMEOUT
+                           ${_timeout}
+                           LABELS
+                           "${_labels}"
+                           PASS_REGULAR_EXPRESSION
+                           "${${_PASS_REGEX}}"
+                           FAIL_REGULAR_EXPRESSION
+                           "${${_FAIL_REGEX}}"
+                           SKIP_REGULAR_EXPRESSION
+                           "${${_SKIP_REGEX}}"
+                           ${_props})
         endforeach()
     endif()
 endfunction()

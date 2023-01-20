@@ -848,90 +848,132 @@ endforeach()
 #
 # -------------------------------------------------------------------------------------- #
 
-function(omnitrace_add_causal_test)
-    omnitrace_add_test(SKIP_RUNTIME SKIP_REWRITE SKIP_SAMPLING ${ARGN})
-endfunction()
-
-set(_causal_environment
-    "OMNITRACE_MODE=causal"
-    "OMNITRACE_USE_CAUSAL=ON"
-    "OMNITRACE_USE_PERFETTO=OFF"
-    "OMNITRACE_USE_TIMEMORY=OFF"
-    "OMNITRACE_USE_SAMPLING=OFF"
-    "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
-    "OMNITRACE_USE_RCCLP=ON"
-    "OMNITRACE_USE_KOKKOSP=ON"
-    "OMNITRACE_USE_OMPT=ON"
-    "OMNITRACE_TIME_OUTPUT=OFF"
-    "OMNITRACE_USE_PID=OFF"
-    "OMNITRACE_CAUSAL_FILE_RESET=ON"
-    "${_test_openmp_env}"
-    "${_test_library_path}")
-
 omnitrace_add_causal_test(
-    NAME causal-profiling-func
+    NAME cpu-omni-func
     TARGET causal-cpu-omni
-    LABELS "causal-profiling"
     RUN_ARGS 70 10 432525 1000000000
-    ENVIRONMENT "${_causal_environment};OMNITRACE_CAUSAL_MODE=function"
-    PRELOAD_PASS_REGEX
+    CAUSAL_MODE "function"
+    CAUSAL_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
     )
 
 omnitrace_add_causal_test(
     SKIP_BASELINE
-    NAME causal-profiling-func-ndebug
+    NAME cpu-omni-func-ndebug
     TARGET causal-cpu-omni-ndebug
-    LABELS "causal-profiling"
     RUN_ARGS 70 10 432525 1000000000
-    ENVIRONMENT "${_causal_environment};OMNITRACE_CAUSAL_MODE=function"
-    PRELOAD_PASS_REGEX
+    CAUSAL_MODE "function"
+    CAUSAL_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
     )
 
 omnitrace_add_causal_test(
     SKIP_BASELINE
-    NAME causal-profiling-line
+    NAME cpu-omni-line
     TARGET causal-cpu-omni
-    LABELS "causal-profiling"
     RUN_ARGS 70 10 432525 1000000000
-    ENVIRONMENT "${_causal_environment};OMNITRACE_CAUSAL_MODE=line"
-    PRELOAD_PASS_REGEX
+    CAUSAL_MODE "line"
+    CAUSAL_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
     )
 
 omnitrace_add_causal_test(
-    NAME causal-lulesh-func
+    NAME lulesh-func
     TARGET lulesh-omni
-    LABELS "causal-profiling"
     RUN_ARGS -i 35 -s 50 -p
-    ENVIRONMENT
-        "${_causal_environment};OMNITRACE_CAUSAL_MODE=function;OMNITRACE_CAUSAL_FIXED_SPEEDUP=0,10,25,50,75"
-    PRELOAD_PASS_REGEX
+    CAUSAL_MODE "function"
+    CAUSAL_ARGS -s 0,10,25,50,75
+    CAUSAL_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
     )
 
 omnitrace_add_causal_test(
     SKIP_BASELINE
-    NAME causal-lulesh-func-ndebug
+    NAME lulesh-func-ndebug
     TARGET lulesh-omni-ndebug
-    LABELS "causal-profiling"
     RUN_ARGS -i 35 -s 50 -p
-    ENVIRONMENT
-        "${_causal_environment};OMNITRACE_CAUSAL_MODE=function;OMNITRACE_CAUSAL_FIXED_SPEEDUP=0,10,25,50,75"
-    PRELOAD_PASS_REGEX
+    CAUSAL_MODE "function"
+    CAUSAL_ARGS -s 0,10,25,50,75
+    CAUSAL_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
     )
 
 omnitrace_add_causal_test(
     SKIP_BASELINE
-    NAME causal-lulesh-line
+    NAME lulesh-line
     TARGET lulesh-omni
-    LABELS "causal-profiling"
     RUN_ARGS -i 35 -s 50 -p
-    ENVIRONMENT
-        "${_causal_environment};OMNITRACE_CAUSAL_MODE=line;OMNITRACE_CAUSAL_FIXED_SPEEDUP=0,10,25,50,75"
-    PRELOAD_PASS_REGEX
+    CAUSAL_MODE "line"
+    CAUSAL_ARGS -s 0,10,25,50,75 -S lulesh.cc
+    CAUSAL_PASS_REGEX
+        "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
+    )
+
+set(_causal_common_args
+    "-n 5 -e -s 0 10 20 30 -B $<TARGET_FILE_BASE_NAME:causal-cpu-omni>")
+
+macro(causal_e2e_args_and_validation _NAME _TEST _MODE _EXPER _V10 _V20 _V30)
+    # arguments to omnitrace-causal
+    set(${_NAME}_args "${_causal_common_args} ${_MODE} ${_EXPER}")
+    # arguments to validate-causal-json.py
+    set(${_NAME}_valid
+        "-n 0 -i omnitrace-tests-output/causal-cpu-omni-${_TEST}-e2e/causal/experiments.json -v ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 10 ${_V10} 3 ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 20 ${_V20} 3 ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 30 ${_V30} 3"
+        )
+    # patch string for command-line
+    string(REPLACE " " ";" ${_NAME}_args "${${_NAME}_args}")
+    string(REPLACE " " ";" ${_NAME}_valid "${${_NAME}_valid}")
+endmacro()
+
+causal_e2e_args_and_validation(_causal_slow_func slow-func "-F" "cpu_slow_func" 10 20 20)
+causal_e2e_args_and_validation(_causal_fast_func fast-func "-F" "cpu_fast_func" 0 0 0)
+causal_e2e_args_and_validation(_causal_line_155 line-155 "-S" "causal.cpp:155" 10 20 20)
+causal_e2e_args_and_validation(_causal_line_165 line-165 "-S" "causal.cpp:165" 0 0 0)
+
+omnitrace_add_causal_test(
+    SKIP_BASELINE
+    NAME cpu-omni-slow-func-e2e
+    TARGET causal-cpu-omni
+    RUN_ARGS 80 10 432525 1000000000
+    CAUSAL_MODE "func"
+    CAUSAL_ARGS ${_causal_slow_func_args}
+    CAUSAL_VALIDATE_ARGS ${_causal_slow_func_valid}
+    CAUSAL_PASS_REGEX
+        "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
+    )
+
+omnitrace_add_causal_test(
+    SKIP_BASELINE
+    NAME cpu-omni-fast-func-e2e
+    TARGET causal-cpu-omni
+    RUN_ARGS 80 10 432525 1000000000
+    CAUSAL_MODE "line"
+    CAUSAL_ARGS ${_causal_fast_func_args}
+    CAUSAL_VALIDATE_ARGS ${_causal_fast_func_valid}
+    CAUSAL_PASS_REGEX
+        "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
+    )
+
+omnitrace_add_causal_test(
+    SKIP_BASELINE
+    NAME cpu-omni-line-155-e2e
+    TARGET causal-cpu-omni
+    RUN_ARGS 80 10 432525 1000000000
+    CAUSAL_MODE "line"
+    CAUSAL_ARGS ${_causal_line_155_args}
+    CAUSAL_VALIDATE_ARGS ${_causal_line_155_valid}
+    CAUSAL_PASS_REGEX
+        "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
+    )
+
+omnitrace_add_causal_test(
+    SKIP_BASELINE
+    NAME cpu-omni-line-165-e2e
+    TARGET causal-cpu-omni
+    RUN_ARGS 80 10 432525 1000000000
+    CAUSAL_MODE "line"
+    CAUSAL_ARGS ${_causal_line_165_args}
+    CAUSAL_VALIDATE_ARGS ${_causal_line_165_valid}
+    CAUSAL_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
     )
 
