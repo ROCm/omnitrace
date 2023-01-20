@@ -64,6 +64,8 @@ auto    current_experiment        = std::atomic<experiment*>{ nullptr };
 auto    experiment_history        = std::vector<experiment>{};
 int64_t global_scaling            = 1;
 int64_t global_scaling_increments = 0;
+bool    use_exp_speedup_scaling =
+    get_env<bool>("OMNITRACE_CAUSAL_SCALE_EXPERIMENT_TIME_BY_SPEEDUP", false);
 }  // namespace
 
 bool
@@ -203,7 +205,8 @@ experiment::start()
     index           = experiment_history.size() + 1;
     virtual_speedup = sample_virtual_speedup();
     delay_scaling   = virtual_speedup / 100.0;
-    scaling_factor  = (1.0 + delay_scaling) * scaling_factor;
+    if(use_exp_speedup_scaling) scaling_factor *= (1.0 + delay_scaling);
+
     experiment_time = global_scaling * scaling_factor * sampling_period * batch_size;
     sample_delay    = sampling_period * delay_scaling;
     total_delay     = delay::sync();
@@ -257,7 +260,7 @@ experiment::stop()
     // for larger speedups, we increased the experiment time, so we want to artificially
     // increase num by the same factor. E.g. 10 throughput points at speedup 50 should
     // really look like 15
-    double _scale_num  = 1.0 + delay_scaling;
+    double _scale_num  = 1.0 + ((use_exp_speedup_scaling) ? delay_scaling : 0.0);
     auto   _prog_stats = tim::statistics<int64_t>{};
     for(auto fitr : fini_progress)
     {
@@ -269,7 +272,7 @@ experiment::stop()
 
     auto _mean = (_prog_stats.get_count() > 0) ? _prog_stats.get_mean() : 0;
     auto _high = (_prog_stats.get_count() > 0) ? _prog_stats.get_max() : 0;
-    if(_high < 5 || _mean < 3)
+    if(_high < 5)
     {
         global_scaling *= 2;
         ++global_scaling_increments;  // keep track of how many successive increments have
@@ -311,6 +314,7 @@ experiment::as_string() const
         _ss << ", duration: " << std::setw(5) << std::fixed << std::setprecision(3)
             << _dur << " sec";
     _ss << " :: experiment: " << as_hex(selection.address) << " ";
+    //_ss << " [" << selection.info.ipaddr().as_string() << "]";
     if(selection.symbol_address > 0 && selection.address != selection.symbol_address)
         _ss << "(symbol@" << as_hex(selection.symbol_address) << ") ";
     if(!selection.info.file.empty() && selection.info.line > 0)
