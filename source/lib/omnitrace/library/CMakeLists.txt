@@ -12,6 +12,7 @@ set(library_sources
     ${CMAKE_CURRENT_LIST_DIR}/exception.cpp
     ${CMAKE_CURRENT_LIST_DIR}/gpu.cpp
     ${CMAKE_CURRENT_LIST_DIR}/kokkosp.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/locking.cpp
     ${CMAKE_CURRENT_LIST_DIR}/mproc.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ompt.cpp
     ${CMAKE_CURRENT_LIST_DIR}/perfetto.cpp
@@ -36,6 +37,7 @@ set(library_headers
     ${CMAKE_CURRENT_LIST_DIR}/debug.hpp
     ${CMAKE_CURRENT_LIST_DIR}/dynamic_library.hpp
     ${CMAKE_CURRENT_LIST_DIR}/gpu.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/locking.hpp
     ${CMAKE_CURRENT_LIST_DIR}/mproc.hpp
     ${CMAKE_CURRENT_LIST_DIR}/ompt.hpp
     ${CMAKE_CURRENT_LIST_DIR}/perfetto.hpp

@@ -28,6 +28,7 @@
 #include "library/components/fwd.hpp"
 #include "library/config.hpp"
 #include "library/debug.hpp"
+#include "library/locking.hpp"
 #include "library/ptl.hpp"
 #include "library/runtime.hpp"
 #include "library/state.hpp"
@@ -373,10 +374,10 @@ get_offload_file()
     return _v;
 }
 
-std::mutex&
+locking::atomic_mutex&
 get_offload_mutex()
 {
-    static auto _v = std::mutex{};
+    static auto _v = locking::atomic_mutex{};
     return _v;
 }
 
@@ -390,7 +391,9 @@ offload_buffer(int64_t _seq, sampler_buffer_t&& _buf)
         << "Error! sampling allocator tries to offload buffer of samples but "
            "omnitrace was configured to not use temporary files\n";
 
-    auto  _lk   = std::unique_lock<std::mutex>{ get_offload_mutex() };
+    // use homemade atomic_mutex/atomic_lock since contention will be low
+    // and using pthread_lock might trigger our wrappers
+    auto  _lk   = locking::atomic_lock{ get_offload_mutex() };
     auto& _file = get_offload_file();
 
     OMNITRACE_REQUIRE(_file)
@@ -416,7 +419,9 @@ load_offload_buffer()
     auto _data = std::map<int64_t, std::vector<sampler_buffer_t>>{};
     if(!get_use_tmp_files()) return _data;
 
-    auto  _lk   = std::unique_lock<std::mutex>{ get_offload_mutex() };
+    // use homemade atomic_mutex/atomic_lock since contention will be low
+    // and using pthread_lock might trigger our wrappers
+    auto  _lk   = locking::atomic_lock{ get_offload_mutex() };
     auto& _file = get_offload_file();
     if(!_file)
     {
