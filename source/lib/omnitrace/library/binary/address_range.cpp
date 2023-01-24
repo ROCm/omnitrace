@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include "library/binary/address_range.hpp"
+#include "library/debug.hpp"
 
 namespace omnitrace
 {
@@ -35,7 +36,9 @@ address_range::address_range(uintptr_t _low, uintptr_t _high)
 : low{ _low }
 , high{ _high }
 {
-    TIMEMORY_REQUIRE(high >= low) << "Error! address_range high must be >= low\n";
+    TIMEMORY_REQUIRE(high >= low)
+        << "Error! address_range high must be >= low. low=" << as_hex(low)
+        << ", high=" << as_hex(high) << "\n";
 }
 
 bool
