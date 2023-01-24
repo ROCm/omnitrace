@@ -46,7 +46,6 @@ static constexpr size_t unwind_offset = 0;
 using unwind_stack_t                  = unwind::stack<unwind_depth>;
 using unwind_addr_t                   = container::static_vector<uintptr_t, unwind_depth>;
 using hash_value_t                    = tim::hash_value_t;
-using line_mapping_info_t = std::pair<binary::procfs::maps, binary::basic_line_info>;
 
 struct selected_entry;
 }  // namespace causal

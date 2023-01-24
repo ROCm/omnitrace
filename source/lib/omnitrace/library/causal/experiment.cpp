@@ -267,7 +267,7 @@ experiment::stop()
         auto    _pt = fitr.second - init_progress[fitr.first];
         int64_t _num =
             std::max<int64_t>({ _pt.get_laps(), _pt.get_arrival(), _pt.get_departure() });
-        _prog_stats += (_num * _scale_num);
+        if(_num > 0) _prog_stats += (_num * _scale_num);
     }
 
     auto _mean = (_prog_stats.get_count() > 0) ? _prog_stats.get_mean() : 0;
@@ -317,9 +317,9 @@ experiment::as_string() const
     //_ss << " [" << selection.info.ipaddr().as_string() << "]";
     if(selection.symbol_address > 0 && selection.address != selection.symbol_address)
         _ss << "(symbol@" << as_hex(selection.symbol_address) << ") ";
-    if(!selection.info.file.empty() && selection.info.line > 0)
-        _ss << "[" << filepath::basename(selection.info.file) << ":"
-            << selection.info.line << "]";
+    if(!selection.symbol.file.empty() && selection.symbol.line > 0)
+        _ss << "[" << filepath::basename(selection.symbol.file) << ":"
+            << selection.symbol.line << "]";
 
     auto _patch = [](std::string _v) {
         auto _pos       = std::string::npos;
@@ -335,7 +335,7 @@ experiment::as_string() const
         }
         return _v;
     };
-    auto _func = _patch(demangle(selection.info.func));
+    auto _func = _patch(demangle(selection.symbol.func));
     _ss << "['" << _func << "']";
 
     return _ss.str();
@@ -465,15 +465,16 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
                 // if(_linfo.size() > 1) _linfo.pop_front();
                 for(const auto& iitr : _linfo)
                 {
-                    auto _sample =
-                        sample{ itr.count, itr.address, iitr.second.name(), iitr.second };
-                    auto fitr = current_record.samples.find(_sample);
+                    auto _sample = sample{ itr.count, itr.address,
+                                           join(":", iitr.file, iitr.line), iitr };
+                    auto fitr    = current_record.samples.find(_sample);
                     if(fitr != current_record.samples.end())
                         *fitr += _sample;
                     else
                         current_record.samples.emplace(std::move(_sample));
                 }
-                if(_linfo.empty())
+
+                if(_linfo.empty() && config::get_debug())
                 {
                     auto _sample = sample{ itr.count, itr.address, as_hex(itr.address),
                                            sample::line_info{} };
@@ -559,10 +560,11 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
         for(auto& itr : current_record.experiments)
         {
             auto& _selection = itr.selection;
-            auto& _line_info = _selection.info;
+            auto& _line_info = _selection.symbol;
 
-            std::string _name =
-                (_selection.symbol_address > 0) ? _line_info.func : _line_info.name();
+            std::string _name = (_selection.symbol_address > 0)
+                                    ? _line_info.func
+                                    : join(":", _line_info.file, _line_info.line);
 
             OMNITRACE_CONDITIONAL_THROW(
                 _name.empty(),
@@ -608,8 +610,11 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
         ofs << "runtime\ttime=" << current_record.runtime << "\n";
 
         for(const auto& itr : current_record.samples)
-            ofs << "samples\tlocation=" << itr.location << "\tcount=" << itr.count
-                << "\taddress=" << as_hex(itr.address) << "\n";
+        {
+            ofs << "samples\tlocation=" << itr.location << "\tcount=" << itr.count;
+            if(config::get_debug()) ofs << "\taddress=" << as_hex(itr.address);
+            ofs << "\n";
+        }
     }
     else
     {

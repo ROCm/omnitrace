@@ -23,7 +23,6 @@
 #pragma once
 
 #include "library/binary/analysis.hpp"
-#include "library/binary/basic_line_info.hpp"
 #include "library/binary/fwd.hpp"
 #include "library/causal/fwd.hpp"
 #include "library/containers/c_array.hpp"
@@ -48,7 +47,7 @@ namespace causal
 void
 save_line_info(const settings::compose_filename_config&, int _verbose);
 
-std::deque<line_mapping_info_t>
+std::deque<binary::symbol>
 get_line_info(uintptr_t _addr, bool include_discarded = true);
 
 bool is_eligible_address(uintptr_t);
@@ -62,7 +61,8 @@ void push_progress_point(std::string_view);
 
 void pop_progress_point(std::string_view);
 
-void mark_progress_point(std::string_view);
+void
+mark_progress_point(std::string_view, bool force = false);
 
 uint16_t
 sample_virtual_speedup();

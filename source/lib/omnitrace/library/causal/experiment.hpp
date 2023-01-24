@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "library/binary/dwarf_entry.hpp"
+#include "library/binary/symbol.hpp"
 #include "library/causal/components/backtrace.hpp"
 #include "library/causal/components/progress_point.hpp"
 #include "library/causal/data.hpp"
@@ -58,7 +60,7 @@ struct experiment
 
     struct sample
     {
-        using line_info = binary::basic_line_info;
+        using line_info = binary::symbol;
 
         mutable uint64_t count    = 0;
         uintptr_t        address  = 0;

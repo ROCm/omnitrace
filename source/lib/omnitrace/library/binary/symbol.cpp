@@ -21,7 +21,6 @@
 // SOFTWARE.
 
 #include "library/config.hpp"
-#include "timemory/mpl/concepts.hpp"
 
 #if !defined(TIMEMORY_USE_BFD)
 #    error "BFD support not enabled"
@@ -46,6 +45,8 @@
 #include "library/binary/symbol.hpp"
 #include "library/timemory.hpp"
 #include "library/utility.hpp"
+
+#include <timemory/mpl/concepts.hpp>
 
 namespace omnitrace
 {

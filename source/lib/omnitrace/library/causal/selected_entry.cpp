@@ -34,7 +34,7 @@ selected_entry::serialize(ArchiveT& ar, const unsigned int)
 {
     using ::tim::cereal::make_nvp;
     ar(make_nvp("address", address), make_nvp("symbol_address", symbol_address),
-       make_nvp("info", info));
+       make_nvp("info", symbol));
 }
 
 template void

@@ -22,8 +22,9 @@
 
 #pragma once
 
-#include "library/binary/basic_line_info.hpp"
+#include "library/binary/dwarf_entry.hpp"
 #include "library/binary/fwd.hpp"
+#include "library/binary/symbol.hpp"
 #include "library/causal/fwd.hpp"
 #include "library/debug.hpp"
 #include "library/defines.hpp"
@@ -46,26 +47,24 @@ namespace causal
 {
 struct selected_entry
 {
-    using line_info = binary::basic_line_info;
-
     TIMEMORY_DEFAULT_OBJECT(selected_entry)
 
-    uintptr_t address        = 0x0;
-    uintptr_t symbol_address = 0x0;
-    line_info info           = {};
+    uintptr_t      address        = 0x0;
+    uintptr_t      symbol_address = 0x0;
+    binary::symbol symbol         = {};
 
     template <typename ArchiveT>
     void serialize(ArchiveT&, const unsigned int);
 
     bool     contains(uintptr_t) const;
-    explicit operator bool() const { return (address > 0 && info.address); }
+    explicit operator bool() const { return (address > 0 && symbol.address); }
 };
 
 inline bool
 selected_entry::contains(uintptr_t _v) const
 {
     return (_v == address || (symbol_address > 0 && _v == symbol_address) ||
-            info.ipaddr().contains(_v));
+            symbol.ipaddr().contains(_v));
 }
 }  // namespace causal
 }  // namespace omnitrace

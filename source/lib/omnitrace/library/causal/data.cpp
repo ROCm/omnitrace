@@ -23,10 +23,8 @@
 #include "library/causal/data.hpp"
 #include "library/binary/address_multirange.hpp"
 #include "library/binary/analysis.hpp"
-#include "library/binary/basic_line_info.hpp"
-#include "library/binary/bfd_line_info.hpp"
+#include "library/binary/binary_info.hpp"
 #include "library/binary/fwd.hpp"
-#include "library/binary/line_info.hpp"
 #include "library/binary/link_map.hpp"
 #include "library/binary/scope_filter.hpp"
 #include "library/causal/delay.hpp"
@@ -90,6 +88,7 @@ auto speedup_dist      = []() {
 }();
 
 auto perform_experiment_impl_completed = std::unique_ptr<std::promise<void>>{};
+auto num_progress_points               = std::atomic<size_t>{ 0 };
 
 template <typename ContextT>
 auto&
@@ -114,21 +113,25 @@ get_eligible_address_ranges()
     return _v;
 }
 
+using sf = binary::scope_filter;
+
 auto
-get_filters()
+get_filters(std::set<binary::scope_filter::filter_scope> _scopes = {
+                sf::BINARY_FILTER, sf::SOURCE_FILTER, sf::FUNCTION_FILTER })
 {
-    using sf      = binary::scope_filter;
     auto _filters = std::vector<binary::scope_filter>{};
 
     // exclude internal libraries used by omnitrace
-    _filters.emplace_back(
-        sf{ sf::FILTER_EXCLUDE, sf::BINARY_FILTER,
-            "lib(omnitrace[-\\.]|dyninst|tbbmalloc|gotcha\\.|unwind\\.so\\.99)" });
+    if(_scopes.count(sf::BINARY_FILTER) > 0)
+        _filters.emplace_back(
+            sf{ sf::FILTER_EXCLUDE, sf::BINARY_FILTER,
+                "lib(omnitrace[-\\.]|dyninst|tbbmalloc|gotcha\\.|unwind\\.so\\.99)" });
 
     // in function mode, it generally doesn't help to experiment on main function since
     // telling the user to "make the main function" faster is literally useless since it
     // contains everything that could be made faster
-    if(config::get_causal_mode() == CausalMode::Function)
+    if(config::get_causal_mode() == CausalMode::Function &&
+       _scopes.count(sf::FUNCTION_FILTER) > 0)
         _filters.emplace_back(sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER,
                                   "( main\\(|^main$|^main\\.cold$)" });
 
@@ -136,7 +139,7 @@ get_filters()
         config::get_setting_value<bool>("OMNITRACE_CAUSAL_FUNCTION_EXCLUDE_DEFAULTS")
             .second;
 
-    if(_use_default_excludes)
+    if(_use_default_excludes && _scopes.count(sf::FUNCTION_FILTER) > 0)
     {
         // symbols starting with leading underscore are generally system functions
         _filters.emplace_back(sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER, "^_" });
@@ -151,10 +154,11 @@ get_filters()
     // in function mode, it generally doesn't help to claim
     // "make main function" faster since it contains everything
     // that could be made faster
-    if(config::get_causal_mode() == CausalMode::Function)
+    if(config::get_causal_mode() == CausalMode::Function &&
+       _scopes.count(sf::FUNCTION_FILTER) > 0)
     {
-        _filters.emplace_back(
-            sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER, "(^main$|int main\\()" });
+        _filters.emplace_back(sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER,
+                                  "(^main$|^main.cold$|int main\\()" });
     }
 
     using utility::get_regex_or;
@@ -186,15 +190,15 @@ get_filters()
             _former_include = _current_include;
         }
 
-        if(!_binary_include.empty())
+        if(!_binary_include.empty() && _scopes.count(sf::BINARY_FILTER) > 0)
             _filters.emplace_back(
                 sf{ sf::FILTER_INCLUDE, sf::BINARY_FILTER, _binary_include });
 
-        if(!_source_include.empty())
+        if(!_source_include.empty() && _scopes.count(sf::SOURCE_FILTER) > 0)
             _filters.emplace_back(
                 sf{ sf::FILTER_INCLUDE, sf::SOURCE_FILTER, _source_include });
 
-        if(!_function_include.empty())
+        if(!_function_include.empty() && _scopes.count(sf::FUNCTION_FILTER) > 0)
             _filters.emplace_back(
                 sf{ sf::FILTER_INCLUDE, sf::FUNCTION_FILTER, _function_include });
     }
@@ -224,15 +228,15 @@ get_filters()
             _former_exclude = _current_exclude;
         }
 
-        if(!_binary_exclude.empty())
+        if(!_binary_exclude.empty() && _scopes.count(sf::BINARY_FILTER) > 0)
             _filters.emplace_back(
                 sf{ sf::FILTER_EXCLUDE, sf::BINARY_FILTER, _binary_exclude });
 
-        if(!_source_exclude.empty())
+        if(!_source_exclude.empty() && _scopes.count(sf::SOURCE_FILTER) > 0)
             _filters.emplace_back(
                 sf{ sf::FILTER_EXCLUDE, sf::SOURCE_FILTER, _source_exclude });
 
-        if(!_function_exclude.empty())
+        if(!_function_exclude.empty() && _scopes.count(sf::FUNCTION_FILTER) > 0)
             _filters.emplace_back(
                 sf{ sf::FILTER_EXCLUDE, sf::FUNCTION_FILTER, _function_exclude });
     }
@@ -240,8 +244,9 @@ get_filters()
     return _filters;
 }
 
-std::pair<binary::line_info_t, binary::line_info_t>&
-get_cached_line_info()
+using binary_info_t = std::vector<binary::binary_info>;
+std::pair<binary_info_t, binary_info_t>&
+get_cached_binary_info()
 {
     static auto _v = []() {
         // get the linked binaries for the exe (excluding ones from libomnitrace)
@@ -251,86 +256,127 @@ get_cached_line_info()
         for(const auto& itr : _link_map)
             _files.emplace_back(itr.real());
 
-        auto _discarded = binary::line_info_t{};
-        auto _requested = binary::get_line_info(_files, get_filters(), &_discarded);
+        auto _discarded = std::vector<binary::binary_info>{};
+        auto _requested = binary::get_binary_info(_files, get_filters());
         return std::make_pair(_requested, _discarded);
     }();
     return _v;
 }
 
+bool
+satisfies_filter(const binary::scope_filter::filter_scope& _scope,
+                 const std::string&                        _value)
+{
+    static auto _filters = get_filters();
+    return binary::scope_filter::satisfies_filter(_filters, _scope, _value);
+};
+
 auto
 compute_eligible_lines()
 {
-    const auto& _line_info = get_cached_line_info().first;
-    auto        _v = std::unordered_map<uintptr_t, std::deque<binary::basic_line_info>>{};
-
-    auto _add_line_info = [&_v](auto _ip_val, const auto& _bfd_val) {
-        auto _basic_val = _bfd_val.get_basic();
-        for(uintptr_t i = _ip_val.low; i < _ip_val.high; ++i)
-        {
-            for(const auto& vitr : _v[i])
-                if(vitr == _basic_val) continue;
-            _v[i].emplace_back(_basic_val);
-        }
-    };
-
-    auto _filters         = get_filters();
-    auto satisfies_filter = [&_filters](auto _scope, const std::string& _value) {
-        for(const auto& itr : _filters)  // NOLINT
-        {
-            // if the filter is for the specified scope and itr does not satisfy the
-            // include/exclude mode, return false
-            if((itr.scope & _scope) > 0 && !itr(_value)) return false;
-        }
-        return true;
-    };
-
-    using sf = binary::scope_filter;
-
-    bool _use_custom_filters = false;
-    for(const auto& itr : _filters)
-    {
-        if(itr.mode == sf::FILTER_INCLUDE &&
-           (itr.scope == sf::FUNCTION_FILTER || itr.scope == sf::SOURCE_FILTER))
-        {
-            _use_custom_filters = true;
-            break;
-        }
-    }
+    const auto& _binary_info = get_cached_binary_info().first;
+    auto&       _filter_info = get_cached_binary_info().second;
+    auto        _filters     = get_filters();
 
     auto& _eligible_ar = get_eligible_address_ranges();
-    for(const auto& litr : _line_info)
+    for(const auto& litr : _binary_info)
     {
-        for(const auto& ditr : litr.second)
+        // for(const auto& ditr : litr.mappings)
         {
-            if(_use_custom_filters)
-            {
-                // check both <file> and <file>:<line>
-                if(!satisfies_filter(sf::SOURCE_FILTER, ditr.file) &&
-                   !satisfies_filter(sf::SOURCE_FILTER, JOIN(':', ditr.file, ditr.line)))
-                    continue;
+            /*
+            // check both <file> and <file>:<line>
+            if(!satisfies_filter(sf::SOURCE_FILTER, ditr.file) &&
+                !satisfies_filter(sf::SOURCE_FILTER, JOIN(':', ditr.file, ditr.line)))
+                continue;
 
-                // only check demangled function name since things like ^_ can
-                // accidentally catch mangled C++ function names
-                if(!satisfies_filter(sf::FUNCTION_FILTER, demangle(ditr.func))) continue;
-            }
-
+            // only check demangled function name since things like ^_ can
+            // accidentally catch mangled C++ function names
+            if(!satisfies_filter(sf::FUNCTION_FILTER, demangle(ditr.func))) continue;
+            */
             // map the instruction pointer address to the line info
-            _add_line_info(ditr.ipaddr(), ditr);
-            _eligible_ar += ditr.ipaddr();
+            //_add_line_info(ditr.ipaddr(), ditr);
         }
+
+        for(const auto& ditr : litr.mappings)
+        {
+            /*
+            // check both <file> and <file>:<line>
+            if(!satisfies_filter(sf::SOURCE_FILTER, ditr.file) &&
+                !satisfies_filter(sf::SOURCE_FILTER, JOIN(':', ditr.file, ditr.line)))
+                continue;
+
+            // only check demangled function name since things like ^_ can
+            // accidentally catch mangled C++ function names
+            if(!satisfies_filter(sf::FUNCTION_FILTER, demangle(ditr.func))) continue;
+            */
+            // map the instruction pointer address to the line info
+            //_add_line_info(ditr.ipaddr(), ditr);
+            _eligible_ar += std::make_pair(
+                binary::address_multirange::coarse{},
+                address_range_t{ ditr.load_address, ditr.last_address + 1 });
+        }
+
+        for(const auto& ditr : litr.symbols)
+        {
+            /*
+            // check both <file> and <file>:<line>
+            if(!satisfies_filter(sf::SOURCE_FILTER, ditr.file) &&
+                !satisfies_filter(sf::SOURCE_FILTER, JOIN(':', ditr.file, ditr.line)))
+                continue;
+
+            // only check demangled function name since things like ^_ can
+            // accidentally catch mangled C++ function names
+            if(!satisfies_filter(sf::FUNCTION_FILTER, demangle(ditr.func))) continue;
+            */
+            // map the instruction pointer address to the line info
+            //_add_line_info(ditr.ipaddr(), ditr);
+            _eligible_ar += ditr.address + ditr.load_address;
+        }
+
+        auto& _filtered    = _filter_info.emplace_back();
+        _filtered.bfd      = litr.bfd;
+        _filtered.mappings = litr.mappings;
+        _filtered.ranges   = litr.ranges;
+        _filtered.sections = litr.sections;
+
+        for(const auto& ditr : litr.symbols)
+        {
+            // check both <file> and <file>:<line>
+            if(ditr(_filters))
+            {
+                auto& _sym = _filtered.symbols.emplace_back(ditr.clone());
+
+                _sym.inlines =
+                    ditr.get_inline_symbols<std::vector<binary::inlined_symbol>>(
+                        _filters);
+
+                _sym.dwarf_info =
+                    ditr.get_debug_line_info<std::vector<binary::dwarf_entry>>(_filters);
+            }
+        }
+
+        for(const auto& ditr : litr.debug_info)
+        {
+            if(sf::satisfies_filter(_filters, sf::SOURCE_FILTER, ditr.file) ||
+               sf::satisfies_filter(_filters, sf::SOURCE_FILTER,
+                                    join(':', ditr.file, ditr.line)))
+            {
+                _filtered.debug_info.emplace_back(ditr);
+            }
+        }
+
+        _filtered.sort();
     }
 
-    OMNITRACE_VERBOSE(0,
-                      "[causal] eligible addresses: %zu, eligible address ranges: %zu, "
-                      "total range: %zu [%s]\n",
-                      _v.size(), _eligible_ar.size(), _eligible_ar.range_size(),
-                      _eligible_ar.coarse_range.as_string().c_str());
+    OMNITRACE_VERBOSE(
+        0, "[causal] eligible address ranges: %zu, coarse address range: %zu [%s]\n",
+        _eligible_ar.size(), _eligible_ar.range_size(),
+        _eligible_ar.coarse_range.as_string().c_str());
 
     if(_eligible_ar.empty())
     {
         auto _cfg         = settings::compose_filename_config{};
-        _cfg.subdirectory = "causal/line-info";
+        _cfg.subdirectory = "causal/binary-info";
         save_line_info(_cfg, config::get_verbose());
     }
 
@@ -338,15 +384,6 @@ compute_eligible_lines()
         _eligible_ar.empty(),
         "Error! binary analysis (after filters) resulted in zero eligible instruction "
         "pointer addresses for causal experimentation");
-
-    return _v;
-}
-
-auto&
-get_eligible_lines()
-{
-    static auto _v = compute_eligible_lines();
-    return _v;
 }
 
 void
@@ -366,7 +403,7 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
 
     perform_experiment_impl_completed->set_value_at_thread_exit();
 
-    (void) get_eligible_lines();
+    compute_eligible_lines();
 
     // notify that thread has started
     if(_started) _started->set_value();
@@ -374,8 +411,17 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
     // pause at least one second to determine sampling rate
     std::this_thread::sleep_for(std::chrono::seconds{ 1 });
 
+    if(!config::get_causal_end_to_end())
+    {
+        // wait for at least one progress point to start
+        while(num_progress_points.load(std::memory_order_relaxed) == 0)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+        }
+    }
+
     auto _cfg         = settings::compose_filename_config{};
-    _cfg.subdirectory = "causal/line-info";
+    _cfg.subdirectory = "causal/binary-info";
     save_line_info(_cfg, config::get_verbose());
 
     double _delay_sec =
@@ -431,6 +477,7 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
         // wait for the experiment to complete
         if(config::get_causal_end_to_end())
         {
+            mark_progress_point(config::get_exe_name(), true);
             while(get_state() < State::Finalized)
             {
                 std::this_thread::yield();
@@ -470,27 +517,52 @@ auto latest_eligible_pc = []() {
 bool
 is_eligible_address(uintptr_t _v)
 {
-    return get_eligible_address_ranges().contains(_v);
+    return get_eligible_address_ranges().coarse_range.contains(_v);
 }
 
 void
 save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
 {
-    auto _write_impl = [](std::ofstream& _ofs, const binary::line_info_t& _data) {
-        for(const auto& itr : _data)
+    auto _write_impl = [](std::ofstream& _ofs, const binary::binary_info& _data) {
+        for(const auto& itr : _data.mappings)
         {
-            _ofs << itr.first.pathname << " [" << as_hex(itr.first.load_address) << " - "
-                 << as_hex(itr.first.last_address) << "]\n";
+            _ofs << itr.pathname << " [" << as_hex(itr.load_address) << " - "
+                 << as_hex(itr.last_address) << "]\n";
+        }
 
-            for(const auto& ditr : itr.second)
+        auto _emitted_dwarf_addresses = std::set<uintptr_t>{};
+        for(const auto& itr : _data.symbols)
+        {
+            auto _addr     = itr.address;
+            auto _addr_off = itr.address + itr.load_address;
+            _ofs << "    " << as_hex(_addr_off) << " [" << as_hex(_addr)
+                 << "] :: " << itr.file;
+            if(itr.line > 0) _ofs << ":" << itr.line;
+            if(!itr.func.empty()) _ofs << " [" << tim::demangle(itr.func) << "]";
+            _ofs << "\n";
+
+            for(const auto& ditr : itr.inlines)
             {
-                auto _addr     = ditr.address;
-                auto _addr_off = ditr.ipaddr();
-                _ofs << "    " << as_hex(_addr_off) << " [" << as_hex(_addr)
-                     << "] :: " << ditr.file << ":" << ditr.line;
+                _ofs << "        " << ditr.file << ":" << ditr.line;
                 if(!ditr.func.empty()) _ofs << " [" << tim::demangle(ditr.func) << "]";
                 _ofs << "\n";
             }
+
+            for(const auto& ditr : itr.dwarf_info)
+            {
+                _ofs << "        " << as_hex(ditr.address) << " :: " << ditr.file << ":"
+                     << ditr.line;
+                _ofs << "\n";
+                _emitted_dwarf_addresses.emplace(ditr.address);
+            }
+        }
+
+        for(const auto& itr : _data.debug_info)
+        {
+            if(_emitted_dwarf_addresses.count(itr.address) > 0) continue;
+            _ofs << "    " << as_hex(itr.address) << " :: " << itr.file << ":"
+                 << itr.line;
+            _ofs << "\n";
         }
 
         _ofs << "\n" << std::flush;
@@ -514,9 +586,10 @@ save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
         if(tim::filepath::open(_ofs, ofname))
         {
             if(_verbose >= 0)
-                operation::file_output_message<binary::basic_line_info>{}(
-                    ofname, std::string{ "causal_line_info" });
-            _write_impl(_ofs, _data);
+                operation::file_output_message<binary::symbol>{}(
+                    ofname, std::string{ "causal_symbol_info" });
+            for(const auto& itr : _data)
+                _write_impl(_ofs, itr);
             _ofs << _maps.str();
         }
         else
@@ -526,11 +599,11 @@ save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
     };
 
     _write(tim::settings::compose_output_filename(
-               config::get_causal_output_filename() + "-included", "txt", _cfg),
-           get_cached_line_info().first);
+               join('-', config::get_causal_output_filename(), "binary"), "txt", _cfg),
+           get_cached_binary_info().first);
     _write(tim::settings::compose_output_filename(
-               config::get_causal_output_filename() + "-excluded", "txt", _cfg),
-           get_cached_line_info().second);
+               join('-', config::get_causal_output_filename(), "scoped"), "txt", _cfg),
+           get_cached_binary_info().second);
 }
 
 void
@@ -556,8 +629,7 @@ sample_selection(size_t _nitr, size_t _wait_ns)
 {
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
 
-    auto&  _eligible_pcs = get_eligible_lines();
-    size_t _n            = 0;
+    size_t _n = 0;
 
     auto _select_address = [&](auto& _address_vec) {
         // this isn't necessary bc of check before calling this lambda but
@@ -567,65 +639,68 @@ sample_selection(size_t _nitr, size_t _wait_ns)
             OMNITRACE_WARNING(0, "no addresses for sample selection...\n");
             return selected_entry{};
         }
-        // randomly select an address
-        auto _dist = std::uniform_int_distribution<size_t>{ 0, _address_vec.size() - 1 };
-        auto _idx  = _dist(get_engine<selected_entry>());
 
-        uintptr_t _addr        = _address_vec.at(_idx);
-        uintptr_t _sym_addr    = 0;
-        uintptr_t _lookup_addr = _addr;
-        auto      _dl_info     = unwind::dlinfo::construct(_addr);
-
-        if(get_causal_mode() == CausalMode::Function)
-            _sym_addr = (_dl_info.symbol) ? _dl_info.symbol.address() : _addr;
-
-        // lookup the PC line info at either the address or the symbol address
-        auto linfo = get_line_info(_lookup_addr, false);
-
-        // unlikely this will be empty but just in case
-        if(OMNITRACE_UNLIKELY(linfo.empty())) return selected_entry{};
-
-        // debugging for continuous integration
-        if(OMNITRACE_UNLIKELY(config::get_is_continuous_integration() ||
-                              config::get_debug()))
+        while(!_address_vec.empty())
         {
-            auto _location =
-                (_dl_info.location)
-                    ? filepath::realpath(std::string{ _dl_info.location.name }, nullptr,
-                                         false)
-                    : std::string{};
-            for(const auto& itr : linfo)
-            {
-                if(OMNITRACE_UNLIKELY(config::get_debug()))
-                {
-                    OMNITRACE_WARNING(0, "[%s][%s][%s][%s] %s [%s][%s:%i][%s][%zu]\n",
-                                      as_hex(_lookup_addr).c_str(), as_hex(_addr).c_str(),
-                                      as_hex(_sym_addr).c_str(),
-                                      (_location.empty()) ? "" : _location.data(),
-                                      demangle(itr.second.func).c_str(),
-                                      itr.first.pathname.c_str(), itr.second.file.c_str(),
-                                      itr.second.line,
-                                      itr.second.address.as_string().c_str(),
-                                      itr.second.address.size());
-                }
-                TIMEMORY_REQUIRE(OMNITRACE_UNLIKELY(
-                    itr.first.pathname.find(filepath::basename(_location)) !=
-                    std::string::npos))
-                    << "Error! pathname (" << itr.first.pathname
-                    << ") does not contain dlinfo location "
-                    << filepath::basename(_location) << " (" << _location << ")";
-            }
-        }
+            // randomly select an address
+            auto _dist =
+                std::uniform_int_distribution<size_t>{ 0, _address_vec.size() - 1 };
+            auto _idx = _dist(get_engine<selected_entry>());
 
-        auto& _linfo_v = (config::get_causal_mode() == CausalMode::Function)
-                             ? linfo.front()
-                             : linfo.back();
-        return selected_entry{ _addr, _sym_addr, _linfo_v.second };
+            uintptr_t _addr        = _address_vec.at(_idx);
+            uintptr_t _sym_addr    = 0;
+            uintptr_t _lookup_addr = _addr;
+            auto      _dl_info     = unwind::dlinfo::construct(_addr);
+
+            _address_vec.erase(_address_vec.begin() + _idx);
+
+            if(get_causal_mode() == CausalMode::Function)
+                _sym_addr = (_dl_info.symbol) ? _dl_info.symbol.address() : _addr;
+
+            // lookup the PC line info at either the address or the symbol address
+            auto linfo = get_line_info(_lookup_addr, false);
+
+            // unlikely this will be empty but just in case
+            if(linfo.empty()) continue;
+
+            // debugging for continuous integration
+            if(OMNITRACE_UNLIKELY(config::get_is_continuous_integration() ||
+                                  config::get_debug()))
+            {
+                auto _location =
+                    (_dl_info.location)
+                        ? filepath::realpath(std::string{ _dl_info.location.name },
+                                             nullptr, false)
+                        : std::string{};
+                for(const auto& itr : linfo)
+                {
+                    if(OMNITRACE_UNLIKELY(config::get_debug()))
+                    {
+                        OMNITRACE_WARNING(
+                            0, "[%s][%s][%s][%s] %s [%s:%i][%s][%zu]\n",
+                            as_hex(_lookup_addr).c_str(), as_hex(_addr).c_str(),
+                            as_hex(_sym_addr).c_str(),
+                            (_location.empty()) ? "" : _location.data(),
+                            demangle(itr.func).c_str(), itr.file.c_str(), itr.line,
+                            itr.address.as_string().c_str(), itr.address.size());
+                    }
+                }
+            }
+
+            auto& _linfo_v = (config::get_causal_mode() == CausalMode::Function)
+                                 ? linfo.front()
+                                 : linfo.back();
+            return selected_entry{ _addr, _sym_addr, _linfo_v };
+            // return selected_entry{ address_range_t{ _addr },
+            //                       address_range_t{ _sym_addr },
+            //                       { _linfo_v.second } };
+        }
+        return selected_entry{};
     };
 
     while(_n++ < _nitr)
     {
-        auto _addresses = std::vector<uintptr_t>{};
+        auto _addresses = std::deque<uintptr_t>{};
         for(auto& aitr : latest_eligible_pc)
         {
             if(OMNITRACE_UNLIKELY(!aitr))
@@ -637,28 +712,20 @@ sample_selection(size_t _nitr, size_t _wait_ns)
             auto _naddrs = aitr->count();
             if(_naddrs == 0) continue;
 
-            _addresses.reserve(_addresses.size() + _naddrs);
             for(size_t i = 0; i < _naddrs; ++i)
             {
                 uintptr_t _addr = 0;
-                if(aitr->read(&_addr) != nullptr)
+                if(!aitr->is_empty() && aitr->read(&_addr) != nullptr)
                 {
-                    // comment out below bc symbol address lookup happens when filling
-                    uintptr_t _sym_addr = 0;
-                    if(get_causal_mode() == CausalMode::Function)
-                    {
-                        auto _dl_info = unwind::dlinfo::construct(_addr);
-                        _sym_addr     = (_dl_info.symbol) ? _dl_info.symbol.address() : 0;
-                    }
-
-                    if(_eligible_pcs.count(_addr) > 0)
-                        _addresses.emplace_back(_addr);
-                    else if(_sym_addr > 0 && _eligible_pcs.count(_sym_addr) > 0)
-                        _addresses.emplace_back(_sym_addr);
+                    if(_addr > 0) _addresses.emplace_back(_addr);
                 }
             }
 
-            if(!_addresses.empty()) return _select_address(_addresses);
+            if(!_addresses.empty())
+            {
+                auto _selection = _select_address(_addresses);
+                if(_selection) return _selection;
+            }
         }
 
         std::this_thread::yield();
@@ -668,23 +735,51 @@ sample_selection(size_t _nitr, size_t _wait_ns)
     return selected_entry{};
 }
 
-std::deque<line_mapping_info_t>
-get_line_info(uintptr_t _addr, bool include_discarded)
+std::deque<binary::symbol>
+get_line_info(uintptr_t _addr, bool _include_discarded)
 {
-    auto _data          = std::deque<line_mapping_info_t>{};
-    auto _get_line_info = [&](const auto& _info) {
+    static auto _filters       = get_filters();
+    static auto _no_filters    = get_filters({ sf::BINARY_FILTER });
+    auto        _data          = std::deque<binary::symbol>{};
+    auto        _get_line_info = [&](const auto& _info) {
         // search for exact matches first
-        for(const auto& litr : _info)
+        for(const binary::binary_info& litr : _info)
         {
-            if(!address_range_t{ litr.first.load_address, litr.first.last_address }
-                    .contains(_addr))
-                continue;
+            auto _local_data = std::deque<binary::symbol>{};
 
-            auto _local_data = std::deque<line_mapping_info_t>{};
-            for(const auto& ditr : litr.second)
+            for(const auto& ditr : litr.symbols)
             {
-                if(ditr.ipaddr().contains(_addr))
-                    _local_data.emplace_back(litr.first, ditr.get_basic());
+                auto _ipaddr = ditr.ipaddr();
+                if(!_ipaddr.contains(_addr)) continue;
+
+                if(config::get_causal_mode() == CausalMode::Function)
+                {
+                    // check if the primary symbol satisfy the constraints
+                    if(ditr(_include_discarded ? _no_filters : _filters))
+                        _local_data.emplace_back(ditr);
+
+                    // the primary symbol may not satisfy the constraints but the inlined
+                    // functions may
+                    utility::combine(_local_data,
+                                     ditr.get_inline_symbols(
+                                         _include_discarded ? _no_filters : _filters));
+                }
+                else if(config::get_causal_mode() == CausalMode::Line)
+                {
+                    auto _debug_data = std::deque<binary::symbol>{};
+                    for(const auto& itr : ditr.get_debug_line_info(
+                            _include_discarded ? _no_filters : _filters))
+                    {
+                        if(itr.ipaddr().contains(_addr)) _debug_data.emplace_back(itr);
+                    }
+                    utility::combine(_local_data, _debug_data);
+                }
+                else
+                {
+                    throw exception<std::runtime_error>(
+                        join(" ", "Causal mode not supported:",
+                             std::to_string(config::get_causal_mode())));
+                }
             }
 
             if(!_local_data.empty())
@@ -696,8 +791,7 @@ get_line_info(uintptr_t _addr, bool include_discarded)
         }
     };
 
-    _get_line_info(get_cached_line_info().first);
-    if(include_discarded) _get_line_info(get_cached_line_info().second);
+    _get_line_info(get_cached_binary_info().first);
 
     return _data;
 }
@@ -705,7 +799,9 @@ get_line_info(uintptr_t _addr, bool include_discarded)
 void
 push_progress_point(std::string_view _name)
 {
-    if(!config::get_causal_end_to_end() && !experiment::is_active()) return;
+    if(config::get_causal_end_to_end()) return;
+
+    ++num_progress_points;
 
     auto  _hash   = tim::add_hash_id(_name);
     auto& _data   = progress_bundles_t::instance(utility::get_thread_index());
@@ -717,7 +813,7 @@ push_progress_point(std::string_view _name)
 void
 pop_progress_point(std::string_view _name)
 {
-    if(!config::get_causal_end_to_end() && !experiment::is_active()) return;
+    if(config::get_causal_end_to_end()) return;
 
     auto& _data = progress_bundles_t::instance(utility::get_thread_index());
     if(_data.empty()) return;
@@ -746,9 +842,11 @@ pop_progress_point(std::string_view _name)
 }
 
 void
-mark_progress_point(std::string_view _name)
+mark_progress_point(std::string_view _name, bool _force)
 {
-    if(!config::get_causal_end_to_end() && !experiment::is_active()) return;
+    if(config::get_causal_end_to_end() && !_force) return;
+
+    ++num_progress_points;
 
     auto  _hash   = tim::add_hash_id(_name);
     auto& _data   = progress_bundles_t::instance(utility::get_thread_index());
@@ -795,7 +893,7 @@ start_experimenting()
         }
     }
 
-    (void) get_eligible_lines();
+    compute_eligible_lines();
 
     if(get_state() < State::Finalized)
     {
