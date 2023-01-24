@@ -284,9 +284,9 @@ compute_eligible_lines_impl()
     {
         for(const auto& ditr : litr.mappings)
         {
-            _eligible_ar += std::make_pair(
-                binary::address_multirange::coarse{},
-                address_range_t{ ditr.load_address, ditr.last_address + 1 });
+            _eligible_ar +=
+                std::make_pair(binary::address_multirange::coarse{},
+                               address_range_t{ ditr.load_address, ditr.last_address });
         }
 
         for(const auto& ditr : litr.symbols)

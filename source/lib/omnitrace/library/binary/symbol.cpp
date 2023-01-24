@@ -82,8 +82,7 @@ read_inliner_info(bfd* _inp)
 
 symbol::symbol(const base_type& _v)
 : base_type{ _v }
-, address{ _v.address, _v.address + _v.symsize + 1 }
-// add one to address + size because address range is exclusive of last address
+, address{ _v.address, _v.address + _v.symsize }
 {}
 
 bool
@@ -186,7 +185,7 @@ symbol::read_bfd(bfd_file& _bfd)
 
     if(_pc < _vma || _pc >= _vma + _size) return false;
     // add one to vma + size because address range is exclusive of last address
-    if(_pc_end > _vma + _size + 1) _pc_end = (_vma + _size) + 1;
+    if(_pc_end > _vma + _size) _pc_end = (_vma + _size);
 
     auto* _inp  = static_cast<bfd*>(_bfd.data);
     auto* _syms = reinterpret_cast<asymbol**>(_bfd.syms);

@@ -80,13 +80,14 @@ parse_line_info(const std::string& _name)
         auto  _processed   = std::set<uintptr_t>{};
         for(auto&& itr : _bfd->get_symbols())
         {
+            if(itr.symsize == 0) continue;
             auto& _sym = _info.symbols.emplace_back(symbol{ itr });
             // if(itr.symsize == 0) continue;
             auto* _section = static_cast<asection*>(itr.section);
             _section_set.emplace(_section);
             _processed.emplace(itr.address);
             _info.ranges.emplace_back(
-                address_range{ itr.address, itr.address + itr.symsize + 1 });
+                address_range{ itr.address, itr.address + itr.symsize });
             _sym.read_bfd(*_bfd);
         }
 
@@ -175,7 +176,7 @@ get_binary_info(const std::vector<std::string>&  _files,
     {
         for(const auto& mitr : itr.mappings)
         {
-            auto mrange = address_range{ mitr.load_address, mitr.last_address + 1 };
+            auto mrange = address_range{ mitr.load_address, mitr.last_address };
             for(auto& sitr : itr.symbols)
             {
                 auto _addr = sitr.address + mitr.load_address;
