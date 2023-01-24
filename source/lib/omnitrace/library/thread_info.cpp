@@ -146,7 +146,7 @@ thread_info::init(bool _offset)
     if(!_info_data)
     {
         static auto _dummy = std::optional<thread_info>{};
-        return (_dummy = std::optional<thread_info>{});
+        return (_dummy.reset(), _dummy);  // always reset for safety
     }
 
     if(!_once && (_once = true))
