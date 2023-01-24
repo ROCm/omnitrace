@@ -149,12 +149,12 @@ symbol::read_dwarf(const std::deque<dwarf_entry>& _info)
               });
 
     // helper for getting the end address
-    auto _get_next_address = [&](auto itr, uintptr_t _low) {
-        while(++itr != dwarf_info.end())
+    auto _get_next_address = [&](auto nitr, uintptr_t _low) {
+        while(++nitr != dwarf_info.end())
         {
-            if(itr->address.low > _low)
+            if(nitr->address.low > _low)
             {
-                return itr->address.low;
+                return nitr->address.low;
             }
         }
         // return the end address of the symbol
