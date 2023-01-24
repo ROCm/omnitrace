@@ -588,15 +588,7 @@ function(OMNITRACE_ADD_CAUSAL_TEST)
                 set(_timeout ${TEST_CAUSAL_VALIDATE_TIMEOUT})
             endif()
 
-            set(_props)
-
-            if(NOT "${_TEST}" STREQUAL "validate-causal")
-                set(_props ${TEST_PROPERTIES})
-
-                if(NOT "RUN_SERIAL" IN_LIST _props)
-                    list(APPEND _props RUN_SERIAL ON)
-                endif()
-            endif()
+            set(_props ${TEST_PROPERTIES})
 
             if("${_TEST}" STREQUAL "validate-causal")
                 set(_REGEX_VAR CAUSAL_VALIDATE)
