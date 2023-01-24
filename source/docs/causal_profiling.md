@@ -102,6 +102,7 @@ $ omnitrace-causal --help
                                                    --debug (max: 1, dtype: bool)
                                                    --verbose (count: 1)
                                                    --config (min: 0, dtype: filepath)
+                                                   --launcher (count: 1, dtype: executable)
                                                    --generate-configs (min: 0, dtype: folder)
                                                    --no-defaults (min: 0, dtype: bool)
                                                    --mode (count: 1, dtype: string)
@@ -158,6 +159,10 @@ Options:
     [GENERAL OPTIONS]
 
     -c, --config                   Base configuration file
+    -l, --launcher                 When running MPI jobs, omnitrace-causal needs to be *before* the executable which launches the MPI processes (i.e.
+                                   before `mpirun`, `srun`, etc.). Pass the name of the target executable (or a regex for matching to the name of the
+                                   target) for causal profiling, e.g., `omnitrace-causal -l foo -- mpirun -n 4 foo`. This ensures that the omnitrace
+                                   library is LD_PRELOADed on the proper target
     -g, --generate-configs         Generate config files instead of passing environment variables directly. If no arguments are provided, the config files
                                    will be placed in ${PWD}/omnitrace-causal-config folder
     --no-defaults                  Do not activate default features which are recommended for causal profiling. For example: PID-tagging of output files
@@ -413,6 +418,33 @@ omnitrace-causal                            \
     -S "lulesh\\.cc"                        \
     --                                      \
     ./lulesh-omni -i 50 -s 200 -r 20 -b 5 -c 5 -p
+```
+
+#### Using `omnitrace-causal` with other launchers (e.g. `mpirun`)
+
+The `omnitrace-causal` executable is intended to assist with application replay and is designed to always be at the start of the command-line (i.e. the primary process).
+`omnitrace-causal` typically adds a `LD_PRELOAD` of the OmniTrace libraries into the environment before launching the command in order to inject the functionality
+required to start the causal profiling tooling. However, this is problematic when the target application for causal profiling requires another command-line
+tool in order to run, e.g. `foo` is the target application but executing `foo` requires `mpirun -n 2 foo`. If one were to simply do `omnitrace-causal -- mpirun -n 2 foo`,
+then the causal profiling would be applied to `mpirun` instead of `foo`. `omnitrace-causal` remedies this by providing a command-line option `-l` / `--launcher`
+to indicate the target application is using a launcher script/executable. The argument to the command-line option is the name of (or regex for) the target application
+on the command-line. When `--launcher` is used, `omnitrace-causal` will generate all the replay configurations and execute them but delay adding the `LD_PRELOAD`, instead it
+will inject a call to itself into the command-line right before the target application. This recursive call to itself will inherit the configuration from
+parent `omnitrace-causal` executable, insert an `LD_PRELOAD` into the environment, and then invoke an `execv` to replace itself with the new process launched by the target
+application.
+
+In other words, the following command:
+
+```console
+omnitrace-causal -l foo -n 3 -- mpirun -n 2 foo`
+```
+
+Effectively results in:
+
+```console
+mpirun -n 2 omnitrace-causal -- foo
+mpirun -n 2 omnitrace-causal -- foo
+mpirun -n 2 omnitrace-causal -- foo
 ```
 
 ### Visualizing the Causal Output
