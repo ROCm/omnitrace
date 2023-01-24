@@ -269,7 +269,7 @@ satisfies_filter(const binary::scope_filter::filter_scope& _scope,
 {
     static auto _filters = get_filters();
     return binary::scope_filter::satisfies_filter(_filters, _scope, _value);
-};
+}
 
 auto
 compute_eligible_lines()
@@ -377,6 +377,7 @@ compute_eligible_lines()
     {
         auto _cfg         = settings::compose_filename_config{};
         _cfg.subdirectory = "causal/binary-info";
+        _cfg.use_suffix   = config::get_use_pid();
         save_line_info(_cfg, config::get_verbose());
     }
 
@@ -422,6 +423,7 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
 
     auto _cfg         = settings::compose_filename_config{};
     _cfg.subdirectory = "causal/binary-info";
+    _cfg.use_suffix   = config::get_use_pid();
     save_line_info(_cfg, config::get_verbose());
 
     double _delay_sec =

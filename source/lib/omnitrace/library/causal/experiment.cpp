@@ -398,6 +398,7 @@ experiment::save_experiments()
 {
     auto _cfg         = settings::compose_filename_config{};
     _cfg.subdirectory = "causal";
+    _cfg.use_suffix   = config::get_use_pid();
     save_experiments(config::get_causal_output_filename(), _cfg);
 }
 
@@ -628,6 +629,7 @@ experiment::load_experiments(bool _throw_on_error)
 {
     auto _cfg         = settings::compose_filename_config{};
     _cfg.subdirectory = "causal";
+    _cfg.use_suffix   = config::get_use_pid();
     return load_experiments(config::get_causal_output_filename(), _cfg, _throw_on_error);
 }
 
