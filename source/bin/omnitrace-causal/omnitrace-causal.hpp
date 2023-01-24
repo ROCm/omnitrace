@@ -46,6 +46,12 @@ void print_updated_environment(std::vector<char*>, std::string_view);
 std::vector<char*>
 get_initial_environment();
 
+void
+prepare_command_for_run(char*, std::vector<char*>&);
+
+void
+prepare_environment_for_run(std::vector<char*>&);
+
 std::string
 get_internal_libpath(const std::string& _lib);
 

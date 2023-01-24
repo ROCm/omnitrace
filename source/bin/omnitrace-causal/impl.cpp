@@ -28,6 +28,7 @@
 #include "common/join.hpp"
 #include "common/setup.hpp"
 
+#include <regex>
 #include <timemory/environment.hpp>
 #include <timemory/log/color.hpp>
 #include <timemory/utility/argparse.hpp>
@@ -75,6 +76,7 @@ int  verbose       = 0;
 auto updated_envs  = std::set<std::string_view>{};
 auto original_envs = std::set<std::string>{};
 auto child_pids    = std::set<pid_t>{};
+auto launcher      = std::string{};
 
 inline signal_handler&
 get_signal_handler(int _sig)
@@ -291,9 +293,6 @@ get_initial_environment()
         }
     }
 
-    update_env(_env, "LD_PRELOAD",
-               get_realpath(get_internal_libpath("libomnitrace-dl.so")), true);
-
     update_env(_env, "OMNITRACE_MODE", "causal");
     update_env(_env, "OMNITRACE_USE_CAUSAL", true);
     update_env(_env, "OMNITRACE_USE_SAMPLING", false);
@@ -303,6 +302,35 @@ get_initial_environment()
     update_env(_env, "OMNITRACE_CRITICAL_TRACE", false);
 
     return _env;
+}
+
+void
+prepare_command_for_run(char* _exe, std::vector<char*>& _argv)
+{
+    if(!launcher.empty())
+    {
+        auto _new_argv = std::vector<char*>{};
+        for(auto* itr : _argv)
+        {
+            if(std::regex_search(itr, std::regex{ launcher }))
+            {
+                _new_argv.emplace_back(_exe);
+                _new_argv.emplace_back(strdup("--"));
+            }
+            _new_argv.emplace_back(itr);
+        }
+        std::swap(_argv, _new_argv);
+    }
+}
+
+void
+prepare_environment_for_run(std::vector<char*>& _env)
+{
+    if(launcher.empty())
+    {
+        update_env(_env, "LD_PRELOAD",
+                   get_realpath(get_internal_libpath("libomnitrace-dl.so")), true);
+    }
 }
 
 std::string
@@ -551,6 +579,18 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
             _config_file =
                 join(array_config{ ":" }, p.get<std::vector<std::string>>("config"));
         });
+    parser
+        .add_argument(
+            { "-l", "--launcher" },
+            "When running MPI jobs, omnitrace-causal needs to be *before* the executable "
+            "which launches the MPI processes (i.e. before `mpirun`, `srun`, etc.). Pass "
+            "the name of the target executable (or a regex for matching to the name of "
+            "the target) for causal profiling, e.g., `omnitrace-causal -l foo -- mpirun "
+            "-n 4 foo`. This ensures that the omnitrace library is LD_PRELOADed on the "
+            "proper target")
+        .count(1)
+        .dtype("executable")
+        .action([&](parser_t& p) { launcher = p.get<std::string>("launcher"); });
     parser
         .add_argument({ "-g", "--generate-configs" },
                       "Generate config files instead of passing environment variables "

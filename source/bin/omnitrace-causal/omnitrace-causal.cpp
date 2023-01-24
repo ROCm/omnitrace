@@ -61,6 +61,9 @@ main(int argc, char** argv)
         _causal_env.resize(1);
     }
 
+    prepare_command_for_run(argv[0], _argv);
+    prepare_environment_for_run(_base_env);
+
     if(get_verbose() >= 3)
     {
         TIMEMORY_PRINTF_INFO(stderr, "causal environments to be executed:\n");
