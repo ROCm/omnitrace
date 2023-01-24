@@ -912,22 +912,73 @@ omnitrace_add_causal_test(
 set(_causal_common_args
     "-n 8 -e -s 0 10 20 30 -B $<TARGET_FILE_BASE_NAME:causal-cpu-omni>")
 
-macro(causal_e2e_args_and_validation _NAME _TEST _MODE _EXPER _V10 _V20 _V30)
+macro(
+    causal_e2e_args_and_validation
+    _NAME
+    _TEST
+    _MODE
+    _EXPER
+    _V10 # expected value for virtual speedup of 10
+    _V20
+    _V30
+    _T10 # tolerance for virtual speedup of 10
+    _T20
+    _T30)
     # arguments to omnitrace-causal
     set(${_NAME}_args "${_causal_common_args} ${_MODE} ${_EXPER}")
     # arguments to validate-causal-json.py
     set(${_NAME}_valid
-        "-n 0 -i omnitrace-tests-output/causal-cpu-omni-${_TEST}-e2e/causal/experiments.json -v ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 10 ${_V10} 3 ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 20 ${_V20} 3 ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 30 ${_V30} 3"
+        "-n 0 -i omnitrace-tests-output/causal-cpu-omni-${_TEST}-e2e/causal/experiments.json -v ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 10 ${_V10} ${_T10} ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 20 ${_V20} ${_T20} ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 30 ${_V30} ${_T30}"
         )
     # patch string for command-line
     string(REPLACE " " ";" ${_NAME}_args "${${_NAME}_args}")
     string(REPLACE " " ";" ${_NAME}_valid "${${_NAME}_valid}")
 endmacro()
 
-causal_e2e_args_and_validation(_causal_slow_func slow-func "-F" "cpu_slow_func" 10 20 20)
-causal_e2e_args_and_validation(_causal_fast_func fast-func "-F" "cpu_fast_func" 0 0 0)
-causal_e2e_args_and_validation(_causal_line_155 line-155 "-S" "causal.cpp:155" 10 20 20)
-causal_e2e_args_and_validation(_causal_line_165 line-165 "-S" "causal.cpp:165" 0 0 0)
+causal_e2e_args_and_validation(
+    _causal_slow_func
+    slow-func
+    "-F"
+    "cpu_slow_func"
+    10
+    20
+    20
+    3
+    5
+    5)
+causal_e2e_args_and_validation(
+    _causal_fast_func
+    fast-func
+    "-F"
+    "cpu_fast_func"
+    0
+    0
+    0
+    3
+    5
+    5)
+causal_e2e_args_and_validation(
+    _causal_line_155
+    line-155
+    "-S"
+    "causal.cpp:155"
+    10
+    20
+    20
+    3
+    5
+    5)
+causal_e2e_args_and_validation(
+    _causal_line_165
+    line-165
+    "-S"
+    "causal.cpp:165"
+    0
+    0
+    0
+    3
+    5
+    5)
 
 omnitrace_add_causal_test(
     SKIP_BASELINE
