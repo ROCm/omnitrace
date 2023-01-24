@@ -309,16 +309,27 @@ prepare_command_for_run(char* _exe, std::vector<char*>& _argv)
 {
     if(!launcher.empty())
     {
+        bool _injected = false;
         auto _new_argv = std::vector<char*>{};
         for(auto* itr : _argv)
         {
-            if(std::regex_search(itr, std::regex{ launcher }))
+            if(!_injected && std::regex_search(itr, std::regex{ launcher }))
             {
                 _new_argv.emplace_back(_exe);
                 _new_argv.emplace_back(strdup("--"));
+                _injected = true;
             }
             _new_argv.emplace_back(itr);
         }
+
+        if(!_injected)
+        {
+            throw std::runtime_error(
+                join("", "omnitrace-causal was unable to match \"", launcher,
+                     "\" to any arguments on the command line: \"",
+                     join(array_config{ " ", "", "" }, _argv), "\""));
+        }
+
         std::swap(_argv, _new_argv);
     }
 }
