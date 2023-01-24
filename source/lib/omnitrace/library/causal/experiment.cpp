@@ -78,8 +78,16 @@ experiment::sample::operator==(const sample& _v) const
 bool
 experiment::sample::operator<(const sample& _v) const
 {
-    return std::tie(address, info.line, info.file, info.func) <
-           std::tie(_v.address, _v.info.line, _v.info.file, _v.info.func);
+    if(info.line > 0 && _v.info.line > 0)
+    {
+        return std::tie(info.line, info.file) == std::tie(_v.info.line, _v.info.file);
+    }
+    else if((info.line + _v.info.line) > 0)
+    {
+        return std::tie(info.file, location, info.line) <
+               std::tie(_v.info.file, _v.location, _v.info.line);
+    }
+    return (location < _v.location);
 }
 
 const auto&
@@ -466,8 +474,9 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
                 // if(_linfo.size() > 1) _linfo.pop_front();
                 for(const auto& iitr : _linfo)
                 {
-                    auto _sample = sample{ itr.count, itr.address,
-                                           join(":", iitr.file, iitr.line), iitr };
+                    auto _name   = (iitr.line > 0) ? join(":", iitr.file, iitr.line)
+                                                   : demangle(iitr.func);
+                    auto _sample = sample{ itr.count, itr.address, _name, iitr };
                     auto fitr    = current_record.samples.find(_sample);
                     if(fitr != current_record.samples.end())
                         *fitr += _sample;
