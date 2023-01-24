@@ -33,18 +33,18 @@ struct dwarf_entry
 {
     TIMEMORY_DEFAULT_OBJECT(dwarf_entry)
 
-    bool         begin_statement = false;
-    bool         end_sequence    = false;
-    bool         line_block      = false;
-    bool         prologue_end    = false;
-    bool         epilogue_begin  = false;
-    unsigned int line            = 0;
-    int          col             = 0;
-    unsigned int vliw_op_index   = 0;
-    unsigned int isa             = 0;
-    unsigned int discriminator   = 0;
-    uintptr_t    address         = 0;
-    std::string  file            = {};
+    bool          begin_statement = false;
+    bool          end_sequence    = false;
+    bool          line_block      = false;
+    bool          prologue_end    = false;
+    bool          epilogue_begin  = false;
+    unsigned int  line            = 0;
+    int           col             = 0;
+    unsigned int  vliw_op_index   = 0;
+    unsigned int  isa             = 0;
+    unsigned int  discriminator   = 0;
+    address_range address         = { 0, 0 };
+    std::string   file            = {};
 
     bool is_valid() const;
 

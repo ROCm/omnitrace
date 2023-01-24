@@ -123,9 +123,7 @@ experiment::record::serialize(ArchiveT& ar, const unsigned)
     }
     else
     {
-        for(const auto& itr : samples)
-            _samples.emplace_back(itr);
-        ar(cereal::make_nvp("samples", _samples));
+        ar(cereal::make_nvp("samples", samples));
     }
 }
 
@@ -447,52 +445,48 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
 
     // update sample data
     {
-        auto _merge_samples = [](auto& _dst, const auto& _src) {
-            for(const auto& sitr : _src)
-            {
-                if(!_dst.emplace(sitr).second)
-                {
-                    auto titr = _dst.find(sitr);
-                    titr->count += sitr.count;
-                }
-            }
+        auto _add_sample = [&current_record](sample&& _v) {
+            auto fitr = current_record.samples.find(_v);
+            if(fitr != current_record.samples.end())
+                *fitr += _v;
+            else
+                current_record.samples.emplace(std::move(_v));
         };
 
-        auto _samples = get_samples();
-        for(auto& itr : current_record.experiments)
-            _merge_samples(itr.samples, _samples[itr.index]);
+        auto _total_samples = std::map<uintptr_t, size_t>{};
+        for(const auto& itr : get_samples())
+        {
+            for(const auto& sitr : itr.second)
+            {
+                _total_samples[sitr.address] += sitr.count;
+            }
+        }
 
-        auto _total_samples = sample_dataset_t{};
-        for(const auto& itr : current_record.experiments)
-            _merge_samples(_total_samples, itr.samples);
+        auto _binfo_cfg         = settings::compose_filename_config{};
+        _binfo_cfg.subdirectory = "causal/binary-info";
+        _binfo_cfg.use_suffix   = config::get_use_pid();
+        save_line_info(_binfo_cfg, config::get_verbose());
 
         for(const auto& itr : _total_samples)
         {
-            if(itr.count > 0)
+            auto _addr  = itr.first;
+            auto _count = itr.second;
+            if(_count > 0)
             {
-                auto _linfo = get_line_info(itr.address, true);
-                // if(_linfo.size() > 1) _linfo.pop_front();
+                auto _linfo = get_line_info(_addr, true);
                 for(const auto& iitr : _linfo)
                 {
-                    auto _name   = (iitr.line > 0) ? join(":", iitr.file, iitr.line)
-                                                   : demangle(iitr.func);
-                    auto _sample = sample{ itr.count, itr.address, _name, iitr };
-                    auto fitr    = current_record.samples.find(_sample);
-                    if(fitr != current_record.samples.end())
-                        *fitr += _sample;
-                    else
-                        current_record.samples.emplace(std::move(_sample));
+                    auto _name = (iitr.line > 0) ? join(":", iitr.file, iitr.line)
+                                                 : demangle(iitr.func);
+
+                    _name = join(" :: ", as_hex(_addr), _name);
+                    _add_sample(sample{ _count, _addr, _name, iitr });
                 }
 
                 if(_linfo.empty() && config::get_debug())
                 {
-                    auto _sample = sample{ itr.count, itr.address, as_hex(itr.address),
-                                           sample::line_info{} };
-                    auto fitr    = current_record.samples.find(_sample);
-                    if(fitr != current_record.samples.end())
-                        *fitr += _sample;
-                    else
-                        current_record.samples.emplace(std::move(_sample));
+                    _add_sample(
+                        sample{ _count, _addr, as_hex(_addr), sample::line_info{} });
                 }
             }
         }

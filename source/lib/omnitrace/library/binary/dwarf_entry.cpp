@@ -81,7 +81,8 @@ get_dwarf_entry(Dwarf_Die* _die)
             auto* _line = dwarf_onesrcline(_lines, j);
             if(_line)
             {
-                int _lineno = 0;
+                int       _lineno  = 0;
+                uintptr_t _address = 0;
                 dwarf_lineno(_line, &_lineno);
                 dwarf_linecol(_line, &itr.col);
                 dwarf_linebeginstatement(_line, &itr.begin_statement);
@@ -91,7 +92,8 @@ get_dwarf_entry(Dwarf_Die* _die)
                 dwarf_lineprologueend(_line, &itr.prologue_end);
                 dwarf_lineisa(_line, &itr.isa);
                 dwarf_linediscriminator(_line, &itr.discriminator);
-                dwarf_lineaddr(_line, &itr.address);
+                dwarf_lineaddr(_line, &_address);
+                itr.address = address_range{ _address };
                 if(_lineno > 0) itr.line = _lineno;
                 const auto* _file = dwarf_linesrc(_line, nullptr, nullptr);
                 if(!_file) _file = dwarf_diename(_die);
@@ -170,18 +172,18 @@ dwarf_entry::serialize(ArchiveT& ar, const unsigned int)
 {
 #define OMNITRACE_SERIALIZE_MEMBER(MEMBER) ar(::tim::cereal::make_nvp(#MEMBER, MEMBER));
 
-    OMNITRACE_SERIALIZE_MEMBER(begin_statement)
-    OMNITRACE_SERIALIZE_MEMBER(end_sequence)
-    OMNITRACE_SERIALIZE_MEMBER(line_block)
-    OMNITRACE_SERIALIZE_MEMBER(prologue_end)
-    OMNITRACE_SERIALIZE_MEMBER(epilogue_begin)
+    OMNITRACE_SERIALIZE_MEMBER(file)
     OMNITRACE_SERIALIZE_MEMBER(line)
     OMNITRACE_SERIALIZE_MEMBER(col)
-    OMNITRACE_SERIALIZE_MEMBER(vliw_op_index)
-    OMNITRACE_SERIALIZE_MEMBER(isa)
-    OMNITRACE_SERIALIZE_MEMBER(discriminator)
     OMNITRACE_SERIALIZE_MEMBER(address)
-    OMNITRACE_SERIALIZE_MEMBER(file)
+    OMNITRACE_SERIALIZE_MEMBER(discriminator)
+    // OMNITRACE_SERIALIZE_MEMBER(begin_statement)
+    // OMNITRACE_SERIALIZE_MEMBER(end_sequence)
+    // OMNITRACE_SERIALIZE_MEMBER(line_block)
+    // OMNITRACE_SERIALIZE_MEMBER(prologue_end)
+    // OMNITRACE_SERIALIZE_MEMBER(epilogue_begin)
+    // OMNITRACE_SERIALIZE_MEMBER(vliw_op_index)
+    // OMNITRACE_SERIALIZE_MEMBER(isa)
 }
 
 template void

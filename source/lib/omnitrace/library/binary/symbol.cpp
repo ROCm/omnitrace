@@ -141,6 +141,34 @@ symbol::read_dwarf(const std::deque<dwarf_entry>& _info)
     {
         if(address.contains(itr.address)) dwarf_info.emplace_back(itr);
     }
+
+    // make sure the dwarf info is sorted by address (low to high)
+    std::sort(dwarf_info.begin(), dwarf_info.end(),
+              [](const dwarf_entry& _lhs, const dwarf_entry& _rhs) {
+                  return _lhs.address < _rhs.address;
+              });
+
+    // helper for getting the end address
+    auto _get_next_address = [&](auto itr, uintptr_t _low) {
+        while(++itr != dwarf_info.end())
+        {
+            if(itr->address.low > _low)
+            {
+                return itr->address.low;
+            }
+        }
+        // return the end address of the symbol
+        return address.high;
+    };
+    // convert the single addresses into ranges
+    for(auto itr = dwarf_info.begin(); itr != dwarf_info.end(); ++itr)
+    {
+        // if address is already a range, do not update it
+        if(!itr->address.is_range())
+            itr->address = address_range{ itr->address.low,
+                                          _get_next_address(itr, itr->address.low) };
+    }
+
     return dwarf_info.size();
 }
 
@@ -238,14 +266,6 @@ symbol::get_inline_symbols(const std::vector<scope_filter>& _filters) const
     return _data;
 }
 
-template std::deque<symbol>
-symbol::get_inline_symbols<std::deque<symbol>>(
-    const std::vector<scope_filter>& _filters) const;
-
-template std::vector<inlined_symbol>
-symbol::get_inline_symbols<std::vector<inlined_symbol>>(
-    const std::vector<scope_filter>& _filters) const;
-
 template <typename Tp>
 Tp
 symbol::get_debug_line_info(const std::vector<scope_filter>& _filters) const
@@ -266,7 +286,7 @@ symbol::get_debug_line_info(const std::vector<scope_filter>& _filters) const
                 if constexpr(concepts::is_unqualified_same<value_type, symbol>::value)
                 {
                     auto _sym    = clone();
-                    _sym.address = address_range{ itr.address, itr.address + 1 };
+                    _sym.address = itr.address;
                     _sym.file    = itr.file;
                     _sym.line    = itr.line;
                     _data.emplace_back(_sym);
@@ -282,14 +302,6 @@ symbol::get_debug_line_info(const std::vector<scope_filter>& _filters) const
 
     return _data;
 }
-
-template std::deque<symbol>
-symbol::get_debug_line_info<std::deque<symbol>>(
-    const std::vector<scope_filter>& _filters) const;
-
-template std::vector<dwarf_entry>
-symbol::get_debug_line_info<std::vector<dwarf_entry>>(
-    const std::vector<scope_filter>& _filters) const;
 
 template <typename ArchiveT>
 void
@@ -322,5 +334,21 @@ symbol::serialize<cereal::MinimalJSONOutputArchive>(cereal::MinimalJSONOutputArc
 template void
 symbol::serialize<cereal::PrettyJSONOutputArchive>(cereal::PrettyJSONOutputArchive&,
                                                    const unsigned int);
+
+template std::deque<symbol>
+symbol::get_inline_symbols<std::deque<symbol>>(
+    const std::vector<scope_filter>& _filters) const;
+
+template std::vector<inlined_symbol>
+symbol::get_inline_symbols<std::vector<inlined_symbol>>(
+    const std::vector<scope_filter>& _filters) const;
+
+template std::deque<symbol>
+symbol::get_debug_line_info<std::deque<symbol>>(
+    const std::vector<scope_filter>& _filters) const;
+
+template std::vector<dwarf_entry>
+symbol::get_debug_line_info<std::vector<dwarf_entry>>(
+    const std::vector<scope_filter>& _filters) const;
 }  // namespace binary
 }  // namespace omnitrace

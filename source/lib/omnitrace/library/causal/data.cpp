@@ -282,36 +282,8 @@ compute_eligible_lines_impl()
     auto& _eligible_ar = get_eligible_address_ranges();
     for(const auto& litr : _binary_info)
     {
-        // for(const auto& ditr : litr.mappings)
-        {
-            /*
-            // check both <file> and <file>:<line>
-            if(!satisfies_filter(sf::SOURCE_FILTER, ditr.file) &&
-                !satisfies_filter(sf::SOURCE_FILTER, JOIN(':', ditr.file, ditr.line)))
-                continue;
-
-            // only check demangled function name since things like ^_ can
-            // accidentally catch mangled C++ function names
-            if(!satisfies_filter(sf::FUNCTION_FILTER, demangle(ditr.func))) continue;
-            */
-            // map the instruction pointer address to the line info
-            //_add_line_info(ditr.ipaddr(), ditr);
-        }
-
         for(const auto& ditr : litr.mappings)
         {
-            /*
-            // check both <file> and <file>:<line>
-            if(!satisfies_filter(sf::SOURCE_FILTER, ditr.file) &&
-                !satisfies_filter(sf::SOURCE_FILTER, JOIN(':', ditr.file, ditr.line)))
-                continue;
-
-            // only check demangled function name since things like ^_ can
-            // accidentally catch mangled C++ function names
-            if(!satisfies_filter(sf::FUNCTION_FILTER, demangle(ditr.func))) continue;
-            */
-            // map the instruction pointer address to the line info
-            //_add_line_info(ditr.ipaddr(), ditr);
             _eligible_ar += std::make_pair(
                 binary::address_multirange::coarse{},
                 address_range_t{ ditr.load_address, ditr.last_address + 1 });
@@ -319,18 +291,6 @@ compute_eligible_lines_impl()
 
         for(const auto& ditr : litr.symbols)
         {
-            /*
-            // check both <file> and <file>:<line>
-            if(!satisfies_filter(sf::SOURCE_FILTER, ditr.file) &&
-                !satisfies_filter(sf::SOURCE_FILTER, JOIN(':', ditr.file, ditr.line)))
-                continue;
-
-            // only check demangled function name since things like ^_ can
-            // accidentally catch mangled C++ function names
-            if(!satisfies_filter(sf::FUNCTION_FILTER, demangle(ditr.func))) continue;
-            */
-            // map the instruction pointer address to the line info
-            //_add_line_info(ditr.ipaddr(), ditr);
             _eligible_ar += ditr.address + ditr.load_address;
         }
 
@@ -441,13 +401,13 @@ save_line_info_impl(std::ostream&                           _ofs,
                 _ofs << "        " << as_hex(ditr.address) << " :: " << ditr.file << ":"
                      << ditr.line;
                 _ofs << "\n";
-                _emitted_dwarf_addresses.emplace(ditr.address);
+                _emitted_dwarf_addresses.emplace(ditr.address.low);
             }
         }
 
         for(const auto& itr : _data.debug_info)
         {
-            if(_emitted_dwarf_addresses.count(itr.address) > 0) continue;
+            if(_emitted_dwarf_addresses.count(itr.address.low) > 0) continue;
             _ofs << "    " << as_hex(itr.address) << " :: " << itr.file << ":"
                  << itr.line;
             _ofs << "\n";
@@ -490,7 +450,7 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
     if(_started) _started->set_value();
 
     // pause at least one second to determine sampling rate
-    std::this_thread::sleep_for(std::chrono::seconds{ 1 });
+    // std::this_thread::sleep_for(std::chrono::seconds{ 1 });
 
     if(!config::get_causal_end_to_end())
     {
@@ -500,11 +460,6 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
             std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
         }
     }
-
-    auto _cfg         = settings::compose_filename_config{};
-    _cfg.subdirectory = "causal/binary-info";
-    _cfg.use_suffix   = config::get_use_pid();
-    save_line_info(_cfg, config::get_verbose());
 
     double _delay_sec =
         config::get_setting_value<double>("OMNITRACE_CAUSAL_DELAY").second;
@@ -808,10 +763,10 @@ sample_selection(size_t _nitr, size_t _wait_ns)
 std::deque<binary::symbol>
 get_line_info(uintptr_t _addr, bool _include_discarded)
 {
-    static auto _filters       = get_filters();
-    static auto _no_filters    = get_filters({ sf::BINARY_FILTER });
+    static auto _glob_filters  = get_filters({ sf::BINARY_FILTER });
+    static auto _scope_filters = get_filters();
     auto        _data          = std::deque<binary::symbol>{};
-    auto        _get_line_info = [&](const auto& _info) {
+    auto        _get_line_info = [&](const auto& _info, const auto& _filters) {
         // search for exact matches first
         for(const binary::binary_info& litr : _info)
         {
@@ -825,20 +780,16 @@ get_line_info(uintptr_t _addr, bool _include_discarded)
                 if(config::get_causal_mode() == CausalMode::Function)
                 {
                     // check if the primary symbol satisfy the constraints
-                    if(ditr(_include_discarded ? _no_filters : _filters))
-                        _local_data.emplace_back(ditr);
+                    if(ditr(_filters)) _local_data.emplace_back(ditr);
 
                     // the primary symbol may not satisfy the constraints but the inlined
                     // functions may
-                    utility::combine(_local_data,
-                                     ditr.get_inline_symbols(
-                                         _include_discarded ? _no_filters : _filters));
+                    utility::combine(_local_data, ditr.get_inline_symbols(_filters));
                 }
                 else if(config::get_causal_mode() == CausalMode::Line)
                 {
                     auto _debug_data = std::deque<binary::symbol>{};
-                    for(const auto& itr : ditr.get_debug_line_info(
-                            _include_discarded ? _no_filters : _filters))
+                    for(const auto& itr : ditr.get_debug_line_info(_filters))
                     {
                         if(itr.ipaddr().contains(_addr)) _debug_data.emplace_back(itr);
                     }
@@ -862,9 +813,9 @@ get_line_info(uintptr_t _addr, bool _include_discarded)
     };
 
     if(_include_discarded)
-        _get_line_info(get_cached_binary_info().first);
+        _get_line_info(get_cached_binary_info().first, _glob_filters);
     else
-        _get_line_info(get_cached_binary_info().second);
+        _get_line_info(get_cached_binary_info().second, _scope_filters);
 
     return _data;
 }
@@ -967,6 +918,11 @@ start_experimenting()
     }
 
     compute_eligible_lines();
+
+    auto _cfg         = settings::compose_filename_config{};
+    _cfg.subdirectory = "causal/binary-info";
+    _cfg.use_suffix   = config::get_use_pid();
+    save_line_info(_cfg, config::get_verbose());
 
     if(get_state() < State::Finalized)
     {
