@@ -58,6 +58,7 @@
 #include <initializer_list>
 #include <random>
 #include <regex>
+#include <sstream>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -272,7 +273,7 @@ satisfies_filter(const binary::scope_filter::filter_scope& _scope,
 }
 
 auto
-compute_eligible_lines()
+compute_eligible_lines_impl()
 {
     const auto& _binary_info = get_cached_binary_info().first;
     auto&       _filter_info = get_cached_binary_info().second;
@@ -341,17 +342,17 @@ compute_eligible_lines()
 
         for(const auto& ditr : litr.symbols)
         {
-            // check both <file> and <file>:<line>
-            if(ditr(_filters))
+            auto _sym = ditr.clone();
+
+            _sym.inlines =
+                ditr.get_inline_symbols<std::vector<binary::inlined_symbol>>(_filters);
+
+            _sym.dwarf_info =
+                ditr.get_debug_line_info<std::vector<binary::dwarf_entry>>(_filters);
+
+            if(ditr(_filters) || (_sym.inlines.size() + _sym.dwarf_info.size()) > 0)
             {
-                auto& _sym = _filtered.symbols.emplace_back(ditr.clone());
-
-                _sym.inlines =
-                    ditr.get_inline_symbols<std::vector<binary::inlined_symbol>>(
-                        _filters);
-
-                _sym.dwarf_info =
-                    ditr.get_debug_line_info<std::vector<binary::dwarf_entry>>(_filters);
+                _filtered.symbols.emplace_back(_sym);
             }
         }
 
@@ -385,6 +386,85 @@ compute_eligible_lines()
         _eligible_ar.empty(),
         "Error! binary analysis (after filters) resulted in zero eligible instruction "
         "pointer addresses for causal experimentation");
+}
+
+void
+save_maps_info_impl(std::ostream& _ofs)
+{
+    auto _maps_file = join("/", "/proc", process::get_id(), "maps");
+    auto _ifs       = std::ifstream{ _maps_file };
+    auto _maps      = std::stringstream{};
+    if(_ifs)
+    {
+        _maps << _maps_file << "\n";
+        while(_ifs)
+        {
+            std::string _line{};
+            getline(_ifs, _line);
+            if(!_line.empty()) _maps << "    " << _line << "\n";
+        }
+    }
+    _ofs << _maps.str();
+}
+
+void
+save_line_info_impl(std::ostream&                           _ofs,
+                    const std::vector<binary::binary_info>& _binary_data)
+{
+    auto _write_impl = [&_ofs](const binary::binary_info& _data) {
+        for(const auto& itr : _data.mappings)
+        {
+            _ofs << itr.pathname << " [" << as_hex(itr.load_address) << " - "
+                 << as_hex(itr.last_address) << "]\n";
+        }
+
+        auto _emitted_dwarf_addresses = std::set<uintptr_t>{};
+        for(const auto& itr : _data.symbols)
+        {
+            auto _addr     = itr.address;
+            auto _addr_off = itr.address + itr.load_address;
+            _ofs << "    " << as_hex(_addr_off) << " [" << as_hex(_addr)
+                 << "] :: " << itr.file;
+            if(itr.line > 0) _ofs << ":" << itr.line;
+            if(!itr.func.empty()) _ofs << " [" << tim::demangle(itr.func) << "]";
+            _ofs << "\n";
+
+            for(const auto& ditr : itr.inlines)
+            {
+                _ofs << "        " << ditr.file << ":" << ditr.line;
+                if(!ditr.func.empty()) _ofs << " [" << tim::demangle(ditr.func) << "]";
+                _ofs << "\n";
+            }
+
+            for(const auto& ditr : itr.dwarf_info)
+            {
+                _ofs << "        " << as_hex(ditr.address) << " :: " << ditr.file << ":"
+                     << ditr.line;
+                _ofs << "\n";
+                _emitted_dwarf_addresses.emplace(ditr.address);
+            }
+        }
+
+        for(const auto& itr : _data.debug_info)
+        {
+            if(_emitted_dwarf_addresses.count(itr.address) > 0) continue;
+            _ofs << "    " << as_hex(itr.address) << " :: " << itr.file << ":"
+                 << itr.line;
+            _ofs << "\n";
+        }
+
+        _ofs << "\n" << std::flush;
+    };
+
+    for(const auto& itr : _binary_data)
+        _write_impl(itr);
+}
+
+void
+compute_eligible_lines()
+{
+    static auto _once = std::once_flag{};
+    std::call_once(_once, compute_eligible_lines_impl);
 }
 
 void
@@ -471,7 +551,54 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
         {
             if(get_state() == State::Finalized)
             {
-                OMNITRACE_CONDITIONAL_THROW(_impl_no == 0, "experiment never started\n");
+                auto _memory = std::stringstream{};
+                auto _binary = std::stringstream{};
+                auto _scoped = std::stringstream{};
+                auto _sample = std::stringstream{};
+                save_maps_info_impl(_memory);
+                save_line_info_impl(_binary, get_cached_binary_info().first);
+                save_line_info_impl(_scoped, get_cached_binary_info().second);
+
+                auto _samples = std::map<uintptr_t, size_t>{};
+                for(const auto& itr : get_samples())
+                {
+                    for(const auto& iitr : itr.second)
+                    {
+                        _samples[iitr.address] += iitr.count;
+                    }
+                }
+
+                for(const auto& itr : _samples)
+                {
+                    if(itr.second > 0)
+                    {
+                        auto _linfo = get_line_info(itr.first, true);
+                        // if(_linfo.size() > 1) _linfo.pop_front();
+                        for(const auto& iitr : _linfo)
+                        {
+                            _sample << "    " << std::setw(8) << itr.second
+                                    << " :: " << as_hex(itr.first) << " [" << iitr.file
+                                    << ":" << iitr.line << "][" << demangle(iitr.func)
+                                    << "]\n";
+                        }
+
+                        if(_linfo.empty())
+                        {
+                            _sample << "    " << std::setw(8) << itr.second
+                                    << " :: " << as_hex(itr.first) << "\n";
+                        }
+                    }
+                }
+
+                std::cerr << std::flush;
+                auto _cerr = tim::log::warning_stream(std::cerr);
+                _cerr << "\nmaps:\n\n" << _memory.str() << "\n";
+                _cerr << "\nbinary:\n\n" << _binary.str() << "\n";
+                _cerr << "\nscoped:\n\n" << _scoped.str() << "\n";
+                _cerr << "\nsample:\n\n" << _sample.str() << "\n";
+                std::cerr << std::flush;
+
+                OMNITRACE_CONDITIONAL_THROW(_impl_no == 0, "experiment never started");
                 return;
             }
         }
@@ -525,74 +652,15 @@ is_eligible_address(uintptr_t _v)
 void
 save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
 {
-    auto _write_impl = [](std::ofstream& _ofs, const binary::binary_info& _data) {
-        for(const auto& itr : _data.mappings)
-        {
-            _ofs << itr.pathname << " [" << as_hex(itr.load_address) << " - "
-                 << as_hex(itr.last_address) << "]\n";
-        }
-
-        auto _emitted_dwarf_addresses = std::set<uintptr_t>{};
-        for(const auto& itr : _data.symbols)
-        {
-            auto _addr     = itr.address;
-            auto _addr_off = itr.address + itr.load_address;
-            _ofs << "    " << as_hex(_addr_off) << " [" << as_hex(_addr)
-                 << "] :: " << itr.file;
-            if(itr.line > 0) _ofs << ":" << itr.line;
-            if(!itr.func.empty()) _ofs << " [" << tim::demangle(itr.func) << "]";
-            _ofs << "\n";
-
-            for(const auto& ditr : itr.inlines)
-            {
-                _ofs << "        " << ditr.file << ":" << ditr.line;
-                if(!ditr.func.empty()) _ofs << " [" << tim::demangle(ditr.func) << "]";
-                _ofs << "\n";
-            }
-
-            for(const auto& ditr : itr.dwarf_info)
-            {
-                _ofs << "        " << as_hex(ditr.address) << " :: " << ditr.file << ":"
-                     << ditr.line;
-                _ofs << "\n";
-                _emitted_dwarf_addresses.emplace(ditr.address);
-            }
-        }
-
-        for(const auto& itr : _data.debug_info)
-        {
-            if(_emitted_dwarf_addresses.count(itr.address) > 0) continue;
-            _ofs << "    " << as_hex(itr.address) << " :: " << itr.file << ":"
-                 << itr.line;
-            _ofs << "\n";
-        }
-
-        _ofs << "\n" << std::flush;
-    };
-
-    auto _write = [&_write_impl, _verbose](const std::string& ofname, const auto& _data) {
-        auto _maps_file = join("/", "/proc", process::get_id(), "maps");
-        auto _ifs       = std::ifstream{ _maps_file };
-        auto _maps      = std::stringstream{};
-        if(_ifs)
-        {
-            _maps << _maps_file << "\n";
-            while(_ifs)
-            {
-                std::string _line{};
-                getline(_ifs, _line);
-                if(!_line.empty()) _maps << "    " << _line << "\n";
-            }
-        }
+    auto _write = [_verbose](const std::string& ofname, const auto& _data) {
         auto _ofs = std::ofstream{};
         if(tim::filepath::open(_ofs, ofname))
         {
             if(_verbose >= 0)
                 operation::file_output_message<binary::symbol>{}(
                     ofname, std::string{ "causal_symbol_info" });
-            for(const auto& itr : _data)
-                _write_impl(_ofs, itr);
-            _ofs << _maps.str();
+            save_line_info_impl(_ofs, _data);
+            save_maps_info_impl(_ofs);
         }
         else
         {
@@ -793,7 +861,10 @@ get_line_info(uintptr_t _addr, bool _include_discarded)
         }
     };
 
-    _get_line_info(get_cached_binary_info().first);
+    if(_include_discarded)
+        _get_line_info(get_cached_binary_info().first);
+    else
+        _get_line_info(get_cached_binary_info().second);
 
     return _data;
 }
@@ -902,7 +973,7 @@ start_experimenting()
         OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
         auto _promise = std::make_shared<std::promise<void>>();
         std::thread{ perform_experiment_impl, _promise }.detach();
-        _promise->get_future().wait_for(std::chrono::seconds{ 1 });
+        _promise->get_future().wait_for(std::chrono::seconds{ 2 });
     }
 }
 
