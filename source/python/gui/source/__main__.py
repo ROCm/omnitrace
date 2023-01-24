@@ -72,17 +72,6 @@ def causal(args):
                 "type": "Name",
             },
             {
-                "Name": "kernel",
-                "filter": [],
-                "values": list(
-                    map(
-                        str,
-                        kernel_names,
-                    )
-                ),
-                "type": "Kernel Name",
-            },
-            {
                 "Name": "points",
                 "filter": [],
                 "values": max_points,
@@ -98,7 +87,10 @@ def causal(args):
             speedup_df,
             args.verbose,
         )
-        app.run_server(debug=False, host="0.0.0.0", port=8051)
+        app.run_server(
+                debug=True,
+                host="0.0.0.0", 
+                port=8051)
 
 
 def main():

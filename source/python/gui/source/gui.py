@@ -67,36 +67,24 @@ def build_line_graph(data, KernelName, points_filt):
     data_options = sorted(list(set(data.point)))
     layout1 = html.Div(
         id = "graph_all",
+        className = 'graph_all',
         children = [
             html.H4("All Causal Profiles", style={"color": "white"}),
-            #dcc.Graph(id="graph_all"),
-            #dcc.Checklist(
-            #    id="checklist_select",
-            #    options=data_options,
-            #    value=data_options,
-            #    inline=True,
-            #)
         ]
     )
 
     layout2 = html.Div(
         id = "graph_select",
+        className = 'graph_select',
         children = [
             html.H4("Selected Causal Profiles", style={"color": "white"}),
-            #dcc.Graph(id="graph_select"),
-            #dcc.Checklist(
-            #    id="checklist_select",
-            #    options=data_options,
-            #    value=data_options,
-            #    inline=True,
-            #),
         ]
     )
 
     return layout1, layout2
 
 
-def update_line_graph(sort_filt, selected_all, selected_select, data, points_filt):
+def update_line_graph(sort_filt, func_list, exp_list, data, points_filt):
 
     # df = px.data.gapminder() # replace with your own data source
     if "Alphabetical" in sort_filt:
@@ -149,39 +137,62 @@ def update_line_graph(sort_filt, selected_all, selected_select, data, points_fil
         data = newData
 
     point_counts = data.point.value_counts()
-    # points_filt = 6.5
+
     sufficient_points = point_counts > points_filt
     sufficient_points = sufficient_points.loc[lambda x: x == True]
     sufficient_points = list(sufficient_points.index)
     # sufficient_points = sufficient_points
-    mask_all = data[data.point.isin(selected_all)]
+    mask_all = data[data.point.isin(func_list)]
     mask_all = mask_all[mask_all.point.isin(sufficient_points)]
+    mask_all = mask_all[mask_all["progress points"].isin(exp_list)]
 
-    mask_select = data[data.point.isin(selected_select)]
+    mask_select = data[data.point.isin(func_list)]
     mask_select = mask_select[mask_select.point.isin(sufficient_points)]
+    mask_select = mask_select[mask_select["progress points"].isin(exp_list)]
+
     # what = mask_select.value_counts()[True]
     # what = data[mask_all]
     # fig_data1 = data[mask_all]
     # fig_data2 = data[mask_select]
     
-    fig1 = dcc.Graph(figure = px.line(
-        mask_all,
-        x="Line Speedup",
-        y="Program Speedup",
-        # height=700,
-        # width=700,
-        # automargin="center",
-        # margin={l:50, r:50},
-        color="point",
-        markers=True,
-        #line_shape="spline",
-    ))
+    fig1 = go.Figure()
+
+    for point in sorted(list(mask_all.point.unique())):
+        #for experiment in list(mask_select.experiment)[0:3]:
+        sub_data = mask_all[mask_all["point"] == point]
+        fig1.add_trace(
+                    go.Scatter(
+                    x = sub_data["Line Speedup"],
+                    y = sub_data["Program Speedup"],
+                    line_shape='spline',
+                    name = point[0:50],
+                    mode='lines+markers',
+                    )
+                ).update_layout(
+                    xaxis={"title":"Function Speedup"},
+                    yaxis={"title":"Program Speedup"}
+                    )
+    _points = list(mask_all["progress points"])
+    _pointsidx = list(range(0,len(_points)))
+    _count=[]
+    Hist_df = px.data.tips()
+    for point in _points:
+        _count.append(len(list(mask_all["progress points"] == point)))
+    HIST_DATA = pd.DataFrame(data= {"Function":_points})
+    fig3 = px.histogram(
+            HIST_DATA,
+            x="Function",
+            marginal="rug",
+            color = "Function",
+            #labels={'Function':'# of experiments'},
+            height=800,
+            nbins = 5
+            )
     layout2  = [
             html.H4("Selected Causal Profiles", style={"color": "white"}),
         ]
     for point in sorted(list(mask_select.point.unique())):
         subplots = go.Figure()
-        #for experiment in list(mask_select.experiment)[0:3]:
         sub_data = mask_select[mask_select["point"] == point]
         line_number = point[point.rfind(':'):].isnumeric()
         if line_number:
@@ -201,7 +212,6 @@ def update_line_graph(sort_filt, selected_all, selected_select, data, points_fil
                     yaxis={"title":"Program Speedup"}
                     )
         else:
-            #sub_data = sub_data.rename(columns={"Line Speedup":"Function Speedup"})
             for prog in list(sub_data["progress points"].unique()):
                 sub_data_prog = sub_data[sub_data["progress points"] == prog]
                 subplots.add_trace(
@@ -219,19 +229,10 @@ def update_line_graph(sort_filt, selected_all, selected_select, data, points_fil
         layout2.append(html.H4(point, style={"color": "white"}))
         layout2.append(dcc.Graph(figure = subplots))
     
-    #layout2 = html.Div(
-    #    id = "graph_select",
-    #    children = [
-    #        html.H4("Selected Causal Profiles", style={"color": "white"}),
-    #    ].append(fig2)
-    #)
     layout1  = [
-            html.H4("Selected Causal Profiles", style={"color": "white"}),
-            fig1
+            html.H4("All Causal Profiles", style={"color": "white"}),
+            dcc.Graph(figure = fig3)
         ]
-
-    #fig2.layout.autosize = 
-
     return mask_all, layout1, layout2
 
 
@@ -329,16 +330,11 @@ def build_causal_layout(
         Output("nav-wrap", "children"),
         Output("graph_all", "children"),
         Output("graph_select", "children"),
-        #Output("checklist_all", "options"),
-        #Output("checklist_select", "options"),
-        #Output("checklist_all", "value"),
-        #Output("checklist_select", "value"),
         [Input("nav-wrap", "children")],
         [Input("Sort by-filt", "value")],
-        [Input("point-regex", "value")],
+        [Input("function_regex", "value")],
+        [Input("exp_regex", "value")],
         [Input("points-filt", "value")],
-        #[Input("checklist_all", "value")],
-        #[Input("checklist_select", "value")],
         [Input("file-path", "value")],
         [Input("upload-drag", "contents")],
         [State("upload-drag", "filename")],
@@ -347,10 +343,9 @@ def build_causal_layout(
     def generate_from_filter(
         header,
         sort_filt,
-        point_regex,
+        func_regex,
+        exp_regex,
         points_filt,
-        #checklist_all_values,
-        #checklist_select_values,
         workload_path,
         list_of_contents,
         filename,
@@ -359,26 +354,27 @@ def build_causal_layout(
         global file_timestamp
         global data
         global input_filters
-        global checklist_options
-        global checklist_values
+
         CLI = False
     
         
         # change to if debug
         if True:
             print("Sort by is ", sort_filt)
-            print("point_regex is ", point_regex)
+            print("func_regex is ", func_regex)
+            print("exp_regex is ", exp_regex)
             print("points is: ", points_filt)
-            #print("checklist_all is: ", checklist_all_values)
-            #print("checklist_select is: ", checklist_select_values)
 
         div_children = []
         files = []
         fig1 = None
         fig2 = None
         global new_data
-        checklist_options = checklist_values = checklist_all_values = checklist_select_values= sorted(list(data.point.unique()))
-
+        global func_list
+        global exp_list
+        func_list = sorted(list(data.point.unique()))
+        exp_list = sorted(list(data["progress points"].unique()))
+        
         if workload_path is not None and os.path.isdir(workload_path):
             #files = glob.glob(os.path.join(workload_path, "*.coz")) + 
             files = glob.glob(os.path.join(workload_path, "*.json"))
@@ -396,7 +392,8 @@ def build_causal_layout(
             data = new_data
 
             # reset checklists
-            checklist_options = checklist_values = sorted(list(data.point.unique()))
+            func_list = sorted(list(data.point.unique()))
+            exp_list = sorted(list(data["progress points"].unique()))
 
             max_points = new_data.point.value_counts().max().max()
 
@@ -453,45 +450,48 @@ def build_causal_layout(
                 )
 
 
-        elif point_regex is not None:
+        elif func_regex is not None or exp_regex is not None:
             # filter options and values
-            p = re.compile(point_regex, flags=0)
+            if func_regex is not None:
+                p = re.compile(func_regex, flags=0)
 
-            checklist_all_values = checklist_select_values = [
-                s for s in checklist_values if p.match(s)
-            ]
-            checklist_select_options = checklist_all_options = [
-                s for s in checklist_options if p.match(s)
-            ]
+                func_list = [
+                    s for s in list(data["point"].unique()) if p.match(s)
+                ]
+            if exp_regex is not None:
+                p = re.compile(exp_regex, flags=0)
+
+                exp_list = [
+                    s for s in list(data["progress points"].unique()) if p.match(s)
+                ]
 
             # change to update checklist after points selection
             screen_data, fig1, fig2 = update_line_graph(
                 sort_filt,
-                checklist_all_values,
-                checklist_select_values,
+                func_list,
+                exp_list,
                 data,
                 points_filt,
             )
-            screen_data_points = sorted(list(screen_data.point.unique()))
 
             # TODO keep min points value...
             return (
                 div_children,
                 header,
                 fig1,
-                fig2,
-                #checklist_all_options,
-                #checklist_select_options,
-                #checklist_all_values,
-                #checklist_select_values,
+                fig2
             )
+
 
         else:
             # change to update checklist after points selection
+            func_list = sorted(list(data.point.unique()))
+            exp_list = sorted(list(data["progress points"].unique()))
+
             screen_data, fig1, fig2 = update_line_graph(
                 sort_filt,
-                checklist_all_values,
-                checklist_select_values,
+                func_list,
+                exp_list,
                 data,
                 points_filt,
             )
@@ -501,8 +501,4 @@ def build_causal_layout(
                 header,
                 fig1,
                 fig2,
-                #checklist_all_options,
-                #checklist_select_options,
-                #checklist_all_values,
-                #checklist_select_values,
             )

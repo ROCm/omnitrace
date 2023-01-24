@@ -61,14 +61,14 @@ def filePath():
     )
 
 
-def kernel_filter(name, values, filter, style_):
+def function_filter(_id, _placeholder):
     return html.Li(
         className="filter",
         children=[
             html.Li(
                 dcc.Input(
-                    id="point-regex",
-                    placeholder="Insert filter regex",
+                    id=_id,
+                    placeholder=_placeholder,
                     type="text",
                     debounce=True,
                     style={
@@ -247,22 +247,24 @@ def get_header(raw_pmc, dropDownMenuItems, input_filters, kernel_names):
                     },
                 )
             )
-        elif filter["type"] == "Kernel Name":
-            header_nav.append(
-                kernel_filter(
-                    filter["Name"],
-                    filter["values"],
-                    filter["filter"],
-                    {
-                        "width": "200px",  # TODO: Change these widths to % rather than fixed value
-                        "height": "34px",
-                    },
-                )
-            )
+        #elif filter["type"] == "Function Name":
+        #    header_nav.append(
+        #        function_filter(
+        #            filter["Name"],
+        #            filter["values"],
+        #            filter["filter"],
+        #            {
+        #                "width": "200px",  # TODO: Change these widths to % rather than fixed value
+        #                "height": "34px",
+        #            },
+        #        )
+        #id    )
         else:
             print("type not supported")
             # sys.exit(1)
     header_nav = children_[0].children[0].children
+    header_nav.append(function_filter("function_regex", "Funtion/line regex"))
+    header_nav.append(function_filter("exp_regex", "Experiment regex"))
     header_nav.append(reportBug())
     # header_nav.append(minPoints())
 

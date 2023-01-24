@@ -106,15 +106,12 @@ def process_data(data, _data):
                 else:
                     _delt = pts["laps"]
                 if _delt > 0:
-                        #delt=1
                         itr += float(_duration) / float(_delt)
                 else:
                         _diff = pts["arrival"] - pts["departure"] + 1
                         _rate = pts["arrival"] / float(_duration)
                         if _rate != 0:
                             itr += float(_diff) / float(_rate)
-                #else:
-                #    _delt = pts["laps"]
     return data
 
 def compute_speedups(_data, CLI):

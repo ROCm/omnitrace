@@ -224,12 +224,21 @@ ul#nav li {
 ul#nav li a:active { background-color: transparent !important; }
 ul#nav li.current a { color: #F06000; }
 
-/* Causal Grapsh */
+/* Causal Graphs 
 .dash-graph{
    width:90%;
    margin: auto;
+}*/
+.graph_all{
+   width:95%;
+   height: 100%;
+   margin: auto;
 }
-
+.graph_select{
+   width:95%;
+   height: 100%;
+   margin: auto;
+}
 /* Report Button */
 button.report {
    color: #fff;
