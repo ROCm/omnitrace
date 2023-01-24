@@ -20,9 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "library/binary/dwarf_line_info.hpp"
-#include "library/binary/basic_line_info.hpp"
+#include "library/binary/dwarf_entry.hpp"
 #include "library/binary/fwd.hpp"
+#include "library/timemory.hpp"
 #include "library/utility.hpp"
 
 #include <dwarf.h>
@@ -64,9 +64,9 @@ get_dwarf_address_ranges(Dwarf_Die* _die)
 }
 
 auto
-get_dwarf_line_info(Dwarf_Die* _die)
+get_dwarf_entry(Dwarf_Die* _die)
 {
-    auto _line_info = std::deque<dwarf_line_info>{};
+    auto _line_info = std::deque<dwarf_entry>{};
 
     if(dwarf_tag(_die) != DW_TAG_compile_unit) return _line_info;
 
@@ -82,7 +82,6 @@ get_dwarf_line_info(Dwarf_Die* _die)
             if(_line)
             {
                 int _lineno = 0;
-                itr.valid   = true;
                 dwarf_lineno(_line, &_lineno);
                 dwarf_linecol(_line, &itr.col);
                 dwarf_linebeginstatement(_line, &itr.begin_statement);
@@ -106,16 +105,37 @@ get_dwarf_line_info(Dwarf_Die* _die)
 }  // namespace
 
 bool
-dwarf_line_info::is_valid() const
+dwarf_entry::operator<(const dwarf_entry& _rhs) const
 {
-    return valid && !file.empty();
+    return std::tie(address, line, col, discriminator) <
+           std::tie(_rhs.address, _rhs.line, _rhs.col, _rhs.discriminator);
 }
 
-std::deque<dwarf_line_info>
-dwarf_line_info::process_dwarf(int _fd, std::vector<address_range>& _ranges)
+bool
+dwarf_entry::operator==(const dwarf_entry& _rhs) const
+{
+    return std::tie(address, line, col, discriminator, vliw_op_index, isa, file) ==
+           std::tie(_rhs.address, _rhs.line, _rhs.col, _rhs.discriminator,
+                    _rhs.vliw_op_index, _rhs.isa, _rhs.file);
+}
+
+bool
+dwarf_entry::operator!=(const dwarf_entry& _rhs) const
+{
+    return !(*this == _rhs);
+}
+
+bool
+dwarf_entry::is_valid() const
+{
+    return (*this != dwarf_entry{} && !file.empty());
+}
+
+std::deque<dwarf_entry>
+dwarf_entry::process_dwarf(int _fd, std::vector<address_range>& _ranges)
 {
     auto* _dwarf_v   = dwarf_begin(_fd, DWARF_C_READ);
-    auto  _line_info = std::deque<dwarf_line_info>{};
+    auto  _line_info = std::deque<dwarf_entry>{};
 
     size_t    cu_header_size = 0;
     Dwarf_Off cu_off         = 0;
@@ -131,7 +151,7 @@ dwarf_line_info::process_dwarf(int _fd, std::vector<address_range>& _ranges)
             Dwarf_Die* _die = &cu_die;
             if(dwarf_tag(_die) == DW_TAG_compile_unit)
             {
-                combine(_line_info, get_dwarf_line_info(_die));
+                combine(_line_info, get_dwarf_entry(_die));
                 combine(_ranges, get_dwarf_address_ranges(_die));
             }
         }
@@ -143,5 +163,37 @@ dwarf_line_info::process_dwarf(int _fd, std::vector<address_range>& _ranges)
 
     return _line_info;
 }
+
+template <typename ArchiveT>
+void
+dwarf_entry::serialize(ArchiveT& ar, const unsigned int)
+{
+#define OMNITRACE_SERIALIZE_MEMBER(MEMBER) ar(::tim::cereal::make_nvp(#MEMBER, MEMBER));
+
+    OMNITRACE_SERIALIZE_MEMBER(begin_statement)
+    OMNITRACE_SERIALIZE_MEMBER(end_sequence)
+    OMNITRACE_SERIALIZE_MEMBER(line_block)
+    OMNITRACE_SERIALIZE_MEMBER(prologue_end)
+    OMNITRACE_SERIALIZE_MEMBER(epilogue_begin)
+    OMNITRACE_SERIALIZE_MEMBER(line)
+    OMNITRACE_SERIALIZE_MEMBER(col)
+    OMNITRACE_SERIALIZE_MEMBER(vliw_op_index)
+    OMNITRACE_SERIALIZE_MEMBER(isa)
+    OMNITRACE_SERIALIZE_MEMBER(discriminator)
+    OMNITRACE_SERIALIZE_MEMBER(address)
+    OMNITRACE_SERIALIZE_MEMBER(file)
+}
+
+template void
+dwarf_entry::serialize<cereal::JSONInputArchive>(cereal::JSONInputArchive&,
+                                                 const unsigned int);
+
+template void
+dwarf_entry::serialize<cereal::MinimalJSONOutputArchive>(
+    cereal::MinimalJSONOutputArchive&, const unsigned int);
+
+template void
+dwarf_entry::serialize<cereal::PrettyJSONOutputArchive>(cereal::PrettyJSONOutputArchive&,
+                                                        const unsigned int);
 }  // namespace binary
 }  // namespace omnitrace

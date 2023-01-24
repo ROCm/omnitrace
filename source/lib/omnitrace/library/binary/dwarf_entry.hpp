@@ -29,11 +29,10 @@ namespace omnitrace
 {
 namespace binary
 {
-struct dwarf_line_info
+struct dwarf_entry
 {
-    TIMEMORY_DEFAULT_OBJECT(dwarf_line_info)
+    TIMEMORY_DEFAULT_OBJECT(dwarf_entry)
 
-    bool         valid           = false;
     bool         begin_statement = false;
     bool         end_sequence    = false;
     bool         line_block      = false;
@@ -47,30 +46,17 @@ struct dwarf_line_info
     uintptr_t    address         = 0;
     std::string  file            = {};
 
-    bool     is_valid() const;
+    bool is_valid() const;
+
+    bool     operator<(const dwarf_entry&) const;
+    bool     operator==(const dwarf_entry&) const;
+    bool     operator!=(const dwarf_entry&) const;
     explicit operator bool() const { return is_valid(); }
 
-    friend bool operator<(const dwarf_line_info& _lhs, const dwarf_line_info& _rhs)
-    {
-        return std::tie(_lhs.address, _lhs.line, _lhs.col, _lhs.discriminator) <
-               std::tie(_rhs.address, _rhs.line, _rhs.col, _rhs.discriminator);
-    }
+    static std::deque<dwarf_entry> process_dwarf(int _fd, std::vector<address_range>&);
 
-    friend bool operator==(const dwarf_line_info& _lhs, const dwarf_line_info& _rhs)
-    {
-        return std::tie(_lhs.address, _lhs.line, _lhs.col, _lhs.discriminator,
-                        _lhs.vliw_op_index, _lhs.isa, _lhs.file) ==
-               std::tie(_rhs.address, _rhs.line, _rhs.col, _rhs.discriminator,
-                        _rhs.vliw_op_index, _rhs.isa, _rhs.file);
-    }
-
-    friend bool operator!=(const dwarf_line_info& _lhs, const dwarf_line_info& _rhs)
-    {
-        return !(_lhs == _rhs);
-    }
-
-    static std::deque<dwarf_line_info> process_dwarf(int _fd,
-                                                     std::vector<address_range>&);
+    template <typename ArchiveT>
+    void serialize(ArchiveT&, const unsigned int);
 };
 }  // namespace binary
 }  // namespace omnitrace

@@ -48,19 +48,12 @@ namespace omnitrace
 {
 namespace binary
 {
-namespace procfs = ::tim::procfs;
+namespace procfs = ::tim::procfs;  // NOLINT
 
 using bfd_file     = ::tim::unwind::bfd_file;
 using hash_value_t = ::tim::hash_value_t;
 
-using line_info_t = std::map<procfs::maps, line_info<bfd_line_info>>;
-
-line_info_t
-get_line_info(const std::vector<std::string>&, const std::vector<scope_filter>&,
-              line_info_t* _discarded = nullptr);
-
-// returns whether the system is using address space layout randomization
-bool
-using_load_address_offset();
+std::vector<binary_info>
+get_binary_info(const std::vector<std::string>&, const std::vector<scope_filter>&);
 }  // namespace binary
 }  // namespace omnitrace

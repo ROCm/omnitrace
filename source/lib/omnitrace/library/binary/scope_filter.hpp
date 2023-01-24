@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "library/defines.hpp"
+
 #include <cstdint>
 #include <string>
 
@@ -49,7 +51,25 @@ struct scope_filter
     filter_scope scope      = UNIVERSAL_FILTER;
     std::string  expression = {};
 
-    bool operator()(const std::string& _value) const;
+    bool operator()(std::string_view _value) const;
+
+    template <typename ContainerT>
+    static bool satisfies_filter(const ContainerT&, filter_scope,
+                                 std::string_view) OMNITRACE_PURE;
 };
+
+template <typename ContainerT>
+inline bool
+scope_filter::satisfies_filter(const ContainerT& _filters, filter_scope _scope,
+                               std::string_view _value)
+{
+    for(const auto& itr : _filters)  // NOLINT
+    {
+        // if the filter is for the specified scope and itr does not satisfy the
+        // include/exclude mode, return false
+        if((itr.scope & _scope) > 0 && !itr(_value)) return false;
+    }
+    return true;
+}
 }  // namespace binary
 }  // namespace omnitrace

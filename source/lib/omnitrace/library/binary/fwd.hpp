@@ -53,13 +53,10 @@ using bfd_file     = ::tim::unwind::bfd_file;
 using hash_value_t = ::tim::hash_value_t;
 
 struct address_range;
-struct scope_filter;
-struct basic_line_info;
-struct bfd_line_info;
-struct dwarf_line_info;
 struct address_multirange;
-
-template <typename DataT>
-struct line_info;
+struct scope_filter;
+struct symbol;
+struct dwarf_entry;
+struct binary_info;
 }  // namespace binary
 }  // namespace omnitrace

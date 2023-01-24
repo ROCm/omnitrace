@@ -23,8 +23,12 @@
 #pragma once
 
 #include "library/binary/address_range.hpp"
+#include "library/binary/dwarf_entry.hpp"
 #include "library/binary/fwd.hpp"
+#include "library/binary/symbol.hpp"
 #include "library/utility.hpp"
+
+#include <timemory/utility/procfs/maps.hpp>
 
 #include <deque>
 #include <memory>
@@ -34,29 +38,14 @@ namespace omnitrace
 {
 namespace binary
 {
-template <typename DataT>
-struct line_info
+struct binary_info
 {
-    using value_type = DataT;
-
-    std::shared_ptr<bfd_file>                file     = {};
-    std::deque<value_type>                   data     = {};
-    std::vector<address_range>               ranges   = {};
-    std::unordered_map<address_range, void*> sections = {};
-
-    auto begin() const { return data.begin(); }
-    auto end() const { return data.end(); }
-    auto begin() { return data.begin(); }
-    auto end() { return data.end(); }
-    auto size() const { return data.size(); }
-    auto empty() const { return data.empty(); }
-
-    auto range_begin() const { return ranges.begin(); }
-    auto range_end() const { return ranges.end(); }
-    auto range_begin() { return ranges.begin(); }
-    auto range_end() { return ranges.end(); }
-    auto range_size() const { return ranges.size(); }
-    auto range_empty() const { return ranges.empty(); }
+    std::shared_ptr<bfd_file>                bfd        = {};
+    std::vector<procfs::maps>                mappings   = {};
+    std::deque<symbol>                       symbols    = {};
+    std::deque<dwarf_entry>                  debug_info = {};
+    std::vector<address_range>               ranges     = {};
+    std::unordered_map<address_range, void*> sections   = {};
 
     void sort();
 
@@ -64,18 +53,18 @@ struct line_info
     RetT* find_section(uintptr_t);
 };
 
-template <typename DataT>
-void
-line_info<DataT>::sort()
+inline void
+binary_info::sort()
 {
-    utility::filter_sort_unique(data);
+    utility::filter_sort_unique(mappings);
+    utility::filter_sort_unique(symbols);
     utility::filter_sort_unique(ranges);
+    utility::filter_sort_unique(debug_info);
 }
 
-template <typename DataT>
 template <typename RetT>
-RetT*
-line_info<DataT>::find_section(uintptr_t _addr)
+inline RetT*
+binary_info::find_section(uintptr_t _addr)
 {
     for(const auto& sitr : sections)
     {
