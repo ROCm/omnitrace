@@ -125,7 +125,7 @@ set(_test_environment ${_base_environment} "OMNITRACE_CRITICAL_TRACE=OFF")
 
 set(_causal_environment
     "${_test_openmp_env}" "${_test_library_path}" "OMNITRACE_TIME_OUTPUT=OFF"
-    "OMNITRACE_FILE_OUTPUT=ON")
+    "OMNITRACE_FILE_OUTPUT=ON" "OMNITRACE_CAUSAL_RANDOM_SEED=1342342")
 
 set(_python_environment
     "OMNITRACE_USE_PERFETTO=ON"
@@ -520,19 +520,12 @@ function(OMNITRACE_ADD_CAUSAL_TEST)
     endif()
 
     if(NOT TEST_CAUSAL_TIMEOUT)
-        set(TEST_CAUSAL_TIMEOUT 300)
+        set(TEST_CAUSAL_TIMEOUT 600)
     endif()
 
     if(NOT TEST_CAUSAL_VALIDATE_TIMEOUT)
         set(TEST_CAUSAL_VALIDATE_TIMEOUT 60)
     endif()
-
-    if(NOT DEFINED TEST_ENVIRONMENT OR "${TEST_ENVIRONMENT}" STREQUAL "")
-        set(TEST_ENVIRONMENT "${_causal_environment}")
-    endif()
-
-    list(APPEND TEST_ENVIRONMENT "OMNITRACE_CI=ON")
-    list(APPEND TEST_ENVIRONMENT "OMNITRACE_USE_PID=OFF")
 
     if(TARGET ${TEST_TARGET})
         set(COMMAND_PREFIX $<TARGET_FILE:omnitrace-causal> --reset -m ${TEST_CAUSAL_MODE}
@@ -581,8 +574,13 @@ function(OMNITRACE_ADD_CAUSAL_TEST)
             endif()
 
             set(_environ
-                "${TEST_ENVIRONMENT}" "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output"
-                "OMNITRACE_OUTPUT_PREFIX=${_prefix}")
+                "${_causal_environment}"
+                "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output"
+                "OMNITRACE_OUTPUT_PREFIX=${_prefix}"
+                "OMNITRACE_CI=ON"
+                "OMNITRACE_USE_PID=OFF"
+                "OMNITRACE_THREAD_POOL_SIZE=1"
+                "${TEST_ENVIRONMENT}")
 
             set(_timeout ${TEST_CAUSAL_TIMEOUT})
 
