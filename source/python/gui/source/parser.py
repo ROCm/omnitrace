@@ -10,8 +10,10 @@ class experiment_data(object):
     def __init__(self, _speedup):
         self.speedup = _speedup
         self.duration = []
+        self.delta=[]
     def __iadd__(self, _val):
-        self.duration += [float(_val)]
+        self.duration += [float(_val[0])]
+        self.delta += [float(_val[1])]
     def __len__(self):
         return len(self.duration)
     def __eq__(self, rhs):
@@ -22,9 +24,11 @@ class experiment_data(object):
         return self.speedup < rhs.speedup
     def mean(self):
         #print(self.duration)
-        if len(self.duration) == 0:
-            return 0
         return sum(self.duration) / float(len(self.duration))
+    def thorughput(self):
+        if len(self.delta) < 1:
+            return float("nan")
+        return sum(self.duration) / sum(self.delta)
 class line_speedup(object):
     def __init__(self, _name="", _prog="", _exp_data=None, _exp_base=None):
         self.name = _name
@@ -34,6 +38,8 @@ class line_speedup(object):
     def get(self):
         if self.data is None or self.base is None:
             return 0.0
+        if len(self.data.delta) > 0:
+            return ((self.base.thorughput() - self.data.thorughput()) / self.base.thorughput()) * 100
         return ((self.base.mean() - self.data.mean()) / self.base.mean()) * 100
     def __str__(self):
         if self.data is None or self.base is None:
@@ -106,12 +112,15 @@ def process_data(data, _data):
                 else:
                     _delt = pts["laps"]
                 if _delt > 0:
-                        itr += float(_duration) / float(_delt)
+                        #_delt=1
+                        itr += [float(_duration), float(_delt)]
                 else:
                         _diff = pts["arrival"] - pts["departure"] + 1
                         _rate = pts["arrival"] / float(_duration)
                         if _rate != 0:
                             itr += float(_diff) / float(_rate)
+                #else:
+                #    _delt = pts["laps"]
     return data
 
 def compute_speedups(_data, CLI):
@@ -156,10 +165,11 @@ def compute_speedups(_data, CLI):
                 print("")
             #print(f"{itr}")
         if len(itr.data.duration) != 0:
-            out = pd.concat([
-                    out,
-                    pd.DataFrame({"idx":[(itr.prog, itr.name)], "progress points":[itr.prog], "point":[itr.name], "speedup":[itr.data.speedup], "progress_speedup":[itr.get()]})
-                ])
+            if itr.get() <= 200 and itr.get() >= -100:
+                out = pd.concat([
+                        out,
+                        pd.DataFrame({"idx":[(itr.prog, itr.name)], "progress points":[itr.prog], "point":[itr.name], "speedup":[itr.data.speedup], "progress_speedup":[itr.get()]})
+                    ])
         _last_name = itr.name
         _last_prog = itr.prog
     return out
