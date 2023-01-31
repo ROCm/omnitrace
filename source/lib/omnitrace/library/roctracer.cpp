@@ -124,7 +124,7 @@ struct cid_data : cid_tuple_t
 {
     using cid_tuple_t::cid_tuple_t;
 
-    TIMEMORY_DEFAULT_OBJECT(cid_data)
+    OMNITRACE_DEFAULT_OBJECT(cid_data)
 
     auto& cid() { return std::get<0>(*this); }
     auto& pcid() { return std::get<1>(*this); }

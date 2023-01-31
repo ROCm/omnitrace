@@ -31,7 +31,7 @@ namespace binary
 {
 struct dwarf_entry
 {
-    TIMEMORY_DEFAULT_OBJECT(dwarf_entry)
+    OMNITRACE_DEFAULT_OBJECT(dwarf_entry)
 
     bool          begin_statement = false;
     bool          end_sequence    = false;
