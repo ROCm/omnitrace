@@ -162,7 +162,7 @@ ensure_finalization(bool _static_init = false)
                            _tid->system_value);
     }
 
-    if(!get_env("OMNITRACE_COLORIZED_LOG", true)) tim::log::colorized() = false;
+    if(get_env("OMNITRACE_MONOCHROME", false)) tim::log::monochrome() = true;
 
     (void) tim::manager::instance();
     (void) tim::settings::shared_instance();
@@ -418,7 +418,7 @@ omnitrace_init_library_hidden()
 extern "C" bool
 omnitrace_init_tooling_hidden()
 {
-    if(!get_env("OMNITRACE_COLORIZED_LOG", true, false)) tim::log::colorized() = false;
+    if(get_env("OMNITRACE_MONOCHROME", false, false)) tim::log::monochrome() = true;
 
     if(!tim::get_env("OMNITRACE_INIT_TOOLING", true))
     {

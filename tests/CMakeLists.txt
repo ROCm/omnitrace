@@ -504,7 +504,7 @@ set(_ompt_preload_environ
     "OMNITRACE_SAMPLING_REALTIME=ON"
     "OMNITRACE_SAMPLING_CPUTIME_FREQ=1000"
     "OMNITRACE_SAMPLING_REALTIME_FREQ=500"
-    "OMNITRACE_COLORIZED_LOG=OFF")
+    "OMNITRACE_MONOCHROME=ON")
 
 set(_ompt_sample_no_tmpfiles_environ
     "${_ompt_environment}"
@@ -516,7 +516,7 @@ set(_ompt_sample_no_tmpfiles_environ
     "OMNITRACE_SAMPLING_REALTIME=OFF"
     "OMNITRACE_SAMPLING_CPUTIME_FREQ=700"
     "OMNITRACE_USE_TEMPORARY_FILES=OFF"
-    "OMNITRACE_COLORIZED_LOG=OFF")
+    "OMNITRACE_MONOCHROME=ON")
 
 set(_ompt_preload_samp_regex
     "Sampler for thread 0 will be triggered 1000.0x per second of CPU-time(.*)Sampler for thread 0 will be triggered 500.0x per second of wall-time(.*)Sampling will be disabled after 0.250000 seconds(.*)Sampling duration of 0.250000 seconds has elapsed. Shutting down sampling"
