@@ -51,3 +51,11 @@
         NAME& operator=(const NAME&) = default;                                          \
         NAME& operator=(NAME&&) noexcept = default;
 #endif
+
+#if !defined(OMNITRACE_DEFAULT_COPY_MOVE)
+#    define OMNITRACE_DEFAULT_COPY_MOVE(NAME)                                            \
+        NAME(const NAME&)     = default;                                                 \
+        NAME(NAME&&) noexcept = default;                                                 \
+        NAME& operator=(const NAME&) = default;                                          \
+        NAME& operator=(NAME&&) noexcept = default;
+#endif
