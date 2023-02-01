@@ -22,6 +22,7 @@
 
 #include "library/config.hpp"
 #include "common/defines.h"
+#include "library/constraint.hpp"
 #include "library/debug.hpp"
 #include "library/defines.hpp"
 #include "library/gpu.hpp"
@@ -288,8 +289,8 @@ configure_settings(bool _init)
                              "for continuous integration)",
                              false, "debugging", "advanced");
 
-    OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_COLORIZED_LOG", "Enable colorized logging",
-                             true, "debugging", "advanced");
+    OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_MONOCHROME", "Disable colorized logging",
+                             false, "debugging", "advanced");
 
     OMNITRACE_CONFIG_EXT_SETTING(int, "OMNITRACE_DL_VERBOSE",
                                  "Verbosity within the omnitrace-dl library", 0,
@@ -405,11 +406,33 @@ configure_settings(bool _init)
         "durations are needed, see OMNITRACE_TRACE_PERIODS.",
         0.0, "trace", "profile", "perfetto", "timemory");
 
+    auto _clock_s =
+        config::get_setting_value<std::string>("OMNITRACE_TRACE_PERIOD_CLOCK_ID").second;
+
+    auto _clock_choices = std::vector<std::string>{};
+
+    for(const auto& itr : constraint::get_valid_clock_ids())
+    {
+        _clock_choices.emplace_back(
+            join("", "(", join('|', itr.name, itr.value, itr.raw_name), ")"));
+    }
+
+    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_TRACE_PERIODS",
+                             "Similar to specify trace delay and/or duration except in "
+                             "the form <DELAY>:<DURATION>, <DELAY>:<DURATION>:<REPEAT>, "
+                             "and/or <DELAY>:<DURATION>:<REPEAT>:<CLOCK_ID>",
+                             std::string{}, "trace", "profile", "perfetto", "timemory");
+
     OMNITRACE_CONFIG_SETTING(
-        std::string, "OMNITRACE_TRACE_PERIODS",
-        "Similar to specify trace delay and/or duration except in the form "
-        "<DELAY>:<DURATION> and/or <DELAY>:<DURATION>:<REPEAT>",
-        std::string{}, "trace", "profile", "perfetto", "timemory");
+        std::string, "OMNITRACE_TRACE_PERIOD_CLOCK_ID",
+        "Set the default clock ID for OMNITRACE_TRACE_DELAY, OMNITRACE_TRACE_DURATION, "
+        "and/or OMNITRACE_TRACE_PERIODS. E.g. \"realtime\" == the delay/duration is "
+        "governed by the elapsed realtime, \"cputime\" == the delay/duration is governed "
+        "by the elapsed CPU-time within the process, etc. Note: when using CPU-based "
+        "timing, it is recommened to scale the value by the number of threads and be "
+        "aware that omnitrace may contribute to advancing the process CPU-time",
+        "CLOCK_REALTIME", "trace", "profile", "perfetto", "timemory")
+        ->set_choices(_clock_choices);
 
     OMNITRACE_CONFIG_SETTING(
         double, "OMNITRACE_SAMPLING_FREQ",
@@ -999,8 +1022,8 @@ configure_settings(bool _init)
 
     settings::suppress_config() = true;
 
-    if(!get_env("OMNITRACE_COLORIZED_LOG", _config->get<bool>("OMNITRACE_COLORIZED_LOG")))
-        tim::log::colorized() = false;
+    if(get_env("OMNITRACE_MONOCHROME", _config->get<bool>("OMNITRACE_MONOCHROME")))
+        tim::log::monochrome() = true;
 
     if(_init)
     {

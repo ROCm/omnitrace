@@ -165,9 +165,15 @@ set(_rccl_environment
     "${_test_library_path}")
 
 set(_window_environment
-    "OMNITRACE_USE_PERFETTO=ON" "OMNITRACE_USE_TIMEMORY=ON" "OMNITRACE_USE_SAMPLING=OFF"
-    "OMNITRACE_USE_PROCESS_SAMPLING=OFF" "OMNITRACE_TIME_OUTPUT=OFF"
-    "OMNITRACE_FILE_OUTPUT=ON" "${_test_openmp_env}" "${_test_library_path}")
+    "OMNITRACE_USE_PERFETTO=ON"
+    "OMNITRACE_USE_TIMEMORY=ON"
+    "OMNITRACE_USE_SAMPLING=OFF"
+    "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
+    "OMNITRACE_TIME_OUTPUT=OFF"
+    "OMNITRACE_FILE_OUTPUT=ON"
+    "OMNITRACE_VERBOSE=2"
+    "${_test_openmp_env}"
+    "${_test_library_path}")
 
 # -------------------------------------------------------------------------------------- #
 

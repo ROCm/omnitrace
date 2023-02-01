@@ -691,7 +691,7 @@ omnitrace_add_test(
     REWRITE_ARGS -e -v 2 --caller-include inner -i 4096
     RUNTIME_ARGS -e -v 1 --caller-include inner -i 4096
     LABELS "time-window"
-    ENVIRONMENT "${_window_environment};OMNITRACE_TRACE_DURATION=0.5")
+    ENVIRONMENT "${_window_environment};OMNITRACE_TRACE_DURATION=1.25")
 
 omnitrace_add_validation_test(
     NAME trace-time-window-binary-rewrite
@@ -700,6 +700,7 @@ omnitrace_add_validation_test(
     PERFETTO_METRIC "host"
     PERFETTO_FILE "perfetto-trace.proto"
     LABELS "time-window"
+    FAIL_REGEX "outer_d"
     ARGS -l
          main
          outer_a
@@ -724,6 +725,7 @@ omnitrace_add_validation_test(
     PERFETTO_METRIC "host"
     PERFETTO_FILE "perfetto-trace.proto"
     LABELS "time-window"
+    FAIL_REGEX "outer_d"
     ARGS -l
          main
          outer_a
@@ -749,7 +751,7 @@ omnitrace_add_test(
     RUNTIME_ARGS -e -v 1 --caller-include inner -i 4096
     LABELS "time-window"
     ENVIRONMENT
-        "${_window_environment};OMNITRACE_TRACE_DELAY=0.3;OMNITRACE_TRACE_DURATION=0.3")
+        "${_window_environment};OMNITRACE_TRACE_DELAY=0.75;OMNITRACE_TRACE_DURATION=0.75")
 
 omnitrace_add_validation_test(
     NAME trace-time-window-delay-binary-rewrite
