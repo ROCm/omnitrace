@@ -447,7 +447,7 @@ function(OMNITRACE_ADD_TEST)
 
             set(_environ
                 "OMNITRACE_DEFAULT_MIN_INSTRUCTIONS=64" "${TEST_ENVIRONMENT}"
-                "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output"
+                "OMNITRACE_OUTPUT_PATH=${PROJECT_BINARY_DIR}/omnitrace-tests-output"
                 "OMNITRACE_OUTPUT_PREFIX=${_prefix}")
 
             set(_timeout ${TEST_REWRITE_TIMEOUT})
@@ -586,7 +586,7 @@ function(OMNITRACE_ADD_CAUSAL_TEST)
 
             set(_environ
                 "${_causal_environment}"
-                "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output"
+                "OMNITRACE_OUTPUT_PATH=${PROJECT_BINARY_DIR}/omnitrace-tests-output"
                 "OMNITRACE_OUTPUT_PREFIX=${_prefix}"
                 "OMNITRACE_CI=ON"
                 "OMNITRACE_USE_PID=OFF"
@@ -793,8 +793,7 @@ else()
             if(OMNITRACE_VALIDATION_PYTHON_PERFETTO EQUAL 0)
                 break()
             else()
-                omnitrace_message(
-                    AUTHOR_WARNING
+                omnitrace_message(AUTHOR_WARNING
                     "${_PYTHON_EXECUTABLE} found but perfetto support is disabled")
             endif()
         endif()
