@@ -763,7 +763,7 @@ if(NOT OMNITRACE_USE_PYTHON)
     if(Python3_FOUND)
         set(OMNITRACE_VALIDATION_PYTHON ${Python3_EXECUTABLE})
         execute_process(COMMAND ${Python3_EXECUTABLE} -c "import perfetto"
-                        OUTPUT_VARIABLE OMNITRACE_VALIDATION_PYTHON_PERFETTO)
+                        RESULT_VARIABLE OMNITRACE_VALIDATION_PYTHON_PERFETTO)
 
         if(NOT OMNITRACE_VALIDATION_PYTHON_PERFETTO EQUAL 0)
             omnitrace_message(AUTHOR_WARNING
@@ -787,11 +787,15 @@ else()
         if(_PYTHON_EXECUTABLE)
             set(OMNITRACE_VALIDATION_PYTHON ${_PYTHON_EXECUTABLE})
             execute_process(COMMAND ${_PYTHON_EXECUTABLE} -c "import perfetto"
-                            OUTPUT_VARIABLE OMNITRACE_VALIDATION_PYTHON_PERFETTO)
+                            RESULT_VARIABLE OMNITRACE_VALIDATION_PYTHON_PERFETTO)
 
             # prefer Python3 with perfetto support
             if(OMNITRACE_VALIDATION_PYTHON_PERFETTO EQUAL 0)
                 break()
+            else()
+                omnitrace_message(
+                    AUTHOR_WARNING
+                    "${_PYTHON_EXECUTABLE} found but perfetto support is disabled")
             endif()
         endif()
 
@@ -851,7 +855,7 @@ function(OMNITRACE_ADD_VALIDATION_TEST)
             ${PROJECT_BINARY_DIR}/omnitrace-tests-output/${TEST_NAME}/${TEST_TIMEMORY_FILE}
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
-    if(OMNITRACE_VALIDATION_PYTHON_PERFETTO)
+    if(OMNITRACE_VALIDATION_PYTHON_PERFETTO EQUAL 0)
         add_test(
             NAME validate-${TEST_NAME}-perfetto
             COMMAND
