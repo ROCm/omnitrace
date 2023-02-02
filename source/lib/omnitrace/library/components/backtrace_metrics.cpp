@@ -31,7 +31,6 @@
 #include "library/sampling.hpp"
 #include "library/thread_info.hpp"
 #include "library/tracing.hpp"
-#include "timemory/mpl/types.hpp"
 
 #include <timemory/backends/papi.hpp>
 #include <timemory/backends/threading.hpp>
@@ -49,6 +48,7 @@
 #include <timemory/mpl.hpp>
 #include <timemory/mpl/quirks.hpp>
 #include <timemory/mpl/type_traits.hpp>
+#include <timemory/mpl/types.hpp>
 #include <timemory/operations.hpp>
 #include <timemory/storage.hpp>
 #include <timemory/units.hpp>
