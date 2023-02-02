@@ -295,16 +295,40 @@ def reformat_data(dict_data):
 def parseFiles(files, CLI):
     data = pd.DataFrame()
     out = pd.DataFrame()
-    dict_data = {}
-    for file in files:
-        if "json" in file:
-            with open(file, "r") as j:
-                data_experiments = json.load(j)
-                dict_data = process_data(dict_data, data_experiments)
-                dict_data = compute_speedups(dict_data, CLI)  # .sort_index()
+    dict_data = None
 
-        else:
-            f = open(file, "r")
+    name_wo_ext = lambda x: x.replace(".json", "").replace(".coz", "")
+
+    json_files = [x for x in filter(lambda y: y.endswith(".json"), files)]
+    coz_files = [x for x in filter(lambda y: y.endswith(".coz"), files)]
+    base_files = [name_wo_ext(x) for x in coz_files + json_files]
+    read_files = []
+
+    # prefer JSON files first
+    files = json_files + coz_files
+    for file in files:
+        _base_name = name_wo_ext(file)
+        # do not read in a COZ file if the JSON already read
+        if _base_name in read_files:
+            continue
+
+        if file.endswith(".json"):
+            with open(file, "r") as j:
+                _data = json.load(j)
+                # make sure the JSON is an omnitrace causal JSON
+                if "omnitrace" not in _data or "causal" not in _data["omnitrace"]:
+                    continue
+                dict_data = process_data(dict_data, _data)
+                dict_data = compute_speedups(dict_data, CLI)  # .sort_index()
+                read_files.append(_base_name)
+
+        elif file.endswith(".coz"):
+            try:
+                f = open(file, "r")
+            except IOError as e:
+                sys.stderr.write(f"{e}\n")
+                continue
+
             lines = f.readlines()
             # Parse lines
             experiment = None
@@ -315,6 +339,8 @@ def parseFiles(files, CLI):
                     data_type = ""
                     value = {}
                     sections = line.split("\t")
+                    if len(sections) == 0:
+                        continue
                     value["type"] = sections[0]
                     for section in sections:
                         splice = section.split("\n")[0].split("=")
@@ -334,8 +360,11 @@ def parseFiles(files, CLI):
                         data = addLatency(data, experiment, value)
                     elif data_type not in ["startup", "shutdown", "samples", "runtime"]:
                         print("Invalid profile")
+
             out = getSpeedupData(data.sort_index())
-    return pd.concat([out, dict_data])
+            read_files.append(_base_name)
+
+    return pd.concat([out, dict_data]) if dict_data is not None else pd.concat([out])
 
 
 def parseUploadedFile(file, CLI):
