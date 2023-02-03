@@ -199,15 +199,66 @@ def compute_speedups(_data, CLI):
                                 "idx": [(itr.prog, itr.name)],
                                 "progress points": [itr.prog],
                                 "point": [itr.name],
-                                "speedup": [itr.data.speedup],
-                                "progress_speedup": [itr.get()],
+                                "Line Speedup": [itr.data.speedup],
+                                "Program Speedup": [itr.get()],
                             }
                         ),
-                    ]
+                    ],
+                    ignore_index=True,
                 )
         _last_name = itr.name
         _last_prog = itr.prog
     return out
+
+
+def compute_sorts(_data):
+    Max_speedup_order = _data.sort_values(by="Program Speedup").point.unique()
+    Min_speedup_order = _data.sort_values(
+        by="Program Speedup", ascending=False
+    ).point.unique()
+    impactOrder = pd.DataFrame(_data.point.unique(), columns=["progress points"])
+    point_counts = _data.point.value_counts()
+
+    for index_imp, curr in impactOrder.iterrows():
+        prev = pd.Series(dtype="float64")
+        data_subset = _data[_data["point"] == curr["progress points"]]
+        area = 0
+        max_norm_area = 0
+        for index_sub, data_point in data_subset.iterrows():
+            if data_point["Line Speedup"] == 0:
+                continue
+            if prev.empty:
+                prev = data_point
+            else:
+                avg_progress_speedup = (
+                    prev["Program Speedup"] + data_point["Program Speedup"]
+                ) / 2
+                area = area + avg_progress_speedup * (
+                    data_point["Line Speedup"] - prev["Line Speedup"]
+                )
+                norm_area = area / data_point["Line Speedup"]
+                if norm_area > max_norm_area:
+                    max_norm_area = norm_area
+                prev = data_point
+        impactOrder.at[index_imp, "area"] = max_norm_area
+    impactOrder = impactOrder.sort_values(by="area")
+    impactOrder = impactOrder["progress points"].unique()
+    _data["Max Speedup"] = np.nan
+    _data["Min Speedup"] = np.nan
+    _data["impact"] = np.nan
+    _data["point count"] = np.nan
+    for index in _data.index:
+        _data.at[index, "Max Speedup"] = np.where(
+            Max_speedup_order == _data.at[index, "point"]
+        )[0][0]
+        _data.at[index, "impact"] = np.where(impactOrder == _data.at[index, "point"])[0][
+            0
+        ]
+        _data.at[index, "Min Speedup"] = np.where(
+            Min_speedup_order == _data.at[index, "point"]
+        )[0][0]
+        _data.at[index, "point count"] = point_counts[_data.at[index, "point"]]
+    return _data
 
 
 def isValidDataPoint(data):
@@ -295,7 +346,7 @@ def reformat_data(dict_data):
 def parseFiles(files, CLI):
     data = pd.DataFrame()
     out = pd.DataFrame()
-    dict_data = None
+    dict_data = {}
 
     name_wo_ext = lambda x: x.replace(".json", "").replace(".coz", "")
 
@@ -319,7 +370,9 @@ def parseFiles(files, CLI):
                 if "omnitrace" not in _data or "causal" not in _data["omnitrace"]:
                     continue
                 dict_data = process_data(dict_data, _data)
-                dict_data = compute_speedups(dict_data, CLI)  # .sort_index()
+                dict_data = compute_sorts(
+                    compute_speedups(dict_data, CLI)
+                )  # .sort_index()
                 read_files.append(_base_name)
 
         elif file.endswith(".coz"):
@@ -373,7 +426,8 @@ def parseUploadedFile(file, CLI):
         dict_data = {}
         data_experiments = json.loads(file)
         dict_data = process_data(dict_data, data_experiments)
-        data = compute_speedups(dict_data, CLI)  # .sort_index()
+        data = compute_sorts(compute_speedups(dict_data, CLI))
+
     else:
         # coz
         for line in file.split("\n"):

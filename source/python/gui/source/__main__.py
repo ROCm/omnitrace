@@ -49,11 +49,9 @@ def causal(args):
     # workload_path = [os.path.join(args.path, "experiments.coz")]
 
     CLI = args.cli
-    new_df = parseFiles(workload_path, CLI)
+    speedup_df = parseFiles(workload_path, CLI)
     workload_path = workload_path[0]
-    speedup_df = new_df.rename(
-        columns={"speedup": "Line Speedup", "progress_speedup": "Program Speedup"}
-    )
+
     if not CLI:
         runs = OrderedDict({workload_path: speedup_df})
         kernel_names = ["program1", "program2"]

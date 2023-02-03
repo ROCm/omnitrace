@@ -87,66 +87,30 @@ def build_line_graph(data, KernelName, points_filt):
 def update_line_graph(sort_filt, func_list, exp_list, data, points_filt):
     # df = px.data.gapminder() # replace with your own data source
     if "Alphabetical" in sort_filt:
-        data = data.sort_values(by="point")
+        data = data.sort_values(by=["point", "idx"])
+
     if "Impact" in sort_filt:
-        newData = pd.DataFrame()
-        impactOrder = pd.DataFrame(data.point.unique(), columns=["Program"])
+        data = data.sort_values(by=["impact", "idx"])
 
-        for index_imp, curr in impactOrder.iterrows():
-            prev = pd.Series()
-            data_subset = data[data["point"] == curr.Program]
-            area = 0
-            norm_area = 0
-            for index_sub, data_point in data_subset.iterrows():
-                if prev.empty:
-                    prev = data_point
-                else:
-                    avg_progress_speedup = (
-                        prev["Program Speedup"] + data_point["Program Speedup"]
-                    ) / 2
-                    area = area + avg_progress_speedup * (
-                        data_point["Line Speedup"] - prev["Line Speedup"]
-                    )
-                    norm_area = area / data_point["Line Speedup"]
-                    prev = data_point
-            impactOrder.at[index_imp, "area"] = norm_area
-        impactOrder = impactOrder.sort_values(by="area")
-        impactOrder = impactOrder.Program.unique()
-
-        # add to newData in impact order
-        for point in impactOrder:
-            data_subset = data[data["point"] == point]
-            newData = pd.concat([data_subset, newData])
-        data = newData
     if "Max Speedup" in sort_filt:
-        speedupOrder = data.sort_values(by="Program Speedup").point.unique()
-        newData = pd.DataFrame()
-        for point in speedupOrder:
-            data_subset = data[data["point"] == point]
-            newData = pd.concat([data_subset, newData])
-        data = newData
+        data = data.sort_values(by=["Max Speedup", "idx"])
+
     if "Min Speedup" in sort_filt:
-        speedupOrder = data.sort_values(
-            by="Program Speedup", ascending=False
-        ).point.unique()
-        newData = pd.DataFrame()
-        for point in speedupOrder:
-            data_subset = data[data["point"] == point]
-            newData = pd.concat([data_subset, newData])
-        data = newData
+        data = data.sort_values(by=["Min Speedup", "idx"])
 
-    point_counts = data.point.value_counts()
+    if points_filt > 0:
+        data = data[data["point count"] > points_filt]
 
-    sufficient_points = point_counts > points_filt
-    sufficient_points = sufficient_points.loc[lambda x: x == True]
-    sufficient_points = list(sufficient_points.index)
+    # sufficient_points = point_counts > points_filt
+    # sufficient_points = sufficient_points.loc[lambda x: x == True]
+    # sufficient_points = list(sufficient_points.index)
     # sufficient_points = sufficient_points
     mask_all = data[data.point.isin(func_list)]
-    mask_all = mask_all[mask_all.point.isin(sufficient_points)]
+    # mask_all = mask_all[mask_all.point.isin(sufficient_points)]
     mask_all = mask_all[mask_all["progress points"].isin(exp_list)]
 
     mask_select = data[data.point.isin(func_list)]
-    mask_select = mask_select[mask_select.point.isin(sufficient_points)]
+    # mask_select = mask_select[mask_select.point.isin(sufficient_points)]
     mask_select = mask_select[mask_select["progress points"].isin(exp_list)]
 
     # what = mask_select.value_counts()[True]
@@ -189,7 +153,7 @@ def update_line_graph(sort_filt, func_list, exp_list, data, points_filt):
     layout2 = [
         html.H4("Selected Causal Profiles", style={"color": "white"}),
     ]
-    for point in sorted(list(mask_select.point.unique())):
+    for point in list(mask_select.point.unique()):
         subplots = go.Figure()
         sub_data = mask_select[mask_select["point"] == point]
         line_number = point[point.rfind(":") :].isnumeric()
@@ -368,8 +332,6 @@ def build_causal_layout(
         global new_data
         global func_list
         global exp_list
-        func_list = sorted(list(data.point.unique()))
-        exp_list = sorted(list(data["progress points"].unique()))
 
         if workload_path is not None and os.path.isdir(workload_path):
             # files = glob.glob(os.path.join(workload_path, "*.coz")) +
@@ -407,25 +369,15 @@ def build_causal_layout(
                 fig1,
                 fig2,
             )
-        # div_children.append()
+
         elif list_of_contents is not None:
             if ".coz" in filename or ".json" in filename:
                 new_data_file = base64.decodebytes(
                     list_of_contents.encode("utf-8").split(b";base64,")[1]
                 ).decode("utf-8")
-                # change to if debug
 
                 new_data = parseUploadedFile(new_data_file, CLI)
-                new_data = new_data.rename(
-                    columns={
-                        "speedup": "Line Speedup",
-                        "progress_speedup": "Program Speedup",
-                    }
-                )
                 data = new_data
-
-                # reset checklists
-                # checklist_options = checklist_values = sorted(list(data.point.unique()))
 
                 max_points = new_data.point.value_counts().max().max()
 
@@ -445,18 +397,23 @@ def build_causal_layout(
                     fig2,
                 )
 
-        elif func_regex is not None or exp_regex is not None:
+        # runs when function or experiment regex is changed, takes points_filt into account as well
+        elif (
+            func_regex is not None or exp_regex is not None
+        ):  # or func_regex != "" or exp_regex != "":
             # filter options and values
             if func_regex is not None:
                 p = re.compile(func_regex, flags=0)
 
                 func_list = [s for s in list(data["point"].unique()) if p.match(s)]
+                print(func_list)
             if exp_regex is not None:
                 p = re.compile(exp_regex, flags=0)
 
                 exp_list = [
                     s for s in list(data["progress points"].unique()) if p.match(s)
                 ]
+                print(exp_list)
 
             # change to update checklist after points selection
             screen_data, fig1, fig2 = update_line_graph(
@@ -470,8 +427,8 @@ def build_causal_layout(
             # TODO keep min points value...
             return (div_children, header, fig1, fig2)
 
+        # runs when min points changed and when page is first loaded
         else:
-            # change to update checklist after points selection
             func_list = sorted(list(data.point.unique()))
             exp_list = sorted(list(data["progress points"].unique()))
 
