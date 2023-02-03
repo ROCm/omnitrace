@@ -789,34 +789,6 @@ omnitrace_add_validation_test(
          0
          -p)
 
-if(EXISTS /etc/os-release)
-    file(READ /etc/os-release _OS_RELEASE_RAW)
-
-    if(_OS_RELEASE_RAW)
-        string(REPLACE "\"" "" _OS_RELEASE_RAW "${_OS_RELEASE_RAW}")
-        string(REPLACE "-" " " _OS_RELEASE_RAW "${_OS_RELEASE_RAW}")
-        string(REGEX REPLACE "NAME=.*\nVERSION=([0-9]+)\\.([0-9]+).*\nID=([a-z]+).*"
-                             "\\3-\\1.\\2" _OS_RELEASE "${_OS_RELEASE_RAW}")
-        string(REPLACE "opensuse-leap" "opensuse" _SYSTEM_NAME "${_SYSTEM_NAME}")
-        if(_OS_RELEASE STREQUAL "ubuntu-18.04" OR _OS_RELEASE STREQUAL "opensuse-15.2")
-            # using the --caller-include feature + runtime instrumentation on Ubuntu 18.04
-            # and OpenSUSE 15.2 results in a segfault in the internals of Dyninst. For
-            # now, mark that these tests will fail so later, we can tests whether updating
-            # the Dyninst submodule fixes this problem.
-            foreach(_TEST_NAME trace-time-window-runtime-instrument
-                               trace-time-window-delay-runtime-instrument)
-                set_tests_properties(${_TEST_NAME} PROPERTIES WILL_FAIL ON)
-                set_tests_properties(validate-${_TEST_NAME}-timemory PROPERTIES WILL_FAIL
-                                                                                ON)
-                if(TEST validate-${_TEST_NAME}-perfetto)
-                    set_tests_properties(validate-${_TEST_NAME}-perfetto
-                                         PROPERTIES WILL_FAIL ON)
-                endif()
-            endforeach()
-        endif()
-    endif()
-endif()
-
 # -------------------------------------------------------------------------------------- #
 #
 # critical-trace tests
