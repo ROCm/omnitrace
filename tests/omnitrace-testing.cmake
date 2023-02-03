@@ -793,7 +793,8 @@ else()
             if(OMNITRACE_VALIDATION_PYTHON_PERFETTO EQUAL 0)
                 break()
             else()
-                omnitrace_message(AUTHOR_WARNING
+                omnitrace_message(
+                    AUTHOR_WARNING
                     "${_PYTHON_EXECUTABLE} found but perfetto support is disabled")
             endif()
         endif()
