@@ -202,7 +202,7 @@ pthread_create_gotcha::wrapper::operator()() const
     if(_active && !_coverage && !m_config.offset)
     {
         _tid = _info->index_data->sequent_value;
-        OMNITRACE_BASIC_VERBOSE(1, "[PID=%i][rank=%i] New thread %s (parent: %s)\n",
+        OMNITRACE_BASIC_VERBOSE(1, "[PID=%i][rank=%i] Thread %s (parent: %s) created\n",
                                 process::get_id(), dmp::rank(),
                                 _info->index_data->as_string().c_str(),
                                 _parent_info->index_data->as_string().c_str());
@@ -245,7 +245,8 @@ pthread_create_gotcha::wrapper::operator()() const
     else if(m_config.offset)
     {
         OMNITRACE_BASIC_VERBOSE(
-            2, "[PID=%i][rank=%i] New thread %s (parent: %s) [started by omnitrace]\n",
+            2,
+            "[PID=%i][rank=%i] Thread %s (parent: %s) created [started by omnitrace]\n",
             process::get_id(), dmp::rank(), _info->index_data->as_string().c_str(),
             _parent_info->index_data->as_string().c_str());
     }
