@@ -943,7 +943,7 @@ post_process_perfetto(int64_t _tid, const bundle_t* _init,
                 _bt_mt->get_hw_counters().size() ==
                     _last->get<backtrace_metrics>()->get_hw_counters().size();
 
-            auto _hw_counters_enabled = [](const backtrace_metrics* _bt_v) {
+            auto _hw_counters_enabled = [](const auto* _bt_v) {
                 return (_bt_v != nullptr) &&
                        (*_bt_v)(type_list<backtrace_metrics::hw_counters>{}) &&
                        (*_bt_v)(category::thread_hardware_counter{});
@@ -1118,7 +1118,7 @@ post_process_timemory(int64_t _tid, const bundle_t* _init,
             }
             if constexpr(tim::trait::is_available<hw_counters>::value)
             {
-                auto _hw_counters_enabled = [](const backtrace_metrics* _bt_v) {
+                auto _hw_counters_enabled = [](const auto* _bt_v) {
                     return (_bt_v != nullptr) &&
                            (*_bt_v)(type_list<backtrace_metrics::hw_counters>{}) &&
                            (*_bt_v)(category::thread_hardware_counter{});
