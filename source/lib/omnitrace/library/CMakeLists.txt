@@ -7,11 +7,6 @@ set(library_sources
     ${CMAKE_CURRENT_LIST_DIR}/ompt.cpp
     ${CMAKE_CURRENT_LIST_DIR}/process_sampler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ptl.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/rcclp.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/rocm.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/rocm_smi.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/rocprofiler.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/roctracer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/runtime.cpp
     ${CMAKE_CURRENT_LIST_DIR}/sampling.cpp
     ${CMAKE_CURRENT_LIST_DIR}/thread_deleter.cpp

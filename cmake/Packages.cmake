@@ -223,6 +223,7 @@ endif()
 # RCCL
 #
 # ----------------------------------------------------------------------------------------#
+
 if(OMNITRACE_USE_RCCL)
     find_package(RCCL-Headers ${omnitrace_FIND_QUIETLY} REQUIRED)
     target_link_libraries(omnitrace-rccl INTERFACE roc::rccl-headers)
