@@ -1006,6 +1006,28 @@ omnitrace_add_causal_test(
     )
 
 omnitrace_add_causal_test(
+    NAME both-omni-func
+    TARGET causal-both-omni
+    RUN_ARGS 70 10 432525 400000000
+    CAUSAL_MODE "function"
+    CAUSAL_ARGS
+        -w
+        1
+        -d
+        3
+        --monochrome
+        -g
+        ${CMAKE_BINARY_DIR}/omnitrace-tests-config/causal-both-omni-func
+        -l
+        causal-both-omni
+        -v
+        3
+    ENVIRONMENT "OMNITRACE_STRICT_CONFIG=OFF"
+    CAUSAL_PASS_REGEX
+        "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
+    )
+
+omnitrace_add_causal_test(
     NAME lulesh-func
     TARGET lulesh-omni
     RUN_ARGS -i 35 -s 50 -p
