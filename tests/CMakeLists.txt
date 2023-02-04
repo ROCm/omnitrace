@@ -1060,7 +1060,7 @@ omnitrace_add_causal_test(
     )
 
 set(_causal_common_args
-    "-n 10 -e -s 0 10 20 30 -B $<TARGET_FILE_BASE_NAME:causal-cpu-omni>")
+    "-n 12 -e -s 0 10 20 30 -B $<TARGET_FILE_BASE_NAME:causal-cpu-omni>")
 
 macro(
     causal_e2e_args_and_validation

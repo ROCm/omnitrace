@@ -88,6 +88,7 @@ set(_lock_environment
     "OMNITRACE_COUT_OUTPUT=ON"
     "OMNITRACE_TIME_OUTPUT=OFF"
     "OMNITRACE_TIMELINE_PROFILE=OFF"
+    "OMNITRACE_VERBOSE=2"
     "${_test_library_path}")
 
 set(_critical_trace_environment
@@ -845,6 +846,7 @@ function(OMNITRACE_ADD_VALIDATION_TEST)
         omnitrace_message(
             AUTHOR_WARNING
             "No validation test(s) for ${TEST_NAME} because test does not exist")
+        return()
     endif()
 
     if(NOT TEST_TIMEOUT)
