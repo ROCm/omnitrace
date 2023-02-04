@@ -81,10 +81,11 @@ bool       on_load_trace = (get_env<int>("ROCP_ONLOAD_TRACE", 0) > 0);
 }  // namespace rocm
 }  // namespace omnitrace
 
+#if defined(OMNITRACE_USE_ROCPROFILER) && OMNITRACE_USE_ROCPROFILER > 0
 std::ostream&
 operator<<(std::ostream& _os, const rocprofiler_settings_t& _v)
 {
-#define ROCPROF_SETTING_FIELD_STR(NAME) JOIN('=', #NAME, _v.NAME)
+#    define ROCPROF_SETTING_FIELD_STR(NAME) JOIN('=', #    NAME, _v.NAME)
 
     _os << JOIN(
         ", ", ROCPROF_SETTING_FIELD_STR(intercept_mode),
@@ -97,6 +98,7 @@ operator<<(std::ostream& _os, const rocprofiler_settings_t& _v)
         ROCPROF_SETTING_FIELD_STR(obj_dumping));
     return _os;
 }
+#endif
 
 // HSA-runtime tool on-load method
 extern "C"
