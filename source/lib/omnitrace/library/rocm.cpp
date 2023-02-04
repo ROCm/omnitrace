@@ -21,12 +21,12 @@
 // SOFTWARE.
 
 #include "library/rocm.hpp"
+#include "core/config.hpp"
+#include "core/debug.hpp"
+#include "core/dynamic_library.hpp"
+#include "core/gpu.hpp"
 #include "library/components/rocprofiler.hpp"
 #include "library/components/roctracer.hpp"
-#include "library/config.hpp"
-#include "library/debug.hpp"
-#include "library/dynamic_library.hpp"
-#include "library/gpu.hpp"
 #include "library/rocm/hsa_rsrc_factory.hpp"
 #include "library/rocm_smi.hpp"
 #include "library/rocprofiler.hpp"

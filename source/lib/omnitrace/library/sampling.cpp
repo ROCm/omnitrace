@@ -21,22 +21,22 @@
 // SOFTWARE.
 
 #include "library/sampling.hpp"
-#include "library/common.hpp"
+#include "core/common.hpp"
+#include "core/components/fwd.hpp"
+#include "core/config.hpp"
+#include "core/debug.hpp"
+#include "core/locking.hpp"
+#include "core/state.hpp"
+#include "core/utility.hpp"
 #include "library/components/backtrace.hpp"
 #include "library/components/backtrace_metrics.hpp"
 #include "library/components/backtrace_timestamp.hpp"
-#include "library/components/fwd.hpp"
-#include "library/config.hpp"
-#include "library/debug.hpp"
-#include "library/locking.hpp"
 #include "library/ptl.hpp"
 #include "library/runtime.hpp"
-#include "library/state.hpp"
 #include "library/thread_data.hpp"
 #include "library/thread_info.hpp"
 #include "library/tracing.hpp"
 #include "library/tracing/annotation.hpp"
-#include "library/utility.hpp"
 
 #include <timemory/backends/papi.hpp>
 #include <timemory/backends/threading.hpp>
