@@ -139,14 +139,14 @@ get_link_map(const char* _lib, const std::string& _exclude_linked_by,
     auto _name = (!_lib) ? config::get_exe_realpath() : std::string{ _lib };
     for(const auto& itr : _fini_chain)
     {
-        OMNITRACE_VERBOSE(2, "[linkmap][%s]: %s\n", filepath::basename(_name),
-                          itr.real().c_str());
+        OMNITRACE_BASIC_VERBOSE(2, "[linkmap][%s]: %s\n", filepath::basename(_name),
+                                itr.real().c_str());
     }
 
     for(const auto& itr : _excl_chain)
     {
-        OMNITRACE_VERBOSE(3, "[linkmap][%s]: %s\n", _exclude_linked_by.c_str(),
-                          link_file{ itr }.real().c_str());
+        OMNITRACE_BASIC_VERBOSE(3, "[linkmap][%s]: %s\n", _exclude_linked_by.c_str(),
+                                link_file{ itr }.real().c_str());
     }
 
     return _fini_chain;
