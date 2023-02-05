@@ -404,19 +404,20 @@ module_function::is_internal_constrained() const
     auto _module_base = _basename(module_name);
     auto _module_real = _realpath(module_name);
 
-    if(module_name.find("omnitrace") != std::string::npos)
+    if(std::regex_search(module_name, std::regex{ "lib(omnitrace|timemory|perfetto)" }))
         return _report("Excluding", "module", "omnitrace", 3);
-    else if(module_name.find("timemory") != std::string::npos)
-        return _report("Excluding", "module", "timemory", 3);
-    else if(module_name.find("perfetto") != std::string::npos)
-        return _report("Excluding", "module", "perfetto", 3);
+    else if(std::regex_match(module_name,
+                             std::regex{ ".*/source/lib/"
+                                         "(core|common|binary|omnitrace|omnitrace-dl|"
+                                         "omnitrace-user)/.*/.*\\.(h|c|cpp|hpp)$" }))
+        return _report("Excluding", "module", "omnitrace", 3);
 
-    if(function_name.find("omnitrace") != std::string::npos)
+    if(std::regex_search(function_name, std::regex{ "9omnitrace|omnitrace(::|_)" }))
         return _report("Excluding", "function", "omnitrace", 3);
-    else if(function_name.find("Z3tim") != std::string::npos)
+    else if(std::regex_search(function_name, std::regex{ "3tim|tim::|timemory(::|_)" }))
         return _report("Excluding", "function", "timemory", 3);
-    else if(function_name.find("tim::") != std::string::npos)
-        return _report("Excluding", "function", "timemory", 3);
+    else if(std::regex_search(function_name, std::regex{ "9perfetto|perfetto(::|_)" }))
+        return _report("Excluding", "function", "perfetto", 3);
 
     if(_gnu_libs.find(module_name) != _gnu_libs.end() ||
        _gnu_libs.find(_module_real) != _gnu_libs.end() ||
@@ -606,7 +607,7 @@ module_function::contains_user_callsite() const
 {
     if(caller_include.empty()) return false;
 
-    bpvector_t<BPatch_point*> call_points;
+    std::vector<BPatch_point*> call_points;
     function->getCallPoints(call_points);
     for(const auto& call_point : call_points)
     {
