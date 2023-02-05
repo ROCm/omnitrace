@@ -194,6 +194,7 @@ module_function::should_coverage_instrument() const
 
     if(is_address_range_constrained()) return false;
     if(is_num_instructions_constrained()) return false;
+    if(is_instruction_constrained()) return false;
 
     return true;
 }
@@ -237,6 +238,7 @@ module_function::should_instrument(bool coverage) const
 
     if(is_address_range_constrained()) return false;
     if(is_num_instructions_constrained()) return false;
+    if(is_instruction_constrained()) return false;
 
     return true;
 }
@@ -643,6 +645,33 @@ module_function::is_address_range_constrained() const
         messages.emplace_back(2, "Skipping", "function", "min-address-range",
                               function_name);
         return true;
+    }
+    return false;
+}
+
+bool
+module_function::is_instruction_constrained() const
+{
+    if(!instruction_exclude.empty())
+    {
+        for(auto&& itr : instructions)
+        {
+            auto _instrss = std::stringstream{};
+            for(auto&& iitr : itr)
+                _instrss << " " << iitr.first.format();
+
+            auto _instr = _instrss.str();
+            if(!_instr.empty())
+            {
+                _instr = _instr.substr(1);
+                if(check_regex_restrictions(_instr, instruction_exclude))
+                {
+                    messages.emplace_back(2, "Skipping", "function",
+                                          "instruction-exclude-regex", function_name);
+                    return true;
+                }
+            }
+        }
     }
     return false;
 }

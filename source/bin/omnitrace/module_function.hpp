@@ -86,6 +86,9 @@ struct module_function
     // applied before address range and # instruction constraints
     bool is_dynamic_callsite_forced() const;  // checks dynamic callsites
 
+    // user exclusion based on instructions
+    bool is_instruction_constrained() const;
+
     // estimate the size/work of the function
     bool is_address_range_constrained() const;     // checks address range constraint
     bool is_num_instructions_constrained() const;  // check # instructions constraint
@@ -211,6 +214,7 @@ module_function::serialize(ArchiveT& ar, const unsigned)
                             is_address_range_constrained()),
            cereal::make_nvp("is_num_instructions_constrained",
                             is_num_instructions_constrained()),
+           cereal::make_nvp("is_instruction_constrained", is_instruction_constrained()),
            cereal::make_nvp("is_loop_address_range_constrained",
                             is_loop_address_range_constrained()),
            cereal::make_nvp("is_loop_num_instructions_constrained",

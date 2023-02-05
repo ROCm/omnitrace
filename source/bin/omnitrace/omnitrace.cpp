@@ -130,6 +130,7 @@ regexvec_t       func_restrict                 = {};
 regexvec_t       caller_include                = {};
 regexvec_t       func_internal_include         = {};
 regexvec_t       file_internal_include         = {};
+regexvec_t       instruction_exclude           = {};
 CodeCoverageMode coverage_mode                 = CODECOV_NONE;
 
 std::unique_ptr<std::ofstream> log_ofs = {};
@@ -656,6 +657,9 @@ main(int argc, char** argv)
         { "--internal-module-include" },
         "Regex(es) for including modules/libraries which are (likely) utilized "
         "by omnitrace itself. Use this option with care.");
+    parser.add_argument(
+        { "--instruction-exclude" },
+        "Regex(es) for excluding functions containing certain instructions");
 
     auto _internal_libs = get_internal_basic_libs();
 
@@ -1158,6 +1162,9 @@ main(int argc, char** argv)
         add_regex(file_internal_include,
                   tim::get_env<string_t>("OMNITRACE_REGEX_MODULE_INTERNAL_INCLUDE", ""));
 
+        add_regex(instruction_exclude,
+                  tim::get_env<string_t>("OMNITRACE_REGEX_INSTRUCTION_EXCLUDE", ""));
+
         //  Helper function for parsing the regex options
         auto _parse_regex_option = [&parser, &add_regex](const string_t& _option,
                                                          regexvec_t&     _regex_vec) {
@@ -1178,6 +1185,7 @@ main(int argc, char** argv)
         _parse_regex_option("module-exclude", file_exclude);
         _parse_regex_option("module-restrict", file_restrict);
         _parse_regex_option("internal-module-include", file_internal_include);
+        _parse_regex_option("instruction-exclude", instruction_exclude);
 
         (void) get_internal_libs_data();
     }

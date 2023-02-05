@@ -29,13 +29,13 @@
 #include "core/utility.hpp"
 #include "fwd.hpp"
 #include "log.hpp"
-#include "timemory/environment/types.hpp"
 
-#include <dlfcn.h>
+#include <timemory/environment/types.hpp>
 #include <timemory/utility/demangle.hpp>
 #include <timemory/utility/filepath.hpp>
 
 #include <algorithm>
+#include <dlfcn.h>
 #include <initializer_list>
 #include <set>
 #include <string>
