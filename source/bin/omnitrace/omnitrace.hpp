@@ -378,6 +378,7 @@ insert_instr(address_space_t* mutatee, procedure_t* funcToInstr, Tp traceFunc,
              procedure_loc_t traceLoc, flow_graph_t* cfGraph,
              basic_loop_t* loopToInstrument, bool allow_traps)
 {
+    if(!funcToInstr) return false;
     module_t* module = funcToInstr->getModule();
     if(!module || !traceFunc) return false;
 
