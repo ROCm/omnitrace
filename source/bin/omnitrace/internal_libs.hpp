@@ -131,11 +131,21 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
-using func_set_t           = std::set<std::string>;
-using module_func_map_t    = std::map<std::string, func_set_t>;
-using library_module_map_t = std::map<std::string, module_func_map_t>;
+using func_set_t           = std::unordered_set<std::string>;
+using module_func_map_t    = std::unordered_map<std::string, func_set_t>;
+using library_module_map_t = std::unordered_map<std::string, module_func_map_t>;
+
+template <typename Tp, typename... TailT>
+std::set<Tp>
+ordered(const std::unordered_set<Tp, TailT...>&);
+
+template <typename KeyT, typename MappedT, typename... TailT>
+std::map<KeyT, MappedT>
+ordered(const std::unordered_map<KeyT, MappedT, TailT...>&);
 
 std::optional<std::string> find_library(std::string_view);
 
@@ -145,7 +155,10 @@ const std::vector<std::string>&
 get_library_search_paths();
 
 std::set<std::string>&
-get_internal_libs(bool _all_modules = false);
+get_internal_basic_libs();
+
+std::set<std::string>&
+get_internal_libs();
 
 const library_module_map_t&
 get_internal_libs_data();

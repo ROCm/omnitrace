@@ -656,29 +656,30 @@ main(int argc, char** argv)
         { "--internal-module-include" },
         "Regex(es) for including modules/libraries which are (likely) utilized "
         "by omnitrace itself. Use this option with care.");
-    parser.add_argument({ "--internal-libraries-append" },
-                        "Append to the list of libraries which omnitrace treats as being "
-                        "used internally, e.g. OmniTrace will find all the symbols in "
-                        "this library and prevent them from being instrumented.");
-    auto _internal_libs = std::set<std::string>{};
-    for(const auto& itr : get_internal_libs())
-        _internal_libs.emplace(tim::filepath::basename(itr));
+
+    auto _internal_libs = get_internal_basic_libs();
+
     parser
-        .add_argument({ "--internal-libraries-remove" },
+        .add_argument({ "--internal-library-append" },
+                      "Append to the list of libraries which omnitrace treats as being "
+                      "used internally, e.g. OmniTrace will find all the symbols in "
+                      "this library and prevent them from being instrumented.")
+        .action([](parser_t& p) {
+            for(const auto& itr : p.get<strvec_t>("internal-library-append"))
+                get_internal_basic_libs().emplace(itr);
+        });
+
+    parser
+        .add_argument({ "--internal-library-remove" },
                       "Remove the specified libraries from being treated as being "
                       "used internally, e.g. OmniTrace will permit all the symbols in "
                       "these libraries to be eligible for instrumentation.")
         .choices(_internal_libs)
         .action([](parser_t& p) {
-            auto  _remove   = p.get<std::set<std::string>>("internal-libraries-remove");
-            auto& _internal = get_internal_libs();
-            auto  _result   = std::set<std::string>{};
-            for(const auto& itr : _internal)
-            {
-                if(_remove.find(tim::filepath::basename(itr)) == _remove.end())
-                    _result.emplace(itr);
-            }
-            std::swap(_internal, _result);
+            auto  _remove   = p.get<strset_t>("internal-library-remove");
+            auto& _internal = get_internal_basic_libs();
+            for(const auto& itr : _remove)
+                _internal.erase(itr);
         });
 
     parser.add_argument({ "" }, "");

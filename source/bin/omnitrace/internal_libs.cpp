@@ -145,7 +145,7 @@ get_library_search_paths_impl()
 }
 
 std::set<std::string>
-get_internal_libs_impl()
+get_internal_basic_libs_impl()
 {
     auto       _libs    = std::set<std::string>{};
     const auto _exclude = strview_set_t{ LIBM_SO, LIBMVEC_SO };
@@ -204,38 +204,54 @@ get_internal_libs_impl()
     {
         for(auto itr : gitr)
         {
-            if(!itr.empty() && _exclude.count(itr) == 0)
+            if(!itr.empty() && _exclude.count(itr) == 0) _libs.emplace(itr);
+        }
+    }
+
+    // auto _link_map = binary::get_link_map(nullptr, "", "", { (RTLD_LAZY | RTLD_NOLOAD)
+    // }); for(const auto& itr : _link_map)
+    //    _libs.emplace(itr.real());
+
+    return _libs;
+}
+
+std::set<std::string>
+get_internal_libs_impl()
+{
+    auto _libs = get_internal_basic_libs();
+    for(auto itr : get_internal_basic_libs())
+    {
+        if(!itr.empty())
+        {
+            if(parse_all_modules)
             {
-                if(parse_all_modules)
+                auto _lib_v = find_libraries(itr);
+                if(!_lib_v.empty())
                 {
-                    auto _lib_v = find_libraries(itr);
-                    if(!_lib_v.empty())
+                    for(const auto& litr : _lib_v)
                     {
-                        for(const auto& litr : _lib_v)
-                        {
-                            verbprintf(1, "Library '%s' found: %s\n", itr.data(),
-                                       litr.c_str());
-                            _libs.emplace(litr);
-                        }
-                    }
-                    else
-                    {
-                        verbprintf(2, "Library '%s' not found\n", itr.data());
+                        verbprintf(1, "Library '%s' found: %s\n", itr.data(),
+                                   litr.c_str());
+                        _libs.emplace(litr);
                     }
                 }
                 else
                 {
-                    auto _lib_v = find_library(itr);
-                    if(_lib_v)
-                    {
-                        verbprintf(1, "Library '%s' found: %s\n", itr.data(),
-                                   _lib_v->c_str());
-                        _libs.emplace(*_lib_v);
-                    }
-                    else
-                    {
-                        verbprintf(2, "Library '%s' not found\n", itr.data());
-                    }
+                    verbprintf(2, "Library '%s' not found\n", itr.data());
+                }
+            }
+            else
+            {
+                auto _lib_v = find_library(itr);
+                if(_lib_v)
+                {
+                    verbprintf(1, "Library '%s' found: %s\n", itr.data(),
+                               _lib_v->c_str());
+                    _libs.emplace(*_lib_v);
+                }
+                else
+                {
+                    verbprintf(2, "Library '%s' not found\n", itr.data());
                 }
             }
         }
@@ -338,26 +354,35 @@ get_internal_libs_data_impl()
     auto _data = library_module_map_t{};
     for(const auto& itr : _info)
     {
+        // allow the user to request this library be considered for instrumentation
+        if(check_regex_restrictions(strvec_t{ itr.filename() }, file_internal_include))
+            continue;
+
         for(const auto& iitr : itr.symbols)
         {
+            // allow the user to request this file be considered for instrumentation
             auto _files = _get_files(iitr.file);
             if(check_regex_restrictions(_files, file_internal_include)) continue;
 
+            // allow the user to request this function be considered for instrumentation
             auto _funcs = _get_funcs(iitr.func);
             if(check_regex_restrictions(_funcs, func_internal_include)) continue;
 
             if(_files.empty())
             {
+                // if the filename is unknown use the library name
                 for(const auto& fitr : _funcs)
                     _data[itr.filename()][itr.filename()].emplace(fitr);
             }
             else if(_funcs.empty())
             {
+                // if the function names are not known but files are, exclude the file
                 for(const auto& fitr : _files)
                     _data[itr.filename()].emplace(fitr, func_set_t{});
             }
             else
             {
+                // add entries for all the files and functions
                 for(const auto& fiitr : _files)
                 {
                     for(const auto& fuitr : _funcs)
@@ -369,16 +394,17 @@ get_internal_libs_data_impl()
         }
     }
 
+    // reporting
     const auto _verbose_lvl = 3;
-    for(const auto& ditr : _data)
+    for(const auto& ditr : ordered(_data))
     {
         verbprintf(_verbose_lvl, "%s\n", ditr.first.c_str());
         OMNITRACE_ADD_LOG_ENTRY(ditr.first);
-        for(const auto& fitr : ditr.second)
+        for(const auto& fitr : ordered(ditr.second))
         {
             verbprintf(_verbose_lvl, "  - %s\n", fitr.first.c_str());
             OMNITRACE_ADD_LOG_ENTRY("  -", fitr.first);
-            for(const auto& itr : fitr.second)
+            for(const auto& itr : ordered(fitr.second))
             {
                 verbprintf(_verbose_lvl, "    + %s\n", itr.c_str());
                 OMNITRACE_ADD_LOG_ENTRY("    +", itr);
@@ -389,6 +415,26 @@ get_internal_libs_data_impl()
     return _data;
 }
 }  // namespace
+
+template <typename Tp, typename... TailT>
+std::set<Tp>
+ordered(const std::unordered_set<Tp, TailT...>& _unordered)
+{
+    auto _ordered = std::set<Tp>{};
+    for(const auto& itr : _unordered)
+        _ordered.emplace(itr);
+    return _ordered;
+}
+
+template <typename KeyT, typename MappedT, typename... TailT>
+std::map<KeyT, MappedT>
+ordered(const std::unordered_map<KeyT, MappedT, TailT...>& _unordered)
+{
+    auto _ordered = std::map<KeyT, MappedT>{};
+    for(const auto& itr : _unordered)
+        _ordered.emplace(itr.first, itr.second);
+    return _ordered;
+}
 
 std::optional<std::string>
 find_library(std::string_view _lib_v)
@@ -428,26 +474,16 @@ get_library_search_paths()
 }
 
 std::set<std::string>&
-get_internal_libs(bool _all_modules)
+get_internal_basic_libs()
 {
-    static auto _parse_v = false;
-    static auto _v       = get_internal_libs_impl();
+    static auto _v = get_internal_basic_libs_impl();
+    return _v;
+}
 
-    // make sure up-to-date if parse_all_modules changed
-    if(_parse_v != parse_all_modules)
-    {
-        _v       = get_internal_libs_impl();
-        _parse_v = parse_all_modules;
-    }
-
-    // if all modules are requested
-    if(_all_modules && !_parse_v)
-    {
-        std::swap(_all_modules, parse_all_modules);
-        _v = get_internal_libs_impl();
-        std::swap(_all_modules, parse_all_modules);
-    }
-
+std::set<std::string>&
+get_internal_libs()
+{
+    static auto _v = get_internal_libs_impl();
     return _v;
 }
 
