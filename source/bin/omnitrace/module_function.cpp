@@ -59,6 +59,7 @@ module_function::update_width(const module_function& rhs)
 module_function::module_function(module_t* mod, procedure_t* proc)
 : module{ mod }
 , function{ proc }
+, symtab_function{ get_symtab_function(proc) }
 , flow_graph{ proc->getCFG() }
 , module_name{ get_name(module) }
 , function_name{ get_name(function) }
@@ -236,6 +237,13 @@ module_function::should_instrument(bool coverage) const
     if(!file_restrict.empty() || !func_restrict.empty()) return !is_user_restricted();
     if(is_user_included()) return true;
 
+    // do not apply visibility and linkage constraints to code coverage
+    if(!coverage)
+    {
+        if(is_linkage_constrained()) return false;
+        if(is_visibility_constrained()) return false;
+    }
+
     if(is_address_range_constrained()) return false;
     if(is_num_instructions_constrained()) return false;
     if(is_instruction_constrained()) return false;
@@ -380,6 +388,36 @@ module_function::is_overlapping() const
 {
     procedure_vec_t _overlapping{};
     return function->findOverlapping(_overlapping);
+}
+
+symbol_linkage_t
+module_function::get_linkage() const
+{
+    constexpr auto unknown_v = SymTab::Symbol::SL_UNKNOWN;
+
+    if(symtab_function == nullptr) return unknown_v;
+    symbol_linkage_t _v = unknown_v;
+    for(const auto& itr : symtab_data.symbols.at(symtab_function))
+    {
+        auto litr = itr->getLinkage();
+        if(litr > unknown_v) _v = (_v == unknown_v) ? litr : std::min(_v, litr);
+    }
+    return _v;
+}
+
+symbol_visibility_t
+module_function::get_visibility() const
+{
+    constexpr auto unknown_v = SymTab::Symbol::SV_UNKNOWN;
+
+    if(symtab_function == nullptr) return unknown_v;
+    symbol_visibility_t _v = unknown_v;
+    for(const auto& itr : symtab_data.symbols.at(symtab_function))
+    {
+        auto litr = itr->getVisibility();
+        if(litr > unknown_v) _v = (_v == unknown_v) ? litr : std::min(_v, litr);
+    }
+    return _v;
 }
 
 bool
@@ -720,6 +758,18 @@ module_function::is_loop_num_instructions_constrained() const
     }
 
     return false;
+}
+
+bool
+module_function::is_visibility_constrained() const
+{
+    return enabled_visibility.find(get_visibility()) == enabled_visibility.end();
+}
+
+bool
+module_function::is_linkage_constrained() const
+{
+    return enabled_linkage.find(get_linkage()) == enabled_linkage.end();
 }
 
 bool

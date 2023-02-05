@@ -113,6 +113,44 @@ get_name(module_t* _module)
     return _v.at(_module);
 }
 
+symtab_func_t*
+get_symtab_function(procedure_t* _func)
+{
+    static auto _v = std::unordered_map<procedure_t*, symtab_func_t*>{};
+
+    auto itr = _v.find(_func);
+    if(itr == _v.end())
+    {
+        auto _name  = _func->getName();
+        auto _dname = _func->getDemangledName();
+        for(auto& fitr : symtab_data.symbols)
+        {
+            if(_name == fitr.first->getName())
+            {
+                _v.emplace(_func, fitr.first);
+                goto _found;
+            }
+            else
+            {
+                for(auto& sitr : fitr.second)
+                {
+                    if(_dname == sitr->getPrettyName() || _dname == sitr->getTypedName())
+                    {
+                        _v.emplace(_func, fitr.first);
+                        goto _found;
+                    }
+                }
+            }
+        }
+    _found:
+    {}
+
+        if(_v.find(_func) == _v.end()) _v.emplace(_func, nullptr);
+    }
+
+    return _v.at(_func);
+}
+
 namespace
 {
 std::string
@@ -395,7 +433,7 @@ find_function(image_t* app_image, const std::string& _name, const strset_t& _ext
 
     auto _find = [app_image](const std::string& _f) -> procedure_t* {
         // Extract the vector of functions
-        bpvector_t<procedure_t*> _found;
+        std::vector<procedure_t*> _found;
         auto* ret = app_image->findFunction(_f.c_str(), _found, false, true, true);
         if(ret == nullptr || _found.empty()) return nullptr;
         return _found.at(0);
@@ -493,6 +531,60 @@ error_func_fake(error_level_t level, int num, const char* const* params)
         .force(level < BPatchInfo);
 }
 
+#include "internal_libs.hpp"
+
+//======================================================================================//
+//
+//  Read the symtab data from Dyninst
+//
+void
+process_modules(const std::vector<module_t*>& _app_modules)
+{
+    for(auto* itr : _app_modules)
+    {
+        auto* _module = SymTab::convert(itr);
+        if(_module) symtab_data.modules.emplace_back(_module);
+    }
+
+    verbprintf(1, "Processing %zu modules...\n", symtab_data.modules.size());
+
+    const auto& _data  = get_internal_libs_data();
+    auto        _names = std::set<std::string_view>{};
+    for(const auto& itr : _data)
+    {
+        _names.emplace(itr.first);
+        for(const auto& ditr : itr.second)
+            _names.emplace(ditr.first);
+    }
+
+    for(auto* itr : symtab_data.modules)
+    {
+        const auto* _base_name = tim::filepath::basename(itr->fullName());
+        auto        _real_name = tim::filepath::realpath(itr->fullName(), nullptr, false);
+
+        if(_names.count(_base_name) == 0 && _names.count(_real_name) == 0)
+        {
+            verbprintf(2, "Processing symbol table for module '%s'...\n",
+                       itr->fullName().c_str());
+        }
+
+        symtab_data.functions.emplace(itr, std::vector<symtab_func_t*>{});
+        itr->getAllFunctions(symtab_data.functions.at(itr));
+        for(auto* fitr : symtab_data.functions.at(itr))
+        {
+            symtab_data.symbols.emplace(fitr, std::vector<symtab_symbol_t*>{});
+            fitr->getSymbols(symtab_data.symbols.at(fitr));
+        }
+    }
+
+    verbprintf(1, "Processing %zu modules... Done\n", _app_modules.size());
+}
+
+//======================================================================================//
+//
+//  I/O assistance
+//
+
 namespace std
 {
 std::string
@@ -543,4 +635,87 @@ to_string(error_level_t _level)
     return JOIN("", tim::log::color::warning(), "UnknownErrorLevel",
                 static_cast<int>(_level));
 }
+
+namespace
+{
+std::string&&
+to_lower(std::string&& _v)
+{
+    for(auto& itr : std::move(_v))
+        itr = tolower(itr);
+    return std::move(_v);
+}
+}  // namespace
+
+std::string
+to_string(symbol_visibility_t _v)
+{
+    return to_lower(SymTab::Symbol::symbolVisibility2Str(_v) + 3);
+}
+
+std::string
+to_string(symbol_linkage_t _v)
+{
+    return to_lower(SymTab::Symbol::symbolLinkage2Str(_v) + 3);
+}
 }  // namespace std
+
+template <typename Tp>
+Tp
+from_string(std::string_view _v)
+{
+    if constexpr(std::is_same<Tp, symbol_visibility_t>::value)
+    {
+        for(const auto& itr :
+            { SV_UNKNOWN, SV_DEFAULT, SV_INTERNAL, SV_HIDDEN, SV_PROTECTED })
+            if(_v == std::to_string(itr)) return itr;
+        return SV_UNKNOWN;
+    }
+    else if constexpr(std::is_same<Tp, symbol_linkage_t>::value)
+    {
+        for(const auto& itr : { SL_UNKNOWN, SL_GLOBAL, SL_LOCAL, SL_WEAK, SL_UNIQUE })
+            if(_v == std::to_string(itr)) return itr;
+        return SL_UNKNOWN;
+    }
+    else
+    {
+        static_assert(std::is_empty<Tp>::value, "Error! not defined");
+        return Tp{};
+    }
+}
+
+template symbol_visibility_t
+from_string<symbol_visibility_t>(std::string_view _v);
+
+template symbol_linkage_t
+from_string<symbol_linkage_t>(std::string_view _v);
+
+std::ostream&
+operator<<(std::ostream& _os, symbol_linkage_t _v)
+{
+    return (_os << std::to_string(_v));
+}
+
+std::ostream&
+operator<<(std::ostream& _os, symbol_visibility_t _v)
+{
+    return (_os << std::to_string(_v));
+}
+
+std::istream&
+operator>>(std::istream& _is, symbol_linkage_t& _v)
+{
+    auto _v_s = std::string{};
+    _is >> _v_s;
+    _v = from_string<symbol_linkage_t>(_v_s);
+    return _is;
+}
+
+std::istream&
+operator>>(std::istream& _is, symbol_visibility_t& _v)
+{
+    auto _v_s = std::string{};
+    _is >> _v_s;
+    _v = from_string<symbol_visibility_t>(_v_s);
+    return _is;
+}

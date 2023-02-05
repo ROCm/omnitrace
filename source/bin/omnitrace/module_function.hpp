@@ -93,11 +93,15 @@ struct module_function
     bool is_address_range_constrained() const;     // checks address range constraint
     bool is_num_instructions_constrained() const;  // check # instructions constraint
 
+    bool is_visibility_constrained() const;
+    bool is_linkage_constrained() const;
+
     size_t                                      start_address     = 0;
     uint64_t                                    address_range     = 0;
     uint64_t                                    num_instructions  = 0;
     module_t*                                   module            = nullptr;
     procedure_t*                                function          = nullptr;
+    symtab_func_t*                              symtab_function   = nullptr;
     flow_graph_t*                               flow_graph        = nullptr;
     string_t                                    module_name       = {};
     string_t                                    function_name     = {};
@@ -112,6 +116,8 @@ struct module_function
     bool is_overlapping() const;  // checks if func overlaps
 
 private:
+    symbol_linkage_t    get_linkage() const;
+    symbol_visibility_t get_visibility() const;
     bool is_loop_num_instructions_constrained() const;  // checks loop instr constraint
     bool is_loop_address_range_constrained() const;  // checks loop addr range constraint
     bool contains_dynamic_callsites() const;
@@ -159,6 +165,8 @@ public:
            << std::setw(14) << rhs.address_range << " "
            << std::setw(14) << rhs.num_instructions << " "
            << std::setw(6) << std::setprecision(2) << std::fixed << (rhs.address_range / static_cast<double>(rhs.num_instructions)) << "  "
+           << std::setw(7) << std::to_string(rhs.get_linkage()) << " "
+           << std::setw(10) << std::to_string(rhs.get_visibility()) << " "
            << std::setw(w0 + 8) << std::left << _get_str(rhs.module_name) << " "
            << std::setw(w1 + 8) << std::left << _get_str(rhs.function_name) << " "
            << std::setw(w2 + 8) << std::left << _get_str(rhs.signature.get());
@@ -189,7 +197,9 @@ module_function::serialize(ArchiveT& ar, const unsigned)
 
     if constexpr(tim::concepts::is_output_archive<ArchiveT>::value)
     {
-        ar(cereal::make_nvp("num_basic_blocks", basic_blocks.size()),
+        ar(cereal::make_nvp("linkage", std::to_string(get_linkage())),
+           cereal::make_nvp("visibility", std::to_string(get_visibility())),
+           cereal::make_nvp("num_basic_blocks", basic_blocks.size()),
            cereal::make_nvp("num_outer_loops", loop_blocks.size()));
         ar.setNextName("heuristics");
         ar.startNode();
@@ -210,6 +220,8 @@ module_function::serialize(ArchiveT& ar, const unsigned)
            cereal::make_nvp("is_entry_trap_constrained", is_entry_trap_constrained()),
            cereal::make_nvp("is_exit_trap_constrained", is_exit_trap_constrained()),
            cereal::make_nvp("is_dynamic_callsite_forced", is_dynamic_callsite_forced()),
+           cereal::make_nvp("is_linkage_constrained", is_linkage_constrained()),
+           cereal::make_nvp("is_visibility_constrained", is_visibility_constrained()),
            cereal::make_nvp("is_address_range_constrained",
                             is_address_range_constrained()),
            cereal::make_nvp("is_num_instructions_constrained",

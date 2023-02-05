@@ -230,7 +230,7 @@ get_internal_libs_impl()
                 {
                     for(const auto& litr : _lib_v)
                     {
-                        verbprintf(1, "Library '%s' found: %s\n", itr.data(),
+                        verbprintf(2, "Library '%s' found: %s\n", itr.data(),
                                    litr.c_str());
                         _libs.emplace(litr);
                     }
@@ -245,7 +245,7 @@ get_internal_libs_impl()
                 auto _lib_v = find_library(itr);
                 if(_lib_v)
                 {
-                    verbprintf(1, "Library '%s' found: %s\n", itr.data(),
+                    verbprintf(2, "Library '%s' found: %s\n", itr.data(),
                                _lib_v->c_str());
                     _libs.emplace(*_lib_v);
                 }
@@ -358,6 +358,10 @@ get_internal_libs_data_impl()
         if(check_regex_restrictions(strvec_t{ itr.filename() }, file_internal_include))
             continue;
 
+        _data.emplace(itr.filename(), module_func_map_t{});
+        _data.emplace(std::string{ filepath::basename(itr.filename()) },
+                      module_func_map_t{});
+
         for(const auto& iitr : itr.symbols)
         {
             // allow the user to request this file be considered for instrumentation
@@ -395,18 +399,18 @@ get_internal_libs_data_impl()
     }
 
     // reporting
-    const auto _verbose_lvl = 3;
+    const auto _verbose_lvl = 1;
     for(const auto& ditr : ordered(_data))
     {
-        verbprintf(_verbose_lvl, "%s\n", ditr.first.c_str());
+        verbprintf(_verbose_lvl, "[internal] %s\n", ditr.first.c_str());
         OMNITRACE_ADD_LOG_ENTRY(ditr.first);
         for(const auto& fitr : ordered(ditr.second))
         {
-            verbprintf(_verbose_lvl, "  - %s\n", fitr.first.c_str());
+            verbprintf(_verbose_lvl + 1, "[internal]   - %s\n", fitr.first.c_str());
             OMNITRACE_ADD_LOG_ENTRY("  -", fitr.first);
             for(const auto& itr : ordered(fitr.second))
             {
-                verbprintf(_verbose_lvl, "    + %s\n", itr.c_str());
+                verbprintf(_verbose_lvl + 2, "[internal]     + %s\n", itr.c_str());
                 OMNITRACE_ADD_LOG_ENTRY("    +", itr);
             }
         }

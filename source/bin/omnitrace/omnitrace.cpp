@@ -133,6 +133,11 @@ regexvec_t       file_internal_include         = {};
 regexvec_t       instruction_exclude           = {};
 CodeCoverageMode coverage_mode                 = CODECOV_NONE;
 
+symtab_data_s                 symtab_data        = {};
+std::set<symbol_linkage_t>    enabled_linkage    = { SL_GLOBAL, SL_LOCAL, SL_UNIQUE };
+std::set<symbol_visibility_t> enabled_visibility = { SV_DEFAULT, SV_HIDDEN, SV_INTERNAL,
+                                                     SV_PROTECTED };
+
 std::unique_ptr<std::ofstream> log_ofs = {};
 
 namespace
@@ -215,9 +220,6 @@ activate_signal_handlers(const std::vector<sys_signal>& _signals)
             stderr, "omnitrace exited with signal %i :: %s\n", nsig,
             signal_settings::str(static_cast<sys_signal>(nsig)).c_str());
 
-        // print the last log entries
-        print_log_entries(std::cerr, num_log_entries);
-
         // print any forced entries
         print_log_entries(
             std::cerr, -1, [](const auto& _v) { return _v.forced(); },
@@ -225,6 +227,9 @@ activate_signal_handlers(const std::vector<sys_signal>& _signals)
                 tim::log::stream(std::cerr, tim::log::color::info())
                     << "\n[omnitrace][exe] Potentially important log entries:\n\n";
             });
+
+        // print the last log entries
+        print_log_entries(std::cerr, num_log_entries);
 
         TIMEMORY_PRINTF_FATAL(stderr, "\n");
         TIMEMORY_PRINTF_FATAL(
@@ -684,6 +689,41 @@ main(int argc, char** argv)
             auto& _internal = get_internal_basic_libs();
             for(const auto& itr : _remove)
                 _internal.erase(itr);
+        });
+
+    using timemory::join::array_config;
+    using timemory::join::join;
+
+    auto available_linkage    = std::vector<symbol_linkage_t>{};
+    auto available_visibility = std::vector<symbol_visibility_t>{};
+
+    for(int i = SL_UNKNOWN; i < SL_END_V; ++i)
+        available_linkage.emplace_back(static_cast<symbol_linkage_t>(i));
+    for(int i = SV_UNKNOWN; i < SV_END_V; ++i)
+        available_visibility.emplace_back(static_cast<symbol_visibility_t>(i));
+
+    parser
+        .add_argument({ "--linkage" },
+                      join("",
+                           "Only instrument functions with specified linkage (default: ",
+                           join(array_config{ ", ", "", "" }, enabled_linkage), ")"))
+        .min_count(1)
+        .choices(available_linkage)
+        .set_default(enabled_linkage)
+        .action([](parser_t& p) {
+            enabled_linkage = p.get<std::set<symbol_linkage_t>>("linkage");
+        });
+
+    parser
+        .add_argument(
+            { "--visibility" },
+            join("", "Only instrument functions with specified visibility (default: ",
+                 join(array_config{ ", ", "", "" }, enabled_visibility), ")"))
+        .min_count(1)
+        .choices(available_visibility)
+        .set_default(enabled_visibility)
+        .action([](parser_t& p) {
+            enabled_visibility = p.get<std::set<symbol_visibility_t>>("visibility");
         });
 
     parser.add_argument({ "" }, "");
@@ -1304,11 +1344,13 @@ main(int argc, char** argv)
 
     // get image
     verbprintf(1, "Getting the address space image, modules, and procedures...\n");
-    image_t*                  app_image     = addr_space->getImage();
-    bpvector_t<module_t*>*    app_modules   = app_image->getModules();
-    bpvector_t<procedure_t*>* app_functions = app_image->getProcedures(include_uninstr);
-    std::set<module_t*>       modules       = {};
-    std::set<procedure_t*>    functions     = {};
+    image_t*                   app_image     = addr_space->getImage();
+    std::vector<module_t*>*    app_modules   = app_image->getModules();
+    std::vector<procedure_t*>* app_functions = app_image->getProcedures(include_uninstr);
+    std::set<module_t*>        modules       = {};
+    std::set<procedure_t*>     functions     = {};
+
+    if(app_modules) process_modules(*app_modules);
 
     //----------------------------------------------------------------------------------//
     //
@@ -1710,8 +1752,8 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    bpvector_t<point_t*>* main_entr_points = nullptr;
-    bpvector_t<point_t*>* main_exit_points = nullptr;
+    std::vector<point_t*>* main_entr_points = nullptr;
+    std::vector<point_t*>* main_exit_points = nullptr;
 
     if(main_func)
     {
@@ -2375,7 +2417,7 @@ query_instr(procedure_t* funcToInstr, procedure_loc_t traceLoc, flow_graph_t* cf
     module_t* module = funcToInstr->getModule();
     if(!module) return false;
 
-    bpvector_t<point_t*>* _points = nullptr;
+    std::vector<point_t*>* _points = nullptr;
 
     if(cfGraph && loopToInstrument)
     {
@@ -2413,7 +2455,7 @@ query_instr(procedure_t* funcToInstr, procedure_loc_t traceLoc, flow_graph_t* cf
 
     if(!cfGraph) cfGraph = funcToInstr->getCFG();
 
-    bpvector_t<point_t*>* _points = nullptr;
+    std::vector<point_t*>* _points = nullptr;
 
     if((cfGraph && loopToInstrument) ||
        (traceLoc == BPatch_locLoopEntry || traceLoc == BPatch_locLoopExit))
