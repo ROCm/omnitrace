@@ -166,20 +166,12 @@ get_internal_basic_libs_impl()
                                            LIBTHREAD_DB_SO,    LIBUTIL_SO };
 
     // shared libraries used by or provided by dyninst
-    const auto _dyn_libs = strview_init_t{ "libdyninstAPI_RT.so",
-                                           "libcommon.so",
-                                           "libstackwalk.so",
-                                           "libbfd.so",
-                                           "libelf.so",
-                                           "libdwarf.so",
-                                           "libdw.so",
-                                           "libtbb.so",
-                                           "libtbbmalloc.so",
-                                           "libtbbmalloc_proxy.so",
-                                           "libz.so",
-                                           "libzstd.so",
-                                           "libbz2.so",
-                                           "liblzma.so" };
+    const auto _dyn_libs =
+        strview_init_t{ "libdyninstAPI_RT.so", "libcommon.so", "libstackwalk.so",
+                        "libbfd.so", "libelf.so", "libdwarf.so", "libdw.so", "libtbb.so",
+                        // "libtbbmalloc.so",
+                        // "libtbbmalloc_proxy.so",
+                        "libz.so", "libzstd.so", "libbz2.so", "liblzma.so" };
 
     // shared libraries used by omnitrace
     const auto _omni_libs = strview_init_t{
@@ -443,30 +435,30 @@ ordered(const std::unordered_map<KeyT, MappedT, TailT...>& _unordered)
 std::optional<std::string>
 find_library(std::string_view _lib_v)
 {
-    auto _lib = binary::get_linked_path(_lib_v.data(), { (RTLD_LAZY | RTLD_NOLOAD) });
-    if(_lib) return _lib;
-
+    auto _lib = std::optional<std::string>{};
     for(const auto& itr : get_library_search_paths())
     {
         auto _path = join('/', itr, _lib_v);
         if(filepath::exists(_path)) return _path;
     }
 
-    return _lib;
+    return binary::get_linked_path(_lib_v.data(), { (RTLD_LAZY | RTLD_NOLOAD) });
 }
 
 std::vector<std::string>
 find_libraries(std::string_view _lib_v)
 {
     auto _libs = std::vector<std::string>{};
-    auto _lib  = binary::get_linked_path(_lib_v.data(), { (RTLD_LAZY | RTLD_NOLOAD) });
-    if(_lib) _libs.emplace_back(*_lib);
 
     for(const auto& itr : get_library_search_paths())
     {
         auto _path = join('/', itr, _lib_v);
         if(filepath::exists(_path)) _libs.emplace_back(_path);
     }
+
+    auto _lib = binary::get_linked_path(_lib_v.data(), { (RTLD_LAZY | RTLD_NOLOAD) });
+    if(_lib) _libs.emplace_back(*_lib);
+
     return _libs;
 }
 

@@ -711,7 +711,9 @@ main(int argc, char** argv)
         .choices(available_linkage)
         .set_default(enabled_linkage)
         .action([](parser_t& p) {
-            enabled_linkage = p.get<std::set<symbol_linkage_t>>("linkage");
+            enabled_linkage.clear();
+            for(const auto& itr : p.get<std::set<std::string>>("linkage"))
+                enabled_linkage.emplace(from_string<symbol_linkage_t>(itr));
         });
 
     parser
@@ -723,7 +725,9 @@ main(int argc, char** argv)
         .choices(available_visibility)
         .set_default(enabled_visibility)
         .action([](parser_t& p) {
-            enabled_visibility = p.get<std::set<symbol_visibility_t>>("visibility");
+            enabled_visibility.clear();
+            for(const auto& itr : p.get<std::set<std::string>>("visibility"))
+                enabled_visibility.emplace(from_string<symbol_visibility_t>(itr));
         });
 
     parser.add_argument({ "" }, "");
