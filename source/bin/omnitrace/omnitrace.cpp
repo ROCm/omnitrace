@@ -23,6 +23,7 @@
 #include "omnitrace.hpp"
 #include "common/defines.h"
 #include "fwd.hpp"
+#include "internal_libs.hpp"
 #include "log.hpp"
 
 #include <timemory/backends/process.hpp>
@@ -90,6 +91,7 @@ bool     loop_level_instr        = false;
 bool     instr_dynamic_callsites = false;
 bool     instr_traps             = false;
 bool     instr_loop_traps        = false;
+bool     parse_all_modules       = false;
 size_t   min_address_range       = get_default_min_address_range();  // 4096
 size_t   min_loop_address_range  = get_default_min_address_range();  // 4096
 size_t   min_instructions        = get_default_min_instructions();   // 1024
@@ -126,6 +128,8 @@ regexvec_t       file_exclude                  = {};
 regexvec_t       file_restrict                 = {};
 regexvec_t       func_restrict                 = {};
 regexvec_t       caller_include                = {};
+regexvec_t       func_internal_include         = {};
+regexvec_t       file_internal_include         = {};
 CodeCoverageMode coverage_mode                 = CODECOV_NONE;
 
 std::unique_ptr<std::ofstream> log_ofs = {};
@@ -143,7 +147,6 @@ bool                                       is_attached          = false;
 bool                                       use_mpi              = false;
 bool                                       is_static_exe        = false;
 bool                                       force_config         = false;
-bool                                       parse_all_modules    = false;
 size_t                                     batch_size           = 50;
 strset_t                                   extra_libs           = {};
 std::vector<std::pair<uint64_t, string_t>> hash_ids             = {};
@@ -646,6 +649,37 @@ main(int argc, char** argv)
     parser.add_argument({ "-MR", "--module-restrict" },
                         "Regex(es) for restricting modules/files/libraries only to those "
                         "that match the provided regular-expressions");
+    parser.add_argument({ "--internal-function-include" },
+                        "Regex(es) for including functions which are (likely) utilized "
+                        "by omnitrace itself. Use this option with care.");
+    parser.add_argument(
+        { "--internal-module-include" },
+        "Regex(es) for including modules/libraries which are (likely) utilized "
+        "by omnitrace itself. Use this option with care.");
+    parser.add_argument({ "--internal-libraries-append" },
+                        "Append to the list of libraries which omnitrace treats as being "
+                        "used internally, e.g. OmniTrace will find all the symbols in "
+                        "this library and prevent them from being instrumented.");
+    auto _internal_libs = std::set<std::string>{};
+    for(const auto& itr : get_internal_libs())
+        _internal_libs.emplace(tim::filepath::basename(itr));
+    parser
+        .add_argument({ "--internal-libraries-remove" },
+                      "Remove the specified libraries from being treated as being "
+                      "used internally, e.g. OmniTrace will permit all the symbols in "
+                      "these libraries to be eligible for instrumentation.")
+        .choices(_internal_libs)
+        .action([](parser_t& p) {
+            auto  _remove   = p.get<std::set<std::string>>("internal-libraries-remove");
+            auto& _internal = get_internal_libs();
+            auto  _result   = std::set<std::string>{};
+            for(const auto& itr : _internal)
+            {
+                if(_remove.find(tim::filepath::basename(itr)) == _remove.end())
+                    _result.emplace(itr);
+            }
+            std::swap(_internal, _result);
+        });
 
     parser.add_argument({ "" }, "");
     parser.add_argument({ "[RUNTIME OPTIONS]" }, "");
@@ -1111,6 +1145,8 @@ main(int argc, char** argv)
         add_regex(func_restrict, tim::get_env<string_t>("OMNITRACE_REGEX_RESTRICT", ""));
         add_regex(caller_include,
                   tim::get_env<string_t>("OMNITRACE_REGEX_CALLER_INCLUDE"));
+        add_regex(func_internal_include,
+                  tim::get_env<string_t>("OMNITRACE_REGEX_INTERNAL_INCLUDE", ""));
 
         add_regex(file_include,
                   tim::get_env<string_t>("OMNITRACE_REGEX_MODULE_INCLUDE", ""));
@@ -1118,6 +1154,8 @@ main(int argc, char** argv)
                   tim::get_env<string_t>("OMNITRACE_REGEX_MODULE_EXCLUDE", ""));
         add_regex(file_restrict,
                   tim::get_env<string_t>("OMNITRACE_REGEX_MODULE_RESTRICT", ""));
+        add_regex(file_internal_include,
+                  tim::get_env<string_t>("OMNITRACE_REGEX_MODULE_INTERNAL_INCLUDE", ""));
 
         //  Helper function for parsing the regex options
         auto _parse_regex_option = [&parser, &add_regex](const string_t& _option,
@@ -1134,9 +1172,13 @@ main(int argc, char** argv)
         _parse_regex_option("function-exclude", func_exclude);
         _parse_regex_option("function-restrict", func_restrict);
         _parse_regex_option("caller-include", caller_include);
+        _parse_regex_option("internal-function-include", func_internal_include);
         _parse_regex_option("module-include", file_include);
         _parse_regex_option("module-exclude", file_exclude);
         _parse_regex_option("module-restrict", file_restrict);
+        _parse_regex_option("internal-module-include", file_internal_include);
+
+        (void) get_internal_libs_data();
     }
 
     //----------------------------------------------------------------------------------//

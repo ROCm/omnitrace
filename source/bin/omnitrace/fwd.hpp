@@ -165,6 +165,7 @@ extern bool   loop_level_instr;
 extern bool   instr_dynamic_callsites;
 extern bool   instr_traps;
 extern bool   instr_loop_traps;
+extern bool   parse_all_modules;
 extern size_t min_address_range;
 extern size_t min_loop_address_range;
 extern size_t min_instructions;
@@ -209,6 +210,8 @@ extern regexvec_t       file_exclude;
 extern regexvec_t       file_restrict;
 extern regexvec_t       func_restrict;
 extern regexvec_t       caller_include;
+extern regexvec_t       func_internal_include;
+extern regexvec_t       file_internal_include;
 extern CodeCoverageMode coverage_mode;
 
 // logging

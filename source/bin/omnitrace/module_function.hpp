@@ -66,11 +66,12 @@ struct module_function
     bool should_coverage_instrument() const;
 
     // hard constraints
-    bool is_instrumentable() const;       // checks whether can instrument
-    bool can_instrument_entry() const;    // checks for entry points
-    bool can_instrument_exit() const;     // checks for exit points
-    bool is_module_constrained() const;   // checks module constraints
-    bool is_routine_constrained() const;  // checks function constraints
+    bool is_instrumentable() const;        // checks whether can instrument
+    bool can_instrument_entry() const;     // checks for entry points
+    bool can_instrument_exit() const;      // checks for exit points
+    bool is_internal_constrained() const;  // checks internal usage constraint
+    bool is_module_constrained() const;    // checks module constraints
+    bool is_routine_constrained() const;   // checks function constraints
 
     // user bypass of heuristics
     bool is_user_restricted() const;  // checks user restrict regexes
@@ -120,18 +121,18 @@ public:
 
     friend bool operator<(const module_function& lhs, const module_function& rhs)
     {
-        return std::tie(lhs.module_name, lhs.start_address, lhs.function_name,
-                        lhs.address_range, lhs.num_instructions, lhs.signature) <
-               std::tie(rhs.module_name, rhs.start_address, rhs.function_name,
-                        rhs.address_range, rhs.num_instructions, rhs.signature);
+        return std::tie(lhs.module_name, lhs.function_name, lhs.start_address,
+                        lhs.address_range, lhs.num_instructions) <
+               std::tie(rhs.module_name, rhs.function_name, rhs.start_address,
+                        rhs.address_range, rhs.num_instructions);
     }
 
     friend bool operator==(const module_function& lhs, const module_function& rhs)
     {
-        return std::tie(lhs.module_name, lhs.start_address, lhs.function_name,
-                        lhs.address_range, lhs.num_instructions, lhs.signature) ==
-               std::tie(rhs.module_name, rhs.start_address, rhs.function_name,
-                        rhs.address_range, rhs.num_instructions, rhs.signature);
+        return std::tie(lhs.start_address, lhs.address_range, lhs.num_instructions,
+                        lhs.module_name, lhs.function_name) ==
+               std::tie(rhs.start_address, rhs.address_range, rhs.num_instructions,
+                        rhs.module_name, rhs.function_name);
     }
 
     friend std::ostream& operator<<(std::ostream& os, const module_function& rhs)
@@ -195,6 +196,7 @@ module_function::serialize(ArchiveT& ar, const unsigned)
            cereal::make_nvp("can_instrument_entry", can_instrument_entry()),
            cereal::make_nvp("can_instrument_exit", can_instrument_exit()),
            cereal::make_nvp("contains_dynamic_callsites", contains_dynamic_callsites()),
+           cereal::make_nvp("is_internal_constrained", is_internal_constrained()),
            cereal::make_nvp("is_module_constrained", is_module_constrained()),
            cereal::make_nvp("is_routine_constrained", is_routine_constrained()),
            cereal::make_nvp("is_user_restricted", is_user_restricted()),
