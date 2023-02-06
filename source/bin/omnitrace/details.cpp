@@ -121,29 +121,44 @@ get_symtab_function(procedure_t* _func)
     auto itr = _v.find(_func);
     if(itr == _v.end())
     {
-        auto _name  = _func->getName();
-        auto _dname = _func->getDemangledName();
+        auto _name = _func->getName();
+        {
+            auto nitr = symtab_data.mangled_symbol_names.find(_name);
+            if(nitr != symtab_data.mangled_symbol_names.end())
+            {
+                _v.emplace(_func, nitr->second->getFunction());
+                return _v.at(_func);
+            }
+        }
+
         for(auto& fitr : symtab_data.symbols)
         {
             if(_name == fitr.first->getName())
             {
                 _v.emplace(_func, fitr.first);
-                goto _found;
-            }
-            else
-            {
-                for(auto& sitr : fitr.second)
-                {
-                    if(_dname == sitr->getPrettyName() || _dname == sitr->getTypedName())
-                    {
-                        _v.emplace(_func, fitr.first);
-                        goto _found;
-                    }
-                }
+                return _v.at(_func);
             }
         }
-    _found:
-    {}
+
+        auto _dname = _func->getDemangledName();
+
+        {
+            auto nitr = symtab_data.typed_func_names.find(_dname);
+            if(nitr != symtab_data.typed_func_names.end())
+            {
+                _v.emplace(_func, nitr->second);
+                return _v.at(_func);
+            }
+        }
+
+        {
+            auto nitr = symtab_data.typed_symbol_names.find(_dname);
+            if(nitr != symtab_data.typed_symbol_names.end())
+            {
+                _v.emplace(_func, nitr->second->getFunction());
+                return _v.at(_func);
+            }
+        }
 
         if(_v.find(_func) == _v.end()) _v.emplace(_func, nullptr);
     }
@@ -580,8 +595,15 @@ process_modules(const std::vector<module_t*>& _app_modules)
         itr->getAllFunctions(symtab_data.functions.at(itr));
         for(auto* fitr : symtab_data.functions.at(itr))
         {
+            symtab_data.typed_func_names[tim::demangle(fitr->getName())] = fitr;
+
             symtab_data.symbols.emplace(fitr, std::vector<symtab_symbol_t*>{});
             fitr->getSymbols(symtab_data.symbols.at(fitr));
+            for(auto* sitr : symtab_data.symbols.at(fitr))
+            {
+                symtab_data.mangled_symbol_names[sitr->getMangledName()] = sitr;
+                symtab_data.typed_symbol_names[sitr->getTypedName()]     = sitr;
+            }
         }
     }
 
