@@ -174,7 +174,7 @@ get_binary_info(const std::vector<std::string>&  _files,
     }
 
     // get the memory maps
-    auto _maps = procfs::get_contiguous_maps(process::get_id(), _filter, true);
+    auto _maps = procfs::get_contiguous_maps(process::get_id(), _filter, false);
 
     for(auto& itr : _data)
     {
