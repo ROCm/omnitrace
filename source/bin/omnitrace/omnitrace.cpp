@@ -709,7 +709,6 @@ main(int argc, char** argv)
                            join(array_config{ ", ", "", "" }, enabled_linkage), ")"))
         .min_count(1)
         .choices(available_linkage)
-        .set_default(enabled_linkage)
         .action([](parser_t& p) {
             enabled_linkage.clear();
             for(const auto& itr : p.get<std::set<std::string>>("linkage"))
@@ -723,7 +722,6 @@ main(int argc, char** argv)
                  join(array_config{ ", ", "", "" }, enabled_visibility), ")"))
         .min_count(1)
         .choices(available_visibility)
-        .set_default(enabled_visibility)
         .action([](parser_t& p) {
             enabled_visibility.clear();
             for(const auto& itr : p.get<std::set<std::string>>("visibility"))

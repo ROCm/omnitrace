@@ -63,6 +63,7 @@
 #include <cstring>
 #include <exception>
 #include <fstream>
+#include <istream>
 #include <limits>
 #include <memory>
 #include <numeric>
