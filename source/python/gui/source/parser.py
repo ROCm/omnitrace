@@ -212,9 +212,11 @@ def compute_speedups(_data, CLI):
 
 
 def compute_sorts(_data):
-    Max_speedup_order = _data.sort_values(by="Program Speedup").point.unique()
-    Min_speedup_order = _data.sort_values(
+    Max_speedup_order = _data.sort_values(
         by="Program Speedup", ascending=False
+    ).point.unique()
+    Min_speedup_order = _data.sort_values(
+        by="Program Speedup", ascending=True
     ).point.unique()
     impactOrder = pd.DataFrame(_data.point.unique(), columns=["progress points"])
     point_counts = _data.point.value_counts()
