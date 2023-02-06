@@ -30,9 +30,11 @@
 #include "fwd.hpp"
 #include "log.hpp"
 
+#include <timemory/components/timing/wall_clock.hpp>
 #include <timemory/environment/types.hpp>
 #include <timemory/utility/demangle.hpp>
 #include <timemory/utility/filepath.hpp>
+#include <timemory/utility/join.hpp>
 
 #include <algorithm>
 #include <dlfcn.h>
@@ -166,12 +168,19 @@ get_internal_basic_libs_impl()
                                            LIBTHREAD_DB_SO,    LIBUTIL_SO };
 
     // shared libraries used by or provided by dyninst
-    const auto _dyn_libs =
-        strview_init_t{ "libdyninstAPI_RT.so", "libcommon.so", "libstackwalk.so",
-                        "libbfd.so", "libelf.so", "libdwarf.so", "libdw.so", "libtbb.so",
-                        // "libtbbmalloc.so",
-                        // "libtbbmalloc_proxy.so",
-                        "libz.so", "libzstd.so", "libbz2.so", "liblzma.so" };
+    const auto _dyn_libs = strview_init_t{ "libdyninstAPI_RT.so",
+                                           "libcommon.so",
+                                           "libbfd.so",
+                                           "libelf.so",
+                                           "libdwarf.so",
+                                           "libdw.so",
+                                           "libtbb.so",
+                                           "libtbbmalloc.so",
+                                           "libtbbmalloc_proxy.so",
+                                           "libz.so",
+                                           "libzstd.so",
+                                           "libbz2.so",
+                                           "liblzma.so" };
 
     // shared libraries used by omnitrace
     const auto _omni_libs = strview_init_t{
@@ -259,6 +268,9 @@ get_internal_libs_impl()
 library_module_map_t
 get_internal_libs_data_impl()
 {
+    auto _wc = tim::component::wall_clock{};
+    _wc.start();
+
     auto _libs_v = get_internal_libs();
     auto _libs   = std::vector<std::string>{};
     _libs.assign(_libs_v.begin(), _libs_v.end());
@@ -289,13 +301,35 @@ get_internal_libs_data_impl()
         OMNITRACE_ADD_LOG_ENTRY("Found system library:", itr);
     }
 
-    // get the symbols in the libraries but avoid processing any DWARF info
-    const auto _filters       = std::vector<binary::scope_filter>{};
-    const auto _process_dwarf = false;  // read dwarf info
-    const auto _process_lines = true;   // read BFD line info
-    const auto _include_all   = false;  // include undefined
-    auto _info = binary::get_binary_info(_libs, _filters, _process_dwarf, _process_lines,
-                                         _include_all);
+    auto _info = std::vector<binary::binary_info>{};
+    {
+        auto _mutex = std::mutex{};
+        auto _func  = [&_info, &_mutex](const std::string& _lib) {
+            // get the symbols in the libraries but avoid processing any DWARF info
+            const auto _filters       = std::vector<binary::scope_filter>{};
+            const auto _process_dwarf = false;  // read dwarf info
+            const auto _process_lines = true;   // read BFD line info
+            const auto _include_all   = false;  // include undefined
+
+            auto _wc_v = tim::component::wall_clock{};
+            _wc_v.start();
+            auto _info_v = binary::get_binary_info({ _lib }, _filters, _process_dwarf,
+                                                   _process_lines, _include_all);
+            _wc_v.stop();
+
+            std::unique_lock<std::mutex> _lk{ _mutex };
+            verbprintf(1, "[internal] binary info for '%s' processed in %.3f %s...\n",
+                       _lib.c_str(), _wc_v.get(), _wc_v.display_unit().c_str());
+
+            for(auto& iitr : _info_v)
+                _info.emplace_back(std::move(iitr));
+        };
+        auto _threads = std::vector<std::thread>{};
+        for(const auto& itr : _libs)
+            _threads.emplace_back(_func, itr);
+        for(auto& itr : _threads)
+            itr.join();
+    }
 
     auto _get_files = [](const std::string& _file_v) {
         if(_file_v.empty()) return std::vector<std::string>{};
@@ -408,6 +442,10 @@ get_internal_libs_data_impl()
         }
     }
 
+    _wc.stop();
+    verbprintf(0, "[internal] binary info processing required %.3f %s...\n", _wc.get(),
+               _wc.display_unit().c_str());
+
     return _data;
 }
 }  // namespace
@@ -435,11 +473,10 @@ ordered(const std::unordered_map<KeyT, MappedT, TailT...>& _unordered)
 std::optional<std::string>
 find_library(std::string_view _lib_v)
 {
-    auto _lib = std::optional<std::string>{};
     for(const auto& itr : get_library_search_paths())
     {
         auto _path = join('/', itr, _lib_v);
-        if(filepath::exists(_path)) return _path;
+        if(filepath::exists(_path)) return std::optional<std::string>{ _path };
     }
 
     return binary::get_linked_path(_lib_v.data(), { (RTLD_LAZY | RTLD_NOLOAD) });
@@ -449,7 +486,6 @@ std::vector<std::string>
 find_libraries(std::string_view _lib_v)
 {
     auto _libs = std::vector<std::string>{};
-
     for(const auto& itr : get_library_search_paths())
     {
         auto _path = join('/', itr, _lib_v);

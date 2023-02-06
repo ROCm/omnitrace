@@ -533,6 +533,11 @@ error_func_fake(error_level_t level, int num, const char* const* params)
 
 #include "internal_libs.hpp"
 
+#include <timemory/components/timing/wall_clock.hpp>
+#include <timemory/utility/join.hpp>
+
+using ::timemory::join::join;
+
 //======================================================================================//
 //
 //  Read the symtab data from Dyninst
@@ -540,13 +545,16 @@ error_func_fake(error_level_t level, int num, const char* const* params)
 void
 process_modules(const std::vector<module_t*>& _app_modules)
 {
+    auto _wc = tim::component::wall_clock{};
+    _wc.start();
+
     for(auto* itr : _app_modules)
     {
         auto* _module = SymTab::convert(itr);
         if(_module) symtab_data.modules.emplace_back(_module);
     }
 
-    verbprintf(1, "Processing %zu modules...\n", symtab_data.modules.size());
+    verbprintf(0, "Processing %zu modules...\n", symtab_data.modules.size());
 
     const auto& _data  = get_internal_libs_data();
     auto        _names = std::set<std::string_view>{};
@@ -577,7 +585,9 @@ process_modules(const std::vector<module_t*>& _app_modules)
         }
     }
 
-    verbprintf(1, "Processing %zu modules... Done\n", _app_modules.size());
+    _wc.stop();
+    verbprintf(0, "Processing %zu modules... Done (%.3f %s)\n", _app_modules.size(),
+               _wc.get(), _wc.display_unit().c_str());
 }
 
 //======================================================================================//

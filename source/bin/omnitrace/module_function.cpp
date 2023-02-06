@@ -59,7 +59,7 @@ module_function::update_width(const module_function& rhs)
 module_function::module_function(module_t* mod, procedure_t* proc)
 : module{ mod }
 , function{ proc }
-, symtab_function{ get_symtab_function(proc) }
+, symtab_function{ proc->isInstrumentable() ? get_symtab_function(proc) : nullptr }
 , flow_graph{ proc->getCFG() }
 , module_name{ get_name(module) }
 , function_name{ get_name(function) }
