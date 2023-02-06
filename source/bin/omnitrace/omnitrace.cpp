@@ -1230,8 +1230,6 @@ main(int argc, char** argv)
         _parse_regex_option("module-restrict", file_restrict);
         _parse_regex_option("internal-module-include", file_internal_include);
         _parse_regex_option("instruction-exclude", instruction_exclude);
-
-        (void) get_internal_libs_data();
     }
 
     //----------------------------------------------------------------------------------//
@@ -1345,6 +1343,8 @@ main(int argc, char** argv)
 
     process_t*     app_thread = nullptr;
     binary_edit_t* app_binary = nullptr;
+
+    (void) get_internal_libs_data();
 
     // get image
     verbprintf(1, "Getting the address space image, modules, and procedures...\n");
