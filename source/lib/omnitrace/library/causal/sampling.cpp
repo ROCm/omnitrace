@@ -252,11 +252,16 @@ configure(bool _setup, int64_t _tid)
 
             for(int64_t i = 1; i < OMNITRACE_MAX_THREADS; ++i)
             {
-                if(get_causal_sampler(i)) get_causal_sampler(i)->reset();
+                if(get_causal_sampler(i))
+                {
+                    get_causal_sampler(i)->stop();
+                    get_causal_sampler(i)->reset();
+                }
             }
         }
 
         _causal->stop();
+        _causal->reset();
 
         OMNITRACE_DEBUG("Causal sampler destroyed for thread %lu\n", _tid);
     }
@@ -293,11 +298,13 @@ void
 block_samples()
 {
     trait::runtime_enabled<causal_sampler_t>::set(false);
+    trait::runtime_enabled<causal::component::backtrace>::set(false);
 }
 
 void
 unblock_samples()
 {
+    trait::runtime_enabled<causal::component::backtrace>::set(true);
     trait::runtime_enabled<causal_sampler_t>::set(true);
 }
 
@@ -326,6 +333,8 @@ post_process()
 
     OMNITRACE_VERBOSE(2 || get_debug_sampling(),
                       "Stopping causal sampling components...\n");
+
+    block_samples();
 
     for(size_t i = 0; i < max_supported_threads; ++i)
     {
