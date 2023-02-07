@@ -31,6 +31,7 @@
 #include "fwd.hpp"
 #include "log.hpp"
 
+#include <timemory/components/rusage/components.hpp>
 #include <timemory/components/timing/wall_clock.hpp>
 #include <timemory/environment/types.hpp>
 #include <timemory/log/macros.hpp>
@@ -62,23 +63,47 @@ get_exe_realpath()
     return filepath::realpath("/proc/self/exe", nullptr, false);
 }
 
+auto&
+get_symtab_file_cache()
+{
+    static auto _cache = std::unordered_map<std::string, std::pair<symtab_t*, bool>>{};
+    return _cache;
+}
+
 symtab_t*
 get_symtab_file(const std::string& _name)
 {
-    static auto _cache = std::unordered_map<std::string, symtab_t*>{};
-    auto        itr    = _cache.find(_name);
+    auto& _cache = get_symtab_file_cache();
+    auto  itr    = _cache.find(_name);
     if(itr == _cache.end())
     {
-        symtab_t* _v = SymTab::Symtab::findOpenSymtab(_name);
+        symtab_t* _v        = SymTab::Symtab::findOpenSymtab(_name);
+        bool      _closable = (_v == nullptr);
         if(!_v) SymTab::Symtab::openFile(_v, _name);
 
         TIMEMORY_PREFER(_v != nullptr)
             << "Warning! Dyninst could not open a Symtab instance for file '" << _name
             << "'\n";
-        _cache.emplace(_name, _v);
+        _cache.emplace(_name, std::make_pair(_v, _closable));
     }
 
-    return _cache.at(_name);
+    return _cache.at(_name).first;
+}
+
+bool
+close_symtab_file(const std::string& _name)
+{
+    auto& _cache = get_symtab_file_cache();
+    auto  itr    = _cache.find(_name);
+    if(itr != _cache.end())
+    {
+        symtab_t* _symtab   = itr->second.first;
+        bool      _closable = itr->second.second;
+        if(_symtab && _closable) SymTab::Symtab::closeSymtab(_symtab);
+        _cache.erase(itr);
+        return true;
+    }
+    return false;
 }
 
 template <template <typename, typename...> class ContainerT, typename... TailT>
@@ -353,13 +378,15 @@ get_internal_libs_impl()
                     verbprintf(2, "Library '%s' found: '%s'\n", itr.data(),
                                _lib_v->c_str());
                     _libs.emplace(*_lib_v);
-                    /*
-                    for(auto&& litr : get_link_map(*_lib_v))
+                    if(include_internal_linked_libs)
                     {
-                        verbprintf(2, "Library '%s' found: '%s' (linked by '%s')\n",
-                                   itr.data(), litr.c_str(), _lib_v->c_str());
-                        _libs.emplace(litr);
-                    }*/
+                        for(auto&& litr : get_link_map(*_lib_v))
+                        {
+                            verbprintf(2, "Library '%s' found: '%s' (linked by '%s')\n",
+                                       itr.data(), litr.c_str(), _lib_v->c_str());
+                            _libs.emplace(litr);
+                        }
+                    }
                 }
                 else
                 {
@@ -376,7 +403,9 @@ library_module_map_t
 get_internal_libs_data_impl()
 {
     auto _wc = tim::component::wall_clock{};
+    auto _pr = tim::component::peak_rss{};
     _wc.start();
+    _pr.start();
 
     auto _libs_v = get_internal_libs();
     auto _libs   = std::vector<std::string>{};
@@ -422,7 +451,9 @@ get_internal_libs_data_impl()
         verbprintf(0, "[internal] parsing library: '%s'...\n", itr.first.c_str());
 
         auto _wc_v = tim::component::wall_clock{};
+        auto _pr_v = tim::component::peak_rss{};
         _wc_v.start();
+        _pr_v.start();
 
         auto _modules = std::vector<symtab_module_t*>{};
         _symtab->getAllModules(_modules);
@@ -455,27 +486,20 @@ get_internal_libs_data_impl()
             }
         }
 
+        _pr_v.stop();
         _wc_v.stop();
-        verbprintf(1, "[internal] parsing library: '%s'... %.3f %s\n", itr.first.c_str(),
-                   _wc_v.get(), _wc_v.display_unit().c_str());
+        verbprintf(1, "[internal] parsing library: '%s'... Done (%.3f %s, %.3f %s)\n",
+                   itr.first.c_str(), _wc_v.get(), _wc_v.display_unit().c_str(),
+                   _pr_v.get(), _pr_v.display_unit().c_str());
+
+        // close_symtab_file(itr.first);
     }
 
-    // reporting
-    const auto _verbose_lvl = 1;
-    for(const auto& ditr : ordered(_data))
-    {
-        verbprintf(_verbose_lvl, "[internal] %s\n", ditr.first.c_str());
-        for(const auto& fitr : ordered(ditr.second))
-        {
-            verbprintf(_verbose_lvl + 1, "[internal]   - %s\n", fitr.first.c_str());
-            // for(const auto& itr : ordered(fitr.second))
-            //    verbprintf(_verbose_lvl + 2, "[internal]     + %s\n", itr.c_str());
-        }
-    }
-
+    _pr.stop();
     _wc.stop();
-    verbprintf(0, "[internal] binary info processing required %.3f %s...\n", _wc.get(),
-               _wc.display_unit().c_str());
+    verbprintf(0, "[internal] binary info processing required %.3f %s and %.3f %s\n",
+               _wc.get(), _wc.display_unit().c_str(), _pr.get(),
+               _pr.display_unit().c_str());
 
     return _data;
 }
@@ -559,4 +583,10 @@ get_internal_libs_data()
 {
     static auto _v = get_internal_libs_data_impl();
     return _v;
+}
+
+void
+parse_internal_libs_data()
+{
+    (void) get_internal_libs_data();
 }

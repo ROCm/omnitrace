@@ -209,6 +209,7 @@ extern int  num_log_entries;
 //
 extern bool simulate;
 extern bool include_uninstr;
+extern bool include_internal_linked_libs;
 //
 //  string settings
 //

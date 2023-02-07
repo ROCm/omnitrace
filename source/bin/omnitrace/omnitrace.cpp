@@ -82,32 +82,33 @@ get_default_min_address_range()
 }
 }  // namespace
 
-bool     use_return_info         = false;
-bool     use_args_info           = false;
-bool     use_file_info           = false;
-bool     use_line_info           = false;
-bool     allow_overlapping       = false;
-bool     loop_level_instr        = false;
-bool     instr_dynamic_callsites = false;
-bool     instr_traps             = false;
-bool     instr_loop_traps        = false;
-bool     parse_all_modules       = false;
-size_t   min_address_range       = get_default_min_address_range();  // 4096
-size_t   min_loop_address_range  = get_default_min_address_range();  // 4096
-size_t   min_instructions        = get_default_min_instructions();   // 1024
-size_t   min_loop_instructions   = get_default_min_instructions();   // 1024
-bool     werror                  = false;
-bool     debug_print             = false;
-bool     instr_print             = false;
-bool     simulate                = false;
-bool     include_uninstr         = false;
-int      verbose_level           = tim::get_env<int>("OMNITRACE_VERBOSE_INSTRUMENT", 0);
-int      num_log_entries         = tim::get_env<int>("OMNITRACE_LOG_COUNT", 20);
-string_t main_fname              = "main";
-string_t argv0                   = {};
-string_t cmdv0                   = {};
-string_t default_components      = "wall_clock";
-string_t prefer_library          = {};
+bool     use_return_info              = false;
+bool     use_args_info                = false;
+bool     use_file_info                = false;
+bool     use_line_info                = false;
+bool     allow_overlapping            = false;
+bool     loop_level_instr             = false;
+bool     instr_dynamic_callsites      = false;
+bool     instr_traps                  = false;
+bool     instr_loop_traps             = false;
+bool     parse_all_modules            = false;
+size_t   min_address_range            = get_default_min_address_range();  // 4096
+size_t   min_loop_address_range       = get_default_min_address_range();  // 4096
+size_t   min_instructions             = get_default_min_instructions();   // 1024
+size_t   min_loop_instructions        = get_default_min_instructions();   // 1024
+bool     werror                       = false;
+bool     debug_print                  = false;
+bool     instr_print                  = false;
+bool     simulate                     = false;
+bool     include_uninstr              = false;
+bool     include_internal_linked_libs = false;
+int      verbose_level      = tim::get_env<int>("OMNITRACE_VERBOSE_INSTRUMENT", 0);
+int      num_log_entries    = tim::get_env<int>("OMNITRACE_LOG_COUNT", 20);
+string_t main_fname         = "main";
+string_t argv0              = {};
+string_t cmdv0              = {};
+string_t default_components = "wall_clock";
+string_t prefer_library     = {};
 //
 //  global variables
 //
@@ -415,7 +416,7 @@ main(int argc, char** argv)
                       "{available,instrumented,excluded,overlapping} module "
                       "function lists, e.g. available.txt")
         .max_count(1)
-        .dtype("bool")
+        .dtype("boolean")
         .action([](parser_t& p) { simulate = p.get<bool>("simulate"); });
     parser
         .add_argument({ "--print-format" },
@@ -629,7 +630,7 @@ main(int argc, char** argv)
             { "--all-functions" },
             "When finding functions, include the functions which are not instrumentable. "
             "This is purely diagnostic for the available/excluded functions output")
-        .dtype("bool")
+        .dtype("boolean")
         .max_count(1)
         .action([](parser_t& p) { include_uninstr = p.get<bool>("all-functions"); });
 
@@ -665,6 +666,20 @@ main(int argc, char** argv)
     parser.add_argument(
         { "--instruction-exclude" },
         "Regex(es) for excluding functions containing certain instructions");
+
+    parser
+        .add_argument({ "--internal-library-deps" },
+                      "Treat the libraries linked to the internal libraries as internal "
+                      "libraries. This increase the internal library processing time and "
+                      "consume more memory (so use with care) but may be useful when the "
+                      "application uses Boost libraries and Dyninst is dynamically "
+                      "linked against the same boost libraries")
+        .min_count(0)
+        .max_count(1)
+        .dtype("boolean")
+        .action([](parser_t& p) {
+            include_internal_linked_libs = p.get<bool>("internal-library-deps");
+        });
 
     auto _internal_libs = get_internal_basic_libs();
 
@@ -896,7 +911,7 @@ main(int argc, char** argv)
             "ensure the instrumentation fits. In this case, Dyninst replaces the "
             "instruction with a single-byte instruction that generates a trap.")
         .max_count(1)
-        .dtype("bool")
+        .dtype("boolean")
         .set_default(instr_traps)
         .action([](parser_t& p) { instr_traps = p.get<bool>("traps"); });
     parser
@@ -904,7 +919,7 @@ main(int argc, char** argv)
                       "Instrument points within a loop which require using a trap (only "
                       "relevant when --instrument-loops is enabled).")
         .max_count(1)
-        .dtype("bool")
+        .dtype("boolean")
         .set_default(instr_loop_traps)
         .action([](parser_t& p) { instr_loop_traps = p.get<bool>("loop-traps"); });
     parser
@@ -1351,8 +1366,6 @@ main(int argc, char** argv)
 
     process_t*     app_thread = nullptr;
     binary_edit_t* app_binary = nullptr;
-
-    (void) get_internal_libs_data();
 
     // get image
     verbprintf(1, "Getting the address space image, modules, and procedures...\n");

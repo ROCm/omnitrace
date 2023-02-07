@@ -162,3 +162,6 @@ get_internal_libs();
 
 const library_module_map_t&
 get_internal_libs_data();
+
+void
+parse_internal_libs_data();

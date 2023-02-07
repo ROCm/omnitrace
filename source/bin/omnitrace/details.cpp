@@ -25,6 +25,9 @@
 #include "log.hpp"
 #include "omnitrace.hpp"
 
+#include <timemory/components/rusage/components.hpp>
+#include <timemory/components/timing/wall_clock.hpp>
+
 #include <string>
 #include <vector>
 
@@ -562,8 +565,12 @@ using ::timemory::join::join;
 void
 process_modules(const std::vector<module_t*>& _app_modules)
 {
+    parse_internal_libs_data();
+
     auto _wc = tim::component::wall_clock{};
+    auto _pr = tim::component::peak_rss{};
     _wc.start();
+    _pr.start();
 
     for(auto* itr : _app_modules)
     {
@@ -609,9 +616,11 @@ process_modules(const std::vector<module_t*>& _app_modules)
         }
     }
 
+    _pr.stop();
     _wc.stop();
-    verbprintf(0, "Processing %zu modules... Done (%.3f %s)\n", _app_modules.size(),
-               _wc.get(), _wc.display_unit().c_str());
+    verbprintf(0, "Processing %zu modules... Done (%.3f %s, %.3f %s)\n",
+               _app_modules.size(), _wc.get(), _wc.display_unit().c_str(), _pr.get(),
+               _pr.display_unit().c_str());
 }
 
 //======================================================================================//
