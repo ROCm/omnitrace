@@ -702,6 +702,14 @@ main(int argc, char** argv)
     for(int i = SV_UNKNOWN; i < SV_END_V; ++i)
         available_visibility.emplace_back(static_cast<symbol_visibility_t>(i));
 
+    auto _get_strvec = [](const auto& _inp) {
+        auto _ret = std::vector<std::string>{};
+        _ret.reserve(_inp.size());
+        for(const auto& itr : _inp)
+            _ret.emplace_back(std::to_string(itr));
+        return _ret;
+    };
+
     parser
         .add_argument({ "--linkage" },
                       join("",
@@ -709,6 +717,7 @@ main(int argc, char** argv)
                            join(array_config{ ", ", "", "" }, enabled_linkage), ")"))
         .min_count(1)
         .choices(available_linkage)
+        .set_default(_get_strvec(enabled_linkage))
         .action([](parser_t& p) {
             enabled_linkage.clear();
             for(const auto& itr : p.get<std::set<std::string>>("linkage"))
@@ -722,6 +731,7 @@ main(int argc, char** argv)
                  join(array_config{ ", ", "", "" }, enabled_visibility), ")"))
         .min_count(1)
         .choices(available_visibility)
+        .set_default(_get_strvec(enabled_visibility))
         .action([](parser_t& p) {
             enabled_visibility.clear();
             for(const auto& itr : p.get<std::set<std::string>>("visibility"))

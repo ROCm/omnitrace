@@ -136,6 +136,7 @@ using instruction_t          = Dyninst::InstructionAPI::Instruction;
 using instruction_category_t = Dyninst::InstructionAPI::InsnCategory;
 
 namespace SymTab          = ::Dyninst::SymtabAPI;
+using symtab_t            = SymTab::Symtab;
 using symtab_module_t     = SymTab::Module;
 using symtab_symbol_t     = SymTab::Symbol;
 using symtab_func_t       = SymTab::Function;

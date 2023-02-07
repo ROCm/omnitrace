@@ -30,8 +30,6 @@ target_link_libraries(
             omnitrace::omnitrace-dyninst
             omnitrace::omnitrace-compile-options
             omnitrace::omnitrace-compile-definitions
-            omnitrace::omnitrace-core
-            omnitrace::omnitrace-binary
             omnitrace::omnitrace-sanitizer
             timemory::timemory-headers
             timemory::timemory-extensions

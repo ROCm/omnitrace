@@ -26,15 +26,18 @@
 #include "binary/link_map.hpp"
 #include "binary/scope_filter.hpp"
 #include "binary/symbol.hpp"
+#include "common/defines.h"
 #include "core/utility.hpp"
 #include "fwd.hpp"
 #include "log.hpp"
 
 #include <timemory/components/timing/wall_clock.hpp>
 #include <timemory/environment/types.hpp>
+#include <timemory/log/macros.hpp>
 #include <timemory/utility/demangle.hpp>
 #include <timemory/utility/filepath.hpp>
 #include <timemory/utility/join.hpp>
+#include <timemory/utility/types.hpp>
 
 #include <algorithm>
 #include <dlfcn.h>
@@ -45,12 +48,38 @@
 
 namespace
 {
-namespace binary   = ::omnitrace::binary;
 namespace filepath = ::tim::filepath;
 using ::tim::delimit;
+using ::tim::get_env;
 using ::timemory::join::join;
-using strview_init_t = std::initializer_list<std::string_view>;
-using strview_set_t  = std::set<std::string_view>;
+using strview_init_t   = std::initializer_list<std::string_view>;
+using strview_set_t    = std::set<std::string_view>;
+using open_modes_vec_t = std::vector<int>;
+
+auto
+get_exe_realpath()
+{
+    return filepath::realpath("/proc/self/exe", nullptr, false);
+}
+
+symtab_t*
+get_symtab_file(const std::string& _name)
+{
+    static auto _cache = std::unordered_map<std::string, symtab_t*>{};
+    auto        itr    = _cache.find(_name);
+    if(itr == _cache.end())
+    {
+        symtab_t* _v = SymTab::Symtab::findOpenSymtab(_name);
+        if(!_v) SymTab::Symtab::openFile(_v, _name);
+
+        TIMEMORY_PREFER(_v != nullptr)
+            << "Warning! Dyninst could not open a Symtab instance for file '" << _name
+            << "'\n";
+        _cache.emplace(_name, _v);
+    }
+
+    return _cache.at(_name);
+}
 
 template <template <typename, typename...> class ContainerT, typename... TailT>
 bool
@@ -61,6 +90,70 @@ check_regex_restrictions(const ContainerT<std::string, TailT...>& _names,
         for(const auto& ritr : _regexes)
             if(std::regex_search(nitr, ritr)) return true;
     return false;
+}
+
+std::optional<std::string>
+get_linked_path(const char*        _name,
+                open_modes_vec_t&& _open_modes = { (RTLD_LAZY | RTLD_NOLOAD) })
+{
+    void* _handle = nullptr;
+    bool  _noload = false;
+    for(auto _mode : _open_modes)
+    {
+        _handle = dlopen(_name, _mode);
+        _noload = (_mode & RTLD_NOLOAD) == RTLD_NOLOAD;
+        if(_handle) break;
+    }
+
+    tim::scope::destructor _dtor{ [&_noload, &_handle]() {
+        if(_noload == false) dlclose(_handle);
+    } };
+
+    if(_handle)
+    {
+        struct link_map* _link_map = nullptr;
+        dlinfo(_handle, RTLD_DI_LINKMAP, &_link_map);
+        if(_link_map != nullptr && !std::string_view{ _link_map->l_name }.empty())
+        {
+            return filepath::realpath(_link_map->l_name, nullptr, false);
+        }
+    }
+
+    return std::optional<std::string>{};
+}
+
+std::set<std::string>
+get_link_map(const std::string& _lib,
+             open_modes_vec_t&& _open_modes = { (RTLD_LAZY | RTLD_NOLOAD) })
+{
+    void* _handle = nullptr;
+    bool  _noload = false;
+    for(auto _mode : _open_modes)
+    {
+        _handle = dlopen(_lib.c_str(), _mode);
+        _noload = (_mode & RTLD_NOLOAD) == RTLD_NOLOAD;
+        if(_handle) break;
+    }
+
+    auto _chain = std::set<std::string>{};
+    if(_handle)
+    {
+        struct link_map* _link_map = nullptr;
+        dlinfo(_handle, RTLD_DI_LINKMAP, &_link_map);
+        struct link_map* _next = _link_map;
+        while(_next)
+        {
+            if(!std::string_view{ _next->l_name }.empty() &&
+               std::string_view{ _next->l_name } != _lib)
+            {
+                _chain.emplace(filepath::realpath(_next->l_name, nullptr, false));
+            }
+            _next = _next->l_next;
+        }
+
+        if(_noload == false) dlclose(_handle);
+    }
+    return _chain;
 }
 
 std::vector<std::string>
@@ -78,9 +171,21 @@ get_library_search_paths_impl()
     };
 
     // search paths from environment variables
-    for(const auto& itr :
-        delimit(tim::get_env("LD_LIBRARY_PATH", std::string{}, false), ":"))
+    for(const auto& itr : delimit(get_env("LD_LIBRARY_PATH", std::string{}, false), ":"))
         _emplace_if_exists(itr);
+
+    for(const auto& itr : { get_env<std::string>("OMNITRACE_ROCM_PATH", ""),
+                            get_env<std::string>("ROCM_PATH", ""),
+                            std::string{ OMNITRACE_DEFAULT_ROCM_PATH } })
+    {
+        if(!itr.empty())
+        {
+            for(const auto& ditr : delimit(itr, ":"))
+            {
+                _emplace_if_exists(join('/', ditr, "lib"));
+            }
+        }
+    }
 
     // search ld.so.cache
     // apparently ubuntu doesn't like pclosing NULL, so a shared pointer custom
@@ -135,10 +240,9 @@ get_library_search_paths_impl()
     }
 
     // search hard-coded system paths
-    for(const char* itr :
-        { "/usr/local/lib", "/usr/share/lib", "/usr/lib", "/usr/lib64",
-          "/usr/lib/x86_64-linux-gnu", "/lib", "/lib64", "/lib/x86_64-linux-gnu",
-          "/usr/lib/i386-linux-gnu", "/usr/lib32" })
+    for(const char* itr : { "/usr/local/lib", "/usr/share/lib", "/usr/lib", "/usr/lib64",
+                            "/usr/lib/x86_64-linux-gnu", "/lib", "/lib64",
+                            "/lib/x86_64-linux-gnu", "/usr/lib/i386-linux-gnu" })
     {
         _emplace_if_exists(itr);
     }
@@ -246,9 +350,16 @@ get_internal_libs_impl()
                 auto _lib_v = find_library(itr);
                 if(_lib_v)
                 {
-                    verbprintf(2, "Library '%s' found: %s\n", itr.data(),
+                    verbprintf(2, "Library '%s' found: '%s'\n", itr.data(),
                                _lib_v->c_str());
                     _libs.emplace(*_lib_v);
+                    /*
+                    for(auto&& litr : get_link_map(*_lib_v))
+                    {
+                        verbprintf(2, "Library '%s' found: '%s' (linked by '%s')\n",
+                                   itr.data(), litr.c_str(), _lib_v->c_str());
+                        _libs.emplace(litr);
+                    }*/
                 }
                 else
                 {
@@ -257,10 +368,6 @@ get_internal_libs_impl()
             }
         }
     }
-
-    // auto _link_map = binary::get_link_map(nullptr, "", "", { (RTLD_LAZY | RTLD_NOLOAD)
-    // }); for(const auto& itr : _link_map)
-    //    _libs.emplace(itr.real());
 
     return _libs;
 }
@@ -295,133 +402,62 @@ get_internal_libs_data_impl()
     omnitrace::utility::filter_sort_unique(
         _libs, [](const auto& itr) { return itr.empty() || !filepath::exists(itr); });
 
+    auto _data = library_module_map_t{};
     for(const auto& itr : _libs)
     {
-        verbprintf(2, "Analyzing %s...\n", itr.c_str());
-        OMNITRACE_ADD_LOG_ENTRY("Found system library:", itr);
-    }
-
-    auto _info = std::vector<binary::binary_info>{};
-    {
-        auto _mutex = std::mutex{};
-        auto _func  = [&_info, &_mutex](const std::string& _lib) {
-            // get the symbols in the libraries but avoid processing any DWARF info
-            const auto _filters       = std::vector<binary::scope_filter>{};
-            const auto _process_dwarf = false;  // read dwarf info
-            const auto _process_lines = true;   // read BFD line info
-            const auto _include_all   = false;  // include undefined
-
-            auto _wc_v = tim::component::wall_clock{};
-            _wc_v.start();
-            auto _info_v = binary::get_binary_info({ _lib }, _filters, _process_dwarf,
-                                                   _process_lines, _include_all);
-            _wc_v.stop();
-
-            std::unique_lock<std::mutex> _lk{ _mutex };
-            verbprintf(1, "[internal] binary info for '%s' processed in %.3f %s...\n",
-                       _lib.c_str(), _wc_v.get(), _wc_v.display_unit().c_str());
-
-            for(auto& iitr : _info_v)
-                _info.emplace_back(std::move(iitr));
-        };
-        auto _threads = std::vector<std::thread>{};
-        for(const auto& itr : _libs)
-            _threads.emplace_back(_func, itr);
-        for(auto& itr : _threads)
-            itr.join();
-    }
-
-    auto _get_files = [](const std::string& _file_v) {
-        if(_file_v.empty()) return std::vector<std::string>{};
-        std::string _base = omnitrace::filepath::basename(_file_v);
-        if(_file_v != _base) return std::vector<std::string>{ _file_v, _base };
-        return std::vector<std::string>{ _file_v };
-    };
-
-    auto _get_funcs = [](std::string _func_v) {
-        auto _v = func_set_t{};
-        if(_func_v.empty()) return _v;
-
-        _v.emplace(_func_v);
-        auto _func_v_d = tim::demangle(_func_v);
-        if(_func_v.find("_Z") != 0 || _func_v == _func_v_d)
-        {
-            for(std::string_view itr : { "__old", "__new", "__IO", "__GI", "_IO", "_GI" })
-            {
-                auto _pos = _func_v.find(itr);
-                if(_pos == 0)
-                {
-                    _func_v = _func_v.substr(itr.length());
-                    _v.emplace(_func_v);
-                }
-            }
-
-            auto _pos = std::string::npos;
-            while((_pos = _func_v.find("__")) == 0)
-            {
-                _func_v = _func_v.substr(2);
-                _v.emplace(_func_v);
-            }
-
-            while((_pos = _func_v.find('_')) == 0)
-            {
-                _func_v = _func_v.substr(1);
-                _v.emplace(_func_v);
-            }
-        }
-        else
-        {
-            _v.emplace(_func_v_d);
-        }
-
-        return _v;
-    };
-
-    auto _data = library_module_map_t{};
-    for(const auto& itr : _info)
-    {
+        auto _fpath = filepath::realpath(itr, nullptr, false);
         // allow the user to request this library be considered for instrumentation
-        if(check_regex_restrictions(strvec_t{ itr.filename() }, file_internal_include))
+        if(check_regex_restrictions(strvec_t{ itr, _fpath }, file_internal_include))
             continue;
 
-        _data.emplace(itr.filename(), module_func_map_t{});
-        _data.emplace(std::string{ filepath::basename(itr.filename()) },
-                      module_func_map_t{});
+        _data.emplace(_fpath, module_func_map_t{});
+    }
 
-        for(const auto& iitr : itr.symbols)
+    auto _odata = ordered(_data);
+    for(const auto& itr : _odata)
+    {
+        symtab_t* _symtab = get_symtab_file(itr.first);
+        if(!_symtab) continue;
+
+        verbprintf(0, "[internal] parsing library: '%s'...\n", itr.first.c_str());
+
+        auto _wc_v = tim::component::wall_clock{};
+        _wc_v.start();
+
+        auto _modules = std::vector<symtab_module_t*>{};
+        _symtab->getAllModules(_modules);
+
+        for(const auto& mitr : _modules)
         {
-            // allow the user to request this file be considered for instrumentation
-            auto _files = _get_files(iitr.file);
-            if(check_regex_restrictions(_files, file_internal_include)) continue;
+            const auto& _mname = mitr->fileName();
+            const auto& _mpath = mitr->fullName();
+            // allow the user to request this library be considered for instrumentation
+            if(check_regex_restrictions(strvec_t{ _mname, _mpath },
+                                        file_internal_include))
+                continue;
 
-            // allow the user to request this function be considered for instrumentation
-            auto _funcs = _get_funcs(iitr.func);
-            if(check_regex_restrictions(_funcs, func_internal_include)) continue;
+            verbprintf(2, "[internal]     parsing module: '%s' (via '%s')...\n",
+                       _mname.c_str(), filepath::basename(itr.first));
 
-            if(_files.empty())
+            _data[itr.first].emplace(_mpath, func_set_t{});
+            _data[itr.first].emplace(_mname, func_set_t{});
+
+            auto _funcs = std::vector<symtab_func_t*>{};
+            mitr->getAllFunctions(_funcs);
+
+            for(const auto& fitr : _funcs)
             {
-                // if the filename is unknown use the library name
-                for(const auto& fitr : _funcs)
-                    _data[itr.filename()][itr.filename()].emplace(fitr);
-            }
-            else if(_funcs.empty())
-            {
-                // if the function names are not known but files are, exclude the file
-                for(const auto& fitr : _files)
-                    _data[itr.filename()].emplace(fitr, func_set_t{});
-            }
-            else
-            {
-                // add entries for all the files and functions
-                for(const auto& fiitr : _files)
-                {
-                    for(const auto& fuitr : _funcs)
-                    {
-                        _data[itr.filename()][fiitr].emplace(fuitr);
-                    }
-                }
+                auto _fname = fitr->getName();
+                auto _dname = tim::demangle(_fname);
+
+                _data[itr.first][_mpath].emplace(_fname);
+                _data[itr.first][_mpath].emplace(_dname);
             }
         }
+
+        _wc_v.stop();
+        verbprintf(1, "[internal] parsing library: '%s'... %.3f %s\n", itr.first.c_str(),
+                   _wc_v.get(), _wc_v.display_unit().c_str());
     }
 
     // reporting
@@ -429,16 +465,11 @@ get_internal_libs_data_impl()
     for(const auto& ditr : ordered(_data))
     {
         verbprintf(_verbose_lvl, "[internal] %s\n", ditr.first.c_str());
-        OMNITRACE_ADD_LOG_ENTRY(ditr.first);
         for(const auto& fitr : ordered(ditr.second))
         {
             verbprintf(_verbose_lvl + 1, "[internal]   - %s\n", fitr.first.c_str());
-            OMNITRACE_ADD_LOG_ENTRY("  -", fitr.first);
-            for(const auto& itr : ordered(fitr.second))
-            {
-                verbprintf(_verbose_lvl + 2, "[internal]     + %s\n", itr.c_str());
-                OMNITRACE_ADD_LOG_ENTRY("    +", itr);
-            }
+            // for(const auto& itr : ordered(fitr.second))
+            //    verbprintf(_verbose_lvl + 2, "[internal]     + %s\n", itr.c_str());
         }
     }
 
@@ -473,27 +504,31 @@ ordered(const std::unordered_map<KeyT, MappedT, TailT...>& _unordered)
 std::optional<std::string>
 find_library(std::string_view _lib_v)
 {
+    auto _lib = get_linked_path(_lib_v.data(), { (RTLD_LAZY | RTLD_NOLOAD) });
+    if(_lib) return _lib;
+
     for(const auto& itr : get_library_search_paths())
     {
         auto _path = join('/', itr, _lib_v);
         if(filepath::exists(_path)) return std::optional<std::string>{ _path };
     }
 
-    return binary::get_linked_path(_lib_v.data(), { (RTLD_LAZY | RTLD_NOLOAD) });
+    return std::optional<std::string>{};
 }
 
 std::vector<std::string>
 find_libraries(std::string_view _lib_v)
 {
     auto _libs = std::vector<std::string>{};
+
+    auto _lib = get_linked_path(_lib_v.data(), { (RTLD_LAZY | RTLD_NOLOAD) });
+    if(_lib) _libs.emplace_back(*_lib);
+
     for(const auto& itr : get_library_search_paths())
     {
         auto _path = join('/', itr, _lib_v);
         if(filepath::exists(_path)) _libs.emplace_back(_path);
     }
-
-    auto _lib = binary::get_linked_path(_lib_v.data(), { (RTLD_LAZY | RTLD_NOLOAD) });
-    if(_lib) _libs.emplace_back(*_lib);
 
     return _libs;
 }

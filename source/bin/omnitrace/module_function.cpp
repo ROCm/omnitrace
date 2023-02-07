@@ -149,6 +149,8 @@ module_function::write_header(std::ostream& os)
        << " " << std::setw(14) << "AddressRange"
        << " " << std::setw(14) << "#Instructions"
        << " " << std::setw(6) << "Ratio"
+       << " " << std::setw(7) << "Linkage"
+       << " " << std::setw(10) << "Visibility"
        << "  " << std::setw(w0 + 8) << std::left << "Module"
        << " " << std::setw(w1 + 8) << std::left << "Function"
        << " " << std::setw(w2 + 8) << std::left << "FunctionSignature"
@@ -574,7 +576,9 @@ module_function::is_routine_constrained() const
         regex_opts);
     static std::regex leading(
         "^(\\.|frame_dummy|transaction clone|virtual thunk|non-virtual thunk|"
-        "\\(|targ|kmp_threadprivate_|Kokkos::Profiling::|_IO_|_GI_|___)",
+        "\\(|targ|kmp_threadprivate_|Kokkos::Profiling::|_IO_|___|"
+        "__(GI|cxa|libc|IO|rpc|run|call|pthread|dl|nl|nss|new|old|internal|argp|malloc|"
+        "libio|printf)_)",
         regex_opts);
     static std::regex trailing("(_internal)$", regex_opts);
     // static std::regex trailing(
@@ -763,13 +767,17 @@ module_function::is_loop_num_instructions_constrained() const
 bool
 module_function::is_visibility_constrained() const
 {
-    return enabled_visibility.find(get_visibility()) == enabled_visibility.end();
+    auto _visibility = get_visibility();
+    return (_visibility != SV_UNKNOWN &&
+            enabled_visibility.find(_visibility) == enabled_visibility.end());
 }
 
 bool
 module_function::is_linkage_constrained() const
 {
-    return enabled_linkage.find(get_linkage()) == enabled_linkage.end();
+    auto _linkage = get_linkage();
+    return (_linkage != SL_UNKNOWN &&
+            enabled_linkage.find(_linkage) == enabled_linkage.end());
 }
 
 bool
