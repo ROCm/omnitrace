@@ -22,10 +22,10 @@
 
 #include "api.hpp"
 
-#include "library/components/fork_gotcha.hpp"
 #include "core/config.hpp"
 #include "core/debug.hpp"
 #include "core/state.hpp"
+#include "library/components/fork_gotcha.hpp"
 
 #include <timemory/backends/process.hpp>
 #include <timemory/backends/threading.hpp>
