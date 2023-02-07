@@ -674,9 +674,9 @@ setup()
 std::set<int>
 shutdown()
 {
-    bool _is_child =
-        get_env("OMNITRACE_CHILD_PROCESS", false, false) ||
-        (get_env("OMNITRACE_ROOT_PROCESS", process::get_id(), false) != process::get_id());
+    bool _is_child = get_env("OMNITRACE_CHILD_PROCESS", false, false) ||
+                     (get_env("OMNITRACE_ROOT_PROCESS", process::get_id(), false) !=
+                      process::get_id());
 
     if(_is_child)
     {
