@@ -260,4 +260,4 @@ EOF
 
 verbose-run cat CTestCustom.cmake
 verbose-run cat dashboard.cmake
-verbose-run ctest ${CDASH_ARGS} --output-on-failure -V --force-new-ctest-process -S dashboard.cmake ${CTEST_ARGS}
+verbose-run ctest ${CDASH_ARGS} -S dashboard.cmake --output-on-failure -V ${CTEST_ARGS}
