@@ -604,7 +604,7 @@ omnitrace_add_test(
         code.coverage
     LABELS "coverage;function-coverage"
     RUN_ARGS 10 ${NUM_THREADS} 1000
-    ENVIRONMENT "${_base_environment};OMNITRACE_DEBUG=ON"
+    ENVIRONMENT "${_base_environment}"
     RUNTIME_PASS_REGEX "(\\\[[0-9]+\\\]) code coverage     ::  66.67%"
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) code coverage     ::  66.67%")
 
@@ -631,7 +631,7 @@ omnitrace_add_test(
         code.coverage
     LABELS "coverage;function-coverage;hybrid-coverage"
     RUN_ARGS 10 ${NUM_THREADS} 1000
-    ENVIRONMENT "${_base_environment};OMNITRACE_DEBUG=ON"
+    ENVIRONMENT "${_base_environment}"
     RUNTIME_PASS_REGEX "(\\\[[0-9]+\\\]) code coverage     ::  66.67%"
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) code coverage     ::  66.67%")
 

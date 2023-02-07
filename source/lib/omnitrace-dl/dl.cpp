@@ -128,6 +128,16 @@ reset_omnitrace_preload()
     }
 }
 
+inline pid_t
+get_omnitrace_root_pid()
+{
+    auto _pid = getpid();
+    setenv("OMNITRACE_ROOT_PROCESS", std::to_string(_pid).c_str(), 0);
+    return get_env("OMNITRACE_ROOT_PROCESS", _pid);
+}
+
+pid_t _omnitrace_root_pid = get_omnitrace_root_pid();
+
 // environment priority:
 //  - OMNITRACE_DL_DEBUG
 //  - OMNITRACE_DL_VERBOSE

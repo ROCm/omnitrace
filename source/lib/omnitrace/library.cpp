@@ -680,9 +680,7 @@ omnitrace_finalize_hidden(void)
     // disable initialization callback
     threading::remove_callback(&ensure_initialization);
 
-    bool _is_child =
-        get_env("OMNITRACE_CHILD_PROCESS", false) ||
-        (get_env("OMNITRACE_ROOT_PROCESS", process::get_id()) != process::get_id());
+    bool _is_child = is_child_process();
 
     set_thread_state(ThreadState::Completed);
 

@@ -118,7 +118,7 @@ omnitrace_mpi_fini(MPI_Comm, int, void*, void*)
         tim::signals::block_signals(_blocked, tim::signals::sigmask_scope::process);
     if(mpip_index != std::numeric_limits<uint64_t>::max())
         comp::deactivate_mpip<mpip_bundle_t, project::omnitrace>(mpip_index);
-    omnitrace_finalize_hidden();
+    if(is_root_process()) omnitrace_finalize_hidden();
     return MPI_SUCCESS;
 }
 #endif
@@ -263,7 +263,7 @@ mpi_gotcha::audit(const gotcha_data_t& _data, audit::incoming)
     tim::mpi::is_initialized_callback() = []() { return false; };
     tim::mpi::is_finalized()            = true;
 #else
-    omnitrace_finalize_hidden();
+    if(is_root_process()) omnitrace_finalize_hidden();
 #endif
 }
 

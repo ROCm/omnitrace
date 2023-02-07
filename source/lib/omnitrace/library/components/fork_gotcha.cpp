@@ -24,8 +24,11 @@
 
 #include "core/config.hpp"
 #include "core/debug.hpp"
+#include "core/perfetto.hpp"
 #include "core/state.hpp"
 #include "library/components/fork_gotcha.hpp"
+#include "library/runtime.hpp"
+#include "library/sampling.hpp"
 
 #include <timemory/backends/process.hpp>
 #include <timemory/backends/threading.hpp>
@@ -68,10 +71,15 @@ fork_gotcha::audit(const gotcha_data_t&, audit::outgoing, pid_t _pid)
     }
     else
     {
-        tim::set_env("OMNITRACE_CHILD_PROCESS", "1", 1);
+        OMNITRACE_REQUIRE(is_child_process())
+            << "Error! child process " << process::get_id()
+            << " believes it is the root process " << get_root_process_id() << "\n";
         settings::enabled() = false;
         settings::verbose() = -127;
         settings::debug()   = false;
+        omnitrace::sampling::shutdown();
+        omnitrace::categories::shutdown();
+        omnitrace::get_perfetto_session().release();
         set_thread_state(::omnitrace::ThreadState::Disabled);
     }
 
