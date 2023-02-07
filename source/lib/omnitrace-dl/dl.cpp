@@ -1077,7 +1077,7 @@ omnitrace_preload()
                          ::omnitrace::join(::omnitrace::QuoteStrings{}, ", ", _mode,
                                            false, "omnitrace")
                              .c_str());
-        if(_use_mpi)
+        if(_use_mpi && !(_causal && _mode == "causal"))
         {
             // only make this call if true bc otherwise, if
             // false, it will disable the MPIP component and

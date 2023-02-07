@@ -1054,6 +1054,11 @@ configure_settings(bool _init)
 
     settings::suppress_parsing()  = true;
     settings::use_output_suffix() = _config->get<bool>("OMNITRACE_USE_PID");
+    if(settings::use_output_suffix())
+        settings::default_process_suffix() = process::get_id();
+#if !defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_MPI_HEADERS)
+    if(tim::dmp::is_initialized()) settings::default_process_suffix() = tim::dmp::rank();
+#endif
 
     auto _dl_verbose = _config->find("OMNITRACE_DL_VERBOSE");
     if(_dl_verbose->second->get_config_updated())
