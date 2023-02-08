@@ -25,6 +25,7 @@
 #include "core/concepts.hpp"
 #include "core/config.hpp"
 #include "core/debug.hpp"
+#include "core/locking.hpp"
 #include "core/state.hpp"
 #include "core/utility.hpp"
 #include "library/causal/components/backtrace.hpp"
@@ -172,12 +173,10 @@ causal_offload_buffer(int64_t, causal_sampler_buffer_t&& _buf)
 
     if(!_processed.empty())
     {
-        tasking::general::get_task_group().exec([_processed]() {
-            static std::mutex _mutex;
-            auto              _lk = std::scoped_lock<std::mutex>{ _mutex };
-            for(const auto& itr : _processed)
-                add_samples(itr.first, itr.second);
-        });
+        static auto _mutex = locking::atomic_mutex{};
+        auto        _lk    = locking::atomic_lock{ _mutex };
+        for(const auto& itr : _processed)
+            add_samples(itr.first, itr.second);
     }
 }
 
