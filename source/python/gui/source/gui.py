@@ -90,7 +90,7 @@ def update_line_graph(sort_filt, func_list, exp_list, data, points_filt):
         data = data.sort_values(by=["point", "idx"])
 
     if "Impact" in sort_filt:
-        data = data.sort_values(by=["impact avg", "idx"])
+        data = data.sort_values(by=["impact avg", "idx"], ascending=False)
 
     if "Max Speedup" in sort_filt:
         data = data.sort_values(by=["Max Speedup", "idx"])
@@ -101,22 +101,11 @@ def update_line_graph(sort_filt, func_list, exp_list, data, points_filt):
     if points_filt > 0:
         data = data[data["point count"] > points_filt]
 
-    # sufficient_points = point_counts > points_filt
-    # sufficient_points = sufficient_points.loc[lambda x: x == True]
-    # sufficient_points = list(sufficient_points.index)
-    # sufficient_points = sufficient_points
     mask_all = data[data.point.isin(func_list)]
-    # mask_all = mask_all[mask_all.point.isin(sufficient_points)]
     mask_all = mask_all[mask_all["progress points"].isin(exp_list)]
 
     mask_select = data[data.point.isin(func_list)]
-    # mask_select = mask_select[mask_select.point.isin(sufficient_points)]
     mask_select = mask_select[mask_select["progress points"].isin(exp_list)]
-
-    # what = mask_select.value_counts()[True]
-    # what = data[mask_all]
-    # fig_data1 = data[mask_all]
-    # fig_data2 = data[mask_select]
 
     fig1 = go.Figure()
 
@@ -424,7 +413,6 @@ def build_causal_layout(
                 points_filt,
             )
 
-            # TODO keep min points value...
             return (div_children, header, fig1, fig2)
 
         # runs when min points changed and when page is first loaded

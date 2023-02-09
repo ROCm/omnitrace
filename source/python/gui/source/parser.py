@@ -462,7 +462,7 @@ def compute_sorts(_data):
     return _data
 
 def isValidDataPoint(data):
-    return isnan(data) == False and isinf(data) == False
+    return math.isnan(data) == False and math.isinf(data) == False
 
 def getValue(splice):
     if "type" in splice:
@@ -640,7 +640,7 @@ def parseUploadedFile(file, CLI):
 
 def getDataPoint(data):
     val = ""
-    if isclose(data.delta, 0, rel_tol=1e-09, abs_tol=0.0):
+    if math.isclose(data.delta, 0, rel_tol=1e-09, abs_tol=0.0):
         return np.nan
     if data["type"] == "throughput":
         val = data.duration / data.delta
@@ -652,7 +652,7 @@ def getDataPoint(data):
     else:
         print("invalid datapoint")
         val = np.inf
-    if isinf(val):
+    if math.isinf(val):
         return np.nan
     else:
         return val
@@ -672,10 +672,10 @@ def getSpeedupData(data):
         if row["type"] == "latency":
             maximize = False
 
-        if not isnan(baseline_data_point):
+        if not math.isnan(baseline_data_point):
             # for speedup in row:
             data_point = getDataPoint(row)
-            if not isnan(data_point):
+            if not math.isnan(data_point):
                 progress_speedup = (
                     baseline_data_point - data_point
                 ) / baseline_data_point
