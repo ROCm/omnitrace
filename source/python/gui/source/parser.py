@@ -546,7 +546,6 @@ def isValidDataPoint(data):
     return math.isnan(data) == False and math.isinf(data) == False
 
 
-
 def getValue(splice):
     if "type" in splice:
         # Something might happen here later
