@@ -333,9 +333,7 @@ def build_causal_layout(
             new_data = pd.DataFrame()
             # for profile_path in all_files:
             new_data = new_data.append(parseFiles(all_files, CLI))
-            new_data = new_data.rename(
-                columns={"speedup": "Line Speedup", "progress_speedup": "Program Speedup"}
-            )
+
             data = new_data
 
             # reset checklists

@@ -38,18 +38,23 @@ from collections import OrderedDict
 
 from . import gui
 from .parser import parseFiles
-from .parser import getSpeedupData, compute_speedups, get_validations, process_data, compute_sorts
+from .parser import (
+    getSpeedupData,
+    compute_speedups,
+    get_validations,
+    process_data,
+    compute_sorts,
+)
 
 
 def causal(args):
     app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 
     # TODO This will become a glob to look for subfolders with coz files
-    #workload_path = glob.glob(os.path.join(args.path, "*"), recursive=True)
+    # workload_path = glob.glob(os.path.join(args.path, "*"), recursive=True)
     workload_path = [args.path]
 
-
-    #speedup_df = parseFiles(workload_path, args, CLI)
+    # speedup_df = parseFiles(workload_path, args, CLI)
     workload_path = workload_path[0]
     num_stddev = args.stddev
     num_speedups = len(args.speedups)
@@ -63,7 +68,9 @@ def causal(args):
         inp_data = json.load(f)
         data = process_data(data, inp_data, args.experiments, args.progress_points)
 
-    results_df = compute_sorts(compute_speedups(data, args.speedups, args.num_points, args.validate, args.cli))
+    results_df = compute_sorts(
+        compute_speedups(data, args.speedups, args.num_points, args.validate, args.cli)
+    )
 
     if not args.cli:
         runs = OrderedDict({workload_path: results_df})
@@ -120,12 +127,12 @@ def main():
         settings_path = os.path.join(f"{this_dir.parent}", "settings.json")
     else:
         settings_path = os.path.join(f"{this_dir}", "settings.json")
-    
+
     if os.path.exists(settings_path):
-        with open(settings_path,"r") as f:
+        with open(settings_path, "r") as f:
             settings = json.load(f)
-    else :
-        f = open(settings_path,"w")
+    else:
+        f = open(settings_path, "w")
 
     my_parser = argparse.ArgumentParser(
         description="AMD's OmniTrace GUI",
@@ -143,12 +150,12 @@ def main():
                                         \n-------------------------------------------------------------------------------\n
                                         """,
     )
-    #my_parser.add_argument(
+    # my_parser.add_argument(
     #    "-V",
     #    "--version",
     #    action="version",
     #    version="Causal Visualizer (" + VER + ")",
-    #)
+    # )
 
     my_parser.add_argument(
         "-w",
@@ -198,9 +205,7 @@ def main():
         "-c",
         "--cli",
         action="store_true",
-        default=settings["cli"]
-        if "cli" in settings 
-        else False,
+        default=settings["cli"] if "cli" in settings else False,
         required=False,
     )
     my_parser.add_argument(
@@ -246,11 +251,8 @@ def main():
     settings["path"] = args.path
     with open(settings_path, "w") as f:
         f.write(json.dumps(settings, indent=4))
-        
-    causal(args)
 
-    
-    
+    causal(args)
 
 
 if __name__ == "__main__":
