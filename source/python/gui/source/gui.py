@@ -90,7 +90,7 @@ def update_line_graph(sort_filt, func_list, exp_list, data, points_filt):
         data = data.sort_values(by=["point", "idx"])
 
     if "Impact" in sort_filt:
-        data = data.sort_values(by=["impact", "idx"])
+        data = data.sort_values(by=["impact avg", "idx"])
 
     if "Max Speedup" in sort_filt:
         data = data.sort_values(by=["Max Speedup", "idx"])

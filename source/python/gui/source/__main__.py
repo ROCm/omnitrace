@@ -38,22 +38,35 @@ from collections import OrderedDict
 
 from . import gui
 from .parser import parseFiles
-from .parser import getSpeedupData
+from .parser import getSpeedupData, compute_speedups, get_validations, process_data, compute_sorts
 
 
 def causal(args):
     app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 
     # TODO This will become a glob to look for subfolders with coz files
-    workload_path = glob.glob(os.path.join(args.path, "*"), recursive=True)
-    # workload_path = [os.path.join(args.path, "experiments.coz")]
+    #workload_path = glob.glob(os.path.join(args.path, "*"), recursive=True)
+    workload_path = [args.path]
 
-    CLI = args.cli
-    speedup_df = parseFiles(workload_path, CLI)
+
+    #speedup_df = parseFiles(workload_path, args, CLI)
     workload_path = workload_path[0]
+    num_stddev = args.stddev
+    num_speedups = len(args.speedups)
 
-    if not CLI:
-        runs = OrderedDict({workload_path: speedup_df})
+    if num_speedups > 0 and args.num_points > num_speedups:
+        args.num_points = num_speedups
+
+    data = {}
+    inp = args.path
+    with open(inp, "r") as f:
+        inp_data = json.load(f)
+        data = process_data(data, inp_data, args.experiments, args.progress_points)
+
+    results_df = compute_sorts(compute_speedups(data, args.speedups, args.num_points, args.validate, args.cli))
+
+    if not args.cli:
+        runs = OrderedDict({workload_path: results_df})
         kernel_names = ["program1", "program2"]
         max_points = 9
         sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
@@ -82,7 +95,7 @@ def causal(args):
             runs,
             input_filters,
             workload_path,
-            speedup_df,
+            results_df,
             args.verbose,
         )
         app.run_server(
@@ -107,8 +120,12 @@ def main():
         settings_path = os.path.join(f"{this_dir.parent}", "settings.json")
     else:
         settings_path = os.path.join(f"{this_dir}", "settings.json")
-    with open(settings_path, "r") as f:
-        settings = json.load(f)
+    
+    if os.path.exists(settings_path):
+        with open(settings_path,"r") as f:
+            settings = json.load(f)
+    else :
+        f = open(settings_path,"w")
 
     my_parser = argparse.ArgumentParser(
         description="AMD's OmniTrace GUI",
@@ -126,24 +143,16 @@ def main():
                                         \n-------------------------------------------------------------------------------\n
                                         """,
     )
-    my_parser.add_argument(
-        "-v",
-        "--version",
-        action="version",
-        version="Causal Visualizer (" + VER + ")",
-    )
+    #my_parser.add_argument(
+    #    "-V",
+    #    "--version",
+    #    action="version",
+    #    version="Causal Visualizer (" + VER + ")",
+    #)
 
     my_parser.add_argument(
-        "-V",
-        "--verbose",
-        help="Increase output verbosity",
-        default=0,
-        type=int,
-    )
-
-    my_parser.add_argument(
-        "-p",
-        "--path",
+        "-w",
+        "--workload",
         metavar="FOLDER",
         type=str,
         dest="path",
@@ -154,6 +163,14 @@ def main():
         help="Specify path to causal profiles.\n(DEFAULT: {}/workloads/<name>)".format(
             os.getcwd()
         ),
+    )
+
+    my_parser.add_argument(
+        "-V",
+        "--verbose",
+        help="Increase output verbosity",
+        default=0,
+        type=int,
     )
 
     my_parser.add_argument(
@@ -181,12 +198,59 @@ def main():
         "-c",
         "--cli",
         action="store_true",
-        default=settings["cli"],
+        default=settings["cli"]
+        if "cli" in settings 
+        else False,
         required=False,
+    )
+    my_parser.add_argument(
+        "-e", "--experiments", type=str, help="Regex for experiments", default=".*"
+    )
+    my_parser.add_argument(
+        "-p",
+        "--progress-points",
+        type=str,
+        help="Regex for progress points",
+        default=".*",
+    )
+    my_parser.add_argument(
+        "-n", "--num-points", type=int, help="Minimum number of data points", default=5
+    )
+    my_parser.add_argument(
+        "-s",
+        "--speedups",
+        type=int,
+        help="List of speedup values to report",
+        nargs="*",
+        default=[],
+    )
+    my_parser.add_argument(
+        "-d",
+        "--stddev",
+        type=int,
+        help="Number of standard deviations to report",
+        default=1,
+    )
+    my_parser.add_argument(
+        "-v",
+        "--validate",
+        type=str,
+        nargs="*",
+        help="Validate speedup: {experiment regex} {progress-point regex} {virtual-speedup} {expected-speedup} {tolerance}",
+        default=[],
     )
 
     args = my_parser.parse_args()
+
+    settings["cli"] = args.cli
+    settings["path"] = args.path
+    with open(settings_path, "w") as f:
+        f.write(json.dumps(settings, indent=4))
+        
     causal(args)
+
+    
+    
 
 
 if __name__ == "__main__":
