@@ -318,7 +318,7 @@ def process_data(data, _data, experiments, progress_points):
     return data
 
 
-def compute_speedups(_data, speedups, num_points=0, validate="*", CLI=False):
+def compute_speedups(_data, speedups=[], num_points=0, validate=[], CLI=False):
     out = pd.DataFrame()
     data = {}
     for selected, pitr in _data.items():
@@ -579,7 +579,7 @@ def addLatency(df, experiment, value):
     return df
 
 
-def parseFiles(files, experiments=0, progress_points=0, speedups=0, CLI=False):
+def parseFiles(files, experiments=".*", progress_points=".*", speedups=[], CLI=False):
     data = pd.DataFrame()
     out = pd.DataFrame()
     dict_data = {}
@@ -608,7 +608,7 @@ def parseFiles(files, experiments=0, progress_points=0, speedups=0, CLI=False):
                     continue
                 dict_data = process_data(dict_data, _data, experiments, progress_points)
 
-                cli_out, dict_data = compute_speedups(dict_data, speedups, CLI)
+                dict_data = compute_speedups(dict_data, speedups, CLI)
                 dict_data = compute_sorts(dict_data)  # .sort_index()
                 read_files.append(_base_name)
 
@@ -663,7 +663,7 @@ def parseUploadedFile(file, CLI):
         dict_data = {}
         data_experiments = json.loads(file)
         dict_data = process_data(dict_data, data_experiments)
-        data = compute_sorts(compute_speedups(dict_data, CLI))
+        data = compute_sorts(compute_speedups(dict_data))
 
     else:
         # coz

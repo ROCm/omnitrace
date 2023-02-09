@@ -186,7 +186,7 @@ def update_line_graph(sort_filt, func_list, exp_list, data, points_filt):
     return mask_all, layout1, layout2
 
 
-def reset_Input_filters(kernel_names, max_points):
+def reset_Input_filters(max_points):
     sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
 
     input_filters = [
@@ -200,17 +200,6 @@ def reset_Input_filters(kernel_names, max_points):
                 )
             ),
             "type": "Name",
-        },
-        {
-            "Name": "kernel",
-            "filter": [],
-            "values": list(
-                map(
-                    str,
-                    kernel_names,
-                )
-            ),
-            "type": "Kernel Name",
         },
         {
             "Name": "points",
@@ -332,7 +321,7 @@ def build_causal_layout(
             all_files = files + subfiles
             new_data = pd.DataFrame()
             # for profile_path in all_files:
-            new_data = new_data.append(parseFiles(all_files, CLI))
+            new_data = new_data.append(parseFiles(all_files))
 
             data = new_data
 
@@ -343,10 +332,10 @@ def build_causal_layout(
             max_points = new_data.point.value_counts().max().max()
 
             # reset input_filters
-            input_filters = reset_Input_filters(checklist_options, max_points)
+            input_filters = reset_Input_filters(max_points)
 
             screen_data, fig1, fig2 = update_line_graph(
-                sort_filt, checklist_values, checklist_values, new_data, points_filt
+                sort_filt, func_list, exp_list, new_data, points_filt
             )
 
             header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
@@ -368,8 +357,11 @@ def build_causal_layout(
 
                 max_points = new_data.point.value_counts().max().max()
 
+                func_list = sorted(list(data.point.unique()))
+                exp_list = sorted(list(data["progress points"].unique()))
+
                 # reset input_filters
-                input_filters = reset_Input_filters(checklist_options, max_points)
+                input_filters = reset_Input_filters(max_points)
 
                 screen_data, fig1, fig2 = update_line_graph(
                     sort_filt, checklist_values, checklist_values, new_data, points_filt
