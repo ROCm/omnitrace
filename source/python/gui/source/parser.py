@@ -657,12 +657,12 @@ def parseFiles(files, experiments=".*", progress_points=".*", speedups=[], CLI=F
     return pd.concat([out, dict_data]) if dict_data is not None else pd.concat([out])
 
 
-def parseUploadedFile(file, CLI):
+def parseUploadedFile(file, experiments=".*", progress_points=".*"):
     data = pd.DataFrame()
     if "{" in file:
         dict_data = {}
-        data_experiments = json.loads(file)
-        dict_data = process_data(dict_data, data_experiments)
+        _data = json.loads(file)
+        dict_data = process_data(dict_data, _data, experiments, progress_points)
         data = compute_sorts(compute_speedups(dict_data))
 
     else:

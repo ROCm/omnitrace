@@ -352,7 +352,7 @@ def build_causal_layout(
                     list_of_contents.encode("utf-8").split(b";base64,")[1]
                 ).decode("utf-8")
 
-                new_data = parseUploadedFile(new_data_file, CLI)
+                new_data = parseUploadedFile(new_data_file)
                 data = new_data
 
                 max_points = new_data.point.value_counts().max().max()
@@ -364,7 +364,7 @@ def build_causal_layout(
                 input_filters = reset_Input_filters(max_points)
 
                 screen_data, fig1, fig2 = update_line_graph(
-                    sort_filt, checklist_values, checklist_values, new_data, points_filt
+                    sort_filt, func_list, exp_list, new_data, points_filt
                 )
                 header = get_header(
                     data, dropDownMenuItems, input_filters, filt_kernel_names
