@@ -1,5 +1,7 @@
-################################################################################
-# Copyright (c) 2021 - 2022 Advanced Micro Devices, Inc. All rights reserved.
+#!/usr/bin/env python3
+# MIT License
+#
+# Copyright (c) 2023 Advanced Micro Devices, Inc. All Rights Reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -8,19 +10,24 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-################################################################################
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
 from __future__ import absolute_import
+
+__author__ = "AMD Research"
+__copyright__ = "Copyright 2023, Advanced Micro Devices, Inc."
+__license__ = "MIT"
+__maintainer__ = "AMD Research"
+__status__ = "Development"
 
 import sys
 import argparse
@@ -45,16 +52,15 @@ from .parser import (
     process_data,
     compute_sorts,
 )
+from . import __version__
 
 
 def causal(args):
     app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 
     # TODO This will become a glob to look for subfolders with coz files
-    # workload_path = glob.glob(os.path.join(args.path, "*"), recursive=True)
     workload_path = [args.path]
 
-    # speedup_df = parseFiles(workload_path, args, CLI)
     workload_path = workload_path[0]
     num_stddev = args.stddev
     num_speedups = len(args.speedups)
@@ -113,26 +119,16 @@ def causal(args):
 
 
 def main():
-    # omnitrace version
-    this_dir = Path(__file__).resolve().parent
-    if os.path.basename(this_dir) == "source":
-        ver_path = os.path.join(f"{this_dir.parent}", "VERSION")
-    else:
-        ver_path = os.path.join(f"{this_dir}", "VERSION")
-    f = open(ver_path, "r")
-    VER = f.read()
-
     settings = {}
+
+    this_dir = Path(__file__).resolve().parent
     if os.path.basename(this_dir) == "source":
         settings_path = os.path.join(f"{this_dir.parent}", "settings.json")
     else:
         settings_path = os.path.join(f"{this_dir}", "settings.json")
-
     if os.path.exists(settings_path):
         with open(settings_path, "r") as f:
             settings = json.load(f)
-    else:
-        f = open(settings_path, "w")
 
     my_parser = argparse.ArgumentParser(
         description="AMD's OmniTrace GUI",
@@ -150,12 +146,21 @@ def main():
                                         \n-------------------------------------------------------------------------------\n
                                         """,
     )
-    # my_parser.add_argument(
-    #    "-V",
-    #    "--version",
-    #    action="version",
-    #    version="Causal Visualizer (" + VER + ")",
-    # )
+
+    my_parser.add_argument(
+        "--version",
+        action="version",
+        version="OmniTrace Causal Viewer v{}\n".format(f"{__version__}".strip("\n")),
+    )
+
+    my_parser.add_argument(
+        "-c",
+        "--cli",
+        action="store_true",
+        required=False,
+        default=settings["cli"] if "cli" in settings else False,
+        help="Do not launch the GUI, print the causal analysis out to the console",
+    )
 
     my_parser.add_argument(
         "-w",
@@ -200,17 +205,10 @@ def main():
         help="Specify the port number for the IP address for the web app.\n(DEFAULT: 8051)",
     )
 
-    # only CLI
-    my_parser.add_argument(
-        "-c",
-        "--cli",
-        action="store_true",
-        default=settings["cli"] if "cli" in settings else False,
-        required=False,
-    )
     my_parser.add_argument(
         "-e", "--experiments", type=str, help="Regex for experiments", default=".*"
     )
+
     my_parser.add_argument(
         "-p",
         "--progress-points",
@@ -218,9 +216,11 @@ def main():
         help="Regex for progress points",
         default=".*",
     )
+
     my_parser.add_argument(
         "-n", "--num-points", type=int, help="Minimum number of data points", default=5
     )
+
     my_parser.add_argument(
         "-s",
         "--speedups",
@@ -229,6 +229,7 @@ def main():
         nargs="*",
         default=[],
     )
+
     my_parser.add_argument(
         "-d",
         "--stddev",
@@ -236,6 +237,7 @@ def main():
         help="Number of standard deviations to report",
         default=1,
     )
+
     my_parser.add_argument(
         "-v",
         "--validate",
@@ -246,11 +248,6 @@ def main():
     )
 
     args = my_parser.parse_args()
-
-    settings["cli"] = args.cli
-    settings["path"] = args.path
-    with open(settings_path, "w") as f:
-        f.write(json.dumps(settings, indent=4))
 
     causal(args)
 

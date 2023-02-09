@@ -1,7 +1,6 @@
 
 # direct include
 
-include VERSION
 include README.md
 include requirements.txt
 

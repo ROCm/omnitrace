@@ -10,7 +10,7 @@ from setuptools import setup
 def get_project_version():
     # open "VERSION"
     _cwd = os.path.dirname(__file__)
-    with open(os.path.join(_cwd, "VERSION"), "r") as f:
+    with open(os.path.join(_cwd, "source", "VERSION"), "r") as f:
         data = f.read().replace("\n", "")
     # make sure is string
     if isinstance(data, list) or isinstance(data, tuple):
@@ -62,7 +62,11 @@ setup(
         "omnitrace_causal_viewer": "source",
     },
     package_data={
-        "omnitrace_causal_viewer": ["source/assets/*", "source/workloads/*", "VERSION"]
+        "omnitrace_causal_viewer": [
+            "source/assets/*",
+            "source/workloads/*",
+            "source/VERSION",
+        ]
     },
     install_requires=parse_requirements(),
     python_requires=">=3.6",
