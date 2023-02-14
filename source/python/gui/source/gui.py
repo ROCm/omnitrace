@@ -47,7 +47,7 @@ from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Symbol
 from dash import html, dash_table
 from dash.dependencies import Input, Output, State
-from dash import dcc
+from dash import dcc, ctx
 from os.path import exists
 
 from .header import get_header
@@ -63,6 +63,7 @@ samples = pd.DataFrame()
 input_filters = None
 checklist_options = None
 checklist_values = None
+workload_path = ""
 pd.set_option(
     "mode.chained_assignment", None
 )  # ignore SettingWithCopyWarning pandas warning
@@ -226,6 +227,8 @@ def build_causal_layout(
     samples = samples_
     global input_filters
     input_filters = input_filters_
+    global workload_path
+    workload_path = path_to_dir
     program_names = sorted(list(set(data.point)))
 
     dropDownMenuItems = [
@@ -270,6 +273,7 @@ def build_causal_layout(
         Output("graph_all", "children"),
         Output("graph_select", "children"),
         [Input("nav-wrap", "children")],
+        [Input("refresh", "n_clicks")],
         [Input("Sort by-filt", "value")],
         [Input("function_regex", "value")],
         [Input("exp_regex", "value")],
@@ -281,11 +285,12 @@ def build_causal_layout(
     )
     def generate_from_filter(
         header,
+        refresh,
         sort_filt,
         func_regex,
         exp_regex,
         points_filt,
-        workload_path,
+        workloadPath,
         list_of_contents,
         filename,
         div_children,
@@ -293,7 +298,7 @@ def build_causal_layout(
         global file_timestamp
         global data
         global input_filters
-
+        global workload_path
         CLI = False
 
         # change to if debug
@@ -407,6 +412,27 @@ def build_causal_layout(
             return (div_children, header, fig1, fig2)
 
         # runs when min points changed and when page is first loaded
+        elif("refresh" == ctx.triggered_id):
+            print("refreshing Data with "+ workload_path)
+            data = parseFiles([workload_path])
+
+            func_list = sorted(list(data.point.unique()))
+            exp_list = sorted(list(data["progress points"].unique()))
+
+            screen_data, fig1, fig2 = update_line_graph(
+                sort_filt,
+                func_list,
+                exp_list,
+                data,
+                points_filt,
+            )
+
+            return (
+                div_children,
+                header,
+                fig1,
+                fig2,
+            )
         else:
             func_list = sorted(list(data.point.unique()))
             exp_list = sorted(list(data["progress points"].unique()))
