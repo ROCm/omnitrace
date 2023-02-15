@@ -51,7 +51,7 @@ def stddev(_data):
         return 0.0
     _mean = mean(_data)
     _variance = sum([((x - _mean) ** 2) for x in _data]) / float(len(_data))
-    return _variance**0.5
+    return _variance ** 0.5
 
 
 class validation(object):
@@ -422,7 +422,7 @@ def compute_speedups(_data, speedups=[], num_points=0, validate=[], CLI=False):
                                     "Program Speedup": [speedup],
                                     "impact sum": impact[0],
                                     "impact avg": impact[1],
-                                    "impact err": f"{impact[2]:6.2f}",
+                                    "impact err": float(impact[2]),
                                 }
                             ),
                         ],
@@ -819,10 +819,10 @@ def getSpeedupData(data):
                                 "point": [name],
                                 "speedup": [speedup],
                                 "progress_speedup": [100 * progress_speedup],
-                            },
+                            }
                         ),
                         speedup_df,
-                    ],
+                    ]
                 )
     speedup_df = speedup_df.sort_values(by=["speedup"])
     return speedup_df
