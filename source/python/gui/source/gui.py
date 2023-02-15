@@ -72,14 +72,12 @@ pd.set_option(
 IS_DARK = True  # default dark theme
 
 
-def build_line_graph(data, KernelName, points_filt):
+def build_line_graph(data, KernelName, numPoints):
     data_options = sorted(list(set(data.point)))
     layout1 = html.Div(
         id="graph_all",
         className="graph_all",
-        children=[
-            html.H4("All Causal Profiles", style={"color": "white"}),
-        ],
+        children=[html.H4("All Causal Profiles", style={"color": "white"})],
     )
 
     layout2 = html.Div(
@@ -93,22 +91,22 @@ def build_line_graph(data, KernelName, points_filt):
     return layout1, layout2
 
 
-def update_line_graph(sort_filt, func_list, exp_list, data, points_filt, samples):
+def update_line_graph(sortFilter, func_list, exp_list, data, numPoints, samples):
     # df = px.data.gapminder() # replace with your own data source
-    if "Alphabetical" in sort_filt:
+    if "Alphabetical" in sortFilter:
         data = data.sort_values(by=["point", "idx"])
 
-    if "Impact" in sort_filt:
+    if "Impact" in sortFilter:
         data = data.sort_values(by=["impact avg", "idx"], ascending=False)
 
-    if "Max Speedup" in sort_filt:
+    if "Max Speedup" in sortFilter:
         data = data.sort_values(by=["Max Speedup", "idx"])
 
-    if "Min Speedup" in sort_filt:
+    if "Min Speedup" in sortFilter:
         data = data.sort_values(by=["Min Speedup", "idx"])
 
-    if points_filt > 0:
-        data = data[data["point count"] > points_filt]
+    if numPoints > 0:
+        data = data[data["point count"] > numPoints]
 
     mask_all = data[data.point.isin(func_list)]
     mask_all = mask_all[mask_all["progress points"].isin(exp_list)]
@@ -191,20 +189,10 @@ def reset_Input_filters(max_points):
         {
             "Name": "Sort by",
             "filter": [],
-            "values": list(
-                map(
-                    str,
-                    sortOptions,
-                )
-            ),
+            "values": list(map(str, sortOptions)),
             "type": "Name",
         },
-        {
-            "Name": "points",
-            "filter": [],
-            "values": max_points - 1,
-            "type": "int",
-        },
+        {"Name": "points", "filter": [], "values": max_points - 1, "type": "int"},
     ]
     return input_filters
 
@@ -234,14 +222,10 @@ def build_causal_layout(
     dropDownMenuItems = [
         dbc.DropdownMenuItem("Overview", header=True),
         dbc.DropdownMenuItem(
-            "All Causal Profiles",
-            href="#graph_all",
-            external_link=True,
+            "All Causal Profiles", href="#graph_all", external_link=True
         ),
         dbc.DropdownMenuItem(
-            "Selected Causal Profiles",
-            href="#graph_select",
-            external_link=True,
+            "Selected Causal Profiles", href="#graph_select", external_link=True
         ),
     ]
 
@@ -256,10 +240,7 @@ def build_causal_layout(
     app.layout.children = html.Div(
         children=[
             get_header(
-                runs[path_to_dir],
-                dropDownMenuItems,
-                input_filters,
-                filt_kernel_names,
+                runs[path_to_dir], dropDownMenuItems, input_filters, filt_kernel_names
             ),
             html.Div(id="container", children=[]),
             line_graph1,
@@ -286,14 +267,14 @@ def build_causal_layout(
     def generate_from_filter(
         header,
         refresh,
-        sort_filt,
-        func_regex,
-        exp_regex,
-        points_filt,
+        sortFilter,
+        funcRegex,
+        expRegex,
+        numPoints,
         workloadPath,
-        list_of_contents,
+        contentsList,
         filename,
-        div_children,
+        divChildren,
     ):
         global file_timestamp
         global data
@@ -303,58 +284,64 @@ def build_causal_layout(
 
         # change to if debug
         if True:
-            print("Sort by is ", sort_filt)
-            print("func_regex is ", func_regex)
-            print("exp_regex is ", exp_regex)
-            print("points is: ", points_filt)
+            print("Sort by is ", sortFilter)
+            print("funcRegex is ", funcRegex)
+            print("expRegex is ", expRegex)
+            print("points is: ", numPoints)
+            print("workload_path is: ", workload_path)
 
-        div_children = []
+        divChildren = []
         files = []
         fig1 = None
         fig2 = None
         global new_data
         global func_list
         global exp_list
-
-        if workload_path is not None and os.path.isdir(workload_path):
+        if workloadPath != None:
+            print("workload_path:" + workload_path)
+            print("workloadPath: " + workloadPath)
+        if workloadPath is not None and os.path.exists(workloadPath):
             # files = glob.glob(os.path.join(workload_path, "*.coz")) +
-            files = glob.glob(os.path.join(workload_path, "*.json"))
-            # subfiles = glob.glob(os.path.join(workload_path, "*/*.coz")) +
-            subfiles = glob.glob(os.path.join(workload_path, "*/*.json"))
-            metadata = glob.glob(os.path.join(workload_path, "*/metadata*.json"))
+            files = []
+            if os.path.isfile(workloadPath):
+                files.append(workloadPath)
+                workload_path = workloadPath
+                print("workload_path:" + workload_path)
+            elif os.path.isdir(workloadPath):
+                _files = glob.glob(os.path.join(workloadPath, "*.json"))
+                # subfiles = glob.glob(os.path.join(workload_path, "*/*.coz")) +
+                subfiles = glob.glob(os.path.join(workloadPath, "*/*.json"))
+                metadata = glob.glob(os.path.join(workloadPath, "*/metadata*.json"))
+                files = _files + subfiles
+                # assuming only one file for now
+                workload_path = files[0]
+                print("workload_path:" + workload_path)
 
-            all_files = files + subfiles
-            new_data = pd.DataFrame()
+            print("all_files: ")
+            print(files)
             # for profile_path in all_files:
-            new_data = new_data.append(parseFiles(all_files))
-
-            data = new_data
+            data = parseFiles(files)
 
             # reset checklists
             func_list = sorted(list(data.point.unique()))
             exp_list = sorted(list(data["progress points"].unique()))
 
-            max_points = new_data.point.value_counts().max().max()
+            max_points = data.point.value_counts().max().max()
 
             # reset input_filters
             input_filters = reset_Input_filters(max_points)
 
             screen_data, fig1, fig2 = update_line_graph(
-                sort_filt, func_list, exp_list, new_data, points_filt, samples
+                sortFilter, func_list, exp_list, new_data, numPoints, samples
             )
 
             header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
-            return (
-                div_children,
-                header,
-                fig1,
-                fig2,
-            )
+            return (divChildren, header, fig1, fig2)
 
-        elif list_of_contents is not None:
+        elif contentsList is not None:
             if ".coz" in filename or ".json" in filename:
                 new_data_file = base64.decodebytes(
-                    list_of_contents.encode("utf-8").split(b";base64,")[1]
+                    contentsList.encode("utf-8").split(b";base64,")[1]
                 ).decode("utf-8")
 
                 new_data = parseUploadedFile(new_data_file)
@@ -369,30 +356,25 @@ def build_causal_layout(
                 input_filters = reset_Input_filters(max_points)
 
                 screen_data, fig1, fig2 = update_line_graph(
-                    sort_filt, func_list, exp_list, new_data, points_filt, samples
+                    sortFilter, func_list, exp_list, new_data, numPoints, samples
                 )
                 header = get_header(
                     data, dropDownMenuItems, input_filters, filt_kernel_names
                 )
-                return (
-                    div_children,
-                    header,
-                    fig1,
-                    fig2,
-                )
+                return (divChildren, header, fig1, fig2)
 
-        # runs when function or experiment regex is changed, takes points_filt into account as well
+        # runs when function or experiment regex is changed, takes numPoints into account as well
         elif (
-            func_regex is not None or exp_regex is not None
-        ):  # or func_regex != "" or exp_regex != "":
+            funcRegex is not None or expRegex is not None
+        ):  # or funcRegex != "" or expRegex != "":
             # filter options and values
-            if func_regex is not None:
-                p = re.compile(func_regex, flags=0)
+            if funcRegex is not None:
+                p = re.compile(funcRegex, flags=0)
 
                 func_list = [s for s in list(data["point"].unique()) if p.match(s)]
                 print(func_list)
-            if exp_regex is not None:
-                p = re.compile(exp_regex, flags=0)
+            if expRegex is not None:
+                p = re.compile(expRegex, flags=0)
 
                 exp_list = [
                     s for s in list(data["progress points"].unique()) if p.match(s)
@@ -401,54 +383,41 @@ def build_causal_layout(
 
             # change to update checklist after points selection
             screen_data, fig1, fig2 = update_line_graph(
-                sort_filt,
+                sortFilter,
                 func_list,
                 exp_list,
                 data,
-                points_filt,
+                numPoints,
                 samples,
             )
 
-            return (div_children, header, fig1, fig2)
+            return (divChildren, header, fig1, fig2)
 
         # runs when min points changed and when page is first loaded
-        elif("refresh" == ctx.triggered_id):
-            print("refreshing Data with "+ workload_path)
+        if "refresh" == ctx.triggered_id:
+            print("refreshing Data with " + workload_path)
+
             data = parseFiles([workload_path])
 
             func_list = sorted(list(data.point.unique()))
             exp_list = sorted(list(data["progress points"].unique()))
 
             screen_data, fig1, fig2 = update_line_graph(
-                sort_filt,
-                func_list,
-                exp_list,
-                data,
-                points_filt,
+                sortFilter, func_list, exp_list, data, numPoints
             )
 
-            return (
-                div_children,
-                header,
-                fig1,
-                fig2,
-            )
+            return (divChildren, header, fig1, fig2)
         else:
             func_list = sorted(list(data.point.unique()))
             exp_list = sorted(list(data["progress points"].unique()))
 
             screen_data, fig1, fig2 = update_line_graph(
-                sort_filt,
+                sortFilter,
                 func_list,
                 exp_list,
                 data,
-                points_filt,
+                numPoints,
                 samples,
             )
 
-            return (
-                div_children,
-                header,
-                fig1,
-                fig2,
-            )
+            return (divChildren, header, fig1, fig2)
