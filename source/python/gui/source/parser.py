@@ -713,7 +713,9 @@ def parse_files(
 def parse_uploaded_file(file_name, file, experiments=".*", progress_points=".*"):
     data = pd.DataFrame()
     if "{" in file:
+        raise RuntimeError("bar")
         dict_data = {}
+        sample_data = {}
         _data = json.loads(file)
 
         dict_data = {
