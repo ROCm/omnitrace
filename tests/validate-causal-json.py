@@ -235,16 +235,34 @@ class experiment_progress(object):
         return self.get_impact()[0] < rhs.get_impact()[0]
 
 
-def find_or_insert(_data, _value, _type):
-    if _value not in _data:
-        if _type == "throughput":
-            _data[_value] = throughput_point(_value)
-        elif _type == "latency":
-            _data[_value] = latency_point(_value)
-    return _data[_value]
+def process_samples(data, _data):
+    if not _data:
+        return data
+    for record in _data["omnitrace"]["causal"]["records"]:
+        for samp in record["samples"]:
+            _info = samp["info"]
+            _count = samp["count"]
+            _func = _info["dfunc"]
+            if _func not in data:
+                data[_func] = 0
+            data[_func] += _count
+            for dwarf_entry in _info["dwarf_info"]:
+                _name = "{}:{}".format(dwarf_entry["file"], dwarf_entry["line"])
+                if _name not in data:
+                    data[_name] = 0
+                data[_name] += _count
+    return data
 
 
 def process_data(data, _data, args):
+    def find_or_insert(_data, _value, _type):
+        if _value not in _data:
+            if _type == "throughput":
+                _data[_value] = throughput_point(_value)
+            elif _type == "latency":
+                _data[_value] = latency_point(_value)
+        return _data[_value]
+
     if not _data:
         return data
 
@@ -409,17 +427,27 @@ def main():
         args.num_points = num_speedups
 
     data = {}
+    samp = {}
     for inp in args.input:
         with open(inp, "r") as f:
             inp_data = json.load(f)
         data = process_data(data, inp_data, args)
+        samp = process_samples(samp, inp_data)
+
+    print("Samples:")
+    width = max([len(x) for x in samp.keys()])
+    for name, count in sorted(samp.items()):
+        print(f"    {name:{width}} :: {count}")
 
     results = compute_speedups(data, args)
+    print("")
+    print("Experiments:")
     for itr in results:
         if len(itr) < args.num_points:
             continue
         print("")
-        print(f"{itr}")
+        # split each line, indent each line, and join again into single string
+        print("{}".format("\n".join([f"    {x}" for x in f"{itr}".split("\n")])))
 
     sys.stdout.flush()
 

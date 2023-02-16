@@ -50,6 +50,7 @@ from .parser import (
     compute_speedups,
     get_validations,
     process_data,
+    process_samples,
     compute_sorts,
 )
 from . import __version__
@@ -69,13 +70,19 @@ def causal(args):
         args.num_points = num_speedups
 
     data = {}
+    samp = {}
     inp = args.path
     with open(inp, "r") as f:
         inp_data = json.load(f)
         data = process_data(data, inp_data, args.experiments, args.progress_points)
+        samp = process_samples(samp, inp_data)
 
     results_df = compute_sorts(
         compute_speedups(data, args.speedups, args.num_points, args.validate, args.cli)
+    )
+
+    samples_df = pd.DataFrame(
+        [{"location": loc, "count": count} for loc, count in sorted(samp.items())]
     )
 
     if not args.cli:
@@ -109,6 +116,7 @@ def causal(args):
             input_filters,
             workload_path,
             results_df,
+            samples_df,
             args.verbose,
         )
         app.run_server(
