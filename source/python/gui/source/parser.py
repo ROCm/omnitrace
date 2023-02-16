@@ -51,7 +51,7 @@ def stddev(_data):
         return 0.0
     _mean = mean(_data)
     _variance = sum([((x - _mean) ** 2) for x in _data]) / float(len(_data))
-    return _variance ** 0.5
+    return _variance**0.5
 
 
 class validation(object):
