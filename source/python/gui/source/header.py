@@ -192,7 +192,6 @@ def refresh():
         className="nav-right",
         children=[
             html.Li(
-                
                 children=[
                     # Refresh button
                     html.A(
@@ -201,7 +200,7 @@ def refresh():
                             html.Button(
                                 className="refresh",
                                 children=["Refresh Data"],
-                                id = "refresh"
+                                id="refresh",
                             )
                         ],
                     )
