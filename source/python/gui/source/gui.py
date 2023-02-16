@@ -147,6 +147,9 @@ def update_line_graph(sortFilter, func_list, exp_list, data, numPoints, samples)
                     go.Scatter(
                         x=sub_data_prog["Line Speedup"],
                         y=sub_data_prog["Program Speedup"],
+                        error_y=dict(
+                            type="percent", array=sub_data_prog["impact err"].tolist()
+                        ),
                         line_shape="spline",
                         name=prog,
                         mode="lines+markers",
@@ -161,6 +164,9 @@ def update_line_graph(sortFilter, func_list, exp_list, data, numPoints, samples)
                     go.Scatter(
                         x=sub_data_prog["Line Speedup"],
                         y=sub_data_prog["Program Speedup"],
+                        error_y=dict(
+                            type="percent", array=sub_data_prog["impact err"].tolist()
+                        ),
                         line_shape="spline",
                         name=prog,
                         mode="lines+markers",
