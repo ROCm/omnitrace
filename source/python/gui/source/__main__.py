@@ -71,6 +71,8 @@ def causal(args):
     samp = {}
     inp = args.path
     if os.path.exists(inp):
+        if os.path.isdir(inp):
+            inp = glob.glob(os.path.join(inp, "*.json"))[0]
         with open(inp, "r") as f:
             inp_data = json.load(f)
             data = process_data(data, inp_data, args.experiments, args.progress_points)
