@@ -38,7 +38,7 @@ def list_unique(orig_list, is_numeric):
     return unique_list
 
 
-def filePath():
+def file_path():
     return html.Div(
         className="filter",
         children=[
@@ -88,7 +88,7 @@ def function_filter(_id, _placeholder):
     )
 
 
-def uploadFile():
+def upload_file():
     return html.Div(
         className="filter",
         children=[
@@ -187,19 +187,20 @@ def sortBy(name, values, filter, style_):
     )
 
 
-def reportBug():
+def refresh():
     return html.Div(
         className="nav-right",
         children=[
             html.Li(
                 children=[
-                    # Report bug button
+                    # Refresh button
                     html.A(
                         href="",
                         children=[
                             html.Button(
-                                className="report",
-                                children=["Report Bug"],
+                                className="refresh",
+                                children=["Refresh Data"],
+                                id="refresh",
                             )
                         ],
                     )
@@ -209,7 +210,7 @@ def reportBug():
     )
 
 
-def get_header(raw_pmc, dropDownMenuItems, input_filters, kernel_names):
+def get_header(data, dropDownMenuItems, input_filters, kernel_names):
     children_ = [
         html.Nav(
             id="nav-wrap",
@@ -267,10 +268,10 @@ def get_header(raw_pmc, dropDownMenuItems, input_filters, kernel_names):
     header_nav = children_[0].children[0].children
     header_nav.append(function_filter("function_regex", "Funtion/line regex"))
     header_nav.append(function_filter("exp_regex", "Experiment regex"))
-    header_nav.append(reportBug())
+    header_nav.append(refresh())
     # header_nav.append(minPoints())
 
-    header_nav.append(filePath())
-    header_nav.append(uploadFile())
+    header_nav.append(file_path())
+    header_nav.append(upload_file())
 
     return html.Header(id="home", children=children_)
