@@ -428,6 +428,7 @@ def compute_speedups(_data, speedups=[], num_points=0, validate=[], CLI=False):
                         ],
                         ignore_index=True,
                     )
+
     _data.sort()
 
     if CLI:
@@ -560,11 +561,11 @@ def compute_sorts(_data):
     return _data
 
 
-def isValidDataPoint(data):
+def is_valid_data_point(data):
     return math.isnan(data) == False and math.isinf(data) == False
 
 
-def getValue(splice):
+def get_value(splice):
     if "type" in splice:
         # Something might happen here later
         print("type found in coz file, finish adding code")
@@ -575,7 +576,7 @@ def getValue(splice):
         return splice[1]
 
 
-def addThroughput(df, experiment, value):
+def add_throughput(df, experiment, value):
     # maybe id is issue
     ix = (experiment["selected"], value["name"], experiment["speedup"])
     df_points = list(df.index)
@@ -597,7 +598,7 @@ def addThroughput(df, experiment, value):
     return df
 
 
-def addLatency(df, experiment, value):
+def add_latency(df, experiment, value):
     ix = (experiment["selected"], experiment["speedup"])
     df_points = list(df.index)
     if ix not in df_points:
@@ -628,7 +629,7 @@ def addLatency(df, experiment, value):
     return df
 
 
-def parseFiles(files, experiments=".*", progress_points=".*", speedups=[], CLI=False):
+def parse_files(files, experiments=".*", progress_points=".*", speedups=[], CLI=False):
     data = pd.DataFrame()
     out = pd.DataFrame()
     samples = {}
@@ -686,7 +687,7 @@ def parseFiles(files, experiments=".*", progress_points=".*", speedups=[], CLI=F
                     for section in sections:
                         splice = section.split("\n")[0].split("=")
                         if len(splice) > 1:
-                            val = getValue(splice)
+                            val = get_value(splice)
                             if isinstance(val, str) and "/" in val:
                                 val = val[val.rfind("/") + 1 :]
                             value[splice[0]] = val
@@ -696,9 +697,9 @@ def parseFiles(files, experiments=".*", progress_points=".*", speedups=[], CLI=F
                         experiment = value
                     elif data_type == "throughput-point" or data_type == "progress-point":
                         experiment["speedup"] = 100 * experiment["speedup"]
-                        data = addThroughput(data, experiment, value)
+                        data = add_throughput(data, experiment, value)
                     elif data_type == "latency-point":
-                        data = addLatency(data, experiment, value)
+                        data = add_latency(data, experiment, value)
                     elif data_type == "samples":
                         if value["location"] not in sample_data:
                             sample_data[value["location"]] = 0
@@ -706,7 +707,7 @@ def parseFiles(files, experiments=".*", progress_points=".*", speedups=[], CLI=F
                     elif data_type not in ["startup", "shutdown", "runtime"]:
                         print("Invalid profile")
 
-            out = getSpeedupData(data.sort_index())
+            out = get_speedup_data(data.sort_index())
             read_files.append(_base_name)
 
     raise RuntimeError("foo")
@@ -718,7 +719,7 @@ def parseFiles(files, experiments=".*", progress_points=".*", speedups=[], CLI=F
     )
 
 
-def parseUploadedFile(file, experiments=".*", progress_points=".*"):
+def parse_uploaded_file(file, experiments=".*", progress_points=".*"):
     data = pd.DataFrame()
     if "{" in file:
         raise RuntimeError("bar")
@@ -743,24 +744,24 @@ def parseUploadedFile(file, experiments=".*", progress_points=".*"):
                 for section in sections:
                     splice = section.split("\n")[0].split("=")
                     if len(splice) > 1:
-                        value[splice[0]] = getValue(splice)
+                        value[splice[0]] = get_value(splice)
                     else:
                         data_type = splice[0]
                 if data_type == "experiment":
                     experiment = value
                 elif data_type == "throughput-point" or data_type == "progress-point":
                     experiment["speedup"] = 100 * experiment["speedup"]
-                    data = addThroughput(data, experiment, value)
+                    data = add_throughput(data, experiment, value)
                 elif data_type == "latency-point":
-                    data = addLatency(data, experiment, value)
+                    data = add_latency(data, experiment, value)
                 elif data_type not in ["startup", "shutdown", "samples", "runtime"]:
                     print("Invalid profile")
                     # sys.exit(1)
-        data = getSpeedupData(data.sort_index())
+        data = get_speedup_data(data.sort_index())
     return data
 
 
-def getDataPoint(data):
+def get_data_point(data):
     val = ""
     if math.isclose(data.delta, 0, rel_tol=1e-09, abs_tol=0.0):
         return np.nan
@@ -780,15 +781,15 @@ def getDataPoint(data):
         return val
 
 
-def getSpeedupData(data):
+def get_speedup_data(data):
     cur_data = data.iloc[0]
-    baseline_data_point = getDataPoint(data.iloc[0])
+    baseline_data_point = get_data_point(data.iloc[0])
     speedup_df = pd.DataFrame()
     curr_selected = ""
     for index, row in data.iterrows():
         if curr_selected != index[0]:
             curr_selected = index[0]
-            baseline_data_point = getDataPoint(row)
+            baseline_data_point = get_data_point(row)
 
         maximize = True
 
@@ -797,7 +798,7 @@ def getSpeedupData(data):
 
         if not math.isnan(baseline_data_point):
             # for speedup in row:
-            data_point = getDataPoint(row)
+            data_point = get_data_point(row)
             if not math.isnan(data_point):
                 progress_speedup = (
                     baseline_data_point - data_point

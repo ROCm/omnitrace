@@ -51,9 +51,8 @@ from dash import dcc, ctx
 from os.path import exists
 
 from .header import get_header
-from .parser import parseFiles
-from .parser import parseUploadedFile
-from .parser import getSpeedupData
+from .parser import parse_files
+from .parser import parse_uploaded_file
 import plotly.graph_objects as go
 
 
@@ -73,7 +72,7 @@ IS_DARK = True  # default dark theme
 
 
 def build_line_graph(data, KernelName, numPoints):
-    data_options = sorted(list(set(data.point)))
+    # data_options = sorted(list(set(data.point)))
     layout1 = html.Div(
         id="graph_all",
         className="graph_all",
@@ -223,7 +222,6 @@ def build_causal_layout(
     input_filters = input_filters_
     global workload_path
     workload_path = path_to_dir
-    program_names = sorted(list(set(data.point)))
 
     dropDownMenuItems = [
         dbc.DropdownMenuItem("Overview", header=True),
@@ -240,6 +238,7 @@ def build_causal_layout(
     app.layout = html.Div(style={"backgroundColor": "rgb(50, 50, 50)" if IS_DARK else ""})
 
     filt_kernel_names = []
+
     line_graph1, line_graph2 = build_line_graph(
         data, filt_kernel_names, inital_min_points
     )
@@ -326,7 +325,7 @@ def build_causal_layout(
             print("all_files: ")
             print(files)
             # for profile_path in all_files:
-            data = parseFiles(files)
+            data = parse_files(files)
 
             # reset checklists
             func_list = sorted(list(data.point.unique()))
@@ -350,7 +349,7 @@ def build_causal_layout(
                     contentsList.encode("utf-8").split(b";base64,")[1]
                 ).decode("utf-8")
 
-                new_data = parseUploadedFile(new_data_file)
+                new_data = parse_uploaded_file(new_data_file)
                 data = new_data
 
                 max_points = new_data.point.value_counts().max().max()
@@ -374,28 +373,23 @@ def build_causal_layout(
             funcRegex is not None or expRegex is not None
         ):  # or funcRegex != "" or expRegex != "":
             # filter options and values
-            if funcRegex is not None:
-                p = re.compile(funcRegex, flags=0)
+            if data.empty == False:
+                if funcRegex is not None:
+                    p = re.compile(funcRegex, flags=0)
 
-                func_list = [s for s in list(data["point"].unique()) if p.match(s)]
-                print(func_list)
-            if expRegex is not None:
-                p = re.compile(expRegex, flags=0)
+                    func_list = [s for s in list(data["point"].unique()) if p.match(s)]
+                    print(func_list)
+                if expRegex is not None:
+                    p = re.compile(expRegex, flags=0)
 
-                exp_list = [
-                    s for s in list(data["progress points"].unique()) if p.match(s)
-                ]
-                print(exp_list)
+                    exp_list = [
+                        s for s in list(data["progress points"].unique()) if p.match(s)
+                    ]
+                    print(exp_list)
 
-            # change to update checklist after points selection
-            screen_data, fig1, fig2 = update_line_graph(
-                sortFilter,
-                func_list,
-                exp_list,
-                data,
-                numPoints,
-                samples,
-            )
+                screen_data, fig1, fig2 = update_line_graph(
+                    sortFilter, func_list, exp_list, data, numPoints, samples
+                )
 
             return (divChildren, header, fig1, fig2)
 
@@ -403,27 +397,25 @@ def build_causal_layout(
         if "refresh" == ctx.triggered_id:
             print("refreshing Data with " + workload_path)
 
-            data = parseFiles([workload_path])
+            data = parse_files([workload_path])
 
             func_list = sorted(list(data.point.unique()))
             exp_list = sorted(list(data["progress points"].unique()))
-
-            screen_data, fig1, fig2 = update_line_graph(
-                sortFilter, func_list, exp_list, data, numPoints
-            )
+            if data.empty == False:
+                screen_data, fig1, fig2 = update_line_graph(
+                    sortFilter, func_list, exp_list, data, numPoints
+                )
 
             return (divChildren, header, fig1, fig2)
         else:
-            func_list = sorted(list(data.point.unique()))
-            exp_list = sorted(list(data["progress points"].unique()))
+            func_list = []
+            exp_list = []
+            if data.empty == False:
+                func_list = sorted(list(data.point.unique()))
+                exp_list = sorted(list(data["progress points"].unique()))
 
-            screen_data, fig1, fig2 = update_line_graph(
-                sortFilter,
-                func_list,
-                exp_list,
-                data,
-                numPoints,
-                samples,
-            )
+                screen_data, fig1, fig2 = update_line_graph(
+                    sortFilter, func_list, exp_list, data, numPoints, samples
+                )
 
             return (divChildren, header, fig1, fig2)
