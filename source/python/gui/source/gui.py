@@ -59,6 +59,7 @@ import plotly.graph_objects as go
 
 file_timestamp = 0
 data = pd.DataFrame()
+samples = pd.DataFrame()
 input_filters = None
 checklist_options = None
 checklist_values = None
@@ -84,14 +85,14 @@ def build_line_graph(data, KernelName, points_filt):
         id="graph_select",
         className="graph_select",
         children=[
-            html.H4("Selected Causal Profiles", style={"color": "white"}),
+            html.H4("Call Stack Sample Histogram", style={"color": "white"}),
         ],
     )
 
     return layout1, layout2
 
 
-def update_line_graph(sort_filt, func_list, exp_list, data, points_filt):
+def update_line_graph(sort_filt, func_list, exp_list, data, points_filt, samples):
     # df = px.data.gapminder() # replace with your own data source
     if "Alphabetical" in sort_filt:
         data = data.sort_values(by=["point", "idx"])
@@ -130,25 +131,11 @@ def update_line_graph(sort_filt, func_list, exp_list, data, points_filt):
         ).update_layout(
             xaxis={"title": "Function Speedup"}, yaxis={"title": "Program Speedup"}
         )
-    _points = list(mask_all["progress points"])
-    _pointsidx = list(range(0, len(_points)))
-    _count = []
-    Hist_df = px.data.tips()
-    for point in _points:
-        _count.append(len(list(mask_all["progress points"] == point)))
-    HIST_DATA = pd.DataFrame(data={"Function": _points})
-    fig3 = px.histogram(
-        HIST_DATA,
-        x="Function",
-        marginal="rug",
-        color="Function",
-        # labels={'Function':'# of experiments'},
-        height=800,
-        nbins=5,
-    )
-    layout2 = [
+
+    causalLayout = [
         html.H4("Selected Causal Profiles", style={"color": "white"}),
     ]
+
     for point in list(mask_select.point.unique()):
         subplots = go.Figure()
         sub_data = mask_select[mask_select["point"] == point]
@@ -183,14 +170,17 @@ def update_line_graph(sort_filt, func_list, exp_list, data, points_filt):
                     xaxis={"title": "Function Speedup"},
                     yaxis={"title": "Program Speedup"},
                 )
-        layout2.append(html.H4(point, style={"color": "white"}))
-        layout2.append(dcc.Graph(figure=subplots))
+        causalLayout.append(html.H4(point, style={"color": "white"}))
+        causalLayout.append(dcc.Graph(figure=subplots))
 
-    layout1 = [
-        html.H4("All Causal Profiles", style={"color": "white"}),
+    fig3 = px.bar(samples, x="location", y="count", height=1200)
+
+    samplesLayout = [
+        html.H4("Call Stack Sample Histogram", style={"color": "white"}),
         dcc.Graph(figure=fig3),
     ]
-    return mask_all, layout1, layout2
+
+    return mask_all, causalLayout, samplesLayout
 
 
 def reset_Input_filters(max_points):
@@ -224,13 +214,16 @@ def build_causal_layout(
     input_filters_,
     path_to_dir,
     data_,
+    samples_,
     verbose=0,
 ):
     """
     Build gui layout
     """
     global data
+    global samples
     data = data_
+    samples = samples_
     global input_filters
     input_filters = input_filters_
     program_names = sorted(list(set(data.point)))
@@ -342,7 +335,7 @@ def build_causal_layout(
             input_filters = reset_Input_filters(max_points)
 
             screen_data, fig1, fig2 = update_line_graph(
-                sort_filt, func_list, exp_list, new_data, points_filt
+                sort_filt, func_list, exp_list, new_data, points_filt, samples
             )
 
             header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
@@ -371,7 +364,7 @@ def build_causal_layout(
                 input_filters = reset_Input_filters(max_points)
 
                 screen_data, fig1, fig2 = update_line_graph(
-                    sort_filt, func_list, exp_list, new_data, points_filt
+                    sort_filt, func_list, exp_list, new_data, points_filt, samples
                 )
                 header = get_header(
                     data, dropDownMenuItems, input_filters, filt_kernel_names
@@ -408,6 +401,7 @@ def build_causal_layout(
                 exp_list,
                 data,
                 points_filt,
+                samples,
             )
 
             return (div_children, header, fig1, fig2)
@@ -423,6 +417,7 @@ def build_causal_layout(
                 exp_list,
                 data,
                 points_filt,
+                samples,
             )
 
             return (
