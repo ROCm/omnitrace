@@ -295,16 +295,34 @@ class experiment_progress(object):
         return self.get_impact()[0] < rhs.get_impact()[0]
 
 
-def find_or_insert(_data, _value, _type):
-    if _value not in _data:
-        if _type == "throughput":
-            _data[_value] = throughput_point(_value)
-        elif _type == "latency":
-            _data[_value] = latency_point(_value)
-    return _data[_value]
+def process_samples(data, _data):
+    if not _data:
+        return data
+    for record in _data["omnitrace"]["causal"]["records"]:
+        for samp in record["samples"]:
+            _info = samp["info"]
+            _count = samp["count"]
+            _func = _info["dfunc"]
+            if _func not in data:
+                data[_func] = 0
+            data[_func] += _count
+            for dwarf_entry in _info["dwarf_info"]:
+                _name = "{}:{}".format(dwarf_entry["file"], dwarf_entry["line"])
+                if _name not in data:
+                    data[_name] = 0
+                data[_name] += _count
+    return data
 
 
 def process_data(data, _data, experiments, progress_points):
+    def find_or_insert(_data, _value, _type):
+        if _value not in _data:
+            if _type == "throughput":
+                _data[_value] = throughput_point(_value)
+            elif _type == "latency":
+                _data[_value] = latency_point(_value)
+        return _data[_value]
+
     if not _data:
         return data
     _selection_filter = re.compile(experiments)
@@ -613,6 +631,7 @@ def addLatency(df, experiment, value):
 def parseFiles(files, experiments=".*", progress_points=".*", speedups=[], CLI=False):
     data = pd.DataFrame()
     out = pd.DataFrame()
+    samples = {}
     dict_data = {}
     cli_out = []
 
@@ -638,6 +657,7 @@ def parseFiles(files, experiments=".*", progress_points=".*", speedups=[], CLI=F
                 if "omnitrace" not in _data or "causal" not in _data["omnitrace"]:
                     continue
                 dict_data = process_data(dict_data, _data, experiments, progress_points)
+                sample_data = process_samples(sample_data, _data)
 
                 dict_data = compute_speedups(dict_data, speedups, CLI)
                 dict_data = compute_sorts(dict_data)  # .sort_index()
@@ -679,22 +699,37 @@ def parseFiles(files, experiments=".*", progress_points=".*", speedups=[], CLI=F
                         data = addThroughput(data, experiment, value)
                     elif data_type == "latency-point":
                         data = addLatency(data, experiment, value)
-                    elif data_type not in ["startup", "shutdown", "samples", "runtime"]:
+                    elif data_type == "samples":
+                        if value["location"] not in sample_data:
+                            sample_data[value["location"]] = 0
+                        sample_data[value["location"]] += int(value["count"])
+                    elif data_type not in ["startup", "shutdown", "runtime"]:
                         print("Invalid profile")
 
             out = getSpeedupData(data.sort_index())
             read_files.append(_base_name)
 
-    return pd.concat([out, dict_data]) if dict_data is not None else pd.concat([out])
+    raise RuntimeError("foo")
+    samples = pd.DataFrame({"samples": [sample_data]})
+    return (
+        pd.concat([out, dict_data, samples])
+        if dict_data is not None
+        else pd.concat([out, samples])
+    )
 
 
 def parseUploadedFile(file, experiments=".*", progress_points=".*"):
     data = pd.DataFrame()
     if "{" in file:
+        raise RuntimeError("bar")
         dict_data = {}
+        sample_data = {}
         _data = json.loads(file)
         dict_data = process_data(dict_data, _data, experiments, progress_points)
+        sample_data = process_samples(sample_data, _data)
         data = compute_sorts(compute_speedups(dict_data))
+        samples = pd.DataFrame({"samples": [sample_data]})
+        data = pd.concat([data, samples])
 
     else:
         # coz
