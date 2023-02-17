@@ -338,7 +338,7 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
             set(_mpip_${_EXAMPLE}_environment "${_mpip_environment}")
         endif()
         omnitrace_add_test(
-            SKIP_RUNTIME SKIP_SAMPLING
+            SKIP_RUNTIME SKIP_SAMPLING SKIP_PRELOAD
             NAME "mpi-${_EXAMPLE}"
             TARGET mpi-${_EXAMPLE}
             MPI ON

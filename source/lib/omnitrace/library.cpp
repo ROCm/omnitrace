@@ -42,6 +42,7 @@
 #include "library/components/exit_gotcha.hpp"
 #include "library/components/fork_gotcha.hpp"
 #include "library/components/mpi_gotcha.hpp"
+#include "library/components/numa_gotcha.hpp"
 #include "library/components/pthread_gotcha.hpp"
 #include "library/components/rocprofiler.hpp"
 #include "library/coverage.hpp"
@@ -833,6 +834,9 @@ omnitrace_finalize_hidden(void)
     {
         OMNITRACE_DEBUG_F("Stopping main gotcha...\n");
         get_init_bundle()->stop();
+
+        pthread_gotcha::shutdown();
+        component::numa_gotcha::shutdown();
     }
 
     // stop the gotcha bundle

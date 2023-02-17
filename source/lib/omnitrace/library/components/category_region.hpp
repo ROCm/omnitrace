@@ -33,6 +33,7 @@
 #include "library/tracing/annotation.hpp"
 
 #include <timemory/components/gotcha/backends.hpp>
+#include <timemory/hash/types.hpp>
 #include <timemory/mpl/concepts.hpp>
 #include <timemory/mpl/types.hpp>
 #include <timemory/utility/types.hpp>
@@ -167,6 +168,9 @@ category_region<CategoryT>::start(std::string_view name, Args&&... args)
     {
         ++tracing::push_count();
     }
+
+    auto _hash = tim::add_hash_id(name);
+    name       = tim::get_hash_identifier_fast(_hash);
 
     if constexpr(_ct_use_causal)
     {

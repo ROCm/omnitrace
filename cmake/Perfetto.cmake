@@ -97,6 +97,11 @@ if(NOT EXISTS "${OMNITRACE_PERFETTO_SOURCE_DIR}")
     execute_process(
         COMMAND ${OMNITRACE_COPY_EXECUTABLE} -r ${PROJECT_SOURCE_DIR}/external/perfetto/
                 ${OMNITRACE_PERFETTO_SOURCE_DIR})
+else()
+    configure_file(${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.h
+                   ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.h COPYONLY)
+    configure_file(${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.cc
+                   ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.cc COPYONLY)
 endif()
 
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/args.gn.in
@@ -178,7 +183,7 @@ target_sources(
 target_link_libraries(
     omnitrace-perfetto-library
     PRIVATE omnitrace::omnitrace-threading omnitrace::omnitrace-static-libgcc
-            omnitrace::omnitrace-static-libstdcxx omnitrace::omnitrace-compile-options)
+            omnitrace::omnitrace-static-libstdcxx)
 set_target_properties(
     omnitrace-perfetto-library
     PROPERTIES OUTPUT_NAME perfetto

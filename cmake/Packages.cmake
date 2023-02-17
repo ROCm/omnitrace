@@ -630,6 +630,12 @@ set(TIMEMORY_USE_LIBUNWIND
 set(TIMEMORY_USE_VISIBILITY
     OFF
     CACHE BOOL "Enable/disable using visibility decorations")
+set(TIMEMORY_USE_SANITIZER
+    ${OMNITRACE_USE_SANITIZER}
+    CACHE BOOL "Build with -fsanitze=\${OMNITRACE_SANITIZER_TYPE}" FORCE)
+set(TIMEMORY_SANITIZER_TYPE
+    ${OMNITRACE_SANITIZER_TYPE}
+    CACHE STRING "Sanitizer type, e.g. leak, thread, address, memory, etc." FORCE)
 
 if(DEFINED TIMEMORY_BUILD_GOTCHA AND NOT TIMEMORY_BUILD_GOTCHA)
     omnitrace_message(
