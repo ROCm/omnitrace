@@ -13,3 +13,5 @@ leak:__cxx_global_var_init
 leak:tim::timemory_argparse
 leak:tim::argparse::argument_parser::parse_known_args
 leak:std::shared_ptr<std::promise<void> >
+leak:realloc
+leak:Kokkos::
