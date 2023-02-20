@@ -97,13 +97,25 @@ if(NOT EXISTS "${OMNITRACE_PERFETTO_SOURCE_DIR}")
     execute_process(
         COMMAND ${OMNITRACE_COPY_EXECUTABLE} -r ${PROJECT_SOURCE_DIR}/external/perfetto/
                 ${OMNITRACE_PERFETTO_SOURCE_DIR})
+endif()
+
+if(OMNITRACE_USE_SANITIZER AND OMNITRACE_SANITIZER_TYPE MATCHES "address")
+    file(READ ${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.h _PERFETTO_HEADER)
+    string(REPLACE "__asan_poison_memory_region((a), (s))" "" _PERFETTO_HEADER
+                   "${_PERFETTO_HEADER}")
+    string(REPLACE "__asan_unpoison_memory_region((a), (s))" "" _PERFETTO_HEADER
+                   "${_PERFETTO_HEADER}")
+    file(WRITE ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.h.tmp "${_PERFETTO_HEADER}")
+
+    configure_file(${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.h.tmp
+                   ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.h COPYONLY)
 else()
     configure_file(${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.h
                    ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.h COPYONLY)
-    configure_file(${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.cc
-                   ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.cc COPYONLY)
 endif()
 
+configure_file(${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.cc
+               ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.cc COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/args.gn.in
                ${OMNITRACE_PERFETTO_BINARY_DIR}/args.gn @ONLY)
 
