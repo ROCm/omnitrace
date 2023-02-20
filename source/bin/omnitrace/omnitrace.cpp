@@ -1343,7 +1343,7 @@ main(int argc, char** argv)
     addr_space =
         omnitrace_get_address_space(bpatch, _cmdc, _cmdv, binary_rewrite, _pid, mutname);
 
-    addr_space->allowTraps(instr_traps);
+    // addr_space->allowTraps(instr_traps);
 
     if(!addr_space)
     {
