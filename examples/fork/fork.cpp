@@ -1,4 +1,6 @@
 
+#include <omnitrace/user.h>
+
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -17,6 +19,8 @@ print_info(const char* _name)
 int
 run(const char* _name, int nchildren)
 {
+    omnitrace_user_push_region("launch_children");
+
     for(int i = 0; i < nchildren; ++i)
     {
         auto _run = [i, _name]() {
@@ -36,11 +40,15 @@ run(const char* _name, int nchildren)
         //_run();
     }
 
+    omnitrace_user_pop_region("launch_children");
+    omnitrace_user_push_region("wait_for_children");
+
     int   _status   = 0;
     pid_t _wait_pid = 0;
     // parent waits for all the child processes
     while((_wait_pid = wait(&_status)) > 0)
     {
+        omnitrace_user_push_region("wait_for_child");
         printf("[%s][%i] returned from wait with pid = %i :: ", _name, getpid(),
                _wait_pid);
         if(WIFEXITED(_status))
@@ -63,7 +71,10 @@ run(const char* _name, int nchildren)
         {
             printf("unknown\n");
         }
+        omnitrace_user_pop_region("wait_for_child");
     }
+
+    omnitrace_user_pop_region("wait_for_children");
     return _status;
 }
 
