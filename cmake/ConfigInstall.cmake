@@ -39,3 +39,36 @@ install(
     OPTIONAL)
 
 export(PACKAGE ${PROJECT_NAME})
+
+# ------------------------------------------------------------------------------#
+# install the validate-causal-json python script as a utility
+#
+configure_file(
+    ${PROJECT_SOURCE_DIR}/tests/validate-causal-json.py
+    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/omnitrace-causal-print COPYONLY)
+
+install(PROGRAMS ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/omnitrace-causal-print
+        DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# ------------------------------------------------------------------------------#
+# build tree
+#
+set(_BUILDTREE_EXPORT_DIR
+    "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/omnitrace")
+
+if(NOT EXISTS "${_BUILDTREE_EXPORT_DIR}")
+    file(MAKE_DIRECTORY "${_BUILDTREE_EXPORT_DIR}")
+endif()
+
+if(NOT EXISTS "${_BUILDTREE_EXPORT_DIR}/omnitrace-library-targets.cmake")
+    file(TOUCH "${_BUILDTREE_EXPORT_DIR}/omnitrace-library-targets.cmake")
+endif()
+
+export(
+    EXPORT omnitrace-library-targets
+    NAMESPACE omnitrace::
+    FILE "${_BUILDTREE_EXPORT_DIR}/omnitrace-library-targets.cmake")
+
+set(omnitrace_DIR
+    "${_BUILDTREE_EXPORT_DIR}"
+    CACHE PATH "omnitrace" FORCE)
