@@ -398,20 +398,24 @@ install(
 # ------------------------------------------------------------------------------#
 
 if(OMNITRACE_BUILD_EXAMPLES)
-    set(_BUILDTREE_EXPORT
-        "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/omnitrace/omnitrace-library-targets.cmake"
-        )
+    set(_BUILDTREE_EXPORT_DIR
+        "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/omnitrace")
 
-    if(NOT EXISTS "${_BUILDTREE_EXPORT}")
-        file(TOUCH "${_BUILDTREE_EXPORT}")
+    if(NOT EXISTS "${_BUILDTREE_EXPORT_DIR}")
+        file(MAKE_DIRECTORY "${_BUILDTREE_EXPORT_DIR}")
+    endif()
+
+    if(NOT EXISTS "${_BUILDTREE_EXPORT_DIR}/omnitrace-library-targets.cmake")
+        file(TOUCH "${_BUILDTREE_EXPORT_DIR}/omnitrace-library-targets.cmake")
     endif()
 
     export(
         EXPORT omnitrace-library-targets
         NAMESPACE omnitrace::
-        FILE "${_BUILDTREE_EXPORT}")
+        FILE "${_BUILDTREE_EXPORT_DIR}/omnitrace-library-targets.cmake")
+
     set(omnitrace_DIR
-        "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/omnitrace"
+        "${_BUILDTREE_EXPORT_DIR}"
         CACHE PATH "omnitrace" FORCE)
 
     add_subdirectory(examples)
