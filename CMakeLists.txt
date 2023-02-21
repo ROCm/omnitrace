@@ -398,6 +398,13 @@ install(
 # ------------------------------------------------------------------------------#
 
 if(OMNITRACE_BUILD_EXAMPLES)
+    export(
+        EXPORT omnitrace-library-targets
+        NAMESPACE omnitrace::
+        FILE "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/omnitrace/omnitrace-library-targets.cmake"
+        )
+    set(omnitrace_DIR
+        "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/omnitrace")
     add_subdirectory(examples)
 endif()
 
