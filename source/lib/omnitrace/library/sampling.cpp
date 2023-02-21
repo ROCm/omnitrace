@@ -372,10 +372,13 @@ get_offload_file()
 {
     static auto _v = []() {
         auto _tmp_v   = config::get_tmp_file("sampling");
-        auto _success = _tmp_v->open();
-        OMNITRACE_CI_FAIL(!_success,
-                          "Error opening sampling offload temporary file '%s'\n",
-                          _tmp_v->filename.c_str());
+        if(get_use_tmp_files())
+        {
+            auto _success = _tmp_v->open();
+            OMNITRACE_CI_FAIL(!_success,
+                              "Error opening sampling offload temporary file '%s'\n",
+                              _tmp_v->filename.c_str());
+        }
         return _tmp_v;
     }();
     return _v;
@@ -860,7 +863,7 @@ post_process()
         if(itr) itr.reset();
     }
 
-    if(get_offload_file())
+    if(get_use_tmp_files() && get_offload_file())
     {
         get_offload_file()->remove();
         get_offload_file().reset();
