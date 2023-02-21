@@ -370,7 +370,14 @@ start_duration_thread()
 auto&
 get_offload_file()
 {
-    static auto _v = config::get_tmp_file("sampling");
+    static auto _v = []() {
+        auto _tmp_v   = config::get_tmp_file("sampling");
+        auto _success = _tmp_v->open();
+        OMNITRACE_CI_FAIL(!_success,
+                          "Error opening sampling offload temporary file '%s'\n",
+                          _tmp_v->filename.c_str());
+        return _tmp_v;
+    }();
     return _v;
 }
 
@@ -917,7 +924,7 @@ post_process_perfetto(int64_t _tid, const bundle_t* _init,
         _thread_info->index_data->sequent_value, _thread_info->index_data->system_value);
 
     tracing::push_perfetto_track(category::sampling{}, "samples [omnitrace]", _track,
-                                 _beg_ns, [&](perfetto::EventContext ctx) {
+                                 _beg_ns, [&](::perfetto::EventContext ctx) {
                                      if(config::get_perfetto_annotations())
                                      {
                                          tracing::add_perfetto_annotation(ctx, "begin_ns",
@@ -1002,7 +1009,7 @@ post_process_perfetto(int64_t _tid, const bundle_t* _init,
                     auto _info = JOIN(':', litr.location, litr.line);
                     tracing::push_perfetto_track(
                         category::sampling{}, _name, _track, _beg,
-                        [&](perfetto::EventContext ctx) {
+                        [&](::perfetto::EventContext ctx) {
                             if(config::get_perfetto_annotations())
                             {
                                 _common_annotate(ctx, (_n == 0 && _ncur == 0) ||
@@ -1023,7 +1030,7 @@ post_process_perfetto(int64_t _tid, const bundle_t* _init,
                 const auto* _name = _static_strings.emplace(iitr.name).first->c_str();
                 tracing::push_perfetto_track(
                     category::sampling{}, _name, _track, _beg,
-                    [&](perfetto::EventContext ctx) {
+                    [&](::perfetto::EventContext ctx) {
                         if(config::get_perfetto_annotations())
                         {
                             _common_annotate(ctx, true);
@@ -1057,7 +1064,7 @@ post_process_perfetto(int64_t _tid, const bundle_t* _init,
     }
 
     tracing::pop_perfetto_track(category::sampling{}, "samples [omnitrace]", _track,
-                                _end_ns, [&](perfetto::EventContext ctx) {
+                                _end_ns, [&](::perfetto::EventContext ctx) {
                                     if(config::get_perfetto_annotations())
                                     {
                                         tracing::add_perfetto_annotation(ctx, "end_ns",

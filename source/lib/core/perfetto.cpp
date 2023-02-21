@@ -22,11 +22,30 @@
 
 #include "perfetto.hpp"
 #include "config.hpp"
+#include "library/runtime.hpp"
+#include "perfetto_fwd.hpp"
 
 namespace omnitrace
 {
 namespace perfetto
 {
+namespace
+{
+auto
+is_system_backend()
+{
+    // if get_perfetto_backend() returns 'system' or 'all', this is true
+    return (config::get_perfetto_backend() != "inprocess");
+}
+
+auto&
+get_perfetto_tmp_file(pid_t _pid = process::get_id())
+{
+    static auto _v = std::unordered_map<pid_t, std::shared_ptr<tmp_file>>{};
+    if(_v.find(_pid) == _v.end()) _v.emplace(_pid, std::shared_ptr<tmp_file>{});
+    return _v.at(_pid);
+}
+
 auto&
 get_config()
 {
@@ -35,11 +54,15 @@ get_config()
 }
 
 auto&
-get_session()
+get_session(pid_t _pid = process::get_id())
 {
-    static auto _v = std::unique_ptr<::perfetto::TracingSession>{};
-    return _v;
+    static auto _v =
+        std::unordered_map<pid_t, std::unique_ptr<::perfetto::TracingSession>>{};
+    if(_v.find(_pid) == _v.end())
+        _v.emplace(_pid, std::unique_ptr<::perfetto::TracingSession>{});
+    return _v.at(_pid);
 }
+}  // namespace
 
 void
 setup()
@@ -73,8 +96,8 @@ setup()
 
     args.shmem_size_hint_kb = shmem_size_hint;
 
-    if(get_backend() != "inprocess") args.backends |= ::perfetto::kSystemBackend;
-    if(get_backend() != "system") args.backends |= ::perfetto::kInProcessBackend;
+    if(get_perfetto_backend() != "inprocess") args.backends |= ::perfetto::kSystemBackend;
+    if(get_perfetto_backend() != "system") args.backends |= ::perfetto::kInProcessBackend;
 
     ::perfetto::Tracing::Initialize(args);
     ::perfetto::TrackEvent::Register();
@@ -83,12 +106,151 @@ setup()
 void
 start()
 {
-    auto& cfg             = get_config();
+    if(is_system_backend()) return;
+
     auto& tracing_session = get_session();
-    tracing_session       = ::perfetto::Tracing::NewTrace();
-    tracing_session->Setup(cfg);
-    tracing_session->StartBlocking();
+
+    if(!tracing_session)
+    {
+        tracing_session = ::perfetto::Tracing::NewTrace();
+        auto& _file     = get_perfetto_tmp_file();
+        if(!_file)
+        {
+            _file = config::get_tmp_file("perfetto-trace", "proto");
+            _file->fopen("w+");
+        }
+        else
+        {
+            OMNITRACE_VERBOSE(0, "Resuming perfetto...\n");
+            _file->fopen("a+");
+        }
+
+        OMNITRACE_VERBOSE(0, "Setup perfetto...\n");
+        int   _fd = (_file) ? _file->fd : -1;
+        auto& cfg = get_config();
+        tracing_session->Setup(cfg, _fd);
+        if(is_child_process())
+            tracing_session->Start();
+        else
+            tracing_session->StartBlocking();
+    }
 }
+
+void
+stop()
+{
+    if(is_system_backend()) return;
+
+    auto& tracing_session = get_perfetto_session();
+
+    OMNITRACE_CI_THROW(tracing_session == nullptr, "Null pointer to the tracing session");
+
+    if(tracing_session)
+    {
+        // Make sure the last event is closed for this example.
+        OMNITRACE_VERBOSE(-1, "Flushing the perfetto trace data...\n");
+        ::perfetto::TrackEvent::Flush();
+        tracing_session->FlushBlocking();
+
+        OMNITRACE_VERBOSE(-1, "Stopping the perfetto trace session (blocking)...\n");
+        tracing_session->StopBlocking();
+
+        OMNITRACE_VERBOSE(-1, "Unloading the perfetto session...\n");
+        tracing_session.reset();
+        // unload_session();
+    }
+}
+
+void
+post_process(tim::manager* _timemory_manager, bool& _perfetto_output_error)
+{
+    using char_vec_t = std::vector<char>;
+
+    auto& tracing_session = get_perfetto_session();
+
+    if(!tracing_session) return;
+
+    OMNITRACE_VERBOSE(-1, "Flushing the perfetto trace data...\n");
+
+    // Make sure the last event is closed for this example.
+    ::perfetto::TrackEvent::Flush();
+    tracing_session->FlushBlocking();
+
+    OMNITRACE_VERBOSE(-1, "Stopping the perfetto trace session (blocking)...\n");
+    tracing_session->StopBlocking();
+
+    auto trace_data = char_vec_t{};
+#if defined(TIMEMORY_USE_MPI) && TIMEMORY_USE_MPI > 0
+    if(get_perfetto_combined_traces())
+    {
+        using perfetto_mpi_get_t = tim::operation::finalize::mpi_get<char_vec_t, true>;
+
+        auto _trace_data = char_vec_t{ tracing_session->ReadTraceBlocking() };
+        auto _rank_data  = std::vector<char_vec_t>{};
+        auto _combine    = [](char_vec_t& _dst, const char_vec_t& _src) -> char_vec_t& {
+            _dst.reserve(_dst.size() + _src.size());
+            for(auto&& itr : _src)
+                _dst.emplace_back(itr);
+            return _dst;
+        };
+
+        perfetto_mpi_get_t{ get_perfetto_combined_traces(),
+                            settings::node_count() }(_rank_data, _trace_data, _combine);
+        for(auto& itr : _rank_data)
+            trace_data =
+                (trace_data.empty()) ? std::move(itr) : _combine(trace_data, itr);
+    }
+    else
+    {
+        trace_data = tracing_session->ReadTraceBlocking();
+    }
+#else
+    trace_data = tracing_session->ReadTraceBlocking();
+#endif
+
+    auto _filename = config::get_perfetto_output_filename();
+    if(!trace_data.empty())
+    {
+        operation::file_output_message<tim::project::omnitrace> _fom{};
+        // Write the trace into a file.
+        if(config::get_verbose() >= 0)
+            _fom(_filename, std::string{ "perfetto" },
+                 " (%.2f KB / %.2f MB / %.2f GB)... ",
+                 static_cast<double>(trace_data.size()) / units::KB,
+                 static_cast<double>(trace_data.size()) / units::MB,
+                 static_cast<double>(trace_data.size()) / units::GB);
+        std::ofstream ofs{};
+        if(!filepath::open(ofs, _filename, std::ios::out | std::ios::binary))
+        {
+            _fom.append("Error opening '%s'...", _filename.c_str());
+            _perfetto_output_error = true;
+        }
+        else
+        {
+            // Write the trace into a file.
+            ofs.write(&trace_data[0], trace_data.size());
+            if(config::get_verbose() >= 0) _fom.append("%s", "Done");  // NOLINT
+            if(_timemory_manager)
+                _timemory_manager->add_file_output("protobuf", "perfetto", _filename);
+        }
+        ofs.close();
+    }
+    else if(dmp::rank() == 0)
+    {
+        OMNITRACE_VERBOSE(
+            0, "perfetto trace data is empty. File '%s' will not be written...\n",
+            _filename.c_str());
+    }
+
+    auto& _file = get_perfetto_tmp_file();
+    if(_file)
+    {
+        _file->close();
+        _file->remove();
+        _file.reset();
+    }
+}
+
 }  // namespace perfetto
 
 std::unique_ptr<::perfetto::TracingSession>&

@@ -151,5 +151,4 @@ perfetto_counter_track<Tp>::emplace(size_t _idx, const std::string& _v,
     }
     return _index;
 }
-
 }  // namespace omnitrace
