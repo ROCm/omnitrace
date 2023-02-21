@@ -24,6 +24,7 @@
 #include "config.hpp"
 #include "library/runtime.hpp"
 #include "perfetto_fwd.hpp"
+#include "utility.hpp"
 
 namespace omnitrace
 {
@@ -110,30 +111,29 @@ start()
 
     auto& tracing_session = get_session();
 
-    if(!tracing_session)
+    if(!tracing_session) tracing_session = ::perfetto::Tracing::NewTrace();
+
+    tracing_session = ::perfetto::Tracing::NewTrace();
+    auto& _tmp_file = get_perfetto_tmp_file();
+    if(config::get_use_tmp_files())
     {
-        tracing_session = ::perfetto::Tracing::NewTrace();
-        auto& _file     = get_perfetto_tmp_file();
-        if(!_file)
+        if(!_tmp_file)
         {
-            _file = config::get_tmp_file("perfetto-trace", "proto");
-            _file->fopen("w+");
+            _tmp_file = config::get_tmp_file("perfetto-trace", "proto");
+            _tmp_file->fopen("w+");
         }
         else
         {
             OMNITRACE_VERBOSE(0, "Resuming perfetto...\n");
-            _file->fopen("a+");
+            _tmp_file->fopen("a+");
         }
-
-        OMNITRACE_VERBOSE(0, "Setup perfetto...\n");
-        int   _fd = (_file) ? _file->fd : -1;
-        auto& cfg = get_config();
-        tracing_session->Setup(cfg, _fd);
-        if(is_child_process())
-            tracing_session->Start();
-        else
-            tracing_session->StartBlocking();
     }
+
+    OMNITRACE_VERBOSE(0, "Setup perfetto...\n");
+    int   _fd = (_tmp_file) ? _tmp_file->fd : -1;
+    auto& cfg = get_config();
+    tracing_session->Setup(cfg, _fd);
+    tracing_session->StartBlocking();
 }
 
 void
@@ -147,17 +147,13 @@ stop()
 
     if(tracing_session)
     {
-        // Make sure the last event is closed for this example.
-        OMNITRACE_VERBOSE(-1, "Flushing the perfetto trace data...\n");
+        // Make sure the last event is closed
+        OMNITRACE_VERBOSE(2, "Flushing the perfetto trace data...\n");
         ::perfetto::TrackEvent::Flush();
         tracing_session->FlushBlocking();
 
-        OMNITRACE_VERBOSE(-1, "Stopping the perfetto trace session (blocking)...\n");
+        OMNITRACE_VERBOSE(2, "Stopping the perfetto trace session (blocking)...\n");
         tracing_session->StopBlocking();
-
-        OMNITRACE_VERBOSE(-1, "Unloading the perfetto session...\n");
-        tracing_session.reset();
-        // unload_session();
     }
 }
 
@@ -166,18 +162,35 @@ post_process(tim::manager* _timemory_manager, bool& _perfetto_output_error)
 {
     using char_vec_t = std::vector<char>;
 
-    auto& tracing_session = get_perfetto_session();
+    stop();
 
+    auto& tracing_session = get_perfetto_session();
     if(!tracing_session) return;
 
-    OMNITRACE_VERBOSE(-1, "Flushing the perfetto trace data...\n");
+    auto _get_session_data = [&tracing_session]() {
+        auto _data     = char_vec_t{};
+        auto _tmp_file = get_perfetto_tmp_file();
+        if(_tmp_file && *_tmp_file)
+        {
+            _tmp_file->close();
+            FILE* _fdata = fopen(_tmp_file->filename.c_str(), "rb");
+            fseek(_fdata, 0, SEEK_END);
+            size_t _fnum_elem = ftell(_fdata);
+            fseek(_fdata, 0, SEEK_SET);  // same as rewind(f);
 
-    // Make sure the last event is closed for this example.
-    ::perfetto::TrackEvent::Flush();
-    tracing_session->FlushBlocking();
+            _data.resize(_fnum_elem + 1);
+            auto _fnum_read = fread(_data.data(), sizeof(char), _fnum_elem, _fdata);
+            fclose(_fdata);
 
-    OMNITRACE_VERBOSE(-1, "Stopping the perfetto trace session (blocking)...\n");
-    tracing_session->StopBlocking();
+            OMNITRACE_CI_THROW(
+                _fnum_read != _fnum_elem,
+                "Error! read %zu elements from perfetto trace file '%s'. Expected %zu\n",
+                _fnum_read, _tmp_file->filename.c_str(), _fnum_elem);
+        }
+
+        return utility::combine(_data,
+                                char_vec_t{ tracing_session->ReadTraceBlocking() });
+    };
 
     auto trace_data = char_vec_t{};
 #if defined(TIMEMORY_USE_MPI) && TIMEMORY_USE_MPI > 0
@@ -185,7 +198,7 @@ post_process(tim::manager* _timemory_manager, bool& _perfetto_output_error)
     {
         using perfetto_mpi_get_t = tim::operation::finalize::mpi_get<char_vec_t, true>;
 
-        auto _trace_data = char_vec_t{ tracing_session->ReadTraceBlocking() };
+        auto _trace_data = _get_session_data();
         auto _rank_data  = std::vector<char_vec_t>{};
         auto _combine    = [](char_vec_t& _dst, const char_vec_t& _src) -> char_vec_t& {
             _dst.reserve(_dst.size() + _src.size());
@@ -202,10 +215,10 @@ post_process(tim::manager* _timemory_manager, bool& _perfetto_output_error)
     }
     else
     {
-        trace_data = tracing_session->ReadTraceBlocking();
+        trace_data = _get_session_data();
     }
 #else
-    trace_data = tracing_session->ReadTraceBlocking();
+    trace_data = _get_session_data();
 #endif
 
     auto _filename = config::get_perfetto_output_filename();
@@ -242,12 +255,12 @@ post_process(tim::manager* _timemory_manager, bool& _perfetto_output_error)
             _filename.c_str());
     }
 
-    auto& _file = get_perfetto_tmp_file();
-    if(_file)
+    auto& _tmp_file = get_perfetto_tmp_file();
+    if(_tmp_file)
     {
-        _file->close();
-        _file->remove();
-        _file.reset();
+        _tmp_file->close();
+        _tmp_file->remove();
+        _tmp_file.reset();
     }
 }
 

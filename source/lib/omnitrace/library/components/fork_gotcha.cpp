@@ -33,6 +33,7 @@
 
 #include <timemory/backends/process.hpp>
 #include <timemory/backends/threading.hpp>
+#include <timemory/mpl/types.hpp>
 
 #include <unistd.h>
 
@@ -64,11 +65,9 @@ fork_gotcha::audit(const gotcha_data_t&, audit::incoming)
         "may result is segmentation fault\n");
     TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(get_debug_env(), 16);
 
-    if(config::get_use_perfetto())
-    {
-        OMNITRACE_BASIC_VERBOSE(1, "Stopping perfetto tracing...\n");
-        omnitrace::perfetto::stop();
-    }
+    if(config::get_use_sampling()) sampling::block_samples();
+
+    omnitrace::categories::disable_categories(config::get_enabled_categories());
 }
 
 void
@@ -82,11 +81,9 @@ fork_gotcha::audit(const gotcha_data_t&, audit::outgoing, pid_t _pid)
         OMNITRACE_BASIC_VERBOSE(0, "fork() called on PID %i created PID %i\n", getppid(),
                                 _pid);
 
-        if(config::get_use_perfetto())
-        {
-            OMNITRACE_BASIC_VERBOSE(1, "Resuming perfetto tracing...\n");
-            omnitrace::perfetto::start();
-        }
+        omnitrace::categories::enable_categories(config::get_enabled_categories());
+
+        if(config::get_use_sampling()) sampling::unblock_samples();
     }
     else
     {
@@ -105,12 +102,9 @@ fork_gotcha::audit(const gotcha_data_t&, audit::outgoing, pid_t _pid)
 
     if(!settings::use_output_suffix())
     {
-        settings::use_output_suffix()      = true;
-        settings::default_process_suffix() = process::get_id();
-
         OMNITRACE_BASIC_VERBOSE(
-            0, "call to fork() enables using an output suffix. PID %i will use %i\n",
-            process::get_id(), process::get_id());
+            0, "Application which make calls to fork() should enable using an process "
+               "identifier output suffix (i.e. set OMNITRACE_USE_PID=ON)\n");
     }
 }
 }  // namespace component

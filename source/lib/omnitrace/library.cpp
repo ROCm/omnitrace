@@ -742,23 +742,28 @@ omnitrace_finalize_hidden(void)
 
     OMNITRACE_DEBUG_F("Copying over all timemory hash information to main thread...\n");
     // copy these over so that all hashes are known
+    auto& _hmain = tim::hash::get_main_hash_ids();
+    auto& _amain = tim::hash::get_main_hash_aliases();
     auto& _hzero = tracing::get_timemory_hash_ids(0);
     auto& _azero = tracing::get_timemory_hash_aliases(0);
-    for(size_t i = 1; i < max_supported_threads; ++i)
+    for(size_t i = 0; i < max_supported_threads; ++i)
     {
         auto& _hitr = tracing::get_timemory_hash_ids(i);
         auto& _aitr = tracing::get_timemory_hash_aliases(i);
-        if(_hzero && _hitr)
+        if(_hmain && _hitr)
         {
             for(const auto& itr : *_hitr)
-                _hzero->emplace(itr.first, itr.second);
+                _hmain->emplace(itr.first, itr.second);
         }
-        if(_azero && _aitr)
+        if(_amain && _aitr)
         {
             for(auto itr : *_aitr)
-                _azero->emplace(itr.first, itr.second);
+                _amain->emplace(itr.first, itr.second);
         }
     }
+
+    if(_hzero && _hmain) *_hzero = *_hmain;
+    if(_azero && _amain) *_azero = *_amain;
 
     // stop the main bundle which has stats for run
     if(get_main_bundle())

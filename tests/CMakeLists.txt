@@ -815,7 +815,9 @@ omnitrace_add_test(
     TARGET fork-example
     REWRITE_ARGS -e -v 2 --print-instrumented modules -i 16
     RUNTIME_ARGS -e -v 1 --label file -i 16
-    ENVIRONMENT "${_base_environment};OMNITRACE_CRITICAL_TRACE=ON")
+    ENVIRONMENT
+        "${_base_environment};OMNITRACE_CRITICAL_TRACE=ON;OMNITRACE_SAMPLING_FREQ=250;OMNITRACE_SAMPLING_REALTIME=ON"
+    )
 
 # -------------------------------------------------------------------------------------- #
 #
