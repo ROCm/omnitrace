@@ -1123,7 +1123,7 @@ omnitrace_add_causal_test(
     CAUSAL_VALIDATE_ARGS ${_causal_fast_func_valid}
     CAUSAL_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
-    PROPERTIES PROCESSORS 2 PROCESSOR_AFFINITY ON)
+    PROPERTIES PROCESSORS 2 PROCESSOR_AFFINITY OFF)
 
 omnitrace_add_causal_test(
     SKIP_BASELINE
@@ -1147,7 +1147,7 @@ omnitrace_add_causal_test(
     CAUSAL_VALIDATE_ARGS ${_causal_line_165_valid}
     CAUSAL_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
-    PROPERTIES PROCESSORS 2 PROCESSOR_AFFINITY ON)
+    PROPERTIES PROCESSORS 2 PROCESSOR_AFFINITY OFF)
 
 # -------------------------------------------------------------------------------------- #
 #
