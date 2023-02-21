@@ -614,10 +614,18 @@ function(OMNITRACE_ADD_CAUSAL_TEST)
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
         if(NOT "${TEST_CAUSAL_VALIDATE_ARGS}" STREQUAL "")
+            if("$ENV{OMNITRACE_CI}" MATCHES "ON|on|1|true|TRUE"
+               OR "$ENV{CI}" MATCHES "true"
+               OR NOT "$ENV{GITHUB_RUN_ID}" STREQUAL "")
+                set(_VALIDATE_EXTRA "--ci")
+            else()
+                set(_VALIDATE_EXTRA "")
+            endif()
+
             add_test(
                 NAME validate-causal-${TEST_NAME}
                 COMMAND ${CMAKE_CURRENT_LIST_DIR}/validate-causal-json.py
-                        ${TEST_CAUSAL_VALIDATE_ARGS}
+                        ${_VALIDATE_EXTRA} ${TEST_CAUSAL_VALIDATE_ARGS}
                 WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
         endif()
 

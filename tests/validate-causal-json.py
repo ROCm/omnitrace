@@ -24,6 +24,22 @@ def stddev(_data):
     return _variance**0.5
 
 
+def simpsons_rule(a, b, fa, fb):
+    """Simple numerical integration via Simpson's rule
+
+    https://en.m.wikipedia.org/wiki/Simpson%27s_rule
+    """
+    slope = (fb - fa) / (b - a)
+    # f(x) at midpoint
+    fm = fa + (0.5 * (b - a) * slope)
+
+    factor = (b - a) / 6.0
+    # print(
+    #    f"[{a:8.3f} : {b:8.3f}|{fa:8.3f} : {fb:8.3f}][slope={slope:8.3f}] {factor:8.3f} * ({fa:8.3f} + (4.0 * {fm:8.3f}) + {fb:8.3f})"
+    # )
+    return factor * (fa + (4.0 * fm) + fb)
+
+
 class validation(object):
     def __init__(self, _exp_re, _pp_re, _virt, _expected, _tolerance):
         self.experiment_filter = re.compile(_exp_re)
@@ -40,6 +56,7 @@ class validation(object):
         _prog_speedup,
         _prog_speedup_stddev,
         _base_speedup_stddev,
+        _ci=False,
     ):
         if (
             not re.search(self.experiment_filter, _exp_name)
@@ -51,18 +68,39 @@ class validation(object):
         _tolerance = self.tolerance
         if _base_speedup_stddev > 2.0 * self.tolerance:
             sys.stderr.write(
-                f"  [{_exp_name}][{_pp_name}][{_virt_speedup}] base speedup has stddev > 2 * tolerance (+/- {_base_speedup_stddev:.3f}). Relaxing validation...\n"
+                f"    [{_exp_name}][{_pp_name}][{_virt_speedup}] base speedup has stddev > 2 * tolerance (+/- {_base_speedup_stddev:.3f}). Relaxing validation...\n"
             )
             _tolerance += math.sqrt(_base_speedup_stddev)
         elif _prog_speedup_stddev > 2.0 * self.tolerance:
             sys.stderr.write(
-                f"  [{_exp_name}][{_pp_name}][{_virt_speedup}] program speedup has stddev > 2 * tolerance (+/- {_prog_speedup_stddev:.3f}). Relaxing validation...\n"
+                f"    [{_exp_name}][{_pp_name}][{_virt_speedup}] program speedup has stddev > 2 * tolerance (+/- {_prog_speedup_stddev:.3f}). Relaxing validation...\n"
             )
             _tolerance += math.sqrt(_prog_speedup_stddev)
 
-        return _prog_speedup >= (self.program_speedup - _tolerance) and _prog_speedup <= (
-            self.program_speedup + _tolerance
-        )
+        def _compute(_speedup):
+            return _speedup >= (self.program_speedup - _tolerance) and _speedup <= (
+                self.program_speedup + _tolerance
+            )
+
+        if _ci is True and _virt_speedup > 10:
+            """On GitHub Action servers, you typically only get one core with two hyperthreads.
+            The hyperthreading causes the speedup potential to drop off at higher virtual speedups
+            so we consider
+            """
+            _stddev = max([_base_speedup_stddev, _prog_speedup_stddev])
+            _prog_speedup_a = _prog_speedup
+            _prog_speedup_b = _prog_speedup + 0.5 * _stddev
+            _prog_speedup_c = _prog_speedup + 1.0 * _stddev
+            sys.stderr.write(
+                f"    [{_exp_name}][{_pp_name}][{_virt_speedup}] Relaxing validation to account for hyperthreading on CI systems (accepting {_prog_speedup_a:8.3f}, {_prog_speedup_b:8.3f}, and {_prog_speedup_c:8.3f} +/- tolerance)...\n"
+            )
+            return (
+                _compute(_prog_speedup_a)
+                or _compute(_prog_speedup_b)
+                or _compute(_prog_speedup_c)
+            )
+        else:
+            return _compute(_prog_speedup)
 
 
 class throughput_point(object):
@@ -203,18 +241,15 @@ class experiment_progress(object):
         self.data = _data
 
     def get_impact(self):
-        speedup_c = [x.compute_speedup() for x in self.data]
-        speedup_v = [x.virtual_speedup() for x in self.data]
+        speedup_c = [float(x.compute_speedup()) for x in self.data]
+        speedup_v = [float(x.virtual_speedup()) for x in self.data]
         impact = []
         for i in range(len(self.data) - 1):
-            x = speedup_v[i + 1] - speedup_v[i]
-            y = [speedup_c[i], speedup_c[i + 1]]
-            y_min = min(y)
-            y_max = max(y)
-            a_low = x * y_min
-            a_upp = 0.5 * x * (y_max - y_min)
-            impact += [a_low + a_upp]
-        # impact = [x.compute_speedup() for x in self.data]
+            impact += [
+                simpsons_rule(
+                    speedup_v[i], speedup_v[i + 1], speedup_c[i], speedup_c[i + 1]
+                )
+            ]
         return [sum(impact), mean(impact), stddev(impact)]
 
     def __len__(self):
@@ -235,16 +270,34 @@ class experiment_progress(object):
         return self.get_impact()[0] < rhs.get_impact()[0]
 
 
-def find_or_insert(_data, _value, _type):
-    if _value not in _data:
-        if _type == "throughput":
-            _data[_value] = throughput_point(_value)
-        elif _type == "latency":
-            _data[_value] = latency_point(_value)
-    return _data[_value]
+def process_samples(data, _data):
+    if not _data:
+        return data
+    for record in _data["omnitrace"]["causal"]["records"]:
+        for samp in record["samples"]:
+            _info = samp["info"]
+            _count = samp["count"]
+            _func = _info["dfunc"]
+            if _func not in data:
+                data[_func] = 0
+            data[_func] += _count
+            for dwarf_entry in _info["dwarf_info"]:
+                _name = "{}:{}".format(dwarf_entry["file"], dwarf_entry["line"])
+                if _name not in data:
+                    data[_name] = 0
+                data[_name] += _count
+    return data
 
 
 def process_data(data, _data, args):
+    def find_or_insert(_data, _value, _type):
+        if _value not in _data:
+            if _type == "throughput":
+                _data[_value] = throughput_point(_value)
+            elif _type == "latency":
+                _data[_value] = latency_point(_value)
+        return _data[_value]
+
     if not _data:
         return data
 
@@ -399,6 +452,14 @@ def main():
         help="Validate speedup: {experiment regex} {progress-point regex} {virtual-speedup} {expected-speedup} {tolerance}",
         default=[],
     )
+    parser.add_argument(
+        "--ci",
+        action="store_true",
+        help="{}. {}".format(
+            "Accept speedup predictions when: (A) virtual speedup > 10 and (B) prediction is within the tolerance after being increased by (0.5 * stddev) and (1.0 * stddev)",
+            "This is primarily used for the CI where the two threads commonly run on 1 CPU core with 2 hyperthreads (causing the speedup potential to drop)",
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -409,17 +470,27 @@ def main():
         args.num_points = num_speedups
 
     data = {}
+    samp = {}
     for inp in args.input:
         with open(inp, "r") as f:
             inp_data = json.load(f)
         data = process_data(data, inp_data, args)
+        samp = process_samples(samp, inp_data)
+
+    print("Samples:")
+    width = max([len(x) for x in samp.keys()])
+    for name, count in sorted(samp.items()):
+        print(f"    {name:{width}} :: {count}")
 
     results = compute_speedups(data, args)
+    print("")
+    print("Experiments:")
     for itr in results:
         if len(itr) < args.num_points:
             continue
         print("")
-        print(f"{itr}")
+        # split each line, indent each line, and join again into single string
+        print("{}".format("\n".join([f"    {x}" for x in f"{itr}".split("\n")])))
 
     sys.stdout.flush()
 
@@ -445,6 +516,7 @@ def main():
                         _prog_speedup,
                         _prog_speedup_stddev,
                         _base_speedup_stddev,
+                        args.ci,
                     )
                     if _v is None:
                         continue
@@ -453,7 +525,7 @@ def main():
                         correct_validations += 1
                     else:
                         sys.stderr.write(
-                            f"  [{_experiment}][{_progresspt}][{_virt_speedup}] failed validation: {_prog_speedup:8.3f} != {vitr.program_speedup} +/- {vitr.tolerance}\n"
+                            f"\n    [{_experiment}][{_progresspt}][{_virt_speedup}] failed validation: {_prog_speedup:8.3f} != {vitr.program_speedup} +/- {vitr.tolerance}\n\n"
                         )
 
     if expected_validations != correct_validations:
