@@ -371,7 +371,7 @@ auto&
 get_offload_file()
 {
     static auto _v = []() {
-        auto _tmp_v   = config::get_tmp_file("sampling");
+        auto _tmp_v = config::get_tmp_file("sampling");
         if(get_use_tmp_files())
         {
             auto _success = _tmp_v->open();
