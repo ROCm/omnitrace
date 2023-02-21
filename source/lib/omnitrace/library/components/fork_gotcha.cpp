@@ -31,6 +31,7 @@
 #include "library/runtime.hpp"
 #include "library/sampling.hpp"
 
+#include <cstdlib>
 #include <timemory/backends/process.hpp>
 #include <timemory/backends/threading.hpp>
 #include <timemory/mpl/types.hpp>
@@ -41,6 +42,18 @@ namespace omnitrace
 {
 namespace component
 {
+namespace
+{
+// this does a quick exit (no cleanup) on child processes
+// because perfetto has a tendency to access memory it
+// shouldn't during cleanup
+void
+child_exit(int _ec, void*)
+{
+    std::quick_exit(_ec);
+}
+}  // namespace
+
 void
 fork_gotcha::configure()
 {
@@ -96,8 +109,12 @@ fork_gotcha::audit(const gotcha_data_t&, audit::outgoing, pid_t _pid)
         settings::debug()   = false;
         omnitrace::sampling::shutdown();
         omnitrace::categories::shutdown();
-        omnitrace::get_perfetto_session().reset();
+        omnitrace::get_perfetto_session().release();
         set_thread_state(::omnitrace::ThreadState::Disabled);
+
+        // register these exit handlers to avoid cleaning up resources
+        on_exit(&child_exit, nullptr);
+        std::atexit([]() { child_exit(EXIT_SUCCESS, nullptr); });
     }
 
     if(!settings::use_output_suffix())
