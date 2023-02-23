@@ -69,7 +69,8 @@ prefork_setup()
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
     OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
 
-    if(!config::settings_are_configured()) omnitrace_init_library_hidden();
+    if(get_state() < State::Active && !config::settings_are_configured())
+        omnitrace_init_library_hidden();
 
     tim::set_env("OMNITRACE_PRELOAD", "0", 1);
     tim::set_env("OMNITRACE_ROOT_PROCESS", process::get_id(), 0);
