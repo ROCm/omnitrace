@@ -267,9 +267,9 @@ post_process(tim::manager* _timemory_manager, bool& _perfetto_output_error)
 }  // namespace perfetto
 
 std::unique_ptr<::perfetto::TracingSession>&
-get_perfetto_session()
+get_perfetto_session(pid_t _pid)
 {
-    return ::omnitrace::perfetto::get_session();
+    return ::omnitrace::perfetto::get_session(_pid);
 }
 }  // namespace omnitrace
 

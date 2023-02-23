@@ -31,11 +31,14 @@
 #include "library/runtime.hpp"
 #include "library/sampling.hpp"
 
-#include <cstdlib>
 #include <timemory/backends/process.hpp>
 #include <timemory/backends/threading.hpp>
 #include <timemory/mpl/types.hpp>
+#include <timemory/process/process.hpp>
 
+#include <cstdlib>
+#include <memory>
+#include <pthread.h>
 #include <unistd.h>
 
 namespace omnitrace
@@ -44,6 +47,11 @@ namespace component
 {
 namespace
 {
+// these are used to prevent handlers from executing multiple times
+bool prefork_lock         = false;
+bool postfork_parent_lock = false;
+bool postfork_child_lock  = false;
+
 // this does a quick exit (no cleanup) on child processes
 // because perfetto has a tendency to access memory it
 // shouldn't during cleanup
@@ -52,21 +60,16 @@ child_exit(int _ec, void*)
 {
     std::quick_exit(_ec);
 }
-}  // namespace
 
 void
-fork_gotcha::configure()
+prefork_setup()
 {
-    fork_gotcha_t::get_initializer() = []() {
-        TIMEMORY_C_GOTCHA(fork_gotcha_t, 0, fork);
-    };
-}
+    if(prefork_lock) return;
 
-void
-fork_gotcha::audit(const gotcha_data_t&, audit::incoming)
-{
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
     OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
+
+    if(!config::settings_are_configured()) omnitrace_init_library_hidden();
 
     tim::set_env("OMNITRACE_PRELOAD", "0", 1);
     tim::set_env("OMNITRACE_ROOT_PROCESS", process::get_id(), 0);
@@ -81,40 +84,84 @@ fork_gotcha::audit(const gotcha_data_t&, audit::incoming)
     if(config::get_use_sampling()) sampling::block_samples();
 
     omnitrace::categories::disable_categories(config::get_enabled_categories());
+
+    // prevent re-entry until post-fork routines have been called
+    prefork_lock         = true;
+    postfork_parent_lock = false;
+    postfork_child_lock  = false;
 }
 
 void
-fork_gotcha::audit(const gotcha_data_t&, audit::outgoing, pid_t _pid)
+postfork_parent()
 {
-    OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
-    OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
+    if(postfork_parent_lock) return;
+
+    omnitrace::categories::enable_categories(config::get_enabled_categories());
+
+    if(config::get_use_sampling()) sampling::unblock_samples();
+
+    // prevent re-entry until prefork has been called
+    postfork_parent_lock = true;
+    prefork_lock         = false;
+}
+
+void
+postfork_child()
+{
+    if(postfork_child_lock) return;
+
+    OMNITRACE_REQUIRE(is_child_process())
+        << "Error! child process " << process::get_id()
+        << " believes it is the root process " << get_root_process_id() << "\n";
+
+    settings::enabled() = false;
+    settings::verbose() = -127;
+    settings::debug()   = false;
+    omnitrace::sampling::shutdown();
+    omnitrace::categories::shutdown();
+    set_thread_state(::omnitrace::ThreadState::Disabled);
+
+    omnitrace::get_perfetto_session(process::get_parent_id()).release();
+
+    // register these exit handlers to avoid cleaning up resources
+    on_exit(&child_exit, nullptr);
+    std::atexit([]() { child_exit(EXIT_SUCCESS, nullptr); });
+
+    // prevent re-entry until prefork has been called
+    postfork_child_lock = true;
+    prefork_lock        = false;
+}
+}  // namespace
+
+void
+fork_gotcha::configure()
+{
+    fork_gotcha_t::get_initializer() = []() {
+        TIMEMORY_C_GOTCHA(fork_gotcha_t, 0, fork);
+    };
+
+    // registering the pthread_atfork and gotcha means that we might execute twice
+    // handlers twice, hence the locks
+    pthread_atfork(&prefork_setup, &postfork_parent, &postfork_child);
+}
+
+pid_t
+fork_gotcha::operator()(const gotcha_data_t&, pid_t (*_real_fork)()) const
+{
+    prefork_setup();
+
+    auto _pid = (*_real_fork)();
 
     if(_pid != 0)
     {
         OMNITRACE_BASIC_VERBOSE(0, "fork() called on PID %i created PID %i\n", getppid(),
                                 _pid);
 
-        omnitrace::categories::enable_categories(config::get_enabled_categories());
-
-        if(config::get_use_sampling()) sampling::unblock_samples();
+        postfork_parent();
     }
     else
     {
-        OMNITRACE_REQUIRE(is_child_process())
-            << "Error! child process " << process::get_id()
-            << " believes it is the root process " << get_root_process_id() << "\n";
-
-        settings::enabled() = false;
-        settings::verbose() = -127;
-        settings::debug()   = false;
-        omnitrace::sampling::shutdown();
-        omnitrace::categories::shutdown();
-        omnitrace::get_perfetto_session().release();
-        set_thread_state(::omnitrace::ThreadState::Disabled);
-
-        // register these exit handlers to avoid cleaning up resources
-        on_exit(&child_exit, nullptr);
-        std::atexit([]() { child_exit(EXIT_SUCCESS, nullptr); });
+        postfork_child();
     }
 
     if(!settings::use_output_suffix())
@@ -123,6 +170,8 @@ fork_gotcha::audit(const gotcha_data_t&, audit::outgoing, pid_t _pid)
             0, "Application which make calls to fork() should enable using an process "
                "identifier output suffix (i.e. set OMNITRACE_USE_PID=ON)\n");
     }
+
+    return _pid;
 }
 }  // namespace component
 }  // namespace omnitrace
