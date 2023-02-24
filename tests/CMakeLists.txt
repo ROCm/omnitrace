@@ -253,7 +253,7 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
             args
             --min-instructions
             0
-        ENVIRONMENT "${_base_environment}"
+        ENVIRONMENT "${_base_environment};OMNITRACE_VERBOSE=1"
         REWRITE_RUN_PASS_REGEX
             "(/[A-Za-z-]+/perfetto-trace-0.proto).*(/[A-Za-z-]+/wall_clock-0.txt')"
         REWRITE_RUN_FAIL_REGEX
@@ -1079,7 +1079,7 @@ omnitrace_add_causal_test(
     )
 
 set(_causal_common_args
-    "-n 5 -e -s 0 10 20 30 -B $<TARGET_FILE_BASE_NAME:causal-cpu-omni>")
+    "-n 8 -e -s 0 10 20 30 -B $<TARGET_FILE_BASE_NAME:causal-cpu-omni>")
 
 macro(
     causal_e2e_args_and_validation
