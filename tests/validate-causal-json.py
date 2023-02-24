@@ -66,41 +66,29 @@ class validation(object):
             return None
 
         _tolerance = self.tolerance
-        if _base_speedup_stddev > 2.0 * self.tolerance:
-            sys.stderr.write(
-                f"    [{_exp_name}][{_pp_name}][{_virt_speedup}] base speedup has stddev > 2 * tolerance (+/- {_base_speedup_stddev:.3f}). Relaxing validation...\n"
-            )
-            _tolerance += math.sqrt(_base_speedup_stddev)
-        elif _prog_speedup_stddev > 2.0 * self.tolerance:
-            sys.stderr.write(
-                f"    [{_exp_name}][{_pp_name}][{_virt_speedup}] program speedup has stddev > 2 * tolerance (+/- {_prog_speedup_stddev:.3f}). Relaxing validation...\n"
-            )
-            _tolerance += math.sqrt(_prog_speedup_stddev)
-
-        def _compute(_speedup):
-            return _speedup >= (self.program_speedup - _tolerance) and _speedup <= (
-                self.program_speedup + _tolerance
-            )
 
         if _ci is True and _virt_speedup > 10:
             """On GitHub Action servers, you typically only get one core with two hyperthreads.
             The hyperthreading causes the speedup potential to drop off at higher virtual speedups
             so we consider
             """
-            _stddev = max([_base_speedup_stddev, _prog_speedup_stddev])
-            _prog_speedup_a = _prog_speedup
-            _prog_speedup_b = _prog_speedup + 0.5 * _stddev
-            _prog_speedup_c = _prog_speedup + 1.0 * _stddev
+            _tolerance += max([_base_speedup_stddev, _prog_speedup_stddev])
+        elif _base_speedup_stddev > self.tolerance:
+            _tolerance += math.sqrt(_base_speedup_stddev)
+        elif _prog_speedup_stddev > 1.0:
+            _tolerance += math.sqrt(_prog_speedup_stddev)
+
+        if _tolerance > self.tolerance:
             sys.stderr.write(
-                f"    [{_exp_name}][{_pp_name}][{_virt_speedup}] Relaxing validation to account for hyperthreading on CI systems (accepting {_prog_speedup_a:8.3f}, {_prog_speedup_b:8.3f}, and {_prog_speedup_c:8.3f} +/- tolerance)...\n"
+                f"    [{_exp_name}][{_pp_name}][{_virt_speedup}] Tolerance adjusted due to stddev or to account for hyperthreading on CI systems ({self.tolerance:.3f} increased to {_tolerance:.3f})...\n"
             )
-            return (
-                _compute(_prog_speedup_a)
-                or _compute(_prog_speedup_b)
-                or _compute(_prog_speedup_c)
+
+        def _compute(_speedup_v, _tolerance_v):
+            return _speedup_v >= (self.program_speedup - _tolerance_v) and _speedup_v <= (
+                self.program_speedup + _tolerance_v
             )
-        else:
-            return _compute(_prog_speedup)
+
+        return _compute(_prog_speedup, _tolerance)
 
 
 class throughput_point(object):

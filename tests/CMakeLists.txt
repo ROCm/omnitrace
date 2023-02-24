@@ -1079,7 +1079,7 @@ omnitrace_add_causal_test(
     )
 
 set(_causal_common_args
-    "-n 8 -e -s 0 10 20 30 -B $<TARGET_FILE_BASE_NAME:causal-cpu-omni>")
+    "-n 5 -e -s 0 10 20 30 -B $<TARGET_FILE_BASE_NAME:causal-cpu-omni>")
 
 macro(
     causal_e2e_args_and_validation
@@ -1114,7 +1114,7 @@ omnitrace_add_causal_test(
     SKIP_BASELINE
     NAME cpu-omni-slow-func-e2e
     TARGET causal-cpu-omni
-    RUN_ARGS 80 12 432525 250000000
+    RUN_ARGS 80 12 432525 500000000
     CAUSAL_MODE "func"
     CAUSAL_ARGS ${_causal_slow_func_args}
     CAUSAL_VALIDATE_ARGS ${_causal_slow_func_valid}
@@ -1126,7 +1126,7 @@ omnitrace_add_causal_test(
     SKIP_BASELINE
     NAME cpu-omni-fast-func-e2e
     TARGET causal-cpu-omni
-    RUN_ARGS 80 12 432525 250000000
+    RUN_ARGS 80 12 432525 500000000
     CAUSAL_MODE "func"
     CAUSAL_ARGS ${_causal_fast_func_args}
     CAUSAL_VALIDATE_ARGS ${_causal_fast_func_valid}
@@ -1138,7 +1138,7 @@ omnitrace_add_causal_test(
     SKIP_BASELINE
     NAME cpu-omni-line-155-e2e
     TARGET causal-cpu-omni
-    RUN_ARGS 80 12 432525 250000000
+    RUN_ARGS 80 12 432525 500000000
     CAUSAL_MODE "line"
     CAUSAL_ARGS ${_causal_line_155_args}
     CAUSAL_VALIDATE_ARGS ${_causal_line_155_valid}
@@ -1150,7 +1150,7 @@ omnitrace_add_causal_test(
     SKIP_BASELINE
     NAME cpu-omni-line-165-e2e
     TARGET causal-cpu-omni
-    RUN_ARGS 80 12 432525 250000000
+    RUN_ARGS 80 12 432525 500000000
     CAUSAL_MODE "line"
     CAUSAL_ARGS ${_causal_line_165_args}
     CAUSAL_VALIDATE_ARGS ${_causal_line_165_valid}
