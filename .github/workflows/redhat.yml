@@ -1,5 +1,4 @@
-name: Ubuntu 18.04 (GCC, MPICH, Python)
-run-name: ubuntu-bionic
+name: RedHat Linux 8,9 (GCC, Python, ROCm)
 
 on:
   push:
@@ -18,104 +17,112 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUILD_TYPE: Release
   OMNITRACE_CI: ON
-  GIT_DISCOVERY_ACROSS_FILESYSTEM: 1
   OMNITRACE_TMPDIR: "%env{PWD}%/testing-tmp"
 
 jobs:
-  ubuntu-bionic:
-    runs-on: ubuntu-latest
+  rhel:
+    runs-on: ubuntu-20.04
     container:
-      image: jrmadsen/omnitrace:ci-base-ubuntu-18.04
+      image: jrmadsen/omnitrace:ci-base-rhel-${{ matrix.os-release }}
     strategy:
       fail-fast: false
       matrix:
-        compiler: ['g++-7', 'g++-8']
-        mpi: [ 'nompi', 'mpich' ]
+        compiler: ['g++']
+        os-release: [ '8.7', '9.0', '9.1' ]
+        rocm-version: [ '0.0', '5.3', '5.4' ]
+        build-type: ['Release']
 
     steps:
-    - name: Patch Git
-      timeout-minutes: 25
-      run: |
-        apt-get update
-        apt-get install -y software-properties-common
-        add-apt-repository -y ppa:git-core/ppa
-        apt-get update
-        apt-get upgrade -y
-        apt-get install -y git
-
     - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-
-    - name: Install Packages
-      timeout-minutes: 25
-      uses: nick-fields/retry@v2
-      with:
-        retry_wait_seconds: 30
-        timeout_minutes: 25
-        max_attempts: 5
-        command: |
-          apt-get update &&
-          apt-get upgrade -y &&
-          apt-get install -y build-essential m4 autoconf libtool python3-pip ${{ matrix.compiler }} &&
-          if [ "${{ matrix.mpi }}" = "mpich" ]; then apt-get install -y libmpich-dev mpich; fi &&
-          if [ "${{ matrix.mpi }}" = "openmpi" ]; then apt-get install -y libopenmpi-dev openmpi-bin libfabric-dev; fi &&
-          python3 -m pip install --upgrade pip &&
-          python3 -m pip install numpy &&
-          python3 -m pip install perfetto &&
-          python3 -m pip install 'cmake==3.16.3' &&
-          for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done
-
-    - name: Install Kokkos
-      timeout-minutes: 10
-      run:
-        cd examples/lulesh/external/kokkos &&
-        cmake -B build -DKokkos_ENABLE_OPENMP=ON -DKokkos_ENABLE_SERIAL=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_CXX_STANDARD=17 . &&
-        cmake --build build --target all --parallel 2 &&
-        cmake --build build --target install &&
-        rm -rf build
 
     - name: Configure Env
       run:
         echo "CC=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')" >> $GITHUB_ENV &&
-        echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV &&
-        echo "/opt/omnitrace/bin:${HOME}/.local/bin" >> $GITHUB_PATH &&
-        echo "LD_LIBRARY_PATH=/opt/omnitrace/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
+        echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
+
+    - name: Install Packages
+      if: ${{ matrix.rocm-version > 0 }}
+      timeout-minutes: 30
+      shell: bash
+      run: |
+        ROCM_VERSION=${{ matrix.rocm-version }}
+        ROCM_MAJOR=$(echo ${ROCM_VERSION} | sed 's/\./ /g' | awk '{print $1}')
+        ROCM_MINOR=$(echo ${ROCM_VERSION} | sed 's/\./ /g' | awk '{print $2}')
+        ROCM_VERSN=$(( (${ROCM_MAJOR}*10000)+(${ROCM_MINOR}*100) ))
+        dnf -y --enablerepo=powertools install perl-File-BaseDir
+        yum install -y https://repo.radeon.com/amdgpu-install/${{ matrix.rocm-version }}/rhel/${{ matrix.os-release }}/amdgpu-install-${ROCM_MAJOR}.${ROCM_MINOR}.${ROCM_VERSN}-1${RPM_TAG}.noarch.rpm
+        amdgpu-install --usecase=rocm,hip,hiplibsdk --no-dkms --skip-broken -y 
+        yum install -y rocm-hip-sdk rocm-smi-lib roctracer-dev rocprofiler-dev 
 
     - name: Configure, Build, and Test
+      if: ${{ matrix.rocm-version == 0 }}
       timeout-minutes: 115
       shell: bash
       run:
         git config --global --add safe.directory ${PWD} &&
         cmake --version &&
-        if [ "${{ matrix.mpi }}" = "nompi" ]; then USE_MPI=OFF; else USE_MPI=ON; fi &&
-        append-tagname() { if [ "${1}" == "ON" ]; then TAG="${TAG}-${2}"; fi; } &&
         python3 ./scripts/run-ci.py -B build
-          --name ${{ github.repository_owner }}-${{ github.ref_name }}-ubuntu-bionic-${{ matrix.compiler }}-${{ matrix.mpi }}-python
+          --name ${{ github.repository_owner }}-${{ github.ref_name }}-rhel-${{ matrix.os-release }}-${{ matrix.compiler }}-python
           --build-jobs 2
           --site GitHub
           --
           -DCMAKE_C_COMPILER=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')
           -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
           -DCMAKE_INSTALL_PREFIX=/opt/omnitrace
           -DOMNITRACE_BUILD_TESTING=ON
-          -DOMNITRACE_BUILD_DYNINST=OFF
-          -DOMNITRACE_USE_MPI=${USE_MPI}
+          -DOMNITRACE_USE_MPI=OFF
           -DOMNITRACE_USE_HIP=OFF
+          -DOMNITRACE_USE_OMPT=OFF
           -DOMNITRACE_USE_PYTHON=ON
+          -DOMNITRACE_USE_MPI_HEADERS=ON
           -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
           -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
-          -DLULESH_BUILD_KOKKOS=OFF
+          -DOMNITRACE_CI_MPI_RUN_AS_ROOT=ON
           -DOMNITRACE_MAX_THREADS=64
           -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
           -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
 
+    - name: Configure, Build, and Test
+      if: ${{ matrix.rocm-version > 0 }}
+      timeout-minutes: 115
+      shell: bash
+      run:
+        git config --global --add safe.directory ${PWD} &&
+        cmake --version &&
+        python3 ./scripts/run-ci.py -B build
+          --name ${{ github.repository_owner }}-${{ github.ref_name }}-rhel-${{ matrix.os-release }}-${{ matrix.compiler }}-rocm-${{ matrix.rocm-version }}-python
+          --build-jobs 2
+          --site GitHub
+          --
+          -DCMAKE_C_COMPILER=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
+          -DCMAKE_INSTALL_PREFIX=/opt/omnitrace
+          -DOMNITRACE_BUILD_TESTING=ON
+          -DOMNITRACE_USE_MPI=OFF
+          -DOMNITRACE_USE_HIP=ON
+          -DOMNITRACE_USE_OMPT=OFF
+          -DOMNITRACE_USE_PYTHON=ON
+          -DOMNITRACE_USE_MPI_HEADERS=ON
+          -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
+          -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
+          -DOMNITRACE_CI_MPI_RUN_AS_ROOT=ON
+          -DOMNITRACE_MAX_THREADS=64
+          -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
+          --
+          -LE "transpose|rccl"
+
     - name: Install
+      timeout-minutes: 10
       run:
         cmake --build build --target install --parallel 2
+
+    - name: Configure Post-Install Env
+      run:
+        echo "/opt/omnitrace/bin:${HOME}/.local/bin" >> $GITHUB_PATH &&
+        echo "LD_LIBRARY_PATH=/opt/omnitrace/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
 
     - name: Test Install
       timeout-minutes: 10
