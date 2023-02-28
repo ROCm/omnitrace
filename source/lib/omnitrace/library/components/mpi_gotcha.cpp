@@ -270,7 +270,8 @@ mpi_gotcha::audit(const gotcha_data_t& _data, audit::incoming)
     tim::mpi::is_initialized_callback() = []() { return false; };
     tim::mpi::is_finalized()            = true;
 #else
-    if(is_root_process() && get_state() < State::Finalized) omnitrace_finalize_hidden();
+    if(is_root_process() && omnitrace::get_state() < omnitrace::State::Finalized)
+        omnitrace_finalize_hidden();
 #endif
 }
 
