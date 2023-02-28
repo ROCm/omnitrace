@@ -24,6 +24,7 @@
 #include "fwd.hpp"
 #include "log.hpp"
 #include "omnitrace.hpp"
+#include "timemory/utility/join.hpp"
 
 #include <timemory/components/rusage/components.hpp>
 #include <timemory/components/timing/wall_clock.hpp>
@@ -528,7 +529,9 @@ omnitrace_get_exe_realpath()
         auto _cmd_line = tim::read_command_line(tim::process::get_id());
         if(!_cmd_line.empty())
         {
-            OMNITRACE_ADD_LOG_ENTRY(" ", _cmd_line);
+            using array_config_t = timemory::join::array_config;
+            OMNITRACE_ADD_DETAILED_LOG_ENTRY(array_config_t{ " ", "[ ", " ]" },
+                                             "cmdline:: ", _cmd_line);
             return _cmd_line.front();
             // return tim::filepath::realpath(_cmd_line.front(), nullptr, false);
         }

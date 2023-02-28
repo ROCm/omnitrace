@@ -28,6 +28,7 @@
 
 #include <timemory/backends/process.hpp>
 #include <timemory/config.hpp>
+#include <timemory/environment/types.hpp>
 #include <timemory/hash.hpp>
 #include <timemory/log/macros.hpp>
 #include <timemory/manager.hpp>
@@ -56,6 +57,7 @@
 #include <sys/types.h>
 #include <thread>
 #include <tuple>
+#include <unistd.h>
 #include <utility>
 #include <vector>
 
@@ -83,28 +85,29 @@ get_default_min_address_range()
 }
 }  // namespace
 
-bool     use_return_info              = false;
-bool     use_args_info                = false;
-bool     use_file_info                = false;
-bool     use_line_info                = false;
-bool     allow_overlapping            = false;
-bool     loop_level_instr             = false;
-bool     instr_dynamic_callsites      = false;
-bool     instr_traps                  = false;
-bool     instr_loop_traps             = false;
-bool     parse_all_modules            = false;
-size_t   min_address_range            = get_default_min_address_range();  // 4096
-size_t   min_loop_address_range       = get_default_min_address_range();  // 4096
-size_t   min_instructions             = get_default_min_instructions();   // 1024
-size_t   min_loop_instructions        = get_default_min_instructions();   // 1024
-bool     werror                       = false;
-bool     debug_print                  = false;
-bool     instr_print                  = false;
-bool     simulate                     = false;
-bool     include_uninstr              = false;
-bool     include_internal_linked_libs = false;
-int      verbose_level      = tim::get_env<int>("OMNITRACE_VERBOSE_INSTRUMENT", 0);
-int      num_log_entries    = tim::get_env<int>("OMNITRACE_LOG_COUNT", 20);
+bool   use_return_info              = false;
+bool   use_args_info                = false;
+bool   use_file_info                = false;
+bool   use_line_info                = false;
+bool   allow_overlapping            = false;
+bool   loop_level_instr             = false;
+bool   instr_dynamic_callsites      = false;
+bool   instr_traps                  = false;
+bool   instr_loop_traps             = false;
+bool   parse_all_modules            = false;
+size_t min_address_range            = get_default_min_address_range();  // 4096
+size_t min_loop_address_range       = get_default_min_address_range();  // 4096
+size_t min_instructions             = get_default_min_instructions();   // 1024
+size_t min_loop_instructions        = get_default_min_instructions();   // 1024
+bool   werror                       = false;
+bool   debug_print                  = false;
+bool   instr_print                  = false;
+bool   simulate                     = false;
+bool   include_uninstr              = false;
+bool   include_internal_linked_libs = false;
+int    verbose_level   = tim::get_env<int>("OMNITRACE_VERBOSE_INSTRUMENT", 0);
+int    num_log_entries = tim::get_env<int>(
+    "OMNITRACE_LOG_COUNT", tim::get_env<bool>("OMNITRACE_CI", false) ? 20 : -1);
 string_t main_fname         = "main";
 string_t argv0              = {};
 string_t cmdv0              = {};
@@ -144,8 +147,9 @@ std::unique_ptr<std::ofstream> log_ofs = {};
 
 namespace
 {
-namespace process = tim::process;
-namespace signals = tim::signals;
+namespace process  = tim::process;  // NOLINT
+namespace signals  = tim::signals;
+namespace filepath = tim::filepath;
 
 using signal_settings = tim::signals::signal_settings;
 using sys_signal      = tim::signals::sys_signal;
@@ -293,17 +297,26 @@ main(int argc, char** argv)
 {
     argv0 = argv[0];
 
-    OMNITRACE_ADD_LOG_ENTRY("argv[0] realpath: ", omnitrace_get_exe_realpath());
-
-    bin_search_paths.emplace_back(tim::filepath::dirname(omnitrace_get_exe_realpath()));
-
-    auto _lib_origin = std::optional<std::string>{};
+    auto _omni_root = tim::get_env<std::string>(
+        "omnitrace_ROOT", tim::get_env<std::string>("OMNITRACE_ROOT", ""));
+    if(!_omni_root.empty() && exists(_omni_root))
     {
-        auto _lib_path =
-            JOIN('/', tim::filepath::dirname(omnitrace_get_exe_realpath()), "..", "lib");
-        if(exists(_lib_path)) _lib_origin = get_realpath(_lib_path);
+        bin_search_paths.emplace_back(JOIN('/', _omni_root, "bin"));
+        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib"));
+        OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace root path: ", _omni_root);
     }
-    if(_lib_origin) lib_search_paths.emplace_back(*_lib_origin);
+
+    auto _omni_exe_path = get_absolute_exe_filepath(argv[0]);
+    if(!exists(_omni_exe_path))
+        _omni_exe_path = get_absolute_exe_filepath(omnitrace_get_exe_realpath());
+    bin_search_paths.emplace_back(filepath::dirname(_omni_exe_path));
+
+    auto _omni_lib_path =
+        JOIN('/', filepath::dirname(filepath::dirname(_omni_exe_path)), "lib");
+    lib_search_paths.emplace_back(_omni_lib_path);
+
+    OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace bin path: ", _omni_exe_path);
+    OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace lib path: ", _omni_lib_path);
 
     for(const auto& itr : omnitrace_get_link_map(nullptr))
     {
@@ -311,10 +324,11 @@ main(int argc, char** argv)
            std::regex_search(
                itr, std::regex{ "lib(dyninstAPI|stackwalk|pcontrol|patchAPI|parseAPI|"
                                 "instructionAPI|symtabAPI|dynDwarf|common|dynElf|tbb|"
-                                "tbbmalloc|tbbmalloc_proxy)\\.(so|a)" }))
+                                "tbbmalloc|tbbmalloc_proxy|gotcha|libunwind|roctracer|"
+                                "hsa-runtime|amdhip|rocm_smi)\\.(so|a)" }))
         {
-            if(!find(tim::filepath::dirname(itr), lib_search_paths))
-                lib_search_paths.emplace_back(tim::filepath::dirname(itr));
+            if(!find(filepath::dirname(itr), lib_search_paths))
+                lib_search_paths.emplace_back(filepath::dirname(itr));
         }
     }
 
@@ -1228,7 +1242,7 @@ main(int argc, char** argv)
         log_ofs = std::make_unique<std::ofstream>();
         verbprintf_bare(0, "%s", ::tim::log::color::source());
         verbprintf(0, "Opening '%s' for log output... ", logfile.c_str());
-        if(!tim::filepath::open(*log_ofs, logfile))
+        if(!filepath::open(*log_ofs, logfile))
             throw std::runtime_error(JOIN(" ", "Error opening log output file", logfile));
         verbprintf_bare(0, "Done\n%s", ::tim::log::color::end());
         print_log_entries(*log_ofs, -1, {}, {}, "", false);
@@ -2571,22 +2585,25 @@ get_absolute_filepath(std::string _name, const strvec_t& _search_paths)
 {
     if(!_name.empty() && (!exists(_name) || !is_file(_name)))
     {
-        auto _exe_orig = _name;
+        auto _orig = _name;
         for(const auto& itr : _search_paths)
         {
+            auto _exists = false;
             OMNITRACE_ADD_LOG_ENTRY("searching", itr, "for", _name);
             for(const auto& pitr :
                 { get_realpath(JOIN('/', itr, _name)),
-                  get_realpath(JOIN('/', itr, tim::filepath::basename(_name))) })
+                  get_realpath(JOIN('/', itr, filepath::basename(_name))) })
             {
-                if(exists(pitr) && is_file(pitr))
+                _exists = exists(pitr) && is_file(pitr);
+                if(_exists)
                 {
                     _name = pitr;
-                    verbprintf(1, "Resolved '%s' to '%s'...\n", _exe_orig.c_str(),
+                    verbprintf(1, "Resolved '%s' to '%s'...\n", _orig.c_str(),
                                _name.c_str());
                     break;
                 }
             }
+            if(_exists) break;
         }
 
         if(!exists(_name))
@@ -2614,7 +2631,7 @@ get_absolute_filepath(std::string _name)
 {
     auto _search_paths  = strvec_t{};
     auto _combine_paths = std::vector<strvec_t>{ bin_search_paths, lib_search_paths };
-    auto _base_name     = std::string_view{ tim::filepath::basename(_name) };
+    auto _base_name     = std::string_view{ filepath::basename(_name) };
     // if the name looks like a library, put the lib_search_paths first
     if(_base_name.find("lib") == 0 || _base_name.find(".so") != std::string::npos ||
        _base_name.find(".a") != std::string::npos)
@@ -2653,10 +2670,19 @@ get_absolute_lib_filepath(std::string lib_name)
 
 //======================================================================================//
 //
+std::string
+absolute(std::string _path)
+{
+    if(_path.find('/') == 0) return _path;
+    _path = JOIN('/', get_cwd(), _path);
+    if(filepath::exists(_path)) return filepath::realpath(_path, nullptr, false);
+    return _path;
+}
+
 bool
 exists(const std::string& name)
 {
-    return tim::filepath::exists(name);
+    return filepath::exists(absolute(name));
 }
 
 bool
@@ -2678,14 +2704,22 @@ is_directory(std::string _name)
 std::string
 get_realpath(const std::string& _f)
 {
-    return tim::filepath::realpath(_f, nullptr, false);
+    return filepath::realpath(_f, nullptr, false);
 }
 
 std::string
 get_cwd()
 {
-    char cwd[PATH_MAX];
-    return std::string{ getcwd(cwd, PATH_MAX) };
+#if defined(__GNUC__)
+    auto* _cwd_c = getcwd(nullptr, 0);
+    auto  _cwd_v = std::string{ _cwd_c };
+    free(_cwd_c);
+    return _cwd_v;
+#else
+    char  cwd[PATH_MAX];
+    auto* _cwd_v = getcwd(cwd, PATH_MAX);
+    return (_cwd_v) ? std::string{ _cwd_v } : get_env<std::string>("PWD");
+#endif
 }
 
 using tim::dirname;
