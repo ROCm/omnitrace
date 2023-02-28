@@ -52,7 +52,7 @@ jobs:
         ROCM_MAJOR=$(echo ${ROCM_VERSION} | sed 's/\./ /g' | awk '{print $1}')
         ROCM_MINOR=$(echo ${ROCM_VERSION} | sed 's/\./ /g' | awk '{print $2}')
         ROCM_VERSN=$(( (${ROCM_MAJOR}*10000)+(${ROCM_MINOR}*100) ))
-        dnf -y --enablerepo=powertools install perl-File-BaseDir
+        dnf -y --enablerepo=crb install perl-File-BaseDir
         yum install -y https://repo.radeon.com/amdgpu-install/${{ matrix.rocm-version }}/rhel/${{ matrix.os-release }}/amdgpu-install-${ROCM_MAJOR}.${ROCM_MINOR}.${ROCM_VERSN}-1${RPM_TAG}.noarch.rpm
         amdgpu-install --usecase=rocm,hip,hiplibsdk --no-dkms --skip-broken -y 
         yum install -y rocm-hip-sdk rocm-smi-lib roctracer-dev rocprofiler-dev 

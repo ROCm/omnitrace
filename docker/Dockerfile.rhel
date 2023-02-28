@@ -24,7 +24,7 @@ ARG AMDGPU_RPM=5.4/rhel/8.7/amdgpu-install-5.4.50400-1.el8.noarch.rpm
 
 RUN if [ "${ROCM_VERSION}" != "0.0" ]; then \
         yum update -y && \
-        dnf -y --enablerepo=powertools install perl-File-BaseDir && \
+        dnf -y --enablerepo=crb install perl-File-BaseDir && \
         yum install -y https://repo.radeon.com/amdgpu-install/${AMDGPU_RPM} && \
         amdgpu-install --usecase=rocm,hip,hiplibsdk --no-dkms --skip-broken -y && \
         yum install -y rocm-hip-sdk rocm-smi-lib roctracer-dev rocprofiler-dev && \
