@@ -193,6 +193,12 @@ auto _dyn_api_rt_paths = std::vector<std::string>{};
 #endif
 
 std::string
+get_absolute_filepath(std::string _name, const strvec_t& _paths);
+
+std::string
+get_absolute_filepath(std::string _name);
+
+std::string
 get_absolute_exe_filepath(std::string exe_name);
 
 std::string
@@ -397,7 +403,7 @@ main(int argc, char** argv)
 
     if(_cmdc > 0 && !mutname.empty())
     {
-        auto resolved_mutname = get_absolute_exe_filepath(mutname);
+        auto resolved_mutname = get_absolute_filepath(mutname);
         if(resolved_mutname != mutname)
         {
             mutname = resolved_mutname;
@@ -604,7 +610,7 @@ main(int argc, char** argv)
                     p.print_help(extra_help);
                     std::exit(EXIT_FAILURE);
                 }
-                keys.at(0) = get_absolute_exe_filepath(keys.at(0));
+                keys.at(0) = get_absolute_filepath(keys.at(0));
                 mutname    = keys.at(0);
                 _cmdc      = keys.size();
                 _cmdv      = new char*[_cmdc];
@@ -2561,39 +2567,72 @@ namespace
 //======================================================================================//
 //
 std::string
-get_absolute_exe_filepath(std::string exe_name)
+get_absolute_filepath(std::string _name, const strvec_t& _search_paths)
 {
-    if(!exe_name.empty() && (!exists(exe_name) || !is_file(exe_name)))
+    if(!_name.empty() && (!exists(_name) || !is_file(_name)))
     {
-        auto _exe_orig = exe_name;
-        for(const auto& itr : bin_search_paths)
+        auto _exe_orig = _name;
+        for(const auto& itr : _search_paths)
         {
+            OMNITRACE_ADD_LOG_ENTRY("searching", itr, "for", _name);
             for(const auto& pitr :
-                { get_realpath(JOIN('/', itr, exe_name)),
-                  get_realpath(JOIN('/', itr, tim::filepath::basename(exe_name))) })
+                { get_realpath(JOIN('/', itr, _name)),
+                  get_realpath(JOIN('/', itr, tim::filepath::basename(_name))) })
             {
                 if(exists(pitr) && is_file(pitr))
                 {
-                    exe_name = pitr;
+                    _name = pitr;
                     verbprintf(1, "Resolved '%s' to '%s'...\n", _exe_orig.c_str(),
-                               exe_name.c_str());
+                               _name.c_str());
                     break;
                 }
             }
         }
 
-        if(!exists(exe_name))
+        if(!exists(_name))
         {
-            verbprintf(0, "Warning! File path to '%s' could not be determined...\n",
-                       exe_name.c_str());
+            using array_config_t = timemory::join::array_config;
+            auto _search_paths_v =
+                timemory::join::join(array_config_t{ ", ", "", "" }, bin_search_paths);
+            verbprintf(
+                0, "Warning! File path to '%s' could not be determined... search: %s\n",
+                _name.c_str(), _search_paths_v.c_str());
         }
     }
-    else if(!exe_name.empty())
+    else if(!_name.empty())
     {
-        return get_realpath(exe_name);
+        return get_realpath(_name);
     }
 
-    return exe_name;
+    return _name;
+}
+
+//======================================================================================//
+//
+std::string
+get_absolute_filepath(std::string _name)
+{
+    auto _search_paths  = strvec_t{};
+    auto _combine_paths = std::vector<strvec_t>{ bin_search_paths, lib_search_paths };
+    auto _base_name     = std::string_view{ tim::filepath::basename(_name) };
+    // if the name looks like a library, put the lib_search_paths first
+    if(_base_name.find("lib") == 0 || _base_name.find(".so") != std::string::npos ||
+       _base_name.find(".a") != std::string::npos)
+        std::reverse(_combine_paths.begin(), _combine_paths.end());
+    _search_paths.reserve(bin_search_paths.size() + lib_search_paths.size());
+    for(const auto& pitr : _combine_paths)
+        for(const auto& itr : pitr)
+            _search_paths.emplace_back(itr);
+
+    return get_absolute_filepath(std::move(_name), _search_paths);
+}
+
+//======================================================================================//
+//
+std::string
+get_absolute_exe_filepath(std::string exe_name)
+{
+    return get_absolute_filepath(std::move(exe_name), bin_search_paths);
 }
 
 //======================================================================================//
@@ -2601,41 +2640,14 @@ get_absolute_exe_filepath(std::string exe_name)
 std::string
 get_absolute_lib_filepath(std::string lib_name)
 {
-    if(!lib_name.empty() && (!exists(lib_name) || !is_file(lib_name)))
+    auto _orig_name = lib_name;
+    lib_name        = get_absolute_filepath(std::move(lib_name), lib_search_paths);
+    if(_orig_name == lib_name && !exists(lib_name) &&
+       lib_name.find(".so") == std::string::npos &&
+       lib_name.find(".a") == std::string::npos)
     {
-        auto _lib_orig = lib_name;
-        for(const auto& itr : lib_search_paths)
-        {
-            for(const auto& pitr :
-                { get_realpath(JOIN('/', itr, lib_name)),
-                  get_realpath(JOIN('/', itr, tim::filepath::basename(lib_name))) })
-            {
-                if(exists(pitr) && is_file(pitr))
-                {
-                    lib_name = pitr;
-                    verbprintf(1, "Resolved '%s' to '%s'...\n", _lib_orig.c_str(),
-                               lib_name.c_str());
-                    break;
-                }
-            }
-        }
-
-        if(!exists(lib_name) && lib_name.find(".so") == std::string::npos &&
-           lib_name.find(".a") == std::string::npos)
-        {
-            return get_absolute_lib_filepath(lib_name + ".so");
-        }
-        else if(!exists(lib_name))
-        {
-            verbprintf(0, "Warning! File path to '%s' could not be determined...\n",
-                       lib_name.c_str());
-        }
+        lib_name = get_absolute_filepath(lib_name + ".so", lib_search_paths);
     }
-    else if(!lib_name.empty())
-    {
-        return get_realpath(lib_name);
-    }
-
     return lib_name;
 }
 

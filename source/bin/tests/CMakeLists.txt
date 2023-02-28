@@ -155,6 +155,15 @@ omnitrace_add_bin_test(
         ".*\\\[omnitrace\\\] Usage:.*\\\[DEBUG OPTIONS\\\].*\\\[MODE OPTIONS\\\].*\\\[LIBRARY OPTIONS\\\].*\\\[SYMBOL SELECTION OPTIONS\\\].*\\\[RUNTIME OPTIONS\\\].*\\\[GRANULARITY OPTIONS\\\].*\\\[DYNINST OPTIONS\\\].*"
     )
 
+# on RedHat, /usr/bin/ls is a script for `coreutils --coreutils-prog=ls`
+if(EXISTS /usr/bin/coreutils)
+    set(LS_NAME "coreutils")
+    set(LS_ARGS "--coreutils-prog=ls")
+else()
+    set(LS_NAME ls)
+    set(LS_ARGS)
+endif()
+
 omnitrace_add_bin_test(
     NAME omnitrace-exe-simulate-ls
     TARGET omnitrace-exe
@@ -167,9 +176,10 @@ omnitrace_add_bin_test(
          2
          --all-functions
          --
-         ls
+         ${LS_NAME}
+         ${LS_ARGS}
     LABELS "simulate"
-    TIMEOUT 120)
+    TIMEOUT 240)
 
 omnitrace_add_bin_test(
     NAME omnitrace-exe-simulate-ls-check
@@ -192,9 +202,31 @@ omnitrace_add_bin_test(
     )
 
 omnitrace_add_bin_test(
+    NAME omnitrace-exe-simulate-lib-basename
+    TARGET omnitrace-exe
+    ARGS --print-available
+         functions
+         -v
+         2
+         -o
+         omnitrace-tests-output/omnitrace-exe-simulate-lib-basename/${CMAKE_SHARED_LIBRARY_PREFIX}$<TARGET_FILE_BASE_NAME:omnitrace-user-library>${CMAKE_SHARED_LIBRARY_SUFFIX}
+         --
+         ${CMAKE_SHARED_LIBRARY_PREFIX}$<TARGET_FILE_BASE_NAME:omnitrace-user-library>${CMAKE_SHARED_LIBRARY_SUFFIX}
+    LABELS "simulate"
+    TIMEOUT 120)
+
+omnitrace_add_bin_test(
     NAME omnitrace-exe-write-log
     TARGET omnitrace-exe
-    ARGS --print-instrumented functions -v 1 --log-file user.log -- ls
+    ARGS --print-instrumented
+         functions
+         -v
+         1
+         --log-file
+         user.log
+         --
+         ${LS_NAME}
+         ${LS_ARGS}
     LABELS "log"
     TIMEOUT 120
     PASS_REGEX "Opening .*/instrumentation/user.log")
