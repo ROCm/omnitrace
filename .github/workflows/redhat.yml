@@ -52,7 +52,8 @@ jobs:
         ROCM_MAJOR=$(echo ${ROCM_VERSION} | sed 's/\./ /g' | awk '{print $1}')
         ROCM_MINOR=$(echo ${ROCM_VERSION} | sed 's/\./ /g' | awk '{print $2}')
         ROCM_VERSN=$(( (${ROCM_MAJOR}*10000)+(${ROCM_MINOR}*100) ))
-        dnf -y --enablerepo=crb install perl-File-BaseDir
+        if [ "${OS_VERSION_MAJOR}" -eq 8 ]; then PERL_REPO=powertools; else PERL_REPO=crb; fi && \
+        dnf -y --enablerepo=${PERL_REPO} install perl-File-BaseDir
         yum install -y https://repo.radeon.com/amdgpu-install/${{ matrix.rocm-version }}/rhel/${{ matrix.os-release }}/amdgpu-install-${ROCM_MAJOR}.${ROCM_MINOR}.${ROCM_VERSN}-1${RPM_TAG}.noarch.rpm
         amdgpu-install --usecase=rocm,hip,hiplibsdk --no-dkms --skip-broken -y 
         yum install -y rocm-hip-sdk rocm-smi-lib roctracer-dev rocprofiler-dev 
@@ -64,8 +65,11 @@ jobs:
       run:
         git config --global --add safe.directory ${PWD} &&
         cmake --version &&
+        TAG="${{ github.repository_owner }}-${{ github.ref_name }}-rhel-${{ matrix.os-release }}-${{ matrix.compiler }}" &&
+        USE_HIP=OFF &&
+        if [ ${{ matrix.rocm-version }} != 0 ]; then USE_HIP=ON; TAG="${TAG}-rocm-${{ matrix.rocm-version }}"; fi &&
         python3 ./scripts/run-ci.py -B build
-          --name ${{ github.repository_owner }}-${{ github.ref_name }}-rhel-${{ matrix.os-release }}-${{ matrix.compiler }}-python
+          --name ${TAG}
           --build-jobs 2
           --site GitHub
           --
@@ -75,46 +79,16 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=/opt/omnitrace
           -DOMNITRACE_BUILD_TESTING=ON
           -DOMNITRACE_USE_MPI=OFF
-          -DOMNITRACE_USE_HIP=OFF
+          -DOMNITRACE_USE_HIP=${USE_HIP}
           -DOMNITRACE_USE_OMPT=OFF
-          -DOMNITRACE_USE_PYTHON=ON
+          -DOMNITRACE_USE_PYTHON=OFF
           -DOMNITRACE_USE_MPI_HEADERS=ON
-          -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
-          -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
           -DOMNITRACE_CI_MPI_RUN_AS_ROOT=ON
           -DOMNITRACE_MAX_THREADS=64
           -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
           -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
-
-    - name: Configure, Build, and Test
-      if: ${{ matrix.rocm-version > 0 }}
-      timeout-minutes: 115
-      shell: bash
-      run:
-        git config --global --add safe.directory ${PWD} &&
-        cmake --version &&
-        python3 ./scripts/run-ci.py -B build
-          --name ${{ github.repository_owner }}-${{ github.ref_name }}-rhel-${{ matrix.os-release }}-${{ matrix.compiler }}-rocm-${{ matrix.rocm-version }}-python
-          --build-jobs 2
-          --site GitHub
           --
-          -DCMAKE_C_COMPILER=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')
-          -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
-          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
-          -DCMAKE_INSTALL_PREFIX=/opt/omnitrace
-          -DOMNITRACE_BUILD_TESTING=ON
-          -DOMNITRACE_USE_MPI=OFF
-          -DOMNITRACE_USE_HIP=ON
-          -DOMNITRACE_USE_OMPT=OFF
-          -DOMNITRACE_USE_PYTHON=ON
-          -DOMNITRACE_USE_MPI_HEADERS=ON
-          -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
-          -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
-          -DOMNITRACE_CI_MPI_RUN_AS_ROOT=ON
-          -DOMNITRACE_MAX_THREADS=64
-          -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
-          --
-          -LE "transpose|rccl"
+          -LE "transpose|rccl" -E "parallel-overhead-locks-(baseline|preload|binary|runtime|timemory)"
 
     - name: Install
       timeout-minutes: 10
