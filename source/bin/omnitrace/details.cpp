@@ -24,10 +24,10 @@
 #include "fwd.hpp"
 #include "log.hpp"
 #include "omnitrace.hpp"
-#include "timemory/utility/join.hpp"
 
 #include <timemory/components/rusage/components.hpp>
 #include <timemory/components/timing/wall_clock.hpp>
+#include <timemory/utility/join.hpp>
 
 #include <algorithm>
 #include <link.h>
