@@ -190,7 +190,7 @@ omnitrace_add_test(
     NAME parallel-overhead-locks-timemory
     TARGET parallel-overhead-locks
     LABELS "locks"
-    REWRITE_ARGS -e -v 2 --min-instructions=4
+    REWRITE_ARGS -e -v 2 --min-instructions=32 --dyninst-options InstrStackFrames SaveFPR TrampRecursive 
     RUN_ARGS 10 4 1000
     ENVIRONMENT
         "${_lock_environment};OMNITRACE_FLAT_PROFILE=ON;OMNITRACE_USE_TIMEMORY=ON;OMNITRACE_USE_PERFETTO=OFF;OMNITRACE_SAMPLING_KEEP_INTERNAL=OFF"
@@ -206,7 +206,7 @@ omnitrace_add_test(
     REWRITE_ARGS -e -v 2 --min-instructions=8
     RUN_ARGS 10 4 1000
     ENVIRONMENT
-        "${_lock_environment};OMNITRACE_FLAT_PROFILE=ON;OMNITRACE_USE_TIMEMORY=OFF;OMNITRACE_USE_PERFETTO=ON"
+        "${_lock_environment};OMNITRACE_FLAT_PROFILE=ON;OMNITRACE_USE_TIMEMORY=OFF;OMNITRACE_USE_PERFETTO=ON;OMNITRACE_SAMPLING_KEEP_INTERNAL=OFF"
     )
 
 omnitrace_add_test(
