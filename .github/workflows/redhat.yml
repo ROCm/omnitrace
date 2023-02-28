@@ -37,9 +37,11 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Configure Env
+      shell: bash
       run:
         echo "CC=$(echo '${{ matrix.compiler }}' | sed 's/+/c/g')" >> $GITHUB_ENV &&
-        echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
+        echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV && 
+        env
 
     - name: Install Packages
       if: ${{ matrix.rocm-version > 0 }}
@@ -80,10 +82,12 @@ jobs:
           -DOMNITRACE_USE_MPI=OFF
           -DOMNITRACE_USE_HIP=${USE_HIP}
           -DOMNITRACE_USE_OMPT=OFF
-          -DOMNITRACE_USE_PYTHON=OFF
+          -DOMNITRACE_USE_PYTHON=ON
           -DOMNITRACE_USE_MPI_HEADERS=ON
           -DOMNITRACE_CI_MPI_RUN_AS_ROOT=ON
           -DOMNITRACE_MAX_THREADS=64
+          -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
+          -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10"
           -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
           -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
           --
@@ -94,32 +98,13 @@ jobs:
       run:
         cmake --build build --target install --parallel 2
 
-    - name: Configure Post-Install Env
-      run:
-        echo "/opt/omnitrace/bin:${HOME}/.local/bin" >> $GITHUB_PATH &&
-        echo "LD_LIBRARY_PATH=/opt/omnitrace/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
-
     - name: Test Install
       timeout-minutes: 10
+      shell: bash
       run: |
         set -v
-        export OMNITRACE_DEBUG=ON
-        which omnitrace-avail
-        ldd $(which omnitrace-avail)
-        omnitrace-avail --help
-        omnitrace-avail -a
-        which omnitrace-critical-trace
-        ldd $(which omnitrace-critical-trace)
-        which omnitrace
-        ldd $(which omnitrace)
-        omnitrace --help
-        omnitrace -e -v 1 -o ls.inst --simulate -- ls
-        for i in $(find omnitrace-ls.inst-output -type f); do echo -e "\n\n --> ${i} \n\n"; cat ${i}; done
-        omnitrace -e -v 1 -o ls.inst -- ls
-        ./ls.inst
-        omnitrace -e -v 1 --simulate -- ls
-        for i in $(find omnitrace-ls-output -type f); do echo -e "\n\n --> ${i} \n\n"; cat ${i}; done
-        omnitrace -e -v 1 -- ls
+        source /opt/omnitrace/share/omnitrace/setup-env.sh
+        ./scripts/test-install.sh --test-omnitrace{,-avail,-sample,-rewrite,-runtime,-critical-trace,-python}=1
 
     - name: Test User API
       timeout-minutes: 10
