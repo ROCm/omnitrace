@@ -66,7 +66,7 @@ jobs:
       run:
         git config --global --add safe.directory ${PWD} &&
         cmake --version &&
-        TAG="${{ github.repository_owner }}-${{ github.ref_name }}-rhel-${{ matrix.os-release }}-${{ matrix.compiler }}" &&
+        TAG="${{ github.repository_owner }}-${{ github.ref_name }}-rhel-${{ matrix.os-release }}-${{ matrix.compiler }}-python-mpip" &&
         USE_HIP=OFF &&
         if [ ${{ matrix.rocm-version }} != "0.0" ]; then USE_HIP=ON; TAG="${TAG}-rocm-${{ matrix.rocm-version }}"; fi &&
         python3 ./scripts/run-ci.py -B build

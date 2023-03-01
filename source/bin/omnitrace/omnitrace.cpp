@@ -303,6 +303,7 @@ main(int argc, char** argv)
     {
         bin_search_paths.emplace_back(JOIN('/', _omni_root, "bin"));
         lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib"));
+        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace"));
         OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace root path: ", _omni_root);
     }
 
@@ -314,6 +315,7 @@ main(int argc, char** argv)
     auto _omni_lib_path =
         JOIN('/', filepath::dirname(filepath::dirname(_omni_exe_path)), "lib");
     lib_search_paths.emplace_back(_omni_lib_path);
+    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace"));
 
     OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace bin path: ", _omni_exe_path);
     OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace lib path: ", _omni_lib_path);
@@ -1312,6 +1314,12 @@ main(int argc, char** argv)
     //                              DYNINST OPTIONS
     //
     //----------------------------------------------------------------------------------//
+
+    for(const auto& itr : _dyn_api_rt_paths)
+    {
+        lib_search_paths.emplace_back(itr);
+        lib_search_paths.emplace_back(filepath::dirname(itr));
+    }
 
     find_dyn_api_rt();
 
@@ -2586,8 +2594,10 @@ get_absolute_filepath(std::string _name, const strvec_t& _search_paths)
     if(!_name.empty() && (!exists(_name) || !is_file(_name)))
     {
         auto _orig = _name;
-        for(const auto& itr : _search_paths)
+        for(auto itr : _search_paths)
         {
+            if(!is_directory(itr) || is_file(itr)) itr = filepath::dirname(itr);
+
             auto _exists = false;
             OMNITRACE_ADD_LOG_ENTRY("searching", itr, "for", _name);
             for(const auto& pitr :
