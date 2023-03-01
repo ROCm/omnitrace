@@ -302,8 +302,12 @@ main(int argc, char** argv)
     if(!_omni_root.empty() && exists(_omni_root))
     {
         bin_search_paths.emplace_back(JOIN('/', _omni_root, "bin"));
+        bin_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace"));
+        bin_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace", "bin"));
         lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib"));
         lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace"));
+        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace", "lib"));
+        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace", "lib64"));
         OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace root path: ", _omni_root);
     }
 
@@ -314,8 +318,12 @@ main(int argc, char** argv)
 
     auto _omni_lib_path =
         JOIN('/', filepath::dirname(filepath::dirname(_omni_exe_path)), "lib");
+    bin_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace"));
+    bin_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace", "bin"));
     lib_search_paths.emplace_back(_omni_lib_path);
     lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace"));
+    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace", "lib"));
+    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace", "lib64"));
 
     OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace bin path: ", _omni_exe_path);
     OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace lib path: ", _omni_lib_path);
