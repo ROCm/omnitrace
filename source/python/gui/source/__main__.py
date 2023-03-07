@@ -44,12 +44,7 @@ from yaml import parse
 from collections import OrderedDict
 
 from . import gui
-from .parser import (
-    compute_speedups,
-    process_data,
-    process_samples,
-    compute_sorts,
-)
+from .parser import compute_speedups, process_data, process_samples, compute_sorts
 from . import __version__
 
 
@@ -59,7 +54,6 @@ def causal(args):
     # TODO This will become a glob to look for subfolders with coz files
     workload_path = [args.path]
 
-    workload_path = workload_path[0]
     num_stddev = args.stddev
     num_speedups = len(args.speedups)
 
@@ -69,17 +63,26 @@ def causal(args):
     results_df = pd.DataFrame()
     data = {}
     samp = {}
+    runs_dict = {}
     inp = args.path
     if os.path.exists(inp):
         if os.path.isdir(inp):
-            inp = glob.glob(os.path.join(inp, "*.json"))[0]
-        with open(inp, "r") as f:
-            inp_data = json.load(f)
-            data = process_data(data, inp_data, args.experiments, args.progress_points)
-
+            inp = glob.glob(os.path.join(inp, "*.json"))
+        elif os.path.isfile(inp):
+            inp = [inp]
+        for file in inp:
+            with open(file, "r") as f:
+                inp_data = json.load(f)
+                file_name = file[file.rfind("/") + 1 :]
+                _data = process_data({}, inp_data, args.experiments, args.progress_points)
+                _samp = process_samples({}, inp_data)
+                runs_dict[file[file.rfind("/") + 1 :]] = _data
+                # print(_samp)
+                data.update(_data)
+                samp.update(_samp)
         results_df = compute_sorts(
             compute_speedups(
-                data, args.speedups, args.num_points, args.validate, args.cli
+                runs_dict, args.speedups, args.num_points, args.validate, args.cli
             )
         )
 
@@ -88,15 +91,21 @@ def causal(args):
     )
 
     if not args.cli:
-        runs = OrderedDict({workload_path: results_df})
+        runs = runs_dict
         kernel_names = ["program1", "program2"]
         max_points = 9
         sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
         input_filters = [
             {
                 "Name": "Sort by",
-                "filter": [],
                 "values": list(map(str, sortOptions)),
+                "default": sortOptions[0],
+                "type": "Name",
+            },
+            {
+                "Name": "Select Workload",
+                "values": list(runs_dict.keys()),
+                "default": list(runs_dict.keys()),
                 "type": "Name",
             },
             {"Name": "points", "filter": [], "values": max_points, "type": "int"},
@@ -106,10 +115,11 @@ def causal(args):
             app,
             runs,
             input_filters,
-            workload_path,
+            args.path,
             results_df,
             samples_df,
             args.verbose,
+            args.light,
         )
         app.run_server(
             debug=True if args.verbose >= 3 else False,
@@ -160,6 +170,15 @@ def main():
         required=False,
         default=settings["cli"] if "cli" in settings else False,
         help="Do not launch the GUI, print the causal analysis out to the console",
+    )
+
+    my_parser.add_argument(
+        "-l",
+        "--light",
+        action="store_true",
+        required=False,
+        default=settings["light"] if "light" in settings else False,
+        help="light Mode",
     )
 
     my_parser.add_argument(
