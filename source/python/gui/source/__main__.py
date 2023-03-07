@@ -170,6 +170,7 @@ def main():
         required=False,
         default=settings["cli"] if "cli" in settings else False,
         help="Do not launch the GUI, print the causal analysis out to the console only",
+<<<<<<< HEAD
     )
 
     my_parser.add_argument(
@@ -179,6 +180,8 @@ def main():
         required=False,
         default=settings["light"] if "light" in settings else False,
         help="light Mode",
+=======
+>>>>>>> terminal output if verbosity > 3 or only CLI
     )
 
     my_parser.add_argument(
