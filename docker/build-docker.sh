@@ -4,7 +4,7 @@
 : ${ROCM_VERSIONS:="5.0"}
 : ${DISTRO:=ubuntu}
 : ${VERSIONS:=20.04}
-: ${PYTHON_VERSIONS:="6 7 8 9 10"}
+: ${PYTHON_VERSIONS:="6 7 8 9 10 11"}
 : ${BUILD_CI:=""}
 : ${PUSH:=0}
 : ${RETRY:=3}
@@ -13,12 +13,12 @@ set -e
 
 tolower()
 {
-    echo "$@" | awk -F '\|~\|' '{print tolower($1)}';
+    echo "$@" | awk -F '\\|~\\|' '{print tolower($1)}';
 }
 
 toupper()
 {
-    echo "$@" | awk -F '\|~\|' '{print toupper($1)}';
+    echo "$@" | awk -F '\\|~\\|' '{print toupper($1)}';
 }
 
 usage()
