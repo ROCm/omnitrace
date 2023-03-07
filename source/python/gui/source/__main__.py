@@ -77,9 +77,14 @@ def causal(args):
                 _samp = process_samples({}, inp_data)
                 runs_dict[file_name] = _data
                 samp.update(_samp)
+
         results_df = compute_sorts(
             compute_speedups(
-                runs_dict, args.speedups, args.num_points, args.validate, args.cli
+                runs_dict,
+                args.speedups,
+                args.num_points,
+                args.validate,
+                True if args.cli or args.verbose >= 3 else False,
             )
         )
 
@@ -164,7 +169,7 @@ def main():
         action="store_true",
         required=False,
         default=settings["cli"] if "cli" in settings else False,
-        help="Do not launch the GUI, print the causal analysis out to the console",
+        help="Do not launch the GUI, print the causal analysis out to the console only",
     )
 
     my_parser.add_argument(
