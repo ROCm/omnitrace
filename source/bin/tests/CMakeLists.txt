@@ -34,7 +34,8 @@ function(OMNITRACE_ADD_BIN_TEST)
 
     # common
     list(APPEND TEST_ENVIRONMENT "OMNITRACE_CI=ON" "OMNITRACE_CONFIG_FILE="
-         "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output" "TWD=${TEST_WORKING_DIRECTORY}")
+         "OMNITRACE_OUTPUT_PATH=${PROJECT_BINARY_DIR}/omnitrace-tests-output"
+         "TWD=${TEST_WORKING_DIRECTORY}")
     # copy for inverse
     set(TEST_ENVIRONMENT_INV "${TEST_ENVIRONMENT}")
 
@@ -201,8 +202,7 @@ omnitrace_add_bin_test(
         "\\\[omnitrace\\\]\\\[exe\\\] Runtime instrumentation is not possible!(.*)\n(.*)\\\[omnitrace\\\]\\\[exe\\\] Switching to binary rewrite mode and assuming '--simulate --all-functions'"
     )
 
-file(MAKE_DIRECTORY
-     ${PROJECT_BINARY_DIR}/omnitrace-tests-output/omnitrace-exe-simulate-lib-basename)
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/omnitrace-tests-output/tmp)
 
 omnitrace_add_bin_test(
     NAME omnitrace-exe-simulate-lib-basename
@@ -212,13 +212,12 @@ omnitrace_add_bin_test(
          -v
          2
          -o
-         omnitrace-tests-output/omnitrace-exe-simulate-lib-basename/${CMAKE_SHARED_LIBRARY_PREFIX}$<TARGET_FILE_BASE_NAME:omnitrace-user-library>${CMAKE_SHARED_LIBRARY_SUFFIX}
+         ${PROJECT_BINARY_DIR}/omnitrace-tests-output/omnitrace-exe-simulate-lib-basename/${CMAKE_SHARED_LIBRARY_PREFIX}$<TARGET_FILE_BASE_NAME:omnitrace-user-library>${CMAKE_SHARED_LIBRARY_SUFFIX}
          --
          ${CMAKE_SHARED_LIBRARY_PREFIX}$<TARGET_FILE_BASE_NAME:omnitrace-user-library>${CMAKE_SHARED_LIBRARY_SUFFIX}
     LABELS "simulate"
     TIMEOUT 120
-    WORKING_DIRECTORY
-        ${PROJECT_BINARY_DIR}/omnitrace-tests-output/omnitrace-exe-simulate-lib-basename)
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/omnitrace-tests-output/tmp)
 
 omnitrace_add_bin_test(
     NAME omnitrace-exe-write-log
