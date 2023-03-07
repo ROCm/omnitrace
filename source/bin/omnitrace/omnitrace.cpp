@@ -2681,7 +2681,9 @@ get_absolute_filepath(std::string _name, const strvec_t& _search_paths)
     }
     else if(!_name.empty())
     {
-        return absolute(_name);
+        auto _orig = _name;
+        _name      = absolute(_name);
+        verbprintf(1, "Resolved '%s' to '%s'...\n", _orig.c_str(), _name.c_str());
     }
 
     return _name;
