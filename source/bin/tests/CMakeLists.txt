@@ -201,6 +201,9 @@ omnitrace_add_bin_test(
         "\\\[omnitrace\\\]\\\[exe\\\] Runtime instrumentation is not possible!(.*)\n(.*)\\\[omnitrace\\\]\\\[exe\\\] Switching to binary rewrite mode and assuming '--simulate --all-functions'"
     )
 
+file(MAKE_DIRECTORY
+     ${PROJECT_BINARY_DIR}/omnitrace-tests-output/omnitrace-exe-simulate-lib-basename)
+
 omnitrace_add_bin_test(
     NAME omnitrace-exe-simulate-lib-basename
     TARGET omnitrace-exe
@@ -213,7 +216,9 @@ omnitrace_add_bin_test(
          --
          ${CMAKE_SHARED_LIBRARY_PREFIX}$<TARGET_FILE_BASE_NAME:omnitrace-user-library>${CMAKE_SHARED_LIBRARY_SUFFIX}
     LABELS "simulate"
-    TIMEOUT 120)
+    TIMEOUT 120
+    WORKING_DIRECTORY
+        ${PROJECT_BINARY_DIR}/omnitrace-tests-output/omnitrace-exe-simulate-lib-basename)
 
 omnitrace_add_bin_test(
     NAME omnitrace-exe-write-log
