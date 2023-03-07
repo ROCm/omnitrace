@@ -199,7 +199,7 @@ def refresh():
     )
 
 
-def get_header(dropDownMenuItems, input_filters, kernel_names):
+def get_header(dropDownMenuItems, input_filters):
     children_ = [
         html.Nav(
             id="nav-wrap",

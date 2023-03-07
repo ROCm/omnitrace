@@ -61,7 +61,6 @@ def causal(args):
         args.num_points = num_speedups
 
     results_df = pd.DataFrame()
-    data = {}
     samp = {}
     runs_dict = {}
     inp = args.path
@@ -73,12 +72,10 @@ def causal(args):
         for file in inp:
             with open(file, "r") as f:
                 inp_data = json.load(f)
-                file_name = file[file.rfind("/") + 1 :]
+                file_name = os.path.basename(file)
                 _data = process_data({}, inp_data, args.experiments, args.progress_points)
                 _samp = process_samples({}, inp_data)
-                runs_dict[file[file.rfind("/") + 1 :]] = _data
-                # print(_samp)
-                data.update(_data)
+                runs_dict[file_name] = _data
                 samp.update(_samp)
         results_df = compute_sorts(
             compute_speedups(
@@ -91,15 +88,13 @@ def causal(args):
     )
 
     if not args.cli:
-        runs = runs_dict
-        kernel_names = ["program1", "program2"]
         max_points = 9
         sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
         input_filters = [
             {
                 "Name": "Sort by",
                 "values": list(map(str, sortOptions)),
-                "default": sortOptions[0],
+                "default": "Impact",
                 "type": "Name",
             },
             {
@@ -113,7 +108,7 @@ def causal(args):
 
         gui.build_causal_layout(
             app,
-            runs,
+            runs_dict,
             input_filters,
             args.path,
             results_df,

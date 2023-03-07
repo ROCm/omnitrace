@@ -57,18 +57,16 @@ import plotly.graph_objects as go
 
 
 file_timestamp = 0
-data = pd.DataFrame()
-samples = pd.DataFrame()
-input_filters = None
-checklist_options = None
-checklist_values = None
+global_data = pd.DataFrame()
+global_samples = pd.DataFrame()
+global_input_filters = None
 workload_path = ""
 pd.set_option(
     "mode.chained_assignment", None
 )  # ignore SettingWithCopyWarning pandas warning
 
 
-def build_line_graph(data, KernelName, numPoints):
+def build_line_graph():
     # data_options = sorted(list(set(data.point)))
     layout1 = html.Div(
         id="graph_all",
@@ -196,7 +194,7 @@ def update_line_graph(
     return mask_all, causalLayout, samplesLayout
 
 
-def reset_Input_filters(workloads, max_points):
+def reset_input_filters(workloads, max_points):
     sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
 
     input_filters = [
@@ -218,17 +216,17 @@ def reset_Input_filters(workloads, max_points):
 
 
 def build_causal_layout(
-    app, runs, input_filters_, path_to_dir, data_, samples_, verbose=0, IS_LIGHT=True
+    app, runs, input_filters, path_to_dir, data, samples, verbose=0, light_mode=True
 ):
     """
     Build gui layout
     """
-    global data
-    global samples
-    data = data_
-    samples = samples_
-    global input_filters
-    input_filters = input_filters_
+    global global_data
+    global global_samples
+    global_data = data
+    global_samples = samples
+    global global_input_filters
+    global_input_filters = input_filters
     global workload_path
     workload_path = path_to_dir
 
@@ -246,18 +244,17 @@ def build_causal_layout(
 
     app.layout = html.Div(
         style={"backgroundColor": "rgb(255, 255, 255)"}
-        if IS_LIGHT
+        if light_mode
         else {"backgroundColor": "rgb(50, 50, 50)"}
     )
 
     filt_kernel_names = []
 
-    line_graph1, line_graph2 = build_line_graph(
-        data, filt_kernel_names, inital_min_points
-    )
+    line_graph1, line_graph2 = build_line_graph()
+
     app.layout.children = html.Div(
         children=[
-            get_header(dropDownMenuItems, input_filters, filt_kernel_names),
+            get_header(dropDownMenuItems, global_input_filters),
             html.Div(id="container", children=[]),
             line_graph1,
             line_graph2,
@@ -295,13 +292,13 @@ def build_causal_layout(
         divChildren,
     ):
         global file_timestamp
-        global data
-        global input_filters
+        global global_data
+        global global_input_filters
         global workload_path
         CLI = False
 
         # change to if debug
-        if True:
+        if verbose >= 3:
             print("Sort by is ", sort_filter)
             print("funcRegex is ", func_regex)
             print("expRegex is ", exp_regex)
@@ -316,7 +313,7 @@ def build_causal_layout(
         global new_data
         global func_list
         global exp_list
-        global samples
+        global global_samples
 
         if _workload_path is not None and os.path.exists(_workload_path):
             # files = glob.glob(os.path.join(workload_path, "*.coz")) +
@@ -331,22 +328,28 @@ def build_causal_layout(
                 metadata = glob.glob(os.path.join(_workload_path, "*/metadata*.json"))
                 files = _files + subfiles
                 workload_path = files
-            data, samples = parse_files(files)
+            global_data, global_samples = parse_files(files)
             # reset checklists
-            func_list = sorted(list(data.point.unique()))
-            exp_list = sorted(list(data["progress points"].unique()))
+            func_list = sorted(list(global_data.point.unique()))
+            exp_list = sorted(list(global_data["progress points"].unique()))
 
-            max_points = data.point.value_counts().max().max()
+            max_points = global_data.point.value_counts().max().max()
 
             # reset input_filters
-            workloads = [file[file.rfind("/") + 1 :] for file in files]
-            input_filters = reset_Input_filters(workloads, max_points)
+            workloads = [os.path.basename(file) for file in files]
+            global_input_filters = reset_input_filters(workloads, max_points)
 
             screen_data, fig1, fig2 = update_line_graph(
-                sort_filter, func_list, exp_list, data, num_points, samples, workloads
+                sort_filter,
+                func_list,
+                exp_list,
+                global_data,
+                num_points,
+                global_samples,
+                workloads,
             )
 
-            header = get_header(dropDownMenuItems, input_filters, filt_kernel_names)
+            header = get_header(dropDownMenuItems, global_input_filters)
             return (divChildren, header, fig1, fig2)
 
         elif contentsList is not None:
@@ -355,16 +358,16 @@ def build_causal_layout(
                     contentsList.encode("utf-8").split(b";base64,")[1]
                 ).decode("utf-8")
 
-                new_data, samples = parse_uploaded_file(filename, new_data_file)
-                data = new_data
+                new_data, global_samples = parse_uploaded_file(filename, new_data_file)
+                global_data = new_data
 
                 max_points = new_data.point.value_counts().max().max()
 
-                func_list = sorted(list(data.point.unique()))
-                exp_list = sorted(list(data["progress points"].unique()))
+                func_list = sorted(list(global_data.point.unique()))
+                exp_list = sorted(list(global_data["progress points"].unique()))
 
                 # reset input_filters
-                input_filters = reset_Input_filters([filename], max_points)
+                global_input_filters = reset_input_filters([filename], max_points)
 
                 screen_data, fig1, fig2 = update_line_graph(
                     sort_filter,
@@ -372,34 +375,38 @@ def build_causal_layout(
                     exp_list,
                     new_data,
                     num_points,
-                    samples,
+                    global_samples,
                     workload_filter,
                 )
-                header = get_header(dropDownMenuItems, input_filters, filt_kernel_names)
+                header = get_header(dropDownMenuItems, global_input_filters)
                 return (divChildren, header, fig1, fig2)
 
         # runs when function or experiment regex is changed, takes numPoints into account as well
         elif func_regex is not None or exp_regex is not None:
             # filter options and values
-            if data.empty == False:
+            if global_data.empty == False:
                 if func_regex is not None:
                     p = re.compile(func_regex, flags=0)
 
-                    func_list = [s for s in list(data["point"].unique()) if p.match(s)]
+                    func_list = [
+                        s for s in list(global_data["point"].unique()) if p.match(s)
+                    ]
                 if exp_regex is not None:
                     p = re.compile(exp_regex, flags=0)
 
                     exp_list = [
-                        s for s in list(data["progress points"].unique()) if p.match(s)
+                        s
+                        for s in list(global_data["progress points"].unique())
+                        if p.match(s)
                     ]
 
                 screen_data, fig1, fig2 = update_line_graph(
                     sort_filter,
                     func_list,
                     exp_list,
-                    data,
+                    global_data,
                     num_points,
-                    samples,
+                    global_samples,
                     workload_filter,
                 )
 
@@ -409,30 +416,35 @@ def build_causal_layout(
         if "refresh" == ctx.triggered_id:
             print("refreshing Data with " + workload_path)
 
-            data = parse_files([workload_path])
+            global_data = parse_files([workload_path])
 
-            func_list = sorted(list(data.point.unique()))
-            exp_list = sorted(list(data["progress points"].unique()))
-            if data.empty == False:
+            func_list = sorted(list(global_data.point.unique()))
+            exp_list = sorted(list(global_data["progress points"].unique()))
+            if global_data.empty == False:
                 screen_data, fig1, fig2 = update_line_graph(
-                    sort_filter, func_list, exp_list, data, num_points, workload_filter
+                    sort_filter,
+                    func_list,
+                    exp_list,
+                    global_data,
+                    num_points,
+                    workload_filter,
                 )
 
             return (divChildren, header, fig1, fig2)
         else:
             func_list = []
             exp_list = []
-            if data.empty == False:
-                func_list = sorted(list(data.point.unique()))
-                exp_list = sorted(list(data["progress points"].unique()))
+            if global_data.empty == False:
+                func_list = sorted(list(global_data.point.unique()))
+                exp_list = sorted(list(global_data["progress points"].unique()))
 
                 screen_data, fig1, fig2 = update_line_graph(
                     sort_filter,
                     func_list,
                     exp_list,
-                    data,
+                    global_data,
                     num_points,
-                    samples,
+                    global_samples,
                     workload_filter,
                 )
 
