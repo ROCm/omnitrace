@@ -312,9 +312,10 @@ main(int argc, char** argv)
         OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace root path: ", _omni_root);
     }
 
-    auto _omni_exe_path = get_absolute_exe_filepath(argv[0]);
+    auto _omni_exe_path = get_realpath(get_absolute_exe_filepath(argv[0]));
     if(!exists(_omni_exe_path))
-        _omni_exe_path = get_absolute_exe_filepath(omnitrace_get_exe_realpath());
+        _omni_exe_path =
+            get_realpath(get_absolute_exe_filepath(omnitrace_get_exe_realpath()));
     bin_search_paths.emplace_back(filepath::dirname(_omni_exe_path));
 
     auto _omni_lib_path =
@@ -428,7 +429,7 @@ main(int argc, char** argv)
 
     if(_cmdc > 0 && !mutname.empty())
     {
-        auto resolved_mutname = get_absolute_filepath(mutname);
+        auto resolved_mutname = get_realpath(get_absolute_filepath(mutname));
         if(resolved_mutname != mutname)
         {
             mutname = resolved_mutname;
@@ -635,7 +636,7 @@ main(int argc, char** argv)
                     p.print_help(extra_help);
                     std::exit(EXIT_FAILURE);
                 }
-                keys.at(0) = get_absolute_filepath(keys.at(0));
+                keys.at(0) = get_realpath(get_absolute_filepath(keys.at(0)));
                 mutname    = keys.at(0);
                 _cmdc      = keys.size();
                 _cmdv      = new char*[_cmdc];
@@ -1617,7 +1618,7 @@ main(int argc, char** argv)
         for(auto _libname : _libnames)
         {
             OMNITRACE_ADD_LOG_ENTRY("Getting the absolute lib filepath to", _libname);
-            _libname = get_absolute_lib_filepath(_libname);
+            _libname = get_realpath(get_absolute_lib_filepath(_libname));
             _tried_libs += string_t("|") + _libname;
             verbprintf(1, "loading library: '%s'...\n", _libname.c_str());
             result = (addr_space->loadLibrary(_libname.c_str()) != nullptr);
