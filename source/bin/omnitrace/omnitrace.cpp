@@ -35,6 +35,7 @@
 #include <timemory/settings.hpp>
 #include <timemory/signals/signal_mask.hpp>
 #include <timemory/utility/console.hpp>
+#include <timemory/utility/delimit.hpp>
 #include <timemory/utility/demangle.hpp>
 #include <timemory/utility/filepath.hpp>
 #include <timemory/utility/signals.hpp>
@@ -2597,6 +2598,49 @@ namespace
 //======================================================================================//
 //
 std::string
+canonicalize(std::string _path)
+{
+    if(_path.find("./") == 0)
+        _path = _path.replace(0, 1, get_cwd());
+    else if(_path.find("../") == 0)
+        _path = _path.insert(0, get_cwd() + "/");
+
+    auto _leading_dash = (_path.find('/') == 0);
+    auto _pieces       = tim::delimit(_path, "/");
+    std::reverse(_pieces.begin(), _pieces.end());
+    auto _tree = std::vector<std::string>{};
+    for(size_t i = 0; i < _pieces.size(); ++i)
+    {
+        const auto& itr = _pieces.at(i);
+        if(itr == ".")
+        {
+            continue;
+        }
+        else if(itr == "..")
+            ++i;
+        else
+            _tree.emplace_back(itr);
+    }
+    std::reverse(_tree.begin(), _tree.end());
+    auto _cpath = std::string{ (_leading_dash) ? "/" : "" };
+    for(size_t i = 0; i < _tree.size() - 1; ++i)
+        _cpath += _tree.at(i) + "/";
+    _cpath += _tree.back();
+    return _cpath;
+}
+
+//======================================================================================//
+//
+std::string
+absolute(std::string _path)
+{
+    if(_path.find('/') == 0) return canonicalize(_path);
+    return canonicalize(JOIN('/', get_cwd(), _path));
+}
+
+//======================================================================================//
+//
+std::string
 get_absolute_filepath(std::string _name, const strvec_t& _search_paths)
 {
     if(!_name.empty() && (!exists(_name) || !is_file(_name)))
@@ -2609,8 +2653,8 @@ get_absolute_filepath(std::string _name, const strvec_t& _search_paths)
             auto _exists = false;
             OMNITRACE_ADD_LOG_ENTRY("searching", itr, "for", _name);
             for(const auto& pitr :
-                { get_realpath(JOIN('/', itr, _name)),
-                  get_realpath(JOIN('/', itr, filepath::basename(_name))) })
+                { absolute(JOIN('/', itr, _name)),
+                  absolute(JOIN('/', itr, filepath::basename(_name))) })
             {
                 _exists = exists(pitr) && is_file(pitr);
                 if(_exists)
@@ -2636,7 +2680,7 @@ get_absolute_filepath(std::string _name, const strvec_t& _search_paths)
     }
     else if(!_name.empty())
     {
-        return get_realpath(_name);
+        return absolute(_name);
     }
 
     return _name;
@@ -2684,17 +2728,6 @@ get_absolute_lib_filepath(std::string lib_name)
         lib_name = get_absolute_filepath(lib_name + ".so", lib_search_paths);
     }
     return lib_name;
-}
-
-//======================================================================================//
-//
-std::string
-absolute(std::string _path)
-{
-    if(_path.find('/') == 0) return _path;
-    _path = JOIN('/', get_cwd(), _path);
-    if(filepath::exists(_path)) return filepath::realpath(_path, nullptr, false);
-    return _path;
 }
 
 bool
