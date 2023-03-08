@@ -195,7 +195,11 @@ def main():
     )
 
     my_parser.add_argument(
-        "-V", "--verbose", help="Increase output verbosity", default=0, type=int
+        "-V",
+        "--verbose",
+        help="Increase output verbosity, if 3 or greater, CLI output will show in terminal in GUI mode",
+        default=0,
+        type=int,
     )
 
     my_parser.add_argument(
