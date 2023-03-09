@@ -57,21 +57,16 @@ import plotly.graph_objects as go
 
 
 file_timestamp = 0
-data = pd.DataFrame()
-samples = pd.DataFrame()
-input_filters = None
-checklist_options = None
-checklist_values = None
+global_data = pd.DataFrame()
+global_samples = pd.DataFrame()
+global_input_filters = None
 workload_path = ""
 pd.set_option(
     "mode.chained_assignment", None
 )  # ignore SettingWithCopyWarning pandas warning
 
 
-IS_DARK = True  # default dark theme
-
-
-def build_line_graph(data, KernelName, numPoints):
+def build_line_graph():
     # data_options = sorted(list(set(data.point)))
     layout1 = html.Div(
         id="graph_all",
@@ -82,36 +77,47 @@ def build_line_graph(data, KernelName, numPoints):
     layout2 = html.Div(
         id="graph_select",
         className="graph_select",
-        children=[
-            html.H4("Call Stack Sample Histogram", style={"color": "white"}),
-        ],
+        children=[html.H4("Call Stack Sample Histogram", style={"color": "white"})],
     )
 
     return layout1, layout2
 
 
-def update_line_graph(sortFilter, func_list, exp_list, data, numPoints, samples):
+def update_line_graph(
+    sort_filter, func_list, exp_list, data, num_points, samples, workloads
+):
     # df = px.data.gapminder() # replace with your own data source
-    if "Alphabetical" in sortFilter:
+    if "Alphabetical" in sort_filter:
         data = data.sort_values(by=["point", "idx"])
 
-    if "Impact" in sortFilter:
-        data = data.sort_values(by=["impact avg", "idx"], ascending=False)
+    if "Impact" in sort_filter:
+        data = data.sort_values(by=["impact sum", "idx"], ascending=False)
 
-    if "Max Speedup" in sortFilter:
+    if "Max Speedup" in sort_filter:
         data = data.sort_values(by=["Max Speedup", "idx"])
 
-    if "Min Speedup" in sortFilter:
+    if "Min Speedup" in sort_filter:
         data = data.sort_values(by=["Min Speedup", "idx"])
 
-    if numPoints > 0:
-        data = data[data["point count"] > numPoints]
+    if num_points > 0:
+        data = data[data["point count"] > num_points]
 
     mask_all = data[data.point.isin(func_list)]
     mask_all = mask_all[mask_all["progress points"].isin(exp_list)]
+    mask_all = mask_all[mask_all["workload"].isin(workloads)]
 
     mask_select = data[data.point.isin(func_list)]
     mask_select = mask_select[mask_select["progress points"].isin(exp_list)]
+    mask_select = mask_select[mask_select["workload"].isin(workloads)]
+
+    progress_points = list(mask_select["progress points"].unique())
+    colors = [x / float(len(progress_points)) for x in range(len(progress_points))]
+    # colors = [0 if x == 0 else 1/float(x) for x in colors]
+    colors_df = pd.DataFrame()
+    for color, prog in zip(colors, progress_points):
+        colors_df = pd.concat(
+            [colors_df, pd.DataFrame({"progress points": [prog], "color": [color * 100]})]
+        )
 
     fig1 = go.Figure()
 
@@ -130,9 +136,7 @@ def update_line_graph(sortFilter, func_list, exp_list, data, numPoints, samples)
             xaxis={"title": "Function Speedup"}, yaxis={"title": "Program Speedup"}
         )
 
-    causalLayout = [
-        html.H4("Selected Causal Profiles", style={"color": "white"}),
-    ]
+    causalLayout = [html.H4("Selected Causal Profiles", style={"color": "white"})]
 
     for point in list(mask_select.point.unique()):
         subplots = go.Figure()
@@ -163,6 +167,9 @@ def update_line_graph(sortFilter, func_list, exp_list, data, numPoints, samples)
                     go.Scatter(
                         x=sub_data_prog["Line Speedup"],
                         y=sub_data_prog["Program Speedup"],
+                        line_color="hsv("
+                        + str(colors_df[colors_df["progress points"] == prog]["color"][0])
+                        + "%,100%,100%)",
                         error_y=dict(
                             type="percent", array=sub_data_prog["impact err"].tolist()
                         ),
@@ -187,14 +194,20 @@ def update_line_graph(sortFilter, func_list, exp_list, data, numPoints, samples)
     return mask_all, causalLayout, samplesLayout
 
 
-def reset_Input_filters(max_points):
+def reset_input_filters(workloads, max_points):
     sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
 
     input_filters = [
         {
             "Name": "Sort by",
-            "filter": [],
+            "default": sortOptions[0],
             "values": list(map(str, sortOptions)),
+            "type": "Name",
+        },
+        {
+            "Name": "Select Workload",
+            "values": workloads,
+            "default": workloads,
             "type": "Name",
         },
         {"Name": "points", "filter": [], "values": max_points - 1, "type": "int"},
@@ -203,23 +216,17 @@ def reset_Input_filters(max_points):
 
 
 def build_causal_layout(
-    app,
-    runs,
-    input_filters_,
-    path_to_dir,
-    data_,
-    samples_,
-    verbose=0,
+    app, runs, input_filters, path_to_dir, data, samples, verbose=0, light_mode=True
 ):
     """
     Build gui layout
     """
-    global data
-    global samples
-    data = data_
-    samples = samples_
-    global input_filters
-    input_filters = input_filters_
+    global global_data
+    global global_samples
+    global_data = data
+    global_samples = samples
+    global global_input_filters
+    global_input_filters = input_filters
     global workload_path
     workload_path = path_to_dir
 
@@ -235,18 +242,19 @@ def build_causal_layout(
 
     inital_min_points = 3
 
-    app.layout = html.Div(style={"backgroundColor": "rgb(50, 50, 50)" if IS_DARK else ""})
+    app.layout = html.Div(
+        style={"backgroundColor": "rgb(255, 255, 255)"}
+        if light_mode
+        else {"backgroundColor": "rgb(50, 50, 50)"}
+    )
 
     filt_kernel_names = []
 
-    line_graph1, line_graph2 = build_line_graph(
-        data, filt_kernel_names, inital_min_points
-    )
+    line_graph1, line_graph2 = build_line_graph()
+
     app.layout.children = html.Div(
         children=[
-            get_header(
-                runs[path_to_dir], dropDownMenuItems, input_filters, filt_kernel_names
-            ),
+            get_header(dropDownMenuItems, global_input_filters),
             html.Div(id="container", children=[]),
             line_graph1,
             line_graph2,
@@ -261,6 +269,7 @@ def build_causal_layout(
         [Input("nav-wrap", "children")],
         [Input("refresh", "n_clicks")],
         [Input("Sort by-filt", "value")],
+        [Input("Select Workload-filt", "value")],
         [Input("function_regex", "value")],
         [Input("exp_regex", "value")],
         [Input("points-filt", "value")],
@@ -272,28 +281,30 @@ def build_causal_layout(
     def generate_from_filter(
         header,
         refresh,
-        sortFilter,
-        funcRegex,
-        expRegex,
-        numPoints,
-        workloadPath,
+        sort_filter,
+        workload_filter,
+        func_regex,
+        exp_regex,
+        num_points,
+        _workload_path,
         contentsList,
         filename,
         divChildren,
     ):
         global file_timestamp
-        global data
-        global input_filters
+        global global_data
+        global global_input_filters
         global workload_path
         CLI = False
 
         # change to if debug
-        if True:
-            print("Sort by is ", sortFilter)
-            print("funcRegex is ", funcRegex)
-            print("expRegex is ", expRegex)
-            print("points is: ", numPoints)
+        if verbose >= 3:
+            print("Sort by is ", sort_filter)
+            print("funcRegex is ", func_regex)
+            print("expRegex is ", exp_regex)
+            print("points is: ", num_points)
             print("workload_path is: ", workload_path)
+            print("selected workloads are:", workload_filter)
 
         divChildren = []
         files = []
@@ -302,45 +313,43 @@ def build_causal_layout(
         global new_data
         global func_list
         global exp_list
-        if workloadPath != None:
-            print("workload_path:" + workload_path)
-            print("workloadPath: " + workloadPath)
-        if workloadPath is not None and os.path.exists(workloadPath):
+        global global_samples
+
+        if _workload_path is not None and os.path.exists(_workload_path):
             # files = glob.glob(os.path.join(workload_path, "*.coz")) +
             files = []
-            if os.path.isfile(workloadPath):
-                files.append(workloadPath)
-                workload_path = workloadPath
-                print("workload_path:" + workload_path)
-            elif os.path.isdir(workloadPath):
-                _files = glob.glob(os.path.join(workloadPath, "*.json"))
+            if os.path.isfile(_workload_path):
+                files.append(_workload_path)
+                workload_path = _workload_path
+            elif os.path.isdir(_workload_path):
+                _files = glob.glob(os.path.join(_workload_path, "*.json"))
                 # subfiles = glob.glob(os.path.join(workload_path, "*/*.coz")) +
-                subfiles = glob.glob(os.path.join(workloadPath, "*/*.json"))
-                metadata = glob.glob(os.path.join(workloadPath, "*/metadata*.json"))
+                subfiles = glob.glob(os.path.join(_workload_path, "*/*.json"))
+                metadata = glob.glob(os.path.join(_workload_path, "*/metadata*.json"))
                 files = _files + subfiles
-                # assuming only one file for now
-                workload_path = files[0]
-                print("workload_path:" + workload_path)
-
-            print("all_files: ")
-            print(files)
-            # for profile_path in all_files:
-            data = parse_files(files)
-
+                workload_path = files
+            global_data, global_samples = parse_files(files)
             # reset checklists
-            func_list = sorted(list(data.point.unique()))
-            exp_list = sorted(list(data["progress points"].unique()))
+            func_list = sorted(list(global_data.point.unique()))
+            exp_list = sorted(list(global_data["progress points"].unique()))
 
-            max_points = data.point.value_counts().max().max()
+            max_points = global_data.point.value_counts().max().max()
 
             # reset input_filters
-            input_filters = reset_Input_filters(max_points)
+            workloads = [os.path.basename(file) for file in files]
+            global_input_filters = reset_input_filters(workloads, max_points)
 
             screen_data, fig1, fig2 = update_line_graph(
-                sortFilter, func_list, exp_list, new_data, numPoints, samples
+                sort_filter,
+                func_list,
+                exp_list,
+                global_data,
+                num_points,
+                global_samples,
+                workloads,
             )
 
-            header = get_header(data, dropDownMenuItems, input_filters, filt_kernel_names)
+            header = get_header(dropDownMenuItems, global_input_filters)
             return (divChildren, header, fig1, fig2)
 
         elif contentsList is not None:
@@ -349,46 +358,56 @@ def build_causal_layout(
                     contentsList.encode("utf-8").split(b";base64,")[1]
                 ).decode("utf-8")
 
-                new_data = parse_uploaded_file(new_data_file)
-                data = new_data
+                new_data, global_samples = parse_uploaded_file(filename, new_data_file)
+                global_data = new_data
 
                 max_points = new_data.point.value_counts().max().max()
 
-                func_list = sorted(list(data.point.unique()))
-                exp_list = sorted(list(data["progress points"].unique()))
+                func_list = sorted(list(global_data.point.unique()))
+                exp_list = sorted(list(global_data["progress points"].unique()))
 
                 # reset input_filters
-                input_filters = reset_Input_filters(max_points)
+                global_input_filters = reset_input_filters([filename], max_points)
 
                 screen_data, fig1, fig2 = update_line_graph(
-                    sortFilter, func_list, exp_list, new_data, numPoints, samples
+                    sort_filter,
+                    func_list,
+                    exp_list,
+                    new_data,
+                    num_points,
+                    global_samples,
+                    workload_filter,
                 )
-                header = get_header(
-                    data, dropDownMenuItems, input_filters, filt_kernel_names
-                )
+                header = get_header(dropDownMenuItems, global_input_filters)
                 return (divChildren, header, fig1, fig2)
 
         # runs when function or experiment regex is changed, takes numPoints into account as well
-        elif (
-            funcRegex is not None or expRegex is not None
-        ):  # or funcRegex != "" or expRegex != "":
+        elif func_regex is not None or exp_regex is not None:
             # filter options and values
-            if data.empty == False:
-                if funcRegex is not None:
-                    p = re.compile(funcRegex, flags=0)
+            if global_data.empty == False:
+                if func_regex is not None:
+                    p = re.compile(func_regex, flags=0)
 
-                    func_list = [s for s in list(data["point"].unique()) if p.match(s)]
-                    print(func_list)
-                if expRegex is not None:
-                    p = re.compile(expRegex, flags=0)
+                    func_list = [
+                        s for s in list(global_data["point"].unique()) if p.match(s)
+                    ]
+                if exp_regex is not None:
+                    p = re.compile(exp_regex, flags=0)
 
                     exp_list = [
-                        s for s in list(data["progress points"].unique()) if p.match(s)
+                        s
+                        for s in list(global_data["progress points"].unique())
+                        if p.match(s)
                     ]
-                    print(exp_list)
 
                 screen_data, fig1, fig2 = update_line_graph(
-                    sortFilter, func_list, exp_list, data, numPoints, samples
+                    sort_filter,
+                    func_list,
+                    exp_list,
+                    global_data,
+                    num_points,
+                    global_samples,
+                    workload_filter,
                 )
 
             return (divChildren, header, fig1, fig2)
@@ -397,25 +416,36 @@ def build_causal_layout(
         if "refresh" == ctx.triggered_id:
             print("refreshing Data with " + workload_path)
 
-            data = parse_files([workload_path])
+            global_data = parse_files([workload_path])
 
-            func_list = sorted(list(data.point.unique()))
-            exp_list = sorted(list(data["progress points"].unique()))
-            if data.empty == False:
+            func_list = sorted(list(global_data.point.unique()))
+            exp_list = sorted(list(global_data["progress points"].unique()))
+            if global_data.empty == False:
                 screen_data, fig1, fig2 = update_line_graph(
-                    sortFilter, func_list, exp_list, data, numPoints
+                    sort_filter,
+                    func_list,
+                    exp_list,
+                    global_data,
+                    num_points,
+                    workload_filter,
                 )
 
             return (divChildren, header, fig1, fig2)
         else:
             func_list = []
             exp_list = []
-            if data.empty == False:
-                func_list = sorted(list(data.point.unique()))
-                exp_list = sorted(list(data["progress points"].unique()))
+            if global_data.empty == False:
+                func_list = sorted(list(global_data.point.unique()))
+                exp_list = sorted(list(global_data["progress points"].unique()))
 
                 screen_data, fig1, fig2 = update_line_graph(
-                    sortFilter, func_list, exp_list, data, numPoints, samples
+                    sort_filter,
+                    func_list,
+                    exp_list,
+                    global_data,
+                    num_points,
+                    global_samples,
+                    workload_filter,
                 )
 
             return (divChildren, header, fig1, fig2)

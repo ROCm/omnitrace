@@ -154,7 +154,7 @@ def minPoints(name, values):
     )
 
 
-def sortBy(name, values, filter, style_):
+def sortBy(name, values, default, style_):
     return html.Li(
         className="filter",
         children=[
@@ -165,7 +165,7 @@ def sortBy(name, values, filter, style_):
                         list_unique(values, True),
                         id=name + "-filt",
                         multi=True,
-                        value=filter,
+                        value=default,
                         placeholder="ALL",
                         clearable=False,
                         style=style_,
@@ -199,7 +199,7 @@ def refresh():
     )
 
 
-def get_header(data, dropDownMenuItems, input_filters, kernel_names):
+def get_header(dropDownMenuItems, input_filters):
     children_ = [
         html.Nav(
             id="nav-wrap",
@@ -230,10 +230,10 @@ def get_header(data, dropDownMenuItems, input_filters, kernel_names):
                 sortBy(
                     filter["Name"],
                     filter["values"],
-                    filter["filter"],
+                    filter["default"],
                     {
-                        "width": "200px",  # TODO: Change these widths to % rather than fixed value
-                        "height": "34px",
+                        # "width": "200px",  # TODO: Change these widths to % rather than fixed value
+                        "height": "34px"
                     },
                 )
             )
