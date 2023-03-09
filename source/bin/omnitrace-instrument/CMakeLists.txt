@@ -4,7 +4,7 @@
 #
 # ------------------------------------------------------------------------------#
 
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 
 add_executable(omnitrace-instrument)
 
