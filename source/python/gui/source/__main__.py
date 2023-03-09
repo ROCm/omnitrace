@@ -44,12 +44,7 @@ from yaml import parse
 from collections import OrderedDict
 
 from . import gui
-from .parser import (
-    compute_speedups,
-    process_data,
-    process_samples,
-    compute_sorts,
-)
+from .parser import compute_speedups, process_data, process_samples, compute_sorts
 from . import __version__
 
 
@@ -59,7 +54,6 @@ def causal(args):
     # TODO This will become a glob to look for subfolders with coz files
     workload_path = [args.path]
 
-    workload_path = workload_path[0]
     num_stddev = args.stddev
     num_speedups = len(args.speedups)
 
@@ -67,19 +61,30 @@ def causal(args):
         args.num_points = num_speedups
 
     results_df = pd.DataFrame()
-    data = {}
     samp = {}
+    runs_dict = {}
     inp = args.path
     if os.path.exists(inp):
         if os.path.isdir(inp):
-            inp = glob.glob(os.path.join(inp, "*.json"))[0]
-        with open(inp, "r") as f:
-            inp_data = json.load(f)
-            data = process_data(data, inp_data, args.experiments, args.progress_points)
+            inp = glob.glob(os.path.join(inp, "*.json"))
+        elif os.path.isfile(inp):
+            inp = [inp]
+        for file in inp:
+            with open(file, "r") as f:
+                inp_data = json.load(f)
+                file_name = os.path.basename(file)
+                _data = process_data({}, inp_data, args.experiments, args.progress_points)
+                _samp = process_samples({}, inp_data)
+                runs_dict[file_name] = _data
+                samp.update(_samp)
 
         results_df = compute_sorts(
             compute_speedups(
-                data, args.speedups, args.num_points, args.validate, args.cli
+                runs_dict,
+                args.speedups,
+                args.num_points,
+                args.validate,
+                True if args.cli or args.verbose >= 3 else False,
             )
         )
 
@@ -88,15 +93,19 @@ def causal(args):
     )
 
     if not args.cli:
-        runs = OrderedDict({workload_path: results_df})
-        kernel_names = ["program1", "program2"]
         max_points = 9
         sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
         input_filters = [
             {
                 "Name": "Sort by",
-                "filter": [],
                 "values": list(map(str, sortOptions)),
+                "default": "Impact",
+                "type": "Name",
+            },
+            {
+                "Name": "Select Workload",
+                "values": list(runs_dict.keys()),
+                "default": list(runs_dict.keys()),
                 "type": "Name",
             },
             {"Name": "points", "filter": [], "values": max_points, "type": "int"},
@@ -104,12 +113,13 @@ def causal(args):
 
         gui.build_causal_layout(
             app,
-            runs,
+            runs_dict,
             input_filters,
-            workload_path,
+            args.path,
             results_df,
             samples_df,
             args.verbose,
+            args.light,
         )
         app.run_server(
             debug=True if args.verbose >= 3 else False,
@@ -159,7 +169,16 @@ def main():
         action="store_true",
         required=False,
         default=settings["cli"] if "cli" in settings else False,
-        help="Do not launch the GUI, print the causal analysis out to the console",
+        help="Do not launch the GUI, print the causal analysis out to the console only",
+    )
+
+    my_parser.add_argument(
+        "-l",
+        "--light",
+        action="store_true",
+        required=False,
+        default=settings["light"] if "light" in settings else False,
+        help="light Mode",
     )
 
     my_parser.add_argument(
@@ -176,7 +195,11 @@ def main():
     )
 
     my_parser.add_argument(
-        "-V", "--verbose", help="Increase output verbosity", default=0, type=int
+        "-V",
+        "--verbose",
+        help="Increase output verbosity, if 3 or greater, CLI output will show in terminal in GUI mode",
+        default=0,
+        type=int,
     )
 
     my_parser.add_argument(
