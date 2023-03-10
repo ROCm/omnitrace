@@ -27,8 +27,8 @@
 #include "exception.hpp"
 #include "gpu.hpp"
 #include "state.hpp"
-#include "timemory/settings/types.hpp"
 
+#include <timemory/settings/types.hpp>
 #include <timemory/utility/filepath.hpp>
 #include <timemory/utility/join.hpp>
 
