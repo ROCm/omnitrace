@@ -20,7 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "core/timemory.hpp"
 #include "omnitrace-run.hpp"
 
 #include "common/defines.h"
@@ -28,8 +27,10 @@
 #include "common/environment.hpp"
 #include "common/join.hpp"
 #include "common/setup.hpp"
+#include "core/argparse.hpp"
 #include "core/config.hpp"
 #include "core/state.hpp"
+#include "core/timemory.hpp"
 
 #include <timemory/environment.hpp>
 #include <timemory/log/color.hpp>
@@ -528,6 +529,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
         parser.set_description_width(
             std::min<int>(_cols - parser.get_help_width() - 8, 120));
 
+    /*
     auto _added = std::set<std::string>{};
 
     auto _get_name = [](const std::shared_ptr<tim::vsettings>& itr) {
@@ -661,15 +663,27 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
             _add_option(_get_name(itr), itr);
         parser.end_group();
     }
+    */
+
+    using parser_data_t = omnitrace::argparse::parser_data;
+
+    auto _parser_data = parser_data_t{};
+    omnitrace::argparse::init_parser(_parser_data);
+    omnitrace::argparse::add_core_arguments(parser, _parser_data);
+    omnitrace::argparse::add_extended_arguments(parser, _parser_data);
 
     auto _inpv = std::vector<char*>{};
     auto _outv = std::vector<char*>{};
     bool _hash = false;
     for(int i = 0; i < argc; ++i)
     {
-        if(_hash)
+        if(argv[i] == nullptr)
         {
-            _outv.emplace_back(argv[i]);
+            continue;
+        }
+        else if(_hash)
+        {
+            _outv.emplace_back(strdup(argv[i]));
         }
         else if(std::string_view{ argv[i] } == "--")
         {
@@ -677,15 +691,24 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
         }
         else
         {
-            _inpv.emplace_back(argv[i]);
+            _inpv.emplace_back(strdup(argv[i]));
         }
     }
+
+    std::cerr << "Input: ";
+    for(auto& itr : _inpv)
+        std::cerr << " " << itr;
+    std::cerr << std::endl;
 
     auto _cerr = parser.parse_args(_inpv.size(), _inpv.data());
     if(help_check(parser, argc, argv))
         help_action(parser);
     else if(_cerr)
         throw std::runtime_error(_cerr.what());
+
+    _env          = _parser_data.current;
+    updated_envs  = _parser_data.updated;
+    original_envs = _parser_data.initial;
 
     return _outv;
 }
