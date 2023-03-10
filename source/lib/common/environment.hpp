@@ -26,6 +26,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 
@@ -79,9 +80,15 @@ get_env(std::string_view env_id, bool _default)
     char* env_var = ::std::getenv(env_id.data());
     if(env_var)
     {
+        if(std::string_view{ env_var }.empty())
+            throw std::runtime_error(std::string{ "No boolean value provided for " } +
+                                     std::string{ env_id });
+
         if(std::string_view{ env_var }.find_first_not_of("0123456789") ==
            std::string_view::npos)
+        {
             return static_cast<bool>(std::stoi(env_var));
+        }
         else
         {
             for(size_t i = 0; i < strlen(env_var); ++i)
