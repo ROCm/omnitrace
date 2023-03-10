@@ -1113,31 +1113,12 @@ add_core_arguments(parser_t& _parser, parser_data& _data)
 
     if(_data.environ_filter("cpu_events", _data))
     {
-        auto _choices = std::vector<std::string>{};
-        auto pevtitr  = tim::settings::instance()->find("papi_events");
-        if(pevtitr != tim::settings::instance()->end())
-        {
-            _choices = pevtitr->second->get_choices();
-            _choices.erase(
-                std::remove_if(_choices.begin(), _choices.end(),
-                               [](const auto& citr) {
-                                   return std::regex_search(
-                                              citr,
-                                              std::regex{ "[A-Za-z0-9]:([A-Za-z_]+)" }) ||
-                                          std::regex_search(citr, std::regex{ "io:::" });
-                               }),
-                _choices.end());
-            _choices.emplace_back(
-                "... run `omnitrace-avail -H -c CPU` for full list ...");
-        }
-
         _parser
             .add_argument({ "-C", "--cpu-events" },
                           "Set the CPU hardware counter events to record (ref: "
                           "`omnitrace-avail -H -c CPU`)")
             .min_count(1)
             .dtype("[EVENT ...]")
-            .choices(_choices)
             .action([&](parser_t& p) {
                 auto _events = join(array_config_t{ "," }, p.get<strvec_t>("cpu-events"));
                 update_env(_data, "OMNITRACE_PAPI_EVENTS", _events);
@@ -1150,22 +1131,12 @@ add_core_arguments(parser_t& _parser, parser_data& _data)
 #if defined(OMNITRACE_USE_ROCPROFILER)
     if(_data.environ_filter("gpu_events", _data))
     {
-        auto _choices = std::vector<std::string>{};
-        auto revtitr  = tim::settings::instance()->find("rocm_events");
-        if(revtitr != tim::settings::instance()->end())
-        {
-            _choices = revtitr->second->get_choices();
-            _choices.emplace_back(
-                "... run `omnitrace-avail -H -c GPU` for full list ...");
-        }
-
         _parser
             .add_argument({ "-G", "--gpu-events" },
                           "Set the GPU hardware counter events to record (ref: "
                           "`omnitrace-avail -H -c GPU`)")
             .min_count(1)
             .dtype("[EVENT ...]")
-            .choices(_choices)
             .action([&](parser_t& p) {
                 auto _events = join(array_config_t{ "," }, p.get<strvec_t>("gpu-events"));
                 update_env(_data, "OMNITRACE_ROCM_EVENTS", _events);
