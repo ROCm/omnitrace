@@ -695,11 +695,6 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
         }
     }
 
-    std::cerr << "Input: ";
-    for(auto& itr : _inpv)
-        std::cerr << " " << itr;
-    std::cerr << std::endl;
-
     auto _cerr = parser.parse_args(_inpv.size(), _inpv.data());
     if(help_check(parser, argc, argv))
         help_action(parser);
