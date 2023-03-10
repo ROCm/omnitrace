@@ -1171,7 +1171,6 @@ add_core_arguments(parser_t& _parser, parser_data& _data)
         _data.processed_environs.emplace("sampling_include_inlines");
     }
 
-#if defined(OMNITRACE_USE_ROCTRACER) || defined(OMNITRACE_USE_ROCPROFILER)
     if(_data.environ_filter("hsa_interrupt", _data))
     {
         _parser.add_argument({ "--hsa-interrupt" }, _hsa_interrupt_desc)
@@ -1184,7 +1183,6 @@ add_core_arguments(parser_t& _parser, parser_data& _data)
 
         _data.processed_environs.emplace("hsa_interrupt");
     }
-#endif
 
     _parser.end_group();
 
