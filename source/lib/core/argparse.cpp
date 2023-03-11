@@ -77,7 +77,7 @@ get_clock_id_choices()
 #undef OMNITRACE_CLOCK_IDENTIFIER
 
     return std::make_pair(_choices, _aliases);
-};
+}
 
 auto
 get_realpath(const std::string& _path)
