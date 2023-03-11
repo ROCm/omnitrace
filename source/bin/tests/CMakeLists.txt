@@ -493,14 +493,11 @@ omnitrace_add_bin_test(
          spin-locks
          -C
          perf::INSTRUCTIONS
-         -G
-         GPUBusy
          --inlines
          --hsa-interrupt
          0
          --use-causal=false
          --use-kokkosp
-         --use-mpip=0
          --num-threads-hint=4
          --sampling-allocator-size=32
          --ci
