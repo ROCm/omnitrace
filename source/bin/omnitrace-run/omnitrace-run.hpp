@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "core/argparse.hpp"
+
 #include <csignal>
 #include <map>
 #include <sched.h>
@@ -30,61 +32,22 @@
 #include <string_view>
 #include <vector>
 
-int
-get_verbose();
-
-std::string
-get_realpath(const std::string&);
+using parser_data_t = omnitrace::argparse::parser_data;
 
 void
-print_command(const std::vector<char*>& _argv, std::string_view);
-
-void print_updated_environment(std::vector<char*>, std::string_view);
-
-std::vector<char*>
-get_initial_environment();
+print_command(const parser_data_t&, std::string_view);
 
 void
-prepare_command_for_run(char*, std::vector<char*>&);
+print_updated_environment(parser_data_t&, std::string_view);
 
 void
-prepare_environment_for_run(std::vector<char*>&);
-
-std::string
-get_internal_libpath(const std::string& _lib);
-
-template <typename Tp>
-void
-update_env(std::vector<char*>&, std::string_view, Tp&&, bool _append = false,
-           std::string_view _join_delim = ":");
-
-template <typename Tp>
-void
-add_default_env(std::vector<char*>&, std::string_view, Tp&&);
+prepare_command_for_run(char*, parser_data_t&);
 
 void
-remove_env(std::vector<char*>&, std::string_view);
+prepare_environment_for_run(parser_data_t&);
 
-std::vector<char*>
-parse_args(int argc, char** argv, std::vector<char*>&);
+parser_data_t&
+parse_args(int argc, char** argv, parser_data_t&);
 
-using sigaction_t = struct sigaction;
-
-struct signal_handler
-{
-    sigaction_t m_custom_sigaction   = {};
-    sigaction_t m_original_sigaction = {};
-};
-
-void
-forward_signals(const std::set<int>&);
-
-void add_child_pid(pid_t);
-
-void remove_child_pid(pid_t);
-
-int
-wait_pid(pid_t, int = 0);
-
-int
-diagnose_status(pid_t, int);
+parser_data_t&
+parse_command(int argc, char** argv, parser_data_t&);

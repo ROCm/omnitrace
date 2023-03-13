@@ -33,8 +33,11 @@
 #include "core/timemory.hpp"
 
 #include <timemory/environment.hpp>
+#include <timemory/environment/types.hpp>
 #include <timemory/log/color.hpp>
+#include <timemory/settings/types.hpp>
 #include <timemory/settings/vsettings.hpp>
+#include <timemory/signals/signal_handlers.hpp>
 #include <timemory/utility/argparse.hpp>
 #include <timemory/utility/console.hpp>
 #include <timemory/utility/filepath.hpp>
@@ -62,9 +65,11 @@ namespace color    = ::tim::log::color;
 namespace filepath = ::tim::filepath;  // NOLINT
 namespace console  = ::tim::utility::console;
 namespace argparse = ::tim::argparse;
-using namespace timemory::join;
-using tim::get_env;
-using tim::log::stream;
+namespace signals  = ::tim::signals;
+using settings     = ::omnitrace::settings;
+using namespace ::timemory::join;
+using ::tim::get_env;
+using ::tim::log::stream;
 
 namespace std
 {
@@ -77,191 +82,43 @@ to_string(bool _v)
 
 namespace
 {
-int  verbose       = 0;
-auto updated_envs  = std::set<std::string_view>{};
-auto original_envs = std::set<std::string>{};
-auto child_pids    = std::set<pid_t>{};
-auto launcher      = std::string{};
-
-inline signal_handler&
-get_signal_handler(int _sig)
+std::string
+get_internal_libpath(const std::string& _lib)
 {
-    static auto _v  = std::unordered_map<int, signal_handler>{};
-    auto        itr = _v.emplace(_sig, signal_handler{});
-    return itr.first->second;
+    auto _exe = std::string_view{ realpath("/proc/self/exe", nullptr) };
+    auto _pos = _exe.find_last_of('/');
+    auto _dir = std::string{ "./" };
+    if(_pos != std::string_view::npos) _dir = _exe.substr(0, _pos);
+    return omnitrace::common::join("/", _dir, "..", "lib", _lib);
 }
 
-void
-create_signal_handler(int sig, signal_handler& sh, void (*func)(int))
+parser_data_t&
+get_initial_environment(parser_data_t& _data)
 {
-    if(sig < 1) return;
-    sh.m_custom_sigaction.sa_handler = func;
-    sigemptyset(&sh.m_custom_sigaction.sa_mask);
-    sh.m_custom_sigaction.sa_flags = SA_RESTART;
-    if(sigaction(sig, &sh.m_custom_sigaction, &sh.m_original_sigaction) == -1)
+    if(environ != nullptr)
     {
-        std::cerr << "Failed to create signal handler for " << sig << std::endl;
+        int idx = 0;
+        while(environ[idx] != nullptr)
+        {
+            auto* _v = environ[idx++];
+            _data.initial.emplace(_v);
+            _data.current.emplace_back(strdup(_v));
+        }
     }
-}
 
-void
-forward_signal(int sig)
-{
-    for(auto itr : child_pids)
-    {
-        TIMEMORY_PRINTF_WARNING(stderr, "Killing pid=%i with signal %i...\n", itr, sig);
-        kill(itr, sig);
-        diagnose_status(itr, wait_pid(itr));
-    }
-    signal(sig, SIG_DFL);
-    kill(getpid(), sig);
+    return _data;
 }
-}  // namespace
 
 int
-get_verbose()
+get_verbose(parser_data_t& _data)
 {
-    verbose = get_env("OMNITRACE_CAUSAL_VERBOSE",
+    auto& verbose = _data.verbose;
+    verbose       = get_env("OMNITRACE_CAUSAL_VERBOSE",
                       get_env<int>("OMNITRACE_VERBOSE", verbose, false));
     auto _debug =
         get_env("OMNITRACE_CAUSAL_DEBUG", get_env<bool>("OMNITRACE_DEBUG", false, false));
     if(_debug) verbose += 8;
     return verbose;
-}
-
-void
-forward_signals(const std::set<int>& _signals)
-{
-    for(auto itr : _signals)
-        create_signal_handler(itr, get_signal_handler(itr), &forward_signal);
-}
-
-void
-add_child_pid(pid_t _v)
-{
-    child_pids.emplace(_v);
-}
-
-void
-remove_child_pid(pid_t _v)
-{
-    child_pids.erase(_v);
-}
-
-int
-wait_pid(pid_t _pid, int _opts)
-{
-    int   _status = 0;
-    pid_t _pid_v  = -1;
-    _opts |= WUNTRACED;
-    do
-    {
-        if((_opts & WNOHANG) > 0)
-            std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
-        _pid_v = waitpid(_pid, &_status, _opts);
-    } while(_pid <= 0);
-    return _status;
-}
-
-int
-diagnose_status(pid_t _pid, int _status)
-{
-    auto _verbose = get_verbose();
-    if(_verbose >= 3)
-    {
-        fflush(stderr);
-        fflush(stdout);
-        std::cout << std::flush;
-        std::cerr << std::flush;
-    }
-
-    bool _normal_exit      = (WIFEXITED(_status) > 0);
-    bool _unhandled_signal = (WIFSIGNALED(_status) > 0);
-    bool _core_dump        = (WCOREDUMP(_status) > 0);
-    bool _stopped          = (WIFSTOPPED(_status) > 0);
-    int  _exit_status      = WEXITSTATUS(_status);
-    int  _stop_signal      = (_stopped) ? WSTOPSIG(_status) : 0;
-    int  _ec               = (_unhandled_signal) ? WTERMSIG(_status) : 0;
-
-    if(_verbose >= 4)
-    {
-        TIMEMORY_PRINTF_INFO(
-            stderr,
-            "diagnosing status for process %i :: status: %i... normal exit: %s, "
-            "unhandled signal: %s, core dump: %s, stopped: %s, exit status: %i, stop "
-            "signal: %i, exit code: %i\n",
-            _pid, _status, std::to_string(_normal_exit).c_str(),
-            std::to_string(_unhandled_signal).c_str(), std::to_string(_core_dump).c_str(),
-            std::to_string(_stopped).c_str(), _exit_status, _stop_signal, _ec);
-    }
-    else if(_verbose >= 3)
-    {
-        TIMEMORY_PRINTF_INFO(stderr,
-                             "diagnosing status for process %i :: status: %i ...\n", _pid,
-                             _status);
-    }
-
-    if(!_normal_exit)
-    {
-        if(_ec == 0) _ec = EXIT_FAILURE;
-        if(_verbose >= 0)
-        {
-            TIMEMORY_PRINTF_FATAL(
-                stderr, "process %i terminated abnormally. exit code: %i\n", _pid, _ec);
-        }
-    }
-
-    if(_stopped)
-    {
-        if(_verbose >= 0)
-        {
-            TIMEMORY_PRINTF_FATAL(stderr,
-                                  "process %i stopped with signal %i. exit code: %i\n",
-                                  _pid, _stop_signal, _ec);
-        }
-    }
-
-    if(_core_dump)
-    {
-        if(_verbose >= 0)
-        {
-            TIMEMORY_PRINTF_FATAL(
-                stderr, "process %i terminated and produced a core dump. exit code: %i\n",
-                _pid, _ec);
-        }
-    }
-
-    if(_unhandled_signal)
-    {
-        if(_verbose >= 0)
-        {
-            TIMEMORY_PRINTF_FATAL(stderr,
-                                  "process %i terminated because it received a signal "
-                                  "(%i) that was not handled. exit code: %i\n",
-                                  _pid, _ec, _ec);
-        }
-    }
-
-    if(!_normal_exit && _exit_status > 0)
-    {
-        if(_verbose >= 0)
-        {
-            if(_exit_status == 127)
-            {
-                TIMEMORY_PRINTF_FATAL(
-                    stderr, "execv in process %i failed. exit code: %i\n", _pid, _ec);
-            }
-            else
-            {
-                TIMEMORY_PRINTF_FATAL(
-                    stderr,
-                    "process %i terminated with a non-zero status. exit code: %i\n", _pid,
-                    _ec);
-            }
-        }
-    }
-
-    return _ec;
 }
 
 std::string
@@ -273,9 +130,24 @@ get_realpath(const std::string& _v)
     return _ret;
 }
 
-void
-print_command(const std::vector<char*>& _argv, std::string_view _prefix)
+auto
+toggle_suppression(std::tuple<bool, bool> _inp)
 {
+    auto _out =
+        std::make_tuple(settings::suppress_config(), settings::suppress_parsing());
+    std::tie(settings::suppress_config(), settings::suppress_parsing()) = _inp;
+    return _out;
+}
+
+// disable suppression when exe loads but store original values for restoration later
+auto initial_suppression = toggle_suppression({ true, true });
+}  // namespace
+
+void
+print_command(const parser_data_t& _data, std::string_view _prefix)
+{
+    auto        verbose = _data.verbose;
+    const auto& _argv   = _data.command;
     if(verbose >= 1)
         stream(std::cout, color::info())
             << _prefix << "Executing '" << join(array_config{ " " }, _argv) << "'...\n";
@@ -283,34 +155,16 @@ print_command(const std::vector<char*>& _argv, std::string_view _prefix)
     std::cerr << color::end() << std::flush;
 }
 
-std::vector<char*>
-get_initial_environment()
-{
-    std::vector<char*> _env;
-    if(environ != nullptr)
-    {
-        int idx = 0;
-        while(environ[idx] != nullptr)
-        {
-            auto* _v = environ[idx++];
-            original_envs.emplace(_v);
-            _env.emplace_back(strdup(_v));
-        }
-    }
-
-    return _env;
-}
-
 void
-prepare_command_for_run(char* _exe, std::vector<char*>& _argv)
+prepare_command_for_run(char* _exe, parser_data_t& _data)
 {
-    if(!launcher.empty())
+    if(!_data.launcher.empty())
     {
         bool _injected = false;
         auto _new_argv = std::vector<char*>{};
-        for(auto* itr : _argv)
+        for(auto* itr : _data.command)
         {
-            if(!_injected && std::regex_search(itr, std::regex{ launcher }))
+            if(!_injected && std::regex_search(itr, std::regex{ _data.launcher }))
             {
                 _new_argv.emplace_back(_exe);
                 _new_argv.emplace_back(strdup("--"));
@@ -322,40 +176,33 @@ prepare_command_for_run(char* _exe, std::vector<char*>& _argv)
         if(!_injected)
         {
             throw std::runtime_error(
-                join("", "omnitrace-run was unable to match \"", launcher,
+                join("", "omnitrace-run was unable to match \"", _data.launcher,
                      "\" to any arguments on the command line: \"",
-                     join(array_config{ " ", "", "" }, _argv), "\""));
+                     join(array_config{ " ", "", "" }, _data.command), "\""));
         }
 
-        std::swap(_argv, _new_argv);
+        std::swap(_data.command, _new_argv);
     }
 }
 
 void
-prepare_environment_for_run(std::vector<char*>& _env)
+prepare_environment_for_run(parser_data_t& _data)
 {
-    if(launcher.empty())
+    if(_data.launcher.empty())
     {
-        update_env(_env, "LD_PRELOAD",
-                   join(":", get_realpath(get_internal_libpath("libomnitrace-dl.so"))),
-                   true);
+        omnitrace::argparse::add_ld_preload(_data);
     }
 }
 
-std::string
-get_internal_libpath(const std::string& _lib)
-{
-    auto _exe = std::string_view{ realpath("/proc/self/exe", nullptr) };
-    auto _pos = _exe.find_last_of('/');
-    auto _dir = std::string{ "./" };
-    if(_pos != std::string_view::npos) _dir = _exe.substr(0, _pos);
-    return omnitrace::common::join("/", _dir, "..", "lib", _lib);
-}
-
 void
-print_updated_environment(std::vector<char*> _env, std::string_view _prefix)
+print_updated_environment(parser_data_t& _data, std::string_view _prefix)
 {
-    if(get_verbose() < 0) return;
+    auto _verbose = get_verbose(_data);
+
+    if(_verbose < 0) return;
+
+    auto        _env          = _data.current;
+    const auto& _updated_envs = _data.updated;
 
     std::sort(_env.begin(), _env.end(), [](auto* _lhs, auto* _rhs) {
         if(!_lhs) return false;
@@ -372,7 +219,7 @@ print_updated_environment(std::vector<char*> _env, std::string_view _prefix)
 
         auto _is_omni = (std::string_view{ itr }.find("OMNITRACE") == 0);
         auto _updated = false;
-        for(const auto& vitr : updated_envs)
+        for(const auto& vitr : _updated_envs)
         {
             if(std::string_view{ itr }.find(vitr) == 0)
             {
@@ -383,11 +230,11 @@ print_updated_environment(std::vector<char*> _env, std::string_view _prefix)
 
         if(_updated)
             _updates.emplace_back(itr);
-        else if(verbose >= 1 && _is_omni)
+        else if(_verbose >= 1 && _is_omni)
             _general.emplace_back(itr);
     }
 
-    if(_general.size() + _updates.size() == 0 || verbose < 0) return;
+    if(_general.size() + _updates.size() == 0 || _verbose < 0) return;
 
     std::cerr << std::endl;
 
@@ -399,114 +246,38 @@ print_updated_environment(std::vector<char*> _env, std::string_view _prefix)
     std::cerr << color::end() << std::flush;
 }
 
-template <typename Tp>
-void
-update_env(std::vector<char*>& _environ, std::string_view _env_var, Tp&& _env_val,
-           bool _append, std::string_view _join_delim)
+parser_data_t&
+parse_args(int argc, char** argv, parser_data_t& _parser_data)
 {
-    updated_envs.emplace(_env_var);
+    get_initial_environment(_parser_data);
 
-    auto _key = join("", _env_var, "=");
-    for(auto& itr : _environ)
+    bool _do_parse_args = false;
+    for(int i = 1; i < argc; ++i)
     {
-        if(!itr) continue;
-        if(std::string_view{ itr }.find(_key) == 0)
-        {
-            if(_append)
-            {
-                if(std::string_view{ itr }.find(join("", _env_val)) ==
-                   std::string_view::npos)
-                {
-                    auto _val = std::string{ itr }.substr(_key.length());
-                    free(itr);
-                    if(_env_var == "LD_PRELOAD")
-                    {
-                        itr =
-                            strdup(join('=', _env_var, join(_join_delim, _val, _env_val))
-                                       .c_str());
-                    }
-                    else
-                    {
-                        itr =
-                            strdup(join('=', _env_var, join(_join_delim, _env_val, _val))
-                                       .c_str());
-                    }
-                }
-            }
-            else
-            {
-                free(itr);
-                itr = strdup(omnitrace::common::join('=', _env_var, _env_val).c_str());
-            }
-            return;
-        }
-    }
-    _environ.emplace_back(
-        strdup(omnitrace::common::join('=', _env_var, _env_val).c_str()));
-}
-
-template <typename Tp>
-void
-add_default_env(std::vector<char*>& _environ, std::string_view _env_var, Tp&& _env_val)
-{
-    auto _key = join("", _env_var, "=");
-    for(auto& itr : _environ)
-    {
-        if(!itr) continue;
-        if(std::string_view{ itr }.find(_key) == 0) return;
+        auto _arg = std::string_view{ argv[i] };
+        if(_arg == "--" || _arg == "-?" || _arg == "-h" || _arg == "--help" ||
+           _arg == "--version")
+            _do_parse_args = true;
     }
 
-    updated_envs.emplace(_env_var);
-    _environ.emplace_back(
-        strdup(omnitrace::common::join('=', _env_var, _env_val).c_str()));
-}
+    if(!_do_parse_args && argc > 1 && std::string_view{ argv[1] }.find('-') == 0)
+        _do_parse_args = true;
 
-void
-remove_env(std::vector<char*>& _environ, std::string_view _env_var)
-{
-    auto _key   = join("", _env_var, "=");
-    auto _match = [&_key](auto itr) { return std::string_view{ itr }.find(_key) == 0; };
+    if(!_do_parse_args) return parse_command(argc, argv, _parser_data);
 
-    _environ.erase(std::remove_if(_environ.begin(), _environ.end(), _match),
-                   _environ.end());
-
-    for(const auto& itr : original_envs)
-    {
-        if(std::string_view{ itr }.find(_key) == 0)
-            _environ.emplace_back(strdup(itr.c_str()));
-    }
-}
-
-std::vector<char*>
-parse_args(int argc, char** argv, std::vector<char*>& _env)
-{
     using parser_t     = argparse::argument_parser;
     using parser_err_t = typename parser_t::result_type;
 
-    omnitrace::set_state(omnitrace::State::Init);
-    omnitrace::config::configure_settings(false);
+    toggle_suppression(initial_suppression);
+    omnitrace::argparse::init_parser(_parser_data);
+
+    // no need for backtraces
+    signals::disable_signal_detection(signals::signal_settings::get_enabled());
 
     auto help_check = [](parser_t& p, int _argc, char** _argv) {
         std::set<std::string> help_args = { "-h", "--help", "-?" };
         return (p.exists("help") || _argc == 1 ||
                 (_argc > 1 && help_args.find(_argv[1]) != help_args.end()));
-    };
-
-    auto _pec        = EXIT_SUCCESS;
-    auto help_action = [&_pec, argc, argv](parser_t& p) {
-        if(_pec != EXIT_SUCCESS)
-        {
-            std::stringstream msg;
-            msg << "Error in command:";
-            for(int i = 0; i < argc; ++i)
-                msg << " " << argv[i];
-            msg << "\n\n";
-            stream(std::cerr, color::fatal()) << msg.str();
-            std::cerr << std::flush;
-        }
-
-        p.print_help();
-        exit(_pec);
     };
 
     const auto* _desc = R"desc(
@@ -520,7 +291,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
         exit(EXIT_FAILURE);
     });
 
-    parser.enable_help();
+    parser.enable_help("", "Usage: omnitrace-run <OPTIONS> -- <COMMAND> <ARGS>");
     parser.enable_version("omnitrace-run", "v" OMNITRACE_VERSION_STRING,
                           OMNITRACE_GIT_DESCRIBE, OMNITRACE_GIT_REVISION);
 
@@ -529,152 +300,15 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
         parser.set_description_width(
             std::min<int>(_cols - parser.get_help_width() - 8, 120));
 
-    /*
-    auto _added = std::set<std::string>{};
+    // disable options related to causal profiling
+    _parser_data.processed_groups.emplace("causal");
 
-    auto _get_name = [](const std::shared_ptr<tim::vsettings>& itr) {
-        auto _name = itr->get_name();
-        auto _pos  = std::string::npos;
-        while((_pos = _name.find('_')) != std::string::npos)
-            _name = _name.replace(_pos, 1, "-");
-        return _name;
-    };
-
-    auto _add_option = [&parser, &_env,
-                        &_added](const std::string&                     _name,
-                                 const std::shared_ptr<tim::vsettings>& itr) {
-        if(_added.find(_name) != _added.end()) return false;
-
-        _added.emplace(_name);
-
-        auto _opt_name = std::string{ "--" } + _name;
-        itr->set_command_line({ _opt_name });
-        auto* _arg = static_cast<parser_t::argument*>(itr->add_argument(parser));
-        if(_arg)
-        {
-            _arg->action([&](parser_t& p) {
-                using namespace timemory::join;
-                update_env(_env, itr->get_env_name(),
-                           join(array_config{ " ", "", "" },
-                                p.get<std::vector<std::string>>(_name)));
-            });
-        }
-        else
-        {
-            TIMEMORY_PRINTF_WARNING(stderr, "Warning! Option %s (%s) is not enabled\n",
-                                    _name.c_str(), itr->get_env_name().c_str());
-            parser.add_argument({ _opt_name }, itr->get_description())
-                .action([&](parser_t& p) {
-                    using namespace timemory::join;
-                    update_env(_env, itr->get_env_name(),
-                               join(array_config{ " ", "", "" },
-                                    p.get<std::vector<std::string>>(_name)));
-                });
-        }
-        return true;
-    };
-
-    auto _category_count_map = std::unordered_map<std::string, uint32_t>{};
-    auto _settings           = std::vector<std::shared_ptr<tim::vsettings>>{};
-    for(auto& itr : *omnitrace::settings::instance())
-    {
-        if(itr.second->get_categories().count("omnitrace") == 0) continue;
-        if(itr.second->get_categories().count("deprecated") > 0) continue;
-        if(itr.second->get_hidden()) continue;
-
-        itr.second->set_enabled(true);
-        _settings.emplace_back(itr.second);
-
-        if(itr.second->get_name() == "papi_events")
-        {
-            auto _choices = itr.second->get_choices();
-            _choices.erase(
-                std::remove_if(_choices.begin(), _choices.end(),
-                               [](const auto& itr) {
-                                   return std::regex_search(
-                                              itr,
-                                              std::regex{ "[A-Za-z0-9]:([A-Za-z_]+)" }) ||
-                                          std::regex_search(itr, std::regex{ "io:::" });
-                               }),
-                _choices.end());
-            _choices.emplace_back(
-                "... run `omnitrace-avail -H -c CPU` for full list ...");
-            itr.second->set_choices(_choices);
-        }
-
-        for(const auto& citr : itr.second->get_categories())
-        {
-            if(std::regex_search(
-                   citr, std::regex{
-                             "omnitrace|timemory|^(native|custom|advanced|analysis)$" }))
-                continue;
-            _category_count_map[citr] += 1;
-        }
-    }
-
-    auto _category_count_vec = std::vector<std::string>{};
-    for(const auto& itr : _category_count_map)
-        _category_count_vec.emplace_back(itr.first);
-
-    std::sort(_category_count_vec.begin(), _category_count_vec.end(),
-              [&_category_count_map](const auto& _lhs, const auto& _rhs) {
-                  auto _lhs_v = _category_count_map.at(_lhs);
-                  auto _rhs_v = _category_count_map.at(_rhs);
-                  if(_lhs_v == _rhs_v) return _lhs < _rhs;
-                  return _lhs_v > _rhs_v;
-              });
-
-    auto _groups =
-        std::unordered_map<std::string, std::vector<std::shared_ptr<tim::vsettings>>>{};
-    for(const auto& citr : _category_count_vec)
-    {
-        _groups[citr] = {};
-        for(const auto& itr : _settings)
-        {
-            if(itr->get_categories().count(citr) > 0) _groups[citr].emplace_back(itr);
-        }
-        _settings.erase(std::remove_if(_settings.begin(), _settings.end(),
-                                       [&citr](const auto& itr) {
-                                           return itr->get_categories().count(citr) > 0;
-                                       }),
-                        _settings.end());
-    }
-
-    for(const auto& citr : _category_count_vec)
-    {
-        auto _group = _groups.at(citr);
-        if(_group.empty()) continue;
-
-        auto _group_name = citr;
-        for(auto& c : _group_name)
-            c = toupper(c);
-
-        std::sort(_group.begin(), _group.end(), [](const auto& _lhs, const auto& _rhs) {
-            auto _lhs_v = _lhs->get_name();
-            auto _rhs_v = _rhs->get_name();
-            if(_lhs_v.length() > 4 && _rhs_v.length() > 4 &&
-               _lhs_v.substr(0, 4) == _rhs_v.substr(0, 4))
-                return _lhs_v < _rhs_v;
-            return _lhs_v.length() < _rhs_v.length();
-        });
-
-        parser.start_group(_group_name);
-        for(const auto& itr : _group)
-            _add_option(_get_name(itr), itr);
-        parser.end_group();
-    }
-    */
-
-    using parser_data_t = omnitrace::argparse::parser_data;
-
-    auto _parser_data = parser_data_t{};
-    omnitrace::argparse::init_parser(_parser_data);
     omnitrace::argparse::add_core_arguments(parser, _parser_data);
     omnitrace::argparse::add_extended_arguments(parser, _parser_data);
 
-    auto _inpv = std::vector<char*>{};
-    auto _outv = std::vector<char*>{};
-    bool _hash = false;
+    auto  _inpv = std::vector<char*>{};
+    auto& _outv = _parser_data.command;
+    bool  _hash = false;
     for(int i = 0; i < argc; ++i)
     {
         if(argv[i] == nullptr)
@@ -696,19 +330,30 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
     }
 
     auto _cerr = parser.parse_args(_inpv.size(), _inpv.data());
-    if(help_check(parser, argc, argv))
-        help_action(parser);
-    else if(_cerr)
-        throw std::runtime_error(_cerr.what());
+    if(_cerr)
+    {
+        std::cerr << _cerr.what() << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
-    _env          = _parser_data.current;
-    updated_envs  = _parser_data.updated;
-    original_envs = _parser_data.initial;
-
-    return _outv;
+    return _parser_data;
 }
 
-// explicit instantiation for usage in omnitrace-run.cpp
-template void
-update_env(std::vector<char*>&, std::string_view, const std::string& _env_val,
-           bool _append, std::string_view);
+parser_data_t&
+parse_command(int argc, char** argv, parser_data_t& _parser_data)
+{
+    toggle_suppression(initial_suppression);
+    omnitrace::argparse::init_parser(_parser_data);
+
+    // no need for backtraces
+    signals::disable_signal_detection(signals::signal_settings::get_enabled());
+
+    auto& _outv = _parser_data.command;
+    bool  _hash = false;
+    for(int i = 1; i < argc; ++i)
+    {
+        _outv.emplace_back(strdup(argv[i]));
+    }
+
+    return _parser_data;
+}

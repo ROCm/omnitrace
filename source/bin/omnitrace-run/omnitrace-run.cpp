@@ -22,10 +22,12 @@
 
 #include "omnitrace-run.hpp"
 
+#include <timemory/log/color.hpp>
 #include <timemory/log/macros.hpp>
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -33,43 +35,47 @@
 #include <string_view>
 #include <unistd.h>
 
+namespace
+{
+auto* _getenv_at_load = getenv("TIMEMORY_LIBRARY_CTOR");
+auto  _setenv_at_load = setenv("TIMEMORY_LIBRARY_CTOR", "0", 0);
+}  // namespace
+
 int
 main(int argc, char** argv)
 {
-    auto _base_env = get_initial_environment();
-
-    bool _has_double_hyphen = false;
-    for(int i = 1; i < argc; ++i)
-    {
-        auto _arg = std::string_view{ argv[i] };
-        if(_arg == "--" || _arg == "-?" || _arg == "-h" || _arg == "--help" ||
-           _arg == "--version")
-            _has_double_hyphen = true;
-    }
-
-    std::vector<char*> _argv = {};
-    if(_has_double_hyphen)
-    {
-        _argv = parse_args(argc, argv, _base_env);
-    }
+    if(!_getenv_at_load)
+        unsetenv("TIMEMORY_LIBRARY_CTOR");
     else
+        setenv("TIMEMORY_LIBRARY_CTOR", _getenv_at_load, 1);
+
+    auto _print_usage = [argv]() {
+        std::cerr << tim::log::color::fatal() << "Usage: " << argv[0]
+                  << " <OPTIONS> -- <COMMAND> <ARGS>" << std::endl;
+    };
+
+    if(argc == 1)
     {
-        _argv.reserve(argc);
-        for(int i = 1; i < argc; ++i)
-            _argv.emplace_back(argv[i]);
+        _print_usage();
+        return EXIT_FAILURE;
     }
 
-    prepare_command_for_run(argv[0], _argv);
-    prepare_environment_for_run(_base_env);
+    auto _parse_data = parser_data_t{};
+    parse_args(argc, argv, _parse_data);
+    prepare_command_for_run(argv[0], _parse_data);
+    prepare_environment_for_run(_parse_data);
 
+    auto& _argv = _parse_data.command;
+    auto& _envp = _parse_data.current;
     if(!_argv.empty())
     {
-        forward_signals({ SIGINT, SIGTERM, SIGQUIT });
-
-        print_updated_environment(_base_env, "OMNITRACE: ");
-        print_command(_argv, "OMNITRACE: ");
+        print_updated_environment(_parse_data, "OMNITRACE: ");
+        print_command(_parse_data, "OMNITRACE: ");
         _argv.emplace_back(nullptr);
-        _base_env.emplace_back(nullptr);
-        return execvpe(_argv.front(), _argv.data(), _base_env.data());
+        _envp.emplace_back(nullptr);
+        return execvpe(_argv.front(), _argv.data(), _envp.data());
     }
+
+    _print_usage();
+    return EXIT_FAILURE;
 }
