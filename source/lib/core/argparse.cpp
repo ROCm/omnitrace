@@ -96,7 +96,7 @@ enum update_mode : int
 template <typename Tp>
 void
 update_env(parser_data& _data, std::string_view _env_var, Tp&& _env_val,
-           update_mode&& _mode = UPD_REPLACE)
+           update_mode&& _mode = UPD_REPLACE, std::string_view _join_delim = ":")
 {
     _data.updated.emplace(_env_var);
 
@@ -125,11 +125,13 @@ update_env(parser_data& _data, std::string_view _env_var, Tp&& _env_val,
                     auto _val = std::string{ itr }.substr(_key.length());
                     free(itr);
                     if(_prepend)
-                        itr = strdup(
-                            join('=', _env_var, join(":", _val, _env_val)).c_str());
+                        itr =
+                            strdup(join('=', _env_var, join(_join_delim, _val, _env_val))
+                                       .c_str());
                     else
-                        itr = strdup(
-                            join('=', _env_var, join(":", _env_val, _val)).c_str());
+                        itr =
+                            strdup(join('=', _env_var, join(_join_delim, _env_val, _val))
+                                       .c_str());
                 }
             }
             else
@@ -217,9 +219,6 @@ init_parser(parser_data& _data)
         }
     }
 
-    update_env(_data, "LD_PRELOAD",
-               get_realpath(get_internal_libpath("libomnitrace-dl.so")), UPD_APPEND);
-
     _data.dl_libpath   = get_realpath(get_internal_libpath("libomnitrace-dl.so").c_str());
     _data.omni_libpath = get_realpath(get_internal_libpath("libomnitrace.so").c_str());
 
@@ -239,6 +238,13 @@ init_parser(parser_data& _data)
         update_env(_data, "OMP_TOOL_LIBRARIES", _data.dl_libpath, UPD_PREPEND);
 #endif
 
+    return _data;
+}
+
+parser_data&
+add_ld_preload(parser_data& _data)
+{
+    update_env(_data, "LD_PRELOAD", _data.dl_libpath, UPD_APPEND);
     return _data;
 }
 
@@ -334,6 +340,7 @@ add_core_arguments(parser_t& _parser, parser_data& _data)
     }
 
     add_group_arguments(_parser, "debugging", _data);
+    add_group_arguments(_parser, "mode", _data, true);
 
     _parser.start_group("GENERAL OPTIONS",
                         "These are options which are ubiquitously applied");
@@ -685,6 +692,28 @@ add_core_arguments(parser_t& _parser, parser_data& _data)
 
     add_group_arguments(_parser, "backend", _data);
     add_group_arguments(_parser, "parallelism", _data, true);
+
+    if(_data.environ_filter("launcher", _data))
+    {
+        _parser
+            .add_argument(
+                { "-l", "--launcher" },
+                "When running MPI jobs, typically the associated '--' for this "
+                "executable should be right before the target executable, e.g. `mpirun "
+                "-n 2 <THIS_EXE> -- <TARGET_EXE> <TARGET_EXE_ARGS...>`. This options "
+                "enables prefixing the entire command (i.e. before `mpirun`, `srun`, "
+                "etc.). Pass the name of the target executable (or a regex for matching "
+                "to the name of the target) as the argument to this option and this "
+                "executable will insert itself a second time in the appropriate "
+                "location, e.g. `<THIS_EXE> --launcher sleep -- mpirun -n 2 sleep 10` is "
+                "equivalent to `mpirun -n 2 <THIS_EXE> -- sleep 10`")
+            .count(1)
+            .dtype("target-exe")
+            .action(
+                [&](parser_t& p) { _data.launcher = p.get<std::string>("launcher"); });
+
+        _data.processed_environs.emplace("launcher");
+    }
 
     _parser.start_group("TRACING OPTIONS", "Specific options controlling tracing (i.e. "
                                            "deterministic measurements of every event)");
@@ -1193,6 +1222,8 @@ parser_data&
 add_group_arguments(parser_t& _parser, const std::string& _group_name, parser_data& _data,
                     bool _add_group)
 {
+    if(!_data.grouping_filter(_group_name, _data)) return _data;
+
     auto _get_name = [](const std::shared_ptr<tim::vsettings>& itr) {
         auto _name = itr->get_name();
         auto _pos  = std::string::npos;

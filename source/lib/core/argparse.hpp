@@ -62,10 +62,12 @@ struct parser_data
     int                        verbose            = 0;
     std::string                dl_libpath         = {};
     std::string                omni_libpath       = {};
+    std::string                launcher           = {};
     vsettings_set_t            processed_settings = {};
     std::set<std::string>      processed_environs = {};
     std::set<std::string>      processed_groups   = {};
     std::vector<char*>         current            = {};
+    std::vector<char*>         command            = {};
     std::set<std::string_view> updated            = {};
     std::set<std::string>      initial            = {};
     grouping_filter_t          grouping_filter    = default_grouping_filter;
@@ -75,6 +77,9 @@ struct parser_data
 
 parser_data&
 init_parser(parser_data&);
+
+parser_data&
+add_ld_preload(parser_data&);
 
 parser_data&
 add_core_arguments(parser_t&, parser_data&);
