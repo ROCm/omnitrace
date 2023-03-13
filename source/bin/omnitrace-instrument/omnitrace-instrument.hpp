@@ -29,6 +29,7 @@
 #include "module_function.hpp"
 
 #include <timemory/utility/filepath.hpp>
+#include <timemory/utility/join.hpp>
 
 #include <dlfcn.h>
 #include <ios>
@@ -172,7 +173,9 @@ omnitrace_get_is_executable(std::string_view _cmd, bool _default_v)
 //
 static inline address_space_t*
 omnitrace_get_address_space(patch_pointer_t& _bpatch, int _cmdc, char** _cmdv,
-                            bool _rewrite, int _pid = -1, const std::string& _name = {})
+                            const std::vector<std::string>& _cmdenv,
+                            const std::string& _omni_dl_lib, bool _rewrite, int _pid = -1,
+                            const std::string& _name = {})
 {
     address_space_t* mutatee = nullptr;
 
@@ -196,51 +199,102 @@ omnitrace_get_address_space(patch_pointer_t& _bpatch, int _cmdc, char** _cmdv,
         }
         verbprintf_bare(1, "Done\n");
     }
-    else if(_pid >= 0)
-    {
-        verbprintf(1, "Attaching to process %i... ", _pid);
-        fflush(stderr);
-        char* _cmdv0 = (_cmdc > 0) ? _cmdv[0] : nullptr;
-        mutatee      = _bpatch->processAttach(_cmdv0, _pid);
-        if(!mutatee)
-        {
-            verbprintf(-1, "Failed to connect to process %i\n", (int) _pid);
-            throw std::runtime_error("Failed to attach to process");
-        }
-        verbprintf_bare(1, "Done\n");
-    }
     else
     {
-        if(_cmdc < 1) errprintf(-127, "No command provided");
+        bool _attach = (_pid >= 0);
 
-        if(is_text_file(_cmdv[0]))
+        // override the current environment create/attach to process, revert environment
+        using strpair_t    = std::pair<std::string, std::string>;
+        auto _imported     = std::vector<strpair_t>{};
+        auto _exported     = std::vector<strpair_t>{};
+        auto _get_env_pair = [](const std::string& _full) {
+            auto _pos = _full.find('=');
+            if(_pos < _full.length())
+                return std::make_pair(_full.substr(0, _pos), _full.substr(_pos + 1));
+            return strpair_t{};
+        };
+
+        if(environ)
         {
-            errprintf(-1,
-                      "'%s' is a text file. OmniTrace only supports instrumenting "
-                      "binary files",
-                      _cmdv[0]);
+            size_t _idx = 0;
+            while(environ[_idx] != nullptr)
+                _imported.emplace_back(_get_env_pair(environ[_idx++]));
         }
 
-        std::stringstream ss;
-        for(int i = 0; i < _cmdc; ++i)
+        for(const auto& itr : _cmdenv)
         {
-            if(!_cmdv || !_cmdv[i]) continue;
-            ss << " " << _cmdv[i];
+            _exported.emplace_back(_get_env_pair(itr));
         }
-        auto _cmd_msg = ss.str();
-        if(_cmd_msg.length() > 1) _cmd_msg = _cmd_msg.substr(1);
 
-        char** _environ = environ;
-        verbprintf(1, "Creating process '%s'... ", _cmd_msg.c_str());
-        fflush(stderr);
-        mutatee = _bpatch->processCreate(_cmdv[0], (const char**) _cmdv,
-                                         (const char**) _environ);
-        if(!mutatee)
+        if(!_attach && !_omni_dl_lib.empty())
         {
-            verbprintf(-1, "Failed to create process: '%s'\n", _cmd_msg.c_str());
-            throw std::runtime_error("Failed to create process");
+            using ::timemory::join::join;
+            bool _found_ldpreload = false;
+            for(auto& itr : _imported)
+            {
+                if(itr.first == "LD_PRELOAD")
+                {
+                    _exported.emplace_back(
+                        strpair_t{ "LD_PRELOAD", join(":", itr.second, _omni_dl_lib) });
+                    _found_ldpreload = true;
+                    break;
+                }
+            }
+
+            if(!_found_ldpreload)
+                _exported.emplace_back(strpair_t{ "LD_PRELOAD", _omni_dl_lib });
         }
-        verbprintf_bare(1, "Done\n");
+
+        for(const auto& itr : _exported)
+        {
+            setenv(itr.first.c_str(), itr.second.c_str(), 1);
+            verbprintf(4, "[env] %s=%s\n", itr.first.c_str(), itr.second.c_str());
+        }
+
+        if(_attach)
+        {
+            verbprintf(1, "Attaching to process %i... ", _pid);
+            fflush(stderr);
+            char* _cmdv0 = (_cmdc > 0) ? _cmdv[0] : nullptr;
+            mutatee      = _bpatch->processAttach(_cmdv0, _pid);
+            if(!mutatee)
+            {
+                verbprintf(-1, "Failed to connect to process %i\n", (int) _pid);
+                throw std::runtime_error("Failed to attach to process");
+            }
+            verbprintf_bare(1, "Done\n");
+        }
+        else
+        {
+            if(_cmdc < 1) errprintf(-127, "No command provided");
+
+            if(is_text_file(_cmdv[0]))
+            {
+                errprintf(-1,
+                          "'%s' is a text file. OmniTrace only supports instrumenting "
+                          "binary files",
+                          _cmdv[0]);
+            }
+
+            std::stringstream ss;
+            for(int i = 0; i < _cmdc; ++i)
+            {
+                if(!_cmdv || !_cmdv[i]) continue;
+                ss << " " << _cmdv[i];
+            }
+            auto _cmd_msg = ss.str();
+            if(_cmd_msg.length() > 1) _cmd_msg = _cmd_msg.substr(1);
+
+            verbprintf(1, "Creating process '%s'... ", _cmd_msg.c_str());
+            fflush(stderr);
+            mutatee = _bpatch->processCreate(_cmdv[0], (const char**) _cmdv, nullptr);
+            if(!mutatee)
+            {
+                verbprintf(-1, "Failed to create process: '%s'\n", _cmd_msg.c_str());
+                throw std::runtime_error("Failed to create process");
+            }
+            verbprintf_bare(1, "Done\n");
+        }
     }
 
     return mutatee;
