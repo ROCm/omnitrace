@@ -43,7 +43,12 @@
 #include "omnitrace/types.h"
 
 #include <cassert>
+#include <chrono>
 #include <gnu/libc-version.h>
+#include <link.h>
+#include <sys/wait.h>
+#include <thread>
+#include <unistd.h>
 
 //--------------------------------------------------------------------------------------//
 
@@ -68,6 +73,8 @@
     }
 
 //--------------------------------------------------------------------------------------//
+
+using main_func_t = int (*)(int, char**, char**);
 
 std::ostream&
 operator<<(std::ostream& _os, const SpaceHandle& _handle)
@@ -95,6 +102,16 @@ get_omnitrace_dl_env()
     return get_env("OMNITRACE_DL_DEBUG", false)
                ? 100
                : get_env("OMNITRACE_DL_VERBOSE", get_omnitrace_env());
+}
+
+inline bool&
+get_omnitrace_is_preloaded()
+{
+    static bool _v = []() {
+        auto&& _preload_libs = get_env("LD_PRELOAD", std::string{});
+        return (_preload_libs.find("libomnitrace-dl.so") != std::string::npos);
+    }();
+    return _v;
 }
 
 inline bool
@@ -189,7 +206,7 @@ const char* _omnitrace_dl_dlopen_descr = "RTLD_LAZY | RTLD_LOCAL";
 #endif
 
 /// This class contains function pointers for omnitrace's instrumentation functions
-struct OMNITRACE_HIDDEN_API indirect
+struct OMNITRACE_INTERNAL_API indirect
 {
     OMNITRACE_INLINE indirect(const std::string& _omnilib, const std::string& _userlib,
                               const std::string& _dllib)
@@ -456,7 +473,7 @@ private:
 };
 
 inline indirect&
-get_indirect() OMNITRACE_HIDDEN_API;
+get_indirect() OMNITRACE_INTERNAL_API;
 
 indirect&
 get_indirect()
@@ -519,6 +536,35 @@ get_thread_status()
     return _v;
 }
 
+enum class InstrumentMode : int
+{
+    None          = -1,
+    BinaryRewrite = 0,
+    ProcessCreate = 1,  // runtime instrumentation at start of process
+    ProcessAttach = 2,  // runtime instrumentation of running process
+    Last,
+};
+
+InstrumentMode&
+get_instrumented()
+{
+    static auto _v = get_env("OMNITRACE_INSTRUMENT_MODE", InstrumentMode::None);
+    return _v;
+}
+
+auto&
+get_preinits()
+{
+    static auto _v = std::vector<std::function<void()>>{};
+    return _v;
+}
+
+auto&
+get_postinits()
+{
+    static auto _v = std::vector<std::function<void()>>{};
+    return _v;
+}
 // ensure finalization is called
 bool _omnitrace_dl_fini = (std::atexit([]() {
                                if(get_active()) omnitrace_finalize();
@@ -598,6 +644,9 @@ extern "C"
             return;
         }
 
+        for(const auto& itr : dl::get_preinits())
+            itr();
+
         bool _invoked = false;
         OMNITRACE_DL_INVOKE_STATUS(_invoked, get_indirect().omnitrace_init_f, a, b, c);
         if(_invoked)
@@ -605,6 +654,13 @@ extern "C"
             dl::get_active()          = true;
             dl::get_inited()          = true;
             dl::_omnitrace_dl_verbose = dl::get_omnitrace_dl_env();
+            for(const auto& itr : dl::get_postinits())
+                itr();
+            if(dl::get_postinits().empty() &&
+               dl::get_instrumented() == dl::InstrumentMode::ProcessAttach)
+            {
+                omnitrace_init_tooling();
+            }
         }
     }
 
@@ -727,8 +783,9 @@ extern "C"
             OMNITRACE_DL_IGNORE(2, "already initialized and active", a, b);
             return;
         }
+        OMNITRACE_DL_LOG(2, "%s(%s, %s)\n", __FUNCTION__, a, b);
         setenv(a, b, 0);
-        OMNITRACE_DL_INVOKE(get_indirect().omnitrace_set_env_f, a, b);
+        // OMNITRACE_DL_INVOKE(get_indirect().omnitrace_set_env_f, a, b);
     }
 
     void omnitrace_set_mpi(bool a, bool b)
@@ -838,6 +895,22 @@ extern "C"
     {
         return OMNITRACE_DL_INVOKE(get_indirect().omnitrace_annotated_progress_f, _name,
                                    _annotations, _annotation_count);
+    }
+
+    void omnitrace_set_instrumented(int _mode)
+    {
+        OMNITRACE_DL_LOG(2, "%s(%i)\n", __FUNCTION__, _mode);
+        auto _mode_v = static_cast<dl::InstrumentMode>(_mode);
+        if(_mode_v < dl::InstrumentMode::None || _mode_v >= dl::InstrumentMode::Last)
+        {
+            OMNITRACE_DL_LOG(-127,
+                             "%s(mode=%i) invoked with invalid instrumentation mode. "
+                             "mode should be %i >= mode < %i\n",
+                             __FUNCTION__, _mode,
+                             static_cast<int>(dl::InstrumentMode::None),
+                             static_cast<int>(dl::InstrumentMode::Last));
+        }
+        dl::get_instrumented() = _mode_v;
     }
 
     //----------------------------------------------------------------------------------//
@@ -1065,13 +1138,86 @@ inline namespace dl
 namespace
 {
 bool
-omnitrace_preload() OMNITRACE_HIDDEN_API;
+omnitrace_preload() OMNITRACE_INTERNAL_API;
+
+std::vector<std::string>
+get_link_map(const char*,
+             std::vector<int>&& = { (RTLD_LAZY | RTLD_NOLOAD) }) OMNITRACE_INTERNAL_API;
+
+const char*
+get_default_mode() OMNITRACE_INTERNAL_API;
+
+void
+verify_instrumented_preloaded() OMNITRACE_INTERNAL_API;
+
+std::vector<std::string>
+get_link_map(const char* _name, std::vector<int>&& _open_modes)
+{
+    void* _handle = nullptr;
+    bool  _noload = false;
+    for(auto _mode : _open_modes)
+    {
+        _handle = dlopen(_name, _mode);
+        _noload = (_mode & RTLD_NOLOAD) == RTLD_NOLOAD;
+        if(_handle) break;
+    }
+
+    auto _chain = std::vector<std::string>{};
+    if(_handle)
+    {
+        struct link_map* _link_map = nullptr;
+        dlinfo(_handle, RTLD_DI_LINKMAP, &_link_map);
+        struct link_map* _next = _link_map->l_next;
+        while(_next)
+        {
+            if(_next->l_name != nullptr && !std::string_view{ _next->l_name }.empty())
+            {
+                _chain.emplace_back(_next->l_name);
+            }
+            _next = _next->l_next;
+        }
+
+        if(_noload == false) dlclose(_handle);
+    }
+    return _chain;
+}
+
+const char*
+get_default_mode()
+{
+    if(get_env("OMNITRACE_USE_CAUSAL", false)) return "causal";
+
+    auto _link_map = get_link_map(nullptr);
+    for(const auto& itr : _link_map)
+    {
+        if(itr.find("libomnitrace-rt.so") != std::string::npos ||
+           itr.find("libdyninstAPI_RT.so") != std::string::npos)
+            return "trace";
+    }
+
+    return "sampling";
+}
 
 bool
 omnitrace_preload()
 {
-    auto _preload = get_omnitrace_preload() && get_env("OMNITRACE_ENABLED", true);
-    auto _use_mpi = get_env("OMNITRACE_USE_MPI", get_env("OMNITRACE_USE_MPIP", false));
+    auto _preload = get_omnitrace_is_preloaded() && get_omnitrace_preload() &&
+                    get_env("OMNITRACE_ENABLED", true);
+
+    auto _link_map = get_link_map(nullptr);
+    auto _instr_mode =
+        get_env("OMNITRACE_INSTRUMENT_MODE", dl::InstrumentMode::BinaryRewrite);
+    for(const auto& itr : _link_map)
+    {
+        if(itr.find("libomnitrace-rt.so") != std::string::npos ||
+           itr.find("libdyninstAPI_RT.so") != std::string::npos)
+        {
+            omnitrace_set_instrumented(static_cast<int>(_instr_mode));
+            break;
+        }
+    }
+
+    verify_instrumented_preloaded();
 
     static bool _once = false;
     if(_once) return _preload;
@@ -1081,30 +1227,230 @@ omnitrace_preload()
     {
         reset_omnitrace_preload();
         omnitrace_preinit_library();
-        auto _causal = get_env("OMNITRACE_USE_CAUSAL", false);
-        auto _mode   = get_env("OMNITRACE_MODE", (_causal) ? "causal" : "sampling");
-        OMNITRACE_DL_LOG(1, "[%s] invoking %s(%s)\n", __FUNCTION__, "omnitrace_init",
-                         ::omnitrace::join(::omnitrace::QuoteStrings{}, ", ", _mode,
-                                           false, "omnitrace")
-                             .c_str());
-        if(_use_mpi && !(_causal && _mode == "causal"))
-        {
-            // only make this call if true bc otherwise, if
-            // false, it will disable the MPIP component and
-            // we may intercept the MPI init call later.
-            // If _use_mpi defaults to true above, calling this
-            // will override can current env or config value for
-            // OMNITRACE_USE_PID.
-            omnitrace_set_mpi(_use_mpi, false);
-        }
-        omnitrace_init(_mode.c_str(), false, nullptr);
-        omnitrace_init_tooling();
     }
 
     return _preload;
 }
 
-bool _handle_preload = omnitrace::dl::omnitrace_preload();
+void
+verify_instrumented_preloaded()
+{
+    // if preloaded then we are fine
+    if(get_omnitrace_is_preloaded()) return;
+
+    // value returned by get_instrumented is set by either:
+    // - the search of the linked libraries
+    // - via the instrumenter
+    // if binary rewrite or runtime instrumentation, there is an opportunity for
+    // LD_PRELOAD
+    switch(dl::get_instrumented())
+    {
+        case dl::InstrumentMode::None:
+        case dl::InstrumentMode::ProcessAttach:
+        {
+            return;
+        }
+        case dl::InstrumentMode::BinaryRewrite:
+        case dl::InstrumentMode::ProcessCreate:
+        {
+            break;
+        }
+        case dl::InstrumentMode::Last:
+        {
+            throw std::runtime_error(
+                "Invalid instrumentation type: InstrumentMode::Last");
+        }
+    }
+
+    static const char* _notice = R"notice(
+
+        NNNNNNNN        NNNNNNNN     OOOOOOOOO     TTTTTTTTTTTTTTTTTTTTTTTIIIIIIIIII      CCCCCCCCCCCCCEEEEEEEEEEEEEEEEEEEEEE
+        N:::::::N       N::::::N   OO:::::::::OO   T:::::::::::::::::::::TI::::::::I   CCC::::::::::::CE::::::::::::::::::::E
+        N::::::::N      N::::::N OO:::::::::::::OO T:::::::::::::::::::::TI::::::::I CC:::::::::::::::CE::::::::::::::::::::E
+        N:::::::::N     N::::::NO:::::::OOO:::::::OT:::::TT:::::::TT:::::TII::::::IIC:::::CCCCCCCC::::CEE::::::EEEEEEEEE::::E
+        N::::::::::N    N::::::NO::::::O   O::::::OTTTTTT  T:::::T  TTTTTT  I::::I C:::::C       CCCCCC  E:::::E       EEEEEE
+        N:::::::::::N   N::::::NO:::::O     O:::::O        T:::::T          I::::IC:::::C                E:::::E
+        N:::::::N::::N  N::::::NO:::::O     O:::::O        T:::::T          I::::IC:::::C                E::::::EEEEEEEEEE
+        N::::::N N::::N N::::::NO:::::O     O:::::O        T:::::T          I::::IC:::::C                E:::::::::::::::E
+        N::::::N  N::::N:::::::NO:::::O     O:::::O        T:::::T          I::::IC:::::C                E:::::::::::::::E
+        N::::::N   N:::::::::::NO:::::O     O:::::O        T:::::T          I::::IC:::::C                E::::::EEEEEEEEEE
+        N::::::N    N::::::::::NO:::::O     O:::::O        T:::::T          I::::IC:::::C                E:::::E
+        N::::::N     N:::::::::NO::::::O   O::::::O        T:::::T          I::::I C:::::C       CCCCCC  E:::::E       EEEEEE
+        N::::::N      N::::::::NO:::::::OOO:::::::O      TT:::::::TT      II::::::IIC:::::CCCCCCCC::::CEE::::::EEEEEEEE:::::E
+        N::::::N       N:::::::N OO:::::::::::::OO       T:::::::::T      I::::::::I CC:::::::::::::::CE::::::::::::::::::::E
+        N::::::N        N::::::N   OO:::::::::OO         T:::::::::T      I::::::::I   CCC::::::::::::CE::::::::::::::::::::E
+        NNNNNNNN         NNNNNNN     OOOOOOOOO           TTTTTTTTTTT      IIIIIIIIII      CCCCCCCCCCCCCEEEEEEEEEEEEEEEEEEEEEE
+
+                                                     _    _  _____ ______
+                                                    | |  | |/ ____|  ____|
+                                                    | |  | | (___ | |__
+                                                    | |  | |\___ \|  __|
+                                                    | |__| |____) | |____
+                                                     \____/|_____/|______|
+
+                     ____  __  __ _   _ _____ _______ _____            _____ ______      _____  _    _ _   _
+                    / __ \|  \/  | \ | |_   _|__   __|  __ \     /\   / ____|  ____|    |  __ \| |  | | \ | |
+                   | |  | | \  / |  \| | | |    | |  | |__) |   /  \ | |    | |__ ______| |__) | |  | |  \| |
+                   | |  | | |\/| | . ` | | |    | |  |  _  /   / /\ \| |    |  __|______|  _  /| |  | | . ` |
+                   | |__| | |  | | |\  |_| |_   | |  | | \ \  / ____ \ |____| |____     | | \ \| |__| | |\  |
+                    \____/|_|  |_|_| \_|_____|  |_|  |_|  \_\/_/    \_\_____|______|    |_|  \_\\____/|_| \_|
+
+
+    Due to a variety of edge cases we've encountered, OmniTrace now requires that binary rewritten executables and libraries be launched
+    with the 'omnitrace-run' executable.
+
+    In order to launch the executable with 'omnitrace-run', prefix the current command with 'omnitrace-run' and a standalone double hyphen ('--').
+    For MPI applications, place 'omnitrace-run --' after the MPI command.
+    E.g.:
+
+        <EXECUTABLE> <ARGS...>
+        mpirun -n 2 <EXECUTABLE> <ARGS...>
+
+    should be:
+
+        omnitrace-run -- <EXECUTABLE> <ARGS...>
+        mpirun -n 2 omnitrace-run -- <EXECUTABLE> <ARGS...>
+
+    Note: the command-line arguments passed to 'omnitrace-run' (which are specified before the double hyphen) will override configuration variables
+    and/or any configuration values specified to 'omnitrace-instrument' via the '--config' or '--env' options.
+    E.g.:
+
+        $ omnitrace-instrument -o ./sleep.inst --env OMNITRACE_SAMPLING_DELAY=5.0 -- sleep
+        $ echo "OMNITRACE_SAMPLING_FREQ = 500" > omnitrace.cfg
+        $ export OMNITRACE_CONFIG_FILE=omnitrace.cfg
+        $ omnitrace-run --sampling-freq=100 --sampling-delay=1.0 -- ./sleep.inst 10
+
+    In the first command, a default sampling delay of 5 seconds in embedded into the instrumented 'sleep.inst'.
+    In the second command, the sampling frequency will be set to 500 interrupts per second when OmniTrace reads the config file
+    In the fourth command, the sampling frequency and sampling delay are overridden to 100 interrupts per second and 1 second, respectively, when sleep.inst runs
+
+    Thanks for using OmniTrace and happy optimizing!
+    )notice";
+
+    // emit notice
+    std::cerr << _notice << std::endl;
+
+    std::quick_exit(EXIT_FAILURE);
+}
+
+bool        _handle_preload = omnitrace_preload();
+main_func_t main_real       = nullptr;
 }  // namespace
 }  // namespace dl
 }  // namespace omnitrace
+
+extern "C"
+{
+    int  omnitrace_main(int argc, char** argv, char** envp) OMNITRACE_INTERNAL_API;
+    void omnitrace_set_main(main_func_t) OMNITRACE_INTERNAL_API;
+
+    void omnitrace_set_main(main_func_t _main_real)
+    {
+        ::omnitrace::dl::main_real = _main_real;
+    }
+
+    int omnitrace_main(int argc, char** argv, char** envp)
+    {
+        OMNITRACE_DL_LOG(0, "%s\n", __FUNCTION__);
+        using ::omnitrace::common::get_env;
+        using ::omnitrace::dl::get_default_mode;
+
+        // prevent re-entry
+        static int _reentry = 0;
+        if(_reentry > 0) return -1;
+        _reentry = 1;
+
+        if(!::omnitrace::dl::main_real)
+            throw std::runtime_error("[omnitrace][dl] Unsuccessful wrapping of main: "
+                                     "nullptr to real main function");
+
+        if(envp)
+        {
+            size_t _idx = 0;
+            while(envp[_idx] != nullptr)
+            {
+                auto _env_v = std::string_view{ envp[_idx++] };
+                if(_env_v.find("OMNITRACE") != 0 &&
+                   _env_v.find("libomnitrace") == std::string_view::npos)
+                    continue;
+                auto _pos = _env_v.find('=');
+                if(_pos < _env_v.length())
+                {
+                    auto _var = std::string{ _env_v }.substr(0, _pos);
+                    auto _val = std::string{ _env_v }.substr(_pos + 1);
+                    OMNITRACE_DL_LOG(1, "%s(%s, %s)\n", "omnitrace_set_env", _var.c_str(),
+                                     _val.c_str());
+                    setenv(_var.c_str(), _val.c_str(), 0);
+                }
+            }
+        }
+
+        auto _init_setup = [argv]() {
+            auto _use_mpip = get_env("OMNITRACE_USE_MPIP", false);
+            auto _use_mpi  = get_env("OMNITRACE_USE_MPI", _use_mpip);
+            auto _causal   = get_env("OMNITRACE_USE_CAUSAL", false);
+            auto _mode     = get_env("OMNITRACE_MODE", get_default_mode());
+
+            if(_use_mpi && !(_causal && _mode == "causal"))
+            {
+                // only make this call if true bc otherwise, if
+                // false, it will disable the MPIP component and
+                // we may intercept the MPI init call later.
+                // If _use_mpi defaults to true above, calling this
+                // will override can current env or config value for
+                // OMNITRACE_USE_PID.
+                omnitrace_set_mpi(_use_mpi, dl::get_instrumented() ==
+                                                dl::InstrumentMode::ProcessAttach);
+            }
+        };
+
+        auto _init_real = [argv]() {
+            auto _mode = get_env("OMNITRACE_MODE", get_default_mode());
+            omnitrace_init(_mode.c_str(), false, basename(argv[0]));
+        };
+
+        auto _init_tool  = []() { omnitrace_init_tooling(); };
+        auto _init_trace = [argv]() { omnitrace_push_trace(basename(argv[0])); };
+
+        if(dl::get_instrumented() <= dl::InstrumentMode::BinaryRewrite)
+        {
+            // this block is for:
+            // - no instrumentation (< 0)
+            // - binary rewrite (== 0)
+            _init_setup();
+            _init_real();
+            _init_tool();
+            _init_trace();
+        }
+        else
+        {
+            // this block is for:
+            // - runtime instrumentation (< 0)
+            // - attaching to a process (== 0)
+            //
+            // construct callbacks that get executed in omnitrace_init.
+            // In the two above modes, omnitrace_init gets instrumented into main.
+            // This is done to prevent DynInst from parsing libomnitrace.so
+            // and it's dependent libraries (which can take a while).
+
+            // PREINIT
+            {
+                auto& _pre_inits = dl::get_preinits();
+                _pre_inits.emplace_back(_init_setup);
+            }
+            // POSTINIT
+            {
+                auto& _post_inits = dl::get_postinits();
+                _post_inits.emplace_back(_init_tool);
+                _post_inits.emplace_back(_init_trace);
+            }
+        }
+
+        int ret = (*::omnitrace::dl::main_real)(argc, argv, envp);
+
+        omnitrace_pop_trace(basename(argv[0]));
+        omnitrace_finalize();
+
+        return ret;
+    }
+}

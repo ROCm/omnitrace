@@ -76,6 +76,7 @@ extern "C"
     void omnitrace_set_env(const char* env_name,
                            const char* env_val) OMNITRACE_PUBLIC_API;
     void omnitrace_set_mpi(bool use, bool attached) OMNITRACE_PUBLIC_API;
+    void omnitrace_set_instrumented(int) OMNITRACE_PUBLIC_API;
     void omnitrace_push_trace(const char* name) OMNITRACE_PUBLIC_API;
     void omnitrace_pop_trace(const char* name) OMNITRACE_PUBLIC_API;
     int  omnitrace_push_region(const char*) OMNITRACE_PUBLIC_API;
