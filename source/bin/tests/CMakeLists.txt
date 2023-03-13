@@ -414,7 +414,7 @@ omnitrace_add_bin_test(
 omnitrace_add_bin_test(
     NAME omnitrace-run-help
     TARGET omnitrace-run
-    ARGS -?
+    ARGS --help
     TIMEOUT 45
     LABELS "omnitrace-run")
 
