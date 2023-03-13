@@ -1967,7 +1967,8 @@ main(int argc, char** argv)
         auto _var = itr.substr(0, _pos);
         auto _val = itr.substr(_pos + 1);
         tim::set_env(_var, _val);
-        env_variables.emplace_back(omnitrace_call_expr(_var, _val).get(env_func));
+        auto _expr = omnitrace_call_expr(_var, _val);
+        env_variables.emplace_back(_expr.get(env_func));
     }
 
     //----------------------------------------------------------------------------------//
