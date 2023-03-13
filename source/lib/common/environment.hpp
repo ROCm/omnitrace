@@ -29,6 +29,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 namespace omnitrace
 {
@@ -71,6 +72,15 @@ get_env(std::string_view env_id, int _default)
         return _default;
     }
     return _default;
+}
+
+template <typename Tp, typename Up = std::underlying_type_t<Tp>>
+inline std::enable_if_t<std::is_enum<Tp>::value && !std::is_convertible<Tp, Up>::value,
+                        Tp>
+get_env(std::string_view env_id, Tp&& _default)
+{
+    // cast to underlying type -> get_env -> cast to enum type
+    return static_cast<Tp>(get_env(env_id, static_cast<Up>(_default)));
 }
 
 inline bool
