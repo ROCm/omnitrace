@@ -281,7 +281,7 @@ configure_settings(bool _init)
         std::string, "OMNITRACE_MODE",
         "Data collection mode. Used to set default values for OMNITRACE_USE_* options. "
         "Typically set by omnitrace binary instrumenter.",
-        std::string{ "trace" }, "backend", "advanced")
+        std::string{ "trace" }, "backend", "advanced", "mode")
         ->set_choices({ "trace", "sampling", "causal", "coverage" });
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_CI",
