@@ -117,7 +117,7 @@ print_command(const std::vector<char*>& _argv)
 std::vector<char*>
 get_initial_environment()
 {
-    std::vector<char*> _env;
+    auto _env = std::vector<char*>{};
     if(environ != nullptr)
     {
         int idx = 0;
