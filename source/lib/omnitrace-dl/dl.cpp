@@ -89,7 +89,7 @@ operator<<(std::ostream& _os, const SpaceHandle& _handle)
 
 namespace omnitrace
 {
-inline namespace dl
+namespace dl
 {
 namespace
 {
@@ -546,15 +546,6 @@ get_thread_status()
     return _v;
 }
 
-enum class InstrumentMode : int
-{
-    None          = -1,
-    BinaryRewrite = 0,
-    ProcessCreate = 1,  // runtime instrumentation at start of process
-    ProcessAttach = 2,  // runtime instrumentation of running process
-    Last,
-};
-
 InstrumentMode&
 get_instrumented()
 {
@@ -598,7 +589,7 @@ bool _omnitrace_dl_fini = (std::atexit([]() {
         fflush(stderr);                                                                  \
     }
 
-using omnitrace::get_indirect;
+using omnitrace::dl::get_indirect;
 namespace dl = omnitrace::dl;
 
 extern "C"
@@ -641,7 +632,8 @@ extern "C"
             return;
         }
 
-        dl::omnitrace_preinit();
+        if(dl::get_instrumented() < dl::InstrumentMode::PythonProfile)
+            dl::omnitrace_preinit();
 
         bool _invoked = false;
         OMNITRACE_DL_INVOKE_STATUS(_invoked, get_indirect().omnitrace_init_f, a, b, c);
@@ -650,7 +642,8 @@ extern "C"
             dl::get_active()          = true;
             dl::get_inited()          = true;
             dl::_omnitrace_dl_verbose = dl::get_omnitrace_dl_env();
-            dl::omnitrace_postinit((c) ? std::string{ c } : std::string{});
+            if(dl::get_instrumented() < dl::InstrumentMode::PythonProfile)
+                dl::omnitrace_postinit((c) ? std::string{ c } : std::string{});
         }
     }
 
@@ -1123,7 +1116,7 @@ extern "C"
 
 namespace omnitrace
 {
-inline namespace dl
+namespace dl
 {
 namespace
 {
@@ -1191,34 +1184,63 @@ get_default_mode()
 void
 omnitrace_preinit()
 {
-    auto _use_mpip = get_env("OMNITRACE_USE_MPIP", false);
-    auto _use_mpi  = get_env("OMNITRACE_USE_MPI", _use_mpip);
-    auto _causal   = get_env("OMNITRACE_USE_CAUSAL", false);
-    auto _mode     = get_env("OMNITRACE_MODE", get_default_mode());
-
-    if(_use_mpi && !(_causal && _mode == "causal"))
+    switch(get_instrumented())
     {
-        // only make this call if true bc otherwise, if
-        // false, it will disable the MPIP component and
-        // we may intercept the MPI init call later.
-        // If _use_mpi defaults to true above, calling this
-        // will override can current env or config value for
-        // OMNITRACE_USE_PID.
-        omnitrace_set_mpi(_use_mpi,
-                          dl::get_instrumented() == dl::InstrumentMode::ProcessAttach);
+        case InstrumentMode::None:
+        case InstrumentMode::BinaryRewrite:
+        case InstrumentMode::ProcessCreate:
+        case InstrumentMode::ProcessAttach:
+        {
+            auto _use_mpip = get_env("OMNITRACE_USE_MPIP", false);
+            auto _use_mpi  = get_env("OMNITRACE_USE_MPI", _use_mpip);
+            auto _causal   = get_env("OMNITRACE_USE_CAUSAL", false);
+            auto _mode     = get_env("OMNITRACE_MODE", get_default_mode());
+
+            if(_use_mpi && !(_causal && _mode == "causal"))
+            {
+                // only make this call if true bc otherwise, if
+                // false, it will disable the MPIP component and
+                // we may intercept the MPI init call later.
+                // If _use_mpi defaults to true above, calling this
+                // will override can current env or config value for
+                // OMNITRACE_USE_PID.
+                omnitrace_set_mpi(_use_mpi, dl::get_instrumented() ==
+                                                dl::InstrumentMode::ProcessAttach);
+            }
+            break;
+        }
+        case InstrumentMode::PythonProfile:
+        case InstrumentMode::Last: break;
     }
 }
 
 void
 omnitrace_postinit(std::string _exe)
 {
-    if(_exe.empty()) _exe = tim::filepath::readlink(join('/', "/proc", getpid(), "exe"));
+    switch(get_instrumented())
+    {
+        case InstrumentMode::None:
+        case InstrumentMode::BinaryRewrite:
+        case InstrumentMode::ProcessCreate:
+        case InstrumentMode::ProcessAttach:
+        {
+            if(_exe.empty())
+                _exe = tim::filepath::readlink(join('/', "/proc", getpid(), "exe"));
 
-    omnitrace_init_tooling();
-    if(_exe.empty())
-        omnitrace_push_trace("main");
-    else
-        omnitrace_push_trace(basename(_exe.c_str()));
+            omnitrace_init_tooling();
+            if(_exe.empty())
+                omnitrace_push_trace("main");
+            else
+                omnitrace_push_trace(basename(_exe.c_str()));
+            break;
+        }
+        case InstrumentMode::PythonProfile:
+        {
+            omnitrace_init_tooling();
+            break;
+        }
+        case InstrumentMode::Last: break;
+    }
 }
 
 bool
