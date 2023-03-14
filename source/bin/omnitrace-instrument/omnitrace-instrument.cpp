@@ -1426,10 +1426,7 @@ main(int argc, char** argv)
     env_vars.emplace_back(TIMEMORY_JOIN('=', "OMNITRACE_USE_CODE_COVERAGE",
                                         (coverage_mode != CODECOV_NONE) ? "ON" : "OFF"));
 
-    auto _omni_dl_lib = get_realpath(get_absolute_lib_filepath("libomnitrace-dl.so"));
-    if(!exists(_omni_dl_lib)) _omni_dl_lib = {};
-
-    addr_space = omnitrace_get_address_space(bpatch, _cmdc, _cmdv, env_vars, _omni_dl_lib,
+    addr_space = omnitrace_get_address_space(bpatch, _cmdc, _cmdv, env_vars,
                                              binary_rewrite, _pid, mutname);
 
     // addr_space->allowTraps(instr_traps);

@@ -173,9 +173,8 @@ omnitrace_get_is_executable(std::string_view _cmd, bool _default_v)
 //
 static inline address_space_t*
 omnitrace_get_address_space(patch_pointer_t& _bpatch, int _cmdc, char** _cmdv,
-                            const std::vector<std::string>& _cmdenv,
-                            const std::string& _omni_dl_lib, bool _rewrite, int _pid = -1,
-                            const std::string& _name = {})
+                            const std::vector<std::string>& _cmdenv, bool _rewrite,
+                            int _pid = -1, const std::string& _name = {})
 {
     address_space_t* mutatee = nullptr;
 
@@ -224,25 +223,6 @@ omnitrace_get_address_space(patch_pointer_t& _bpatch, int _cmdc, char** _cmdv,
         for(const auto& itr : _cmdenv)
         {
             _exported.emplace_back(_get_env_pair(itr));
-        }
-
-        if(!_attach && !_omni_dl_lib.empty())
-        {
-            using ::timemory::join::join;
-            bool _found_ldpreload = false;
-            for(auto& itr : _imported)
-            {
-                if(itr.first == "LD_PRELOAD")
-                {
-                    _exported.emplace_back(
-                        strpair_t{ "LD_PRELOAD", join(":", itr.second, _omni_dl_lib) });
-                    _found_ldpreload = true;
-                    break;
-                }
-            }
-
-            if(!_found_ldpreload)
-                _exported.emplace_back(strpair_t{ "LD_PRELOAD", _omni_dl_lib });
         }
 
         for(const auto& itr : _exported)

@@ -42,10 +42,14 @@
 #include "omnitrace/categories.h"
 #include "omnitrace/types.h"
 
+#include <timemory/utility/filepath.hpp>
+
 #include <cassert>
 #include <chrono>
 #include <gnu/libc-version.h>
 #include <link.h>
+#include <linux/limits.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <thread>
 #include <unistd.h>
@@ -152,6 +156,12 @@ get_omnitrace_root_pid()
     setenv("OMNITRACE_ROOT_PROCESS", std::to_string(_pid).c_str(), 0);
     return get_env("OMNITRACE_ROOT_PROCESS", _pid);
 }
+
+void
+omnitrace_preinit() OMNITRACE_INTERNAL_API;
+
+void
+omnitrace_postinit(std::string exe = {}) OMNITRACE_INTERNAL_API;
 
 pid_t _omnitrace_root_pid = get_omnitrace_root_pid();
 
@@ -552,19 +562,6 @@ get_instrumented()
     return _v;
 }
 
-auto&
-get_preinits()
-{
-    static auto _v = std::vector<std::function<void()>>{};
-    return _v;
-}
-
-auto&
-get_postinits()
-{
-    static auto _v = std::vector<std::function<void()>>{};
-    return _v;
-}
 // ensure finalization is called
 bool _omnitrace_dl_fini = (std::atexit([]() {
                                if(get_active()) omnitrace_finalize();
@@ -644,8 +641,7 @@ extern "C"
             return;
         }
 
-        for(const auto& itr : dl::get_preinits())
-            itr();
+        dl::omnitrace_preinit();
 
         bool _invoked = false;
         OMNITRACE_DL_INVOKE_STATUS(_invoked, get_indirect().omnitrace_init_f, a, b, c);
@@ -654,13 +650,7 @@ extern "C"
             dl::get_active()          = true;
             dl::get_inited()          = true;
             dl::_omnitrace_dl_verbose = dl::get_omnitrace_dl_env();
-            for(const auto& itr : dl::get_postinits())
-                itr();
-            if(dl::get_postinits().empty() &&
-               dl::get_instrumented() == dl::InstrumentMode::ProcessAttach)
-            {
-                omnitrace_init_tooling();
-            }
+            dl::omnitrace_postinit((c) ? std::string{ c } : std::string{});
         }
     }
 
@@ -1198,6 +1188,39 @@ get_default_mode()
     return "sampling";
 }
 
+void
+omnitrace_preinit()
+{
+    auto _use_mpip = get_env("OMNITRACE_USE_MPIP", false);
+    auto _use_mpi  = get_env("OMNITRACE_USE_MPI", _use_mpip);
+    auto _causal   = get_env("OMNITRACE_USE_CAUSAL", false);
+    auto _mode     = get_env("OMNITRACE_MODE", get_default_mode());
+
+    if(_use_mpi && !(_causal && _mode == "causal"))
+    {
+        // only make this call if true bc otherwise, if
+        // false, it will disable the MPIP component and
+        // we may intercept the MPI init call later.
+        // If _use_mpi defaults to true above, calling this
+        // will override can current env or config value for
+        // OMNITRACE_USE_PID.
+        omnitrace_set_mpi(_use_mpi,
+                          dl::get_instrumented() == dl::InstrumentMode::ProcessAttach);
+    }
+}
+
+void
+omnitrace_postinit(std::string _exe)
+{
+    if(_exe.empty()) _exe = tim::filepath::readlink(join('/', "/proc", getpid(), "exe"));
+
+    omnitrace_init_tooling();
+    if(_exe.empty())
+        omnitrace_push_trace("main");
+    else
+        omnitrace_push_trace(basename(_exe.c_str()));
+}
+
 bool
 omnitrace_preload()
 {
@@ -1247,11 +1270,11 @@ verify_instrumented_preloaded()
     {
         case dl::InstrumentMode::None:
         case dl::InstrumentMode::ProcessAttach:
+        case dl::InstrumentMode::ProcessCreate:
         {
             return;
         }
         case dl::InstrumentMode::BinaryRewrite:
-        case dl::InstrumentMode::ProcessCreate:
         {
             break;
         }
@@ -1385,66 +1408,10 @@ extern "C"
             }
         }
 
-        auto _init_setup = [argv]() {
-            auto _use_mpip = get_env("OMNITRACE_USE_MPIP", false);
-            auto _use_mpi  = get_env("OMNITRACE_USE_MPI", _use_mpip);
-            auto _causal   = get_env("OMNITRACE_USE_CAUSAL", false);
-            auto _mode     = get_env("OMNITRACE_MODE", get_default_mode());
-
-            if(_use_mpi && !(_causal && _mode == "causal"))
-            {
-                // only make this call if true bc otherwise, if
-                // false, it will disable the MPIP component and
-                // we may intercept the MPI init call later.
-                // If _use_mpi defaults to true above, calling this
-                // will override can current env or config value for
-                // OMNITRACE_USE_PID.
-                omnitrace_set_mpi(_use_mpi, dl::get_instrumented() ==
-                                                dl::InstrumentMode::ProcessAttach);
-            }
-        };
-
-        auto _init_real = [argv]() {
-            auto _mode = get_env("OMNITRACE_MODE", get_default_mode());
-            omnitrace_init(_mode.c_str(), false, basename(argv[0]));
-        };
-
-        auto _init_tool  = []() { omnitrace_init_tooling(); };
-        auto _init_trace = [argv]() { omnitrace_push_trace(basename(argv[0])); };
-
-        if(dl::get_instrumented() <= dl::InstrumentMode::BinaryRewrite)
-        {
-            // this block is for:
-            // - no instrumentation (< 0)
-            // - binary rewrite (== 0)
-            _init_setup();
-            _init_real();
-            _init_tool();
-            _init_trace();
-        }
-        else
-        {
-            // this block is for:
-            // - runtime instrumentation (< 0)
-            // - attaching to a process (== 0)
-            //
-            // construct callbacks that get executed in omnitrace_init.
-            // In the two above modes, omnitrace_init gets instrumented into main.
-            // This is done to prevent DynInst from parsing libomnitrace.so
-            // and it's dependent libraries (which can take a while).
-
-            // PREINIT
-            {
-                auto& _pre_inits = dl::get_preinits();
-                _pre_inits.emplace_back(_init_setup);
-            }
-            // POSTINIT
-            {
-                auto& _post_inits = dl::get_postinits();
-                _post_inits.emplace_back(_init_tool);
-                _post_inits.emplace_back(_init_trace);
-            }
-        }
+        auto _mode = get_env("OMNITRACE_MODE", get_default_mode());
+        omnitrace_init(_mode.c_str(),
+                       dl::get_instrumented() == dl::InstrumentMode::BinaryRewrite,
+                       argv[0]);
 
         int ret = (*::omnitrace::dl::main_real)(argc, argv, envp);
 
