@@ -38,7 +38,7 @@
 #include "common/invoke.hpp"
 #include "common/join.hpp"
 #include "common/setup.hpp"
-#include "dl.hpp"
+#include "dl/dl.hpp"
 #include "omnitrace/categories.h"
 #include "omnitrace/types.h"
 

@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 #include "libpyomnitrace.hpp"
-#include "dl.hpp"
+#include "dl/dl.hpp"
 #include "library/coverage.hpp"
 #include "library/coverage/impl.hpp"
 #include "omnitrace/categories.h"

@@ -22,6 +22,7 @@
 
 #include "omnitrace-instrument.hpp"
 #include "common/defines.h"
+#include "dl/dl.hpp"
 #include "fwd.hpp"
 #include "internal_libs.hpp"
 #include "log.hpp"
@@ -86,6 +87,8 @@ get_default_min_address_range()
     return 4 * get_default_min_instructions();
 }
 }  // namespace
+
+using InstrumentMode = ::omnitrace::dl::InstrumentMode;
 
 bool   use_return_info              = false;
 bool   use_args_info                = false;
@@ -1412,13 +1415,17 @@ main(int argc, char** argv)
     //----------------------------------------------------------------------------------//
 
     // prioritize the user environment arguments
-    int  instr_mode_v = (binary_rewrite) ? 0 : (_pid < 0) ? 1 : 2;
-    auto env_vars     = parser.get<strvec_t>("env");
+    auto instr_mode_v     = (binary_rewrite) ? InstrumentMode::BinaryRewrite
+                            : (_pid < 0)     ? InstrumentMode::ProcessCreate
+                                             : InstrumentMode::ProcessAttach;
+    auto instr_mode_v_int = static_cast<int>(instr_mode_v);
+    auto env_vars         = parser.get<strvec_t>("env");
     env_vars.reserve(env_vars.size() + env_config_variables.size());
     for(auto&& itr : env_config_variables)
         env_vars.emplace_back(itr);
     env_vars.emplace_back(TIMEMORY_JOIN('=', "OMNITRACE_MODE", instr_mode));
-    env_vars.emplace_back(TIMEMORY_JOIN('=', "OMNITRACE_INSTRUMENT_MODE", instr_mode_v));
+    env_vars.emplace_back(
+        TIMEMORY_JOIN('=', "OMNITRACE_INSTRUMENT_MODE", instr_mode_v_int));
     env_vars.emplace_back(TIMEMORY_JOIN('=', "OMNITRACE_MPI_INIT", "OFF"));
     env_vars.emplace_back(TIMEMORY_JOIN('=', "OMNITRACE_MPI_FINALIZE", "OFF"));
     env_vars.emplace_back(
@@ -1911,7 +1918,7 @@ main(int argc, char** argv)
     auto fini_call_args = omnitrace_call_expr();
     auto umpi_call_args = omnitrace_call_expr(use_mpi, is_attached);
     auto none_call_args = omnitrace_call_expr();
-    auto set_instr_args = omnitrace_call_expr(instr_mode_v, use_mpi);
+    auto set_instr_args = omnitrace_call_expr(instr_mode_v_int);
 
     verbprintf(2, "Done\n");
     verbprintf(2, "Getting call snippets... ");
