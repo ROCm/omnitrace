@@ -29,15 +29,6 @@ from dash import html, dash_table, dcc
 from matplotlib.style import available
 
 
-# List all the unique column values for desired column in df, 'target_col'
-def list_unique(orig_list, is_numeric):
-    list_set = set(orig_list)
-    unique_list = list(list_set)
-    if is_numeric:
-        unique_list.sort()
-    return unique_list
-
-
 def file_path():
     return html.Div(
         className="filter",
@@ -117,8 +108,6 @@ def upload_file():
 def minPoints(name, values):
     return html.Li(
         className="filter",
-        # style={#'width': '100%',
-        #'height': '50px'},
         children=[
             html.Div(
                 style={
@@ -154,7 +143,7 @@ def minPoints(name, values):
     )
 
 
-def sortBy(name, values, default, style_):
+def sortBy(name, values, default, multi_, style_):
     return html.Li(
         className="filter",
         children=[
@@ -162,9 +151,9 @@ def sortBy(name, values, default, style_):
                 children=[
                     html.A(className="smoothscroll", children=[name + ":"]),
                     dcc.Dropdown(
-                        list_unique(values, True),
+                        values,
                         id=name + "-filt",
-                        multi=True,
+                        multi=multi_,
                         value=default,
                         placeholder="ALL",
                         clearable=False,
@@ -174,7 +163,6 @@ def sortBy(name, values, default, style_):
             )
         ],
     )
-
 
 def refresh():
     return html.Div(
@@ -231,24 +219,12 @@ def get_header(dropDownMenuItems, input_filters):
                     filter["Name"],
                     filter["values"],
                     filter["default"],
+                    filter["multi"],
                     {
-                        # "width": "200px",  # TODO: Change these widths to % rather than fixed value
                         "height": "34px"
                     },
                 )
             )
-        # elif filter["type"] == "Function Name":
-        #    header_nav.append(
-        #        function_filter(
-        #            filter["Name"],
-        #            filter["values"],
-        #            filter["filter"],
-        #            {
-        #                "width": "200px",  # TODO: Change these widths to % rather than fixed value
-        #                "height": "34px",
-        #            },
-        #        )
-        # id    )
         else:
             print("type not supported")
             # sys.exit(1)

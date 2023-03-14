@@ -61,6 +61,8 @@ global_data = pd.DataFrame()
 global_samples = pd.DataFrame()
 global_input_filters = None
 workload_path = ""
+verbose=0
+
 pd.set_option(
     "mode.chained_assignment", None
 )  # ignore SettingWithCopyWarning pandas warning
@@ -194,33 +196,43 @@ def update_line_graph(
     return mask_all, causalLayout, samplesLayout
 
 
-def reset_input_filters(workloads, max_points):
+def reset_input_filters(workloads, max_points, verbosity):
     sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
 
     input_filters = [
-        {
-            "Name": "Sort by",
-            "default": sortOptions[0],
-            "values": list(map(str, sortOptions)),
-            "type": "Name",
-        },
-        {
-            "Name": "Select Workload",
-            "values": workloads,
-            "default": workloads,
-            "type": "Name",
-        },
-        {"Name": "points", "filter": [], "values": max_points - 1, "type": "int"},
-    ]
+            {
+                "Name": "Verbosity",
+                "values": [0,1,2,3],
+                "default": verbosity,
+                "type": "Name",
+                "multi": False
+            },
+            {
+                "Name": "Sort by",
+                "values": list(map(str, sortOptions)),
+                "default": "Impact",
+                "type": "Name",
+                "multi": False
+            },
+            {
+                "Name": "Select Workload",
+                "values": workloads,
+                "default": workloads,
+                "type": "Name",
+                "multi": False
+            },
+            {"Name": "points", "filter": [], "values": max_points, "type": "int"},
+        ]
     return input_filters
 
 
 def build_causal_layout(
-    app, runs, input_filters, path_to_dir, data, samples, verbose=0, light_mode=True
+    app, runs, input_filters, path_to_dir, data, samples, verbosity=0, light_mode=True
 ):
     """
     Build gui layout
     """
+    global verbose
     global global_data
     global global_samples
     global_data = data
@@ -229,6 +241,8 @@ def build_causal_layout(
     global_input_filters = input_filters
     global workload_path
     workload_path = path_to_dir
+
+    verbose = verbosity
 
     dropDownMenuItems = [
         dbc.DropdownMenuItem("Overview", header=True),
@@ -268,6 +282,7 @@ def build_causal_layout(
         Output("graph_select", "children"),
         [Input("nav-wrap", "children")],
         [Input("refresh", "n_clicks")],
+        [Input("Verbosity-filt", "value")],
         [Input("Sort by-filt", "value")],
         [Input("Select Workload-filt", "value")],
         [Input("function_regex", "value")],
@@ -281,6 +296,7 @@ def build_causal_layout(
     def generate_from_filter(
         header,
         refresh,
+        verbosity,
         sort_filter,
         workload_filter,
         func_regex,
@@ -295,16 +311,21 @@ def build_causal_layout(
         global global_data
         global global_input_filters
         global workload_path
+        global verbose
         CLI = False
 
+        verbose = verbosity
+        
+
         # change to if debug
-        if verbose >= 3:
+        if verbose >= 1:
             print("Sort by is ", sort_filter)
             print("funcRegex is ", func_regex)
             print("expRegex is ", exp_regex)
             print("points is: ", num_points)
             print("workload_path is: ", workload_path)
             print("selected workloads are:", workload_filter)
+            print("verbosity is:", verbose)
 
         divChildren = []
         files = []
@@ -320,7 +341,7 @@ def build_causal_layout(
             files = []
             if os.path.isfile(_workload_path):
                 files.append(_workload_path)
-                workload_path = _workload_path
+                workload_path = [_workload_path]
             elif os.path.isdir(_workload_path):
                 _files = glob.glob(os.path.join(_workload_path, "*.json"))
                 # subfiles = glob.glob(os.path.join(workload_path, "*/*.coz")) +
@@ -328,7 +349,7 @@ def build_causal_layout(
                 metadata = glob.glob(os.path.join(_workload_path, "*/metadata*.json"))
                 files = _files + subfiles
                 workload_path = files
-            global_data, global_samples = parse_files(files)
+            global_data, global_samples = parse_files(files = workload_path, CLI = (True if verbose >=2 else False))
             # reset checklists
             func_list = sorted(list(global_data.point.unique()))
             exp_list = sorted(list(global_data["progress points"].unique()))
@@ -337,7 +358,7 @@ def build_causal_layout(
 
             # reset input_filters
             workloads = [os.path.basename(file) for file in files]
-            global_input_filters = reset_input_filters(workloads, max_points)
+            global_input_filters = reset_input_filters(workloads, max_points, verbose)
 
             screen_data, fig1, fig2 = update_line_graph(
                 sort_filter,
@@ -367,7 +388,7 @@ def build_causal_layout(
                 exp_list = sorted(list(global_data["progress points"].unique()))
 
                 # reset input_filters
-                global_input_filters = reset_input_filters([filename], max_points)
+                global_input_filters = reset_input_filters([filename], max_points, verbose)
 
                 screen_data, fig1, fig2 = update_line_graph(
                     sort_filter,
@@ -384,6 +405,7 @@ def build_causal_layout(
         # runs when function or experiment regex is changed, takes numPoints into account as well
         elif func_regex is not None or exp_regex is not None:
             # filter options and values
+            print(global_data.keys())
             if global_data.empty == False:
                 if func_regex is not None:
                     p = re.compile(func_regex, flags=0)
@@ -415,8 +437,9 @@ def build_causal_layout(
         # runs when min points changed and when page is first loaded
         if "refresh" == ctx.triggered_id:
             print("refreshing Data with " + workload_path)
+            print(global_data.keys())
 
-            global_data = parse_files([workload_path])
+            global_data, global_samples = parse_files(files = [workload_path], CLI = (True if verbose >=2 else False))
 
             func_list = sorted(list(global_data.point.unique()))
             exp_list = sorted(list(global_data["progress points"].unique()))

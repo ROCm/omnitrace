@@ -640,7 +640,7 @@ def parse_files(files, experiments=".*", progress_points=".*", speedups=[], CLI=
                         ),
                     ]
                 )
-                out = pd.concat([out, compute_sorts(compute_speedups(dict_data))])
+                out = pd.concat([out, compute_sorts(compute_speedups(dict_data, speedups, 0, [], CLI))])
                 read_files.append(_base_name)
 
         elif file.endswith(".coz"):
@@ -701,7 +701,6 @@ def parse_uploaded_file(file_name, file, experiments=".*", progress_points=".*")
         dict_data = {
             file_name: process_data(dict_data, _data, experiments, progress_points)
         }
-        print(dict_data.keys())
         samps = process_samples({}, _data)
         sample_data = pd.DataFrame(
             [{"location": loc, "count": count} for loc, count in sorted(samps.items())]
