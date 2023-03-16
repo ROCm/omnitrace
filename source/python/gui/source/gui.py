@@ -61,11 +61,27 @@ global_data = pd.DataFrame()
 global_samples = pd.DataFrame()
 global_input_filters = None
 workload_path = ""
-verbose=0
+verbose = 0
 
 pd.set_option(
     "mode.chained_assignment", None
 )  # ignore SettingWithCopyWarning pandas warning
+
+
+def print_speedup_info(data):
+    for idx in set(list(data.idx)):
+        sub_data = data[data["idx"] == idx]
+        print("")
+        for sub_idx, row in sub_data.iterrows():
+            print(
+                f"""[{row["point"]}][{row["progress points"]}][{row["Line Speedup"]}] speedup: {row["Program Speedup"]:6.1f} +/- {row["speedup err"]:6.2f}%"""
+            )
+        print(
+            f"""[{row["point"]}][{row["progress points"]}][sum] impact: {row["impact sum"]:6.1f}"""
+        )
+        print(
+            f"""[{row["point"]}][{row["progress points"]}][avg] impact: {row["impact avg"]:6.1f} +/- {row["impact err"]:6.2f}"""
+        )
 
 
 def build_line_graph():
@@ -88,61 +104,38 @@ def build_line_graph():
 def update_line_graph(
     sort_filter, func_list, exp_list, data, num_points, samples, workloads
 ):
-    # df = px.data.gapminder() # replace with your own data source
     if "Alphabetical" in sort_filter:
         data = data.sort_values(by=["point", "idx"])
 
-    if "Impact" in sort_filter:
+    elif "Impact" in sort_filter:
         data = data.sort_values(by=["impact sum", "idx"], ascending=False)
 
-    if "Max Speedup" in sort_filter:
+    elif "Max Speedup" in sort_filter:
         data = data.sort_values(by=["Max Speedup", "idx"])
 
-    if "Min Speedup" in sort_filter:
+    elif "Min Speedup" in sort_filter:
         data = data.sort_values(by=["Min Speedup", "idx"])
 
     if num_points > 0:
         data = data[data["point count"] > num_points]
 
-    mask_all = data[data.point.isin(func_list)]
-    mask_all = mask_all[mask_all["progress points"].isin(exp_list)]
-    mask_all = mask_all[mask_all["workload"].isin(workloads)]
+    mask = data[data.point.isin(func_list)]
+    mask = mask[mask["progress points"].isin(exp_list)]
+    mask = mask[mask["workload"].isin(workloads)]
 
-    mask_select = data[data.point.isin(func_list)]
-    mask_select = mask_select[mask_select["progress points"].isin(exp_list)]
-    mask_select = mask_select[mask_select["workload"].isin(workloads)]
-
-    progress_points = list(mask_select["progress points"].unique())
+    progress_points = list(mask["progress points"].unique())
     colors = [x / float(len(progress_points)) for x in range(len(progress_points))]
-    # colors = [0 if x == 0 else 1/float(x) for x in colors]
     colors_df = pd.DataFrame()
     for color, prog in zip(colors, progress_points):
         colors_df = pd.concat(
             [colors_df, pd.DataFrame({"progress points": [prog], "color": [color * 100]})]
         )
 
-    fig1 = go.Figure()
-
-    for point in sorted(list(mask_all.point.unique())):
-        # for experiment in list(mask_select.experiment)[0:3]:
-        sub_data = mask_all[mask_all["point"] == point]
-        fig1.add_trace(
-            go.Scatter(
-                x=sub_data["Line Speedup"],
-                y=sub_data["Program Speedup"],
-                line_shape="spline",
-                name=point[0:50],
-                mode="lines+markers",
-            )
-        ).update_layout(
-            xaxis={"title": "Function Speedup"}, yaxis={"title": "Program Speedup"}
-        )
-
     causalLayout = [html.H4("Selected Causal Profiles", style={"color": "white"})]
 
-    for point in list(mask_select.point.unique()):
+    for point in list(mask.point.unique()):
         subplots = go.Figure()
-        sub_data = mask_select[mask_select["point"] == point]
+        sub_data = mask[mask["point"] == point]
         line_number = point[point.rfind(":") :].isnumeric()
         if line_number:
             # untested
@@ -173,7 +166,7 @@ def update_line_graph(
                         + str(colors_df[colors_df["progress points"] == prog]["color"][0])
                         + "%,100%,100%)",
                         error_y=dict(
-                            type="percent", array=sub_data_prog["impact err"].tolist()
+                            type="percent", array=sub_data_prog["speedup err"].tolist()
                         ),
                         line_shape="spline",
                         name=prog,
@@ -193,36 +186,38 @@ def update_line_graph(
         dcc.Graph(figure=fig3),
     ]
 
-    return mask_all, causalLayout, samplesLayout
+    return mask, causalLayout, samplesLayout
 
 
 def reset_input_filters(workloads, max_points, verbosity):
     sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
+    if type(workloads) == str:
+        workloads = [workloads]
 
     input_filters = [
-            {
-                "Name": "Verbosity",
-                "values": [0,1,2,3],
-                "default": verbosity,
-                "type": "Name",
-                "multi": False
-            },
-            {
-                "Name": "Sort by",
-                "values": list(map(str, sortOptions)),
-                "default": "Impact",
-                "type": "Name",
-                "multi": False
-            },
-            {
-                "Name": "Select Workload",
-                "values": workloads,
-                "default": workloads,
-                "type": "Name",
-                "multi": False
-            },
-            {"Name": "points", "filter": [], "values": max_points, "type": "int"},
-        ]
+        {
+            "Name": "Verbosity",
+            "values": [0, 1, 2, 3],
+            "default": verbosity,
+            "type": "Name",
+            "multi": False,
+        },
+        {
+            "Name": "Sort by",
+            "values": list(map(str, sortOptions)),
+            "default": "Impact",
+            "type": "Name",
+            "multi": False,
+        },
+        {
+            "Name": "Select Workload",
+            "values": workloads,
+            "default": workloads,
+            "type": "Name",
+            "multi": True,
+        },
+        {"Name": "points", "filter": [], "values": max_points, "type": "int"},
+    ]
     return input_filters
 
 
@@ -246,12 +241,8 @@ def build_causal_layout(
 
     dropDownMenuItems = [
         dbc.DropdownMenuItem("Overview", header=True),
-        dbc.DropdownMenuItem(
-            "All Causal Profiles", href="#graph_all", external_link=True
-        ),
-        dbc.DropdownMenuItem(
-            "Selected Causal Profiles", href="#graph_select", external_link=True
-        ),
+        dbc.DropdownMenuItem("All Causal Profiles"),
+        dbc.DropdownMenuItem("Selected Causal Profiles"),
     ]
 
     inital_min_points = 3
@@ -262,10 +253,10 @@ def build_causal_layout(
         else {"backgroundColor": "rgb(50, 50, 50)"}
     )
 
-    filt_kernel_names = []
-
     line_graph1, line_graph2 = build_line_graph()
 
+    if verbosity == 3:
+        print(global_input_filters)
     app.layout.children = html.Div(
         children=[
             get_header(dropDownMenuItems, global_input_filters),
@@ -315,9 +306,8 @@ def build_causal_layout(
         CLI = False
 
         verbose = verbosity
-        
-
-        # change to if debug
+        if type(workload_filter) == str:
+            workload_filter = [workload_filter]
         if verbose >= 1:
             print("Sort by is ", sort_filter)
             print("funcRegex is ", func_regex)
@@ -335,9 +325,9 @@ def build_causal_layout(
         global func_list
         global exp_list
         global global_samples
+        screen_data = pd.DataFrame()
 
         if _workload_path is not None and os.path.exists(_workload_path):
-            # files = glob.glob(os.path.join(workload_path, "*.coz")) +
             files = []
             if os.path.isfile(_workload_path):
                 files.append(_workload_path)
@@ -349,8 +339,7 @@ def build_causal_layout(
                 metadata = glob.glob(os.path.join(_workload_path, "*/metadata*.json"))
                 files = _files + subfiles
                 workload_path = files
-            global_data, global_samples = parse_files(files = workload_path, CLI = (True if verbose >=2 else False))
-            # reset checklists
+            global_data, global_samples = parse_files(workload_path)
             func_list = sorted(list(global_data.point.unique()))
             exp_list = sorted(list(global_data["progress points"].unique()))
 
@@ -371,7 +360,6 @@ def build_causal_layout(
             )
 
             header = get_header(dropDownMenuItems, global_input_filters)
-            return (divChildren, header, fig1, fig2)
 
         elif contentsList is not None:
             if ".coz" in filename or ".json" in filename:
@@ -388,7 +376,9 @@ def build_causal_layout(
                 exp_list = sorted(list(global_data["progress points"].unique()))
 
                 # reset input_filters
-                global_input_filters = reset_input_filters([filename], max_points, verbose)
+                global_input_filters = reset_input_filters(
+                    [filename], max_points, verbose
+                )
 
                 screen_data, fig1, fig2 = update_line_graph(
                     sort_filter,
@@ -400,12 +390,9 @@ def build_causal_layout(
                     workload_filter,
                 )
                 header = get_header(dropDownMenuItems, global_input_filters)
-                return (divChildren, header, fig1, fig2)
 
         # runs when function or experiment regex is changed, takes numPoints into account as well
         elif func_regex is not None or exp_regex is not None:
-            # filter options and values
-            print(global_data.keys())
             if global_data.empty == False:
                 if func_regex is not None:
                     p = re.compile(func_regex, flags=0)
@@ -431,15 +418,14 @@ def build_causal_layout(
                     global_samples,
                     workload_filter,
                 )
+        elif "refresh" == ctx.triggered_id:
+            if verbose >= 3:
+                print("refreshing Data with " + workload_path)
+                print(global_data.keys())
 
-            return (divChildren, header, fig1, fig2)
-
-        # runs when min points changed and when page is first loaded
-        if "refresh" == ctx.triggered_id:
-            print("refreshing Data with " + workload_path)
-            print(global_data.keys())
-
-            global_data, global_samples = parse_files(files = [workload_path], CLI = (True if verbose >=2 else False))
+            global_data, global_samples = parse_files(
+                files=[workload_path], CLI=(True if verbose >= 2 else False)
+            )
 
             func_list = sorted(list(global_data.point.unique()))
             exp_list = sorted(list(global_data["progress points"].unique()))
@@ -452,15 +438,12 @@ def build_causal_layout(
                     num_points,
                     workload_filter,
                 )
-
-            return (divChildren, header, fig1, fig2)
         else:
             func_list = []
             exp_list = []
             if global_data.empty == False:
                 func_list = sorted(list(global_data.point.unique()))
                 exp_list = sorted(list(global_data["progress points"].unique()))
-
                 screen_data, fig1, fig2 = update_line_graph(
                     sort_filter,
                     func_list,
@@ -470,5 +453,10 @@ def build_causal_layout(
                     global_samples,
                     workload_filter,
                 )
+        if screen_data.empty == False:
+            if verbose == 2:
+                print_speedup_info(screen_data)
+            elif verbose >= 3:
+                print(screen_data)
 
-            return (divChildren, header, fig1, fig2)
+        return (divChildren, header, fig1, fig2)

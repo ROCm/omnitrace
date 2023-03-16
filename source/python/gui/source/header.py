@@ -58,22 +58,20 @@ def function_filter(_id, _placeholder):
     return html.Li(
         className="filter",
         children=[
-            html.Li(
-                dcc.Input(
-                    id=_id,
-                    placeholder=_placeholder,
-                    type="text",
-                    debounce=True,
-                    style={
-                        "width": "100%",
-                        "height": "40%",
-                        "lineHeight": "60px",
-                        "borderWidth": "1px",
-                        #'borderStyle': 'dashed',
-                        "borderRadius": "5px",
-                        "textAlign": "center",
-                    },
-                )
+            dcc.Input(
+                id=_id,
+                placeholder=_placeholder,
+                type="text",
+                debounce=True,
+                style={
+                    "width": "100%",
+                    "height": "40%",
+                    "lineHeight": "60px",
+                    "borderWidth": "1px",
+                    #'borderStyle': 'dashed',
+                    "borderRadius": "5px",
+                    "textAlign": "center",
+                },
             )
         ],
     )
@@ -114,18 +112,18 @@ def minPoints(name, values):
                     "width": "200px",
                     "position": "relative",
                     "display": "inline-block",
-                    "list-style": "none",
+                    "listStyle": "none",
                 },
                 children=[html.A(className="smoothscroll", children=["Min Points:"])],
             ),
             html.Div(
                 style={
                     "width": "200px",
-                    "padding-top": "10px",
-                    "vertical-align": "middle",
+                    "paddingTop": "10px",
+                    "verticalAlign": "middle",
                     "position": "relative",
                     "display": "inline-block",
-                    "list-style": "none",
+                    "listStyle": "none",
                 },
                 children=[
                     daq.Slider(
@@ -155,14 +153,15 @@ def sortBy(name, values, default, multi_, style_):
                         id=name + "-filt",
                         multi=multi_,
                         value=default,
-                        placeholder="ALL",
+                        # placeholder="ALL",
                         clearable=False,
-                        style=style_,
                     ),
-                ]
+                ],
+                style=style_,
             )
         ],
     )
+
 
 def refresh():
     return html.Div(
@@ -172,7 +171,7 @@ def refresh():
                 children=[
                     # Refresh button
                     html.A(
-                        href="",
+                        # href="",
                         children=[
                             html.Button(
                                 className="refresh",
@@ -220,9 +219,7 @@ def get_header(dropDownMenuItems, input_filters):
                     filter["values"],
                     filter["default"],
                     filter["multi"],
-                    {
-                        "height": "34px"
-                    },
+                    {"height": "34px"},
                 )
             )
         else:

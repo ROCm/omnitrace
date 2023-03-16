@@ -98,24 +98,24 @@ def causal(args):
         input_filters = [
             {
                 "Name": "Verbosity",
-                "values": [0,1,2,3],
-                "default": 0,
+                "values": [0, 1, 2, 3],
+                "default": args.verbose,
                 "type": "Name",
-                "multi": False
+                "multi": False,
             },
             {
                 "Name": "Sort by",
-                "values": list(map(str, sortOptions)),
+                "values": sortOptions,
                 "default": "Impact",
                 "type": "Name",
-                "multi": False
+                "multi": False,
             },
             {
                 "Name": "Select Workload",
                 "values": list(runs_dict.keys()),
                 "default": list(runs_dict.keys()),
                 "type": "Name",
-                "multi": False
+                "multi": True,
             },
             {"Name": "points", "filter": [], "values": max_points, "type": "int"},
         ]

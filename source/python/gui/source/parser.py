@@ -411,6 +411,7 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], CLI=False):
                 impact = experiment_prog.get_impact()
                 for itrx in itr:
                     speedup = itrx.compute_speedup()
+                    line_stddev = float(num_stddev) * itrx.compute_speedup_stddev()
                     if speedup <= 200 and speedup >= -100:
                         out = pd.concat(
                             [
@@ -422,6 +423,7 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], CLI=False):
                                         "point": [itrx.name],
                                         "Line Speedup": [itrx.virtual_speedup()],
                                         "Program Speedup": [speedup],
+                                        "speedup err": line_stddev,
                                         "impact sum": impact[0],
                                         "impact avg": impact[1],
                                         "impact err": float(impact[2]),
@@ -640,7 +642,12 @@ def parse_files(files, experiments=".*", progress_points=".*", speedups=[], CLI=
                         ),
                     ]
                 )
-                out = pd.concat([out, compute_sorts(compute_speedups(dict_data, speedups, 0, [], CLI))])
+                out = pd.concat(
+                    [
+                        out,
+                        compute_sorts(compute_speedups(dict_data, speedups, 0, [], CLI)),
+                    ]
+                )
                 read_files.append(_base_name)
 
         elif file.endswith(".coz"):
