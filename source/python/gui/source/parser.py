@@ -421,8 +421,8 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], CLI=False):
                                         "idx": [(itrx.prog, itrx.name)],
                                         "progress points": [itrx.prog],
                                         "point": [itrx.name],
-                                        "Line Speedup": [itrx.virtual_speedup()],
-                                        "Program Speedup": [speedup],
+                                        "line speedup": [itrx.virtual_speedup()],
+                                        "program speedup": [speedup],
                                         "speedup err": line_stddev,
                                         "impact sum": impact[0],
                                         "impact avg": impact[1],
@@ -507,23 +507,23 @@ def get_validations(validate):
 
 def compute_sorts(_data):
     Max_speedup_order = _data.sort_values(
-        by="Program Speedup", ascending=False
+        by="program speedup", ascending=False
     ).point.unique()
     Min_speedup_order = _data.sort_values(
-        by="Program Speedup", ascending=True
+        by="program speedup", ascending=True
     ).point.unique()
     point_counts = _data.point.value_counts()
     # speedups = pd.DataFrame(_data["Line Speedup"].unique(), columns=["Line Speedup"])
 
-    _data["Max Speedup"] = np.nan
-    _data["Min Speedup"] = np.nan
+    _data["max speedup"] = np.nan
+    _data["min speedup"] = np.nan
     _data["point count"] = np.nan
 
     for index in _data.index:
-        _data.at[index, "Max Speedup"] = np.where(
+        _data.at[index, "max speedup"] = np.where(
             Max_speedup_order == _data.at[index, "point"]
         )[0][0]
-        _data.at[index, "Min Speedup"] = np.where(
+        _data.at[index, "min speedup"] = np.where(
             Min_speedup_order == _data.at[index, "point"]
         )[0][0]
         _data.at[index, "point count"] = point_counts[_data.at[index, "point"]]

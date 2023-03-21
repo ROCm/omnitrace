@@ -49,7 +49,7 @@ html {
 header {
    position: relative;
    height: 40%;
-   min-height: 50px;
+   min-height: 60px;
    width: 100%;
    background: #161415 url(../images/header-background.jpg) no-repeat top center;
    background-size: cover !important;
@@ -151,7 +151,7 @@ header .scrolldown a:hover { color: #11ABB0; }
 
 /* nav-wrap */
 #nav-wrap {
-  font: 18px 'opensans-bold', sans-serif;
+  font: 12px 'opensans-bold', sans-serif;
   width: 100%;
   letter-spacing: 1.5px;
   margin: 0 auto;
@@ -167,7 +167,7 @@ header .scrolldown a:hover { color: #11ABB0; }
 #nav-wrap > a.mobile-btn { display: none; }
 
 ul#nav {
-  min-height: 48px;
+  min-height: 60px;
   width: auto;
 
   /* center align the menu */
@@ -181,39 +181,97 @@ ul#nav li {
  }
 
 /* Filtering */
-#nav .filter {
+.filter {
+   vertical-align: top;
    position: relative;
    list-style: none;
-   height: 48px;
+   /* height: 48px; */
    display: inline-block;
+   width: auto;
 }
 #nav .filter a {
    display: inline-block;
    text-transform: uppercase;
-   padding: 8px 13px;
-   line-height: 32px;
+   padding: 8px; 
+   /* line-height: 32px; */
+   
+   vertical-align: top;
    text-decoration: none;
    text-align: left;
    color: #fff;
-
+   width: auto;
    -webkit-transition: color .2s ease-in-out;
    -moz-transition: color .2s ease-in-out;
    -o-transition: color .2s ease-in-out;
    -ms-transition: color .2s ease-in-out;
    transition: color .2s ease-in-out;
 }
+
 .dash-dropdown {
    position: relative;
    list-style: none;
    display: inline-block;
-   /*width: "30%";*/
+   /* height: 34px; */
+   /* width: 150px; */
+   /* width: auto; */
    vertical-align: middle;
    letter-spacing: normal;
-   font-size: 14px;
-   text-align: left;
+   /* font-size: 14px; */
+   text-align: left; 
+}
+div.dash-dropdown[id="Sort by-filt"]{
+   position: relative;
+   list-style: none;
+   display: inline-block;
+   /* height: 34px; */
+   /* width: 150px; */
+   width: 100%;
+   vertical-align: middle;
+   letter-spacing: normal;
+   /* font-size: 14px; */
+   text-align: left; 
 }
 
-#nav .nav-right {
+li.filter input{
+   vertical-align: top;
+   width: 100%;
+   height: 40%;
+   /* line-height: 60px; */
+   border-width: 1px;
+   border-style: dashed;
+   border-radius: 5px;
+   text-align: center;
+       
+}
+
+li.filter div#upload-drag a {
+   line-height: 100%;
+   border-width: 1px;
+   width: 100%;
+   height: 40%;
+   border-style: dashed;
+   border-radius: 5px;
+   text-align: center;
+   float: right;
+}
+ 
+ul#nav li.filter div.daq-slider--light {
+   position: relative;
+   list-style: none;
+   display: inline-block;
+   vertical-align: bottom;
+}
+ul#nav li.filter div.daq-slider--light div[class="sc-gPEVay cmYtpx rc-slider-handle"] {
+   padding: 0px, 0px;
+   border-radius: 10px;
+   top: 20px;
+}
+
+ul#nav li.filter div.daq-slider--light svg[class = "sc-jAaTju cEBNup rc-slider-handle"]{
+   height: 10px;
+}
+
+#div .nav-right {
    float: right;
 }
 
@@ -229,30 +287,29 @@ ul#nav li.current a { color: #F06000; }
    width:90%;
    margin: auto;
 }*/
-.graph_all{
-   width:95%;
-   height: 100%;
-   margin: auto;
-}
 .graph_select{
    width:95%;
    height: 100%;
    margin: auto;
 }
 /* Report Button */
-button.report {
+ul#nav li.filter button.refresh {
    color: #fff;
    background-color: #F06000;
    font: 16px 'opensans-bold', sans-serif;
    border: none;
    cursor: pointer;
-   height: auto;
+   /* height: auto; */
    display: inline-block;
    border-radius: 3px;
    right:0;
    padding: 8px 13px;
-   margin: 8px 13px;
+   margin: 0px 13px;
+   vertical-align: top
 }
+
+
+
 button.report:hover {
    background-color: #0D0D0D;
 }

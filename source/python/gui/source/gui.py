@@ -74,7 +74,7 @@ def print_speedup_info(data):
         print("")
         for sub_idx, row in sub_data.iterrows():
             print(
-                f"""[{row["point"]}][{row["progress points"]}][{row["Line Speedup"]}] speedup: {row["Program Speedup"]:6.1f} +/- {row["speedup err"]:6.2f}%"""
+                f"""[{row["point"]}][{row["progress points"]}][{row["line speedup"]}] speedup: {row["program speedup"]:6.1f} +/- {row["speedup err"]:6.2f}%"""
             )
         print(
             f"""[{row["point"]}][{row["progress points"]}][sum] impact: {row["impact sum"]:6.1f}"""
@@ -111,10 +111,10 @@ def update_line_graph(
         data = data.sort_values(by=["impact sum", "idx"], ascending=False)
 
     elif "Max Speedup" in sort_filter:
-        data = data.sort_values(by=["Max Speedup", "idx"])
+        data = data.sort_values(by=["max speedup", "idx"])
 
     elif "Min Speedup" in sort_filter:
-        data = data.sort_values(by=["Min Speedup", "idx"])
+        data = data.sort_values(by=["min speedup", "idx"])
 
     if num_points > 0:
         data = data[data["point count"] > num_points]
@@ -136,46 +136,25 @@ def update_line_graph(
     for point in list(mask.point.unique()):
         subplots = go.Figure()
         sub_data = mask[mask["point"] == point]
-        line_number = point[point.rfind(":") :].isnumeric()
-        if line_number:
-            # untested
-            for prog in list(sub_data["progress points"].unique()):
-                sub_data_prog = sub_data[sub_data["progress points"] == prog]
-                subplots.add_trace(
-                    go.Scatter(
-                        x=sub_data_prog["Line Speedup"],
-                        y=sub_data_prog["Program Speedup"],
-                        error_y=dict(
-                            type="percent", array=sub_data_prog["impact err"].tolist()
-                        ),
-                        line_shape="spline",
-                        name=prog,
-                        mode="lines+markers",
-                    )
-                ).update_layout(
-                    xaxis={"title": "Line Speedup"}, yaxis={"title": "Program Speedup"}
+        x_label = (
+            "Line Speedup"
+            if re.match(".*:([0-9]+)$", point) is not None
+            else "Function Speedup"
+        )
+        for prog in list(sub_data["progress points"].unique()):
+            sub_data_prog = sub_data[sub_data["progress points"] == prog]
+            subplots.add_trace(
+                go.Scatter(
+                    x=sub_data_prog["line speedup"],
+                    y=sub_data_prog["program speedup"],
+                    error_y=dict(
+                        type="percent", array=sub_data_prog["impact err"].tolist()
+                    ),
+                    line_shape="spline",
+                    name=prog,
+                    mode="lines+markers",
                 )
-        else:
-            for prog in list(sub_data["progress points"].unique()):
-                sub_data_prog = sub_data[sub_data["progress points"] == prog]
-                subplots.add_trace(
-                    go.Scatter(
-                        x=sub_data_prog["Line Speedup"],
-                        y=sub_data_prog["Program Speedup"],
-                        line_color="hsv("
-                        + str(colors_df[colors_df["progress points"] == prog]["color"][0])
-                        + "%,100%,100%)",
-                        error_y=dict(
-                            type="percent", array=sub_data_prog["speedup err"].tolist()
-                        ),
-                        line_shape="spline",
-                        name=prog,
-                        mode="lines+markers",
-                    )
-                ).update_layout(
-                    xaxis={"title": "Function Speedup"},
-                    yaxis={"title": "Program Speedup"},
-                )
+            ).update_layout(xaxis={"title": x_label}, yaxis={"title": "Program Speedup"})
         causalLayout.append(html.H4(point, style={"color": "white"}))
         causalLayout.append(dcc.Graph(figure=subplots))
 
