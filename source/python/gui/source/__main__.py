@@ -84,7 +84,7 @@ def causal(args):
                 args.speedups,
                 args.num_points,
                 args.validate,
-                True if args.cli or args.verbose >= 2 else False,
+                True if args.cli or args.verbose >= 3 else False,
             )
         )
 
@@ -97,25 +97,16 @@ def causal(args):
         sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
         input_filters = [
             {
-                "Name": "Verbosity",
-                "values": [0, 1, 2, 3],
-                "default": args.verbose,
-                "type": "Name",
-                "multi": False,
-            },
-            {
                 "Name": "Sort by",
-                "values": sortOptions,
+                "values": list(map(str, sortOptions)),
                 "default": "Impact",
                 "type": "Name",
-                "multi": False,
             },
             {
                 "Name": "Select Workload",
                 "values": list(runs_dict.keys()),
                 "default": list(runs_dict.keys()),
                 "type": "Name",
-                "multi": True,
             },
             {"Name": "points", "filter": [], "values": max_points, "type": "int"},
         ]
@@ -179,7 +170,6 @@ def main():
         required=False,
         default=settings["cli"] if "cli" in settings else False,
         help="Do not launch the GUI, print the causal analysis out to the console only",
-<<<<<<< HEAD
     )
 
     my_parser.add_argument(
@@ -189,8 +179,6 @@ def main():
         required=False,
         default=settings["light"] if "light" in settings else False,
         help="light Mode",
-=======
->>>>>>> terminal output if verbosity > 3 or only CLI
     )
 
     my_parser.add_argument(
