@@ -29,35 +29,15 @@ from dash import html, dash_table, dcc
 from matplotlib.style import available
 
 
-# List all the unique column values for desired column in df, 'target_col'
-def list_unique(orig_list, is_numeric):
-    list_set = set(orig_list)
-    unique_list = list(list_set)
-    if is_numeric:
-        unique_list.sort()
-    return unique_list
-
-
 def file_path():
-    return html.Div(
+    return html.Li(
         className="filter",
         children=[
-            html.Li(
-                dcc.Input(
-                    id="file-path",
-                    placeholder="Insert Workload directory",
-                    type="text",
-                    debounce=True,
-                    style={
-                        "width": "100%",
-                        "height": "40%",
-                        "lineHeight": "60px",
-                        "borderWidth": "1px",
-                        #'borderStyle': 'dashed',
-                        "borderRadius": "5px",
-                        "textAlign": "center",
-                    },
-                )
+            dcc.Input(
+                id="file-path",
+                placeholder="Insert Workload directory",
+                type="text",
+                debounce=True,
             )
         ],
     )
@@ -67,48 +47,24 @@ def function_filter(_id, _placeholder):
     return html.Li(
         className="filter",
         children=[
-            html.Li(
-                dcc.Input(
-                    id=_id,
-                    placeholder=_placeholder,
-                    type="text",
-                    debounce=True,
-                    style={
-                        "width": "100%",
-                        "height": "40%",
-                        "lineHeight": "60px",
-                        "borderWidth": "1px",
-                        #'borderStyle': 'dashed',
-                        "borderRadius": "5px",
-                        "textAlign": "center",
-                    },
-                )
+            dcc.Input(
+                id=_id,
+                placeholder=_placeholder,
+                type="text",
+                debounce=True,
             )
         ],
     )
 
 
 def upload_file():
-    return html.Div(
+    return html.Li(
         className="filter",
         children=[
-            html.Li(
-                children=[
-                    # drag and drop
-                    dcc.Upload(
-                        id="upload-drag",
-                        children=["Drag and Drop or ", html.A("Select a File")],
-                        style={
-                            "width": "100%",
-                            "height": "40%",
-                            "lineHeight": "40%",
-                            "borderWidth": "1px",
-                            "borderStyle": "dashed",
-                            "borderRadius": "5px",
-                            "textAlign": "center",
-                        },
-                    )
-                ]
+            # drag and drop
+            dcc.Upload(
+                id="upload-drag",
+                children=[html.A("Drag and Drop or Select a File")],
             )
         ],
     )
@@ -117,83 +73,54 @@ def upload_file():
 def minPoints(name, values):
     return html.Li(
         className="filter",
-        # style={#'width': '100%',
-        #'height': '50px'},
+        id="min-points",
         children=[
             html.Div(
-                style={
-                    "width": "200px",
-                    "position": "relative",
-                    "display": "inline-block",
-                    "list-style": "none",
-                },
-                children=[html.A(className="smoothscroll", children=["Min Points:"])],
-            ),
-            html.Div(
-                style={
-                    "width": "200px",
-                    "padding-top": "10px",
-                    "vertical-align": "middle",
-                    "position": "relative",
-                    "display": "inline-block",
-                    "list-style": "none",
-                },
                 children=[
+                    html.A(children=["Min Points:"]),
                     daq.Slider(
                         min=0,
                         max=values,
                         step=1,
                         value=1,
                         id="points-filt",
-                        handleLabel={"showCurrentValue": True, "label": "VALUE"},
-                        size=200,
-                    )
+                        handleLabel={"showCurrentValue": True, "label": " "},
+                        size=120,
+                    ),
                 ],
             ),
         ],
     )
 
 
-def sortBy(name, values, default, style_):
+def sortBy(name, values, default, multi_):
     return html.Li(
         className="filter",
         children=[
             html.Div(
                 children=[
-                    html.A(className="smoothscroll", children=[name + ":"]),
+                    html.A(children=[name + ":"]),
                     dcc.Dropdown(
-                        list_unique(values, True),
+                        values,
                         id=name + "-filt",
-                        multi=True,
+                        multi=multi_,
                         value=default,
-                        placeholder="ALL",
                         clearable=False,
-                        style=style_,
                     ),
-                ]
+                ],
             )
         ],
     )
 
 
 def refresh():
-    return html.Div(
-        className="nav-right",
+    return html.Li(
+        className="filter",
         children=[
-            html.Li(
-                children=[
-                    # Refresh button
-                    html.A(
-                        href="",
-                        children=[
-                            html.Button(
-                                className="refresh",
-                                children=["Refresh Data"],
-                                id="refresh",
-                            )
-                        ],
-                    )
-                ]
+            html.Button(
+                className="refresh",
+                children=["Refresh Data"],
+                id="refresh",
             )
         ],
     )
@@ -231,34 +158,21 @@ def get_header(dropDownMenuItems, input_filters):
                     filter["Name"],
                     filter["values"],
                     filter["default"],
-                    {
-                        # "width": "200px",  # TODO: Change these widths to % rather than fixed value
-                        "height": "34px"
-                    },
+                    filter["multi"],
+                    # {},
                 )
             )
-        # elif filter["type"] == "Function Name":
-        #    header_nav.append(
-        #        function_filter(
-        #            filter["Name"],
-        #            filter["values"],
-        #            filter["filter"],
-        #            {
-        #                "width": "200px",  # TODO: Change these widths to % rather than fixed value
-        #                "height": "34px",
-        #            },
-        #        )
-        # id    )
         else:
             print("type not supported")
             # sys.exit(1)
     header_nav = children_[0].children[0].children
     header_nav.append(function_filter("function_regex", "Funtion/line regex"))
     header_nav.append(function_filter("exp_regex", "Experiment regex"))
-    header_nav.append(refresh())
+
     # header_nav.append(minPoints())
 
     header_nav.append(file_path())
     header_nav.append(upload_file())
+    header_nav.append(refresh())
 
     return html.Header(id="home", children=children_)

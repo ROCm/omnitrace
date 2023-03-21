@@ -55,12 +55,8 @@ setup(
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
     author="AMD Research",
-    packages=[
-        "omnitrace_causal_viewer",
-    ],
-    package_dir={
-        "omnitrace_causal_viewer": "source",
-    },
+    packages=["omnitrace_causal_viewer"],
+    package_dir={"omnitrace_causal_viewer": "source"},
     package_data={
         "omnitrace_causal_viewer": [
             "source/assets/*",
@@ -71,8 +67,6 @@ setup(
     install_requires=parse_requirements(),
     python_requires=">=3.6",
     entry_points={
-        "console_scripts": [
-            "omnitrace-causal-plot=omnitrace_causal_viewer.__main__:main",
-        ],
+        "console_scripts": ["omnitrace-causal-plot=omnitrace_causal_viewer.__main__:main"]
     },
 )
