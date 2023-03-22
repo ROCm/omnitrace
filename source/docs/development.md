@@ -24,7 +24,7 @@ General design:
 - Adds `libomnitrace-dl.so` to `LD_PRELOAD`
 - Application is launched via `execvpe` with `<command> <command-args>` and modified environment
 
-### omnitrace-casual: [source/bin/omnitrace-causal](https://github.com/AMDResearch/omnitrace/tree/main/source/bin/omnitrace-causal)
+### omnitrace-causal: [source/bin/omnitrace-causal](https://github.com/AMDResearch/omnitrace/tree/main/source/bin/omnitrace-causal)
 
 Nearly identical design to [omnitrace-sample](#omnitrace-sample-sourcebinomnitrace-sample) when
 there is exactly one causal profiling configuration variant (this enables debugging).
