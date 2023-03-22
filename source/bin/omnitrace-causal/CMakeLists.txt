@@ -13,8 +13,8 @@ target_compile_definitions(omnitrace-causal PRIVATE TIMEMORY_CMAKE=1)
 target_include_directories(omnitrace-causal PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(
     omnitrace-causal
-    PRIVATE omnitrace::omnitrace-compile-definitions omnitrace::omnitrace-headers
-            omnitrace::omnitrace-common-library)
+    PRIVATE omnitrace::omnitrace-compile-options omnitrace::omnitrace-compile-definitions
+            omnitrace::omnitrace-headers omnitrace::omnitrace-common-library)
 set_target_properties(
     omnitrace-causal PROPERTIES BUILD_RPATH "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
                                 INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}")

@@ -13,9 +13,9 @@ target_compile_definitions(omnitrace-run PRIVATE TIMEMORY_CMAKE=1)
 target_include_directories(omnitrace-run PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(
     omnitrace-run
-    PRIVATE omnitrace::omnitrace-compile-definitions omnitrace::omnitrace-headers
-            omnitrace::omnitrace-common-library omnitrace::omnitrace-core
-            omnitrace::omnitrace-sanitizer)
+    PRIVATE omnitrace::omnitrace-compile-options omnitrace::omnitrace-compile-definitions
+            omnitrace::omnitrace-headers omnitrace::omnitrace-common-library
+            omnitrace::omnitrace-core omnitrace::omnitrace-sanitizer)
 set_target_properties(
     omnitrace-run PROPERTIES BUILD_RPATH "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
                              INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}")

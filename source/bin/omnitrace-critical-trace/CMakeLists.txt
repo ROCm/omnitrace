@@ -11,7 +11,7 @@ target_include_directories(omnitrace-critical-trace PRIVATE ${CMAKE_CURRENT_LIST
 target_compile_definitions(omnitrace-critical-trace PRIVATE OMNITRACE_EXTERN_COMPONENTS=0)
 target_link_libraries(
     omnitrace-critical-trace
-    PRIVATE omnitrace::omnitrace-compile-definitions
+    PRIVATE omnitrace::omnitrace-compile-options omnitrace::omnitrace-compile-definitions
             omnitrace::omnitrace-interface-library omnitrace::omnitrace-headers
             omnitrace::omnitrace-timemory omnitrace::libomnitrace-static)
 set_target_properties(
