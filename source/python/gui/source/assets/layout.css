@@ -184,10 +184,11 @@ ul#nav li {
 .filter {
    vertical-align: top;
    position: relative;
-   list-style: none;
+   /* list-style: none; */
    /* height: 48px; */
    display: inline-block;
    width: auto;
+   /* float:left; */
 }
 #nav .filter a {
    display: inline-block;
@@ -213,19 +214,8 @@ ul#nav li {
    display: inline-block;
    /* height: 34px; */
    /* width: 150px; */
-   /* width: auto; */
-   vertical-align: middle;
-   letter-spacing: normal;
-   /* font-size: 14px; */
-   text-align: left; 
-}
-div.dash-dropdown[id="Sort by-filt"]{
-   position: relative;
-   list-style: none;
-   display: inline-block;
-   /* height: 34px; */
-   /* width: 150px; */
-   width: 100%;
+   width: auto;
+   min-width: 110px;
    vertical-align: middle;
    letter-spacing: normal;
    /* font-size: 14px; */
