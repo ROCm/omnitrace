@@ -175,13 +175,6 @@ def reset_input_filters(workloads, max_points, verbosity):
 
     input_filters = [
         {
-            "Name": "Verbosity",
-            "values": [0, 1, 2, 3],
-            "default": verbosity,
-            "type": "Name",
-            "multi": False,
-        },
-        {
             "Name": "Sort by",
             "values": list(map(str, sortOptions)),
             "default": "Impact",
@@ -201,7 +194,7 @@ def reset_input_filters(workloads, max_points, verbosity):
 
 
 def build_causal_layout(
-    app, runs, input_filters, path_to_dir, data, samples, verbosity=0, light_mode=True
+    app, input_filters, path_to_dir, data, samples, verbosity=0, light_mode=True
 ):
     """
     Build gui layout
@@ -252,7 +245,6 @@ def build_causal_layout(
         Output("graph_select", "children"),
         [Input("nav-wrap", "children")],
         [Input("refresh", "n_clicks")],
-        [Input("Verbosity-filt", "value")],
         [Input("Sort by-filt", "value")],
         [Input("Select Workload-filt", "value")],
         [Input("function_regex", "value")],
@@ -266,7 +258,6 @@ def build_causal_layout(
     def generate_from_filter(
         header,
         refresh,
-        verbosity,
         sort_filter,
         workload_filter,
         func_regex,
@@ -281,20 +272,15 @@ def build_causal_layout(
         global global_data
         global global_input_filters
         global workload_path
-        global verbose
-        CLI = False
 
-        verbose = verbosity
-        if type(workload_filter) == str:
-            workload_filter = [workload_filter]
-        if verbose >= 1:
+        # change to if debug
+        if verbose >= 3:
             print("Sort by is ", sort_filter)
             print("funcRegex is ", func_regex)
             print("expRegex is ", exp_regex)
             print("points is: ", num_points)
             print("workload_path is: ", workload_path)
             print("selected workloads are:", workload_filter)
-            print("verbosity is:", verbose)
 
         divChildren = []
         files = []
@@ -318,7 +304,9 @@ def build_causal_layout(
                 metadata = glob.glob(os.path.join(_workload_path, "*/metadata*.json"))
                 files = _files + subfiles
                 workload_path = files
-            global_data, global_samples = parse_files(workload_path)
+            global_data, global_samples, global_filenames = parse_files(
+                workload_path, verbose=verbose
+            )
             func_list = sorted(list(global_data.point.unique()))
             exp_list = sorted(list(global_data["progress points"].unique()))
 
@@ -402,8 +390,8 @@ def build_causal_layout(
                 print("refreshing Data with " + workload_path)
                 print(global_data.keys())
 
-            global_data, global_samples = parse_files(
-                files=[workload_path], CLI=(True if verbose >= 2 else False)
+            global_data, global_samples, global_filenames = parse_files(
+                files=[workload_path], verbose=verbose
             )
 
             func_list = sorted(list(global_data.point.unique()))

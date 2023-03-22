@@ -367,7 +367,7 @@ def process_data(data, _data, experiments, progress_points):
     return data
 
 
-def compute_speedups(runs, speedups=[], num_points=0, validate=[], CLI=False):
+def compute_speedups(runs, speedups=[], num_points=0, validate=[], debug=False):
     out = pd.DataFrame()
     data = {}
     for workload in runs:
@@ -435,7 +435,7 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], CLI=False):
                         )
         _data.sort()
 
-        if CLI:
+        if debug:
             for itr in _data:
                 if len(itr) < num_points:
                     continue
@@ -597,11 +597,18 @@ def add_latency(df, experiment, value):
     return df
 
 
-def parse_files(files, experiments=".*", progress_points=".*", speedups=[], CLI=False):
-    data = pd.DataFrame()
-    out = pd.DataFrame()
-    sample_data = pd.DataFrame()
-    samples = {}
+def parse_files(
+    files,
+    experiments=".*",
+    progress_points=".*",
+    speedups=[],
+    num_points=0,
+    validate=[],
+    verbose=0,
+    cli=False,
+):
+    result_df = pd.DataFrame()
+    sample_df = pd.DataFrame()
 
     cli_out = []
 
@@ -611,14 +618,21 @@ def parse_files(files, experiments=".*", progress_points=".*", speedups=[], CLI=
     coz_files = [x for x in filter(lambda y: y.endswith(".coz"), files)]
     base_files = [name_wo_ext(x) for x in coz_files + json_files]
     read_files = []
+    file_names = []
 
     # prefer JSON files first
     files = json_files + coz_files
     for file in files:
+        if verbose >= 3:
+            print(f"Potentially reading causal profile: '{file}'...")
+
         _base_name = name_wo_ext(file)
         # do not read in a COZ file if the JSON already read
         if _base_name in read_files:
             continue
+
+        if verbose >= 3 or (verbose >= 1 and not cli):
+            print(f"Reading causal profile: '{file}'...")
 
         if file.endswith(".json"):
             with open(file, "r") as j:
@@ -627,13 +641,11 @@ def parse_files(files, experiments=".*", progress_points=".*", speedups=[], CLI=
                 # make sure the JSON is an omnitrace causal JSON
                 if "omnitrace" not in _data or "causal" not in _data["omnitrace"]:
                     continue
-                dict_data[file[file.rfind("/") + 1 :]] = process_data(
-                    {}, _data, experiments, progress_points
-                )
+                dict_data[file] = process_data({}, _data, experiments, progress_points)
                 samps = process_samples({}, _data)
-                sample_data = pd.concat(
+                sample_df = pd.concat(
                     [
-                        sample_data,
+                        sample_df,
                         pd.DataFrame(
                             [
                                 {"location": loc, "count": count}
@@ -642,13 +654,22 @@ def parse_files(files, experiments=".*", progress_points=".*", speedups=[], CLI=
                         ),
                     ]
                 )
-                out = pd.concat(
+                result_df = pd.concat(
                     [
-                        out,
-                        compute_sorts(compute_speedups(dict_data, speedups, 0, [], CLI)),
+                        result_df,
+                        compute_sorts(
+                            compute_speedups(
+                                dict_data,
+                                speedups,
+                                num_points,
+                                validate,
+                                verbose >= 3 or cli,
+                            )
+                        ),
                     ]
                 )
                 read_files.append(_base_name)
+                file_names.append(file)
 
         elif file.endswith(".coz"):
             try:
@@ -660,6 +681,8 @@ def parse_files(files, experiments=".*", progress_points=".*", speedups=[], CLI=
             lines = f.readlines()
             # Parse lines
             experiment = None
+            samps = {}
+            data = pd.DataFrame()
 
             for line in lines:
                 if line != "\n":
@@ -687,16 +710,33 @@ def parse_files(files, experiments=".*", progress_points=".*", speedups=[], CLI=
                     elif data_type == "latency-point":
                         data = add_latency(data, experiment, value)
                     elif data_type == "samples":
-                        if value["location"] not in sample_data:
-                            sample_data[value["location"]] = 0
-                        sample_data[value["location"]] += int(value["count"])
+                        if value["location"] not in samps:
+                            samps[value["location"]] = 0
+                        samps[value["location"]] += int(value["count"])
                     elif data_type not in ["startup", "shutdown", "runtime"]:
                         print("Invalid profile")
 
-            out = get_speedup_data(data.sort_index())
+            result_df = pd.concat(
+                [
+                    result_df,
+                    get_speedup_data(data.sort_index()),
+                ]
+            )
+            sample_df = pd.concat(
+                [
+                    sample_df,
+                    pd.DataFrame(
+                        [
+                            {"location": loc, "count": count}
+                            for loc, count in sorted(samps.items())
+                        ]
+                    ),
+                ]
+            )
             read_files.append(_base_name)
+            file_names.append(file)
 
-    return out, sample_data
+    return result_df, sample_df, file_names
 
 
 def parse_uploaded_file(file_name, file, experiments=".*", progress_points=".*"):
