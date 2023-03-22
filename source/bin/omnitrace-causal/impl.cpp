@@ -155,7 +155,7 @@ wait_pid(pid_t _pid, int _opts)
         if((_opts & WNOHANG) > 0)
             std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
         _pid_v = waitpid(_pid, &_status, _opts);
-    } while(_pid <= 0);
+    } while(_pid_v <= 0);
     return _status;
 }
 
@@ -840,7 +840,6 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         throw std::runtime_error(_cerr.what());
 
     if(_niterations < 1) _niterations = 1;
-    auto _get_size = [](const auto& _v) { return std::max<size_t>(_v.size(), 1); };
 
     auto _causal_envs_tmp = std::vector<std::map<std::string_view, std::string>>{};
     auto _fill = [&_causal_envs_tmp](std::string_view _env_var, const auto& _data,

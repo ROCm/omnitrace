@@ -274,12 +274,6 @@ parse_args(int argc, char** argv, parser_data_t& _parser_data)
     // no need for backtraces
     signals::disable_signal_detection(signals::signal_settings::get_enabled());
 
-    auto help_check = [](parser_t& p, int _argc, char** _argv) {
-        std::set<std::string> help_args = { "-h", "--help", "-?" };
-        return (p.exists("help") || _argc == 1 ||
-                (_argc > 1 && help_args.find(_argv[1]) != help_args.end()));
-    };
-
     const auto* _desc = R"desc(
     Command line interface to omnitrace configuration.
     )desc";
@@ -349,7 +343,6 @@ parse_command(int argc, char** argv, parser_data_t& _parser_data)
     signals::disable_signal_detection(signals::signal_settings::get_enabled());
 
     auto& _outv = _parser_data.command;
-    bool  _hash = false;
     for(int i = 1; i < argc; ++i)
     {
         _outv.emplace_back(strdup(argv[i]));
