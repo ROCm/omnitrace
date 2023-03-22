@@ -194,7 +194,7 @@ def reset_input_filters(workloads, max_points, verbosity):
 
 
 def build_causal_layout(
-    app, runs, input_filters, path_to_dir, data, samples, verbosity=0, light_mode=True
+    app, input_filters, path_to_dir, data, samples, verbosity=0, light_mode=True
 ):
     """
     Build gui layout
@@ -272,7 +272,6 @@ def build_causal_layout(
         global global_data
         global global_input_filters
         global workload_path
-        CLI = False
 
         # change to if debug
         if verbose >= 3:
@@ -305,7 +304,9 @@ def build_causal_layout(
                 metadata = glob.glob(os.path.join(_workload_path, "*/metadata*.json"))
                 files = _files + subfiles
                 workload_path = files
-            global_data, global_samples = parse_files(workload_path)
+            global_data, global_samples, global_filenames = parse_files(
+                workload_path, verbose=verbose
+            )
             func_list = sorted(list(global_data.point.unique()))
             exp_list = sorted(list(global_data["progress points"].unique()))
 
@@ -389,8 +390,8 @@ def build_causal_layout(
                 print("refreshing Data with " + workload_path)
                 print(global_data.keys())
 
-            global_data, global_samples = parse_files(
-                files=[workload_path], CLI=(True if verbose >= 2 else False)
+            global_data, global_samples, global_filenames = parse_files(
+                files=[workload_path], verbose=verbose
             )
 
             func_list = sorted(list(global_data.point.unique()))

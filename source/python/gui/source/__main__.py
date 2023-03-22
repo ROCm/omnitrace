@@ -44,52 +44,71 @@ from yaml import parse
 from collections import OrderedDict
 
 from . import gui
-from .parser import compute_speedups, process_data, process_samples, compute_sorts
+from .parser import parse_files
 from . import __version__
 
 
 def causal(args):
     app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 
-    # TODO This will become a glob to look for subfolders with coz files
-    workload_path = [args.path]
+    workload_path = args.path[:]
+    input_files = []
+
+    def find_causal_files(inp, _files):
+        _input_files_tmp = []
+        for itr in _files:
+            if os.path.isfile(itr) and itr.endswith(".json"):
+                with open(itr, "r") as f:
+                    inp_data = json.load(f)
+                    if (
+                        "omnitrace" not in inp_data.keys()
+                        or "causal" not in inp_data["omnitrace"].keys()
+                    ):
+                        if args.verbose >= 2:
+                            print(f"{itr} is not a causal profile")
+                        continue
+                _input_files_tmp += [itr]
+            elif os.path.isfile(itr) and itr.endswith(".coz"):
+                _input_files_tmp += [itr]
+        return _input_files_tmp
+
+    for inp in workload_path:
+        if os.path.exists(inp):
+            if os.path.isdir(inp):
+                _files = glob.glob(os.path.join(inp, "**"), recursive=args.recursive)
+                _input_files_tmp = find_causal_files(inp, _files)
+                if len(_input_files_tmp) == 0:
+                    raise ValueError(f"No causal profiles found in {inp}")
+                else:
+                    input_files += _input_files_tmp
+            elif os.path.isfile(inp):
+                input_files += [inp]
+        else:
+            _files = glob.glob(inp, recursive=args.recursive)
+            _input_files_tmp = find_causal_files(inp, _files)
+            if len(_input_files_tmp) == 0:
+                raise ValueError(f"No causal profiles found in {inp}")
+            else:
+                input_files += _input_files_tmp
+
+    # unique
+    input_files = list(set(input_files))
 
     num_stddev = args.stddev
     num_speedups = len(args.speedups)
 
-    if num_speedups > 0 and args.num_points > num_speedups:
-        args.num_points = num_speedups
+    if num_speedups > 0 and args.min_points > num_speedups:
+        args.min_points = num_speedups
 
-    results_df = pd.DataFrame()
-    samp = {}
-    runs_dict = {}
-    inp = args.path
-    if os.path.exists(inp):
-        if os.path.isdir(inp):
-            inp = glob.glob(os.path.join(inp, "*.json"))
-        elif os.path.isfile(inp):
-            inp = [inp]
-        for file in inp:
-            with open(file, "r") as f:
-                inp_data = json.load(f)
-                file_name = os.path.basename(file)
-                _data = process_data({}, inp_data, args.experiments, args.progress_points)
-                _samp = process_samples({}, inp_data)
-                runs_dict[file_name] = _data
-                samp.update(_samp)
-
-        results_df = compute_sorts(
-            compute_speedups(
-                runs_dict,
-                args.speedups,
-                args.num_points,
-                args.validate,
-                True if args.cli or args.verbose >= 3 else False,
-            )
-        )
-
-    samples_df = pd.DataFrame(
-        [{"location": loc, "count": count} for loc, count in sorted(samp.items())]
+    results_df, samples_df, file_names = parse_files(
+        input_files,
+        args.experiments,
+        args.progress_points,
+        args.speedups,
+        args.min_points,
+        args.validate,
+        args.verbose,
+        args.cli,
     )
 
     if not args.cli:
@@ -105,8 +124,8 @@ def causal(args):
             },
             {
                 "Name": "Select Workload",
-                "values": list(runs_dict.keys()),
-                "default": list(runs_dict.keys()),
+                "values": file_names,
+                "default": file_names,
                 "type": "Name",
                 "multi": True,
             },
@@ -115,7 +134,6 @@ def causal(args):
 
         gui.build_causal_layout(
             app,
-            runs_dict,
             input_filters,
             args.path,
             results_df,
@@ -138,25 +156,48 @@ def main():
         settings_path = os.path.join(f"{this_dir.parent}", "settings.json")
     else:
         settings_path = os.path.join(f"{this_dir}", "settings.json")
-    if os.path.exists(settings_path):
-        with open(settings_path, "r") as f:
-            settings = json.load(f)
+
+    for itr in [
+        settings_path,
+        os.path.join(os.environ.get("HOME"), ".omnitrace-causal-plot.json"),
+    ]:
+        if os.path.exists(itr):
+            with open(itr, "r") as f:
+                settings = json.load(f)
+            break
+
+    default_settings = {}
+    default_settings["path"] = ""
+    default_settings["cli"] = False
+    default_settings["light"] = False
+    default_settings["ip_address"] = "0.0.0.0"
+    default_settings["ip_port"] = 8051
+    default_settings["experiments"] = ".*"
+    default_settings["progress_points"] = ".*"
+    default_settings["min_points"] = 5
+    default_settings["recursive"] = False
+    default_settings["verbose"] = 0
+    default_settings["stddev"] = 1
+
+    for key, value in default_settings.items():
+        if key not in settings:
+            settings[key] = value
 
     my_parser = argparse.ArgumentParser(
-        description="AMD's OmniTrace GUI",
+        description="AMD's OmniTrace Causal Profiling GUI",
         prog="tool",
         allow_abbrev=False,
         formatter_class=lambda prog: argparse.RawTextHelpFormatter(
             prog, max_help_position=40
         ),
         usage="""
-                                        \nomnitrace-causal-plot --path <path>
+        omnitrace-causal-plot [ARGS...]
 
-                                        \n\n-------------------------------------------------------------------------------
-                                        \nExamples:
-                                        \n\tomnitrace-causal-plot --path workloads/toy
-                                        \n-------------------------------------------------------------------------------\n
-                                        """,
+        -------------------------------------------------------------------------------
+        Examples:
+        \tomnitrace-causal-plot --path workloads/toy -n 0
+        -------------------------------------------------------------------------------
+        """,
     )
 
     my_parser.add_argument(
@@ -170,7 +211,7 @@ def main():
         "--cli",
         action="store_true",
         required=False,
-        default=settings["cli"] if "cli" in settings else False,
+        default=settings["cli"],
         help="Do not launch the GUI, print the causal analysis out to the console only",
     )
 
@@ -179,39 +220,49 @@ def main():
         "--light",
         action="store_true",
         required=False,
-        default=settings["light"] if "light" in settings else False,
+        default=settings["light"],
         help="light Mode",
     )
 
     my_parser.add_argument(
         "-w",
         "--workload",
+        "--path",
         metavar="FOLDER",
         type=str,
         dest="path",
-        default=settings["path"] if "path" in settings else "",
+        default=settings["path"],
         required=False,
-        help="Specify path to causal profiles.\n(DEFAULT: {}/workloads/<name>)".format(
-            os.getcwd()
-        ),
+        nargs="+",
+        help="Specify path to causal profiles",
+    )
+
+    my_parser.add_argument(
+        "-r",
+        "--recursive",
+        action="store_true",
+        default=settings["recursive"],
+        help="Recursively search for causal profiles in workload directory",
     )
 
     my_parser.add_argument(
         "-V",
         "--verbose",
         help="Increase output verbosity, if 3 or greater, CLI output will show in terminal in GUI mode",
-        default=0,
+        default=settings["verbose"],
         type=int,
     )
 
     my_parser.add_argument(
         "--ip",
-        "--ip-addr",
+        "--ip-address",
         metavar="IP_ADDR",
         type=str,
         dest="ip_address",
-        default="0.0.0.0",
-        help="Specify the IP address for the web app.\n(DEFAULT: 0.0.0.0)",
+        default=settings["ip_address"],
+        help="Specify the IP address for the web app.\n(DEFAULT: {})".format(
+            settings["ip_address"]
+        ),
     )
 
     my_parser.add_argument(
@@ -220,12 +271,18 @@ def main():
         metavar="PORT",
         type=int,
         dest="ip_port",
-        default=8051,
-        help="Specify the port number for the IP address for the web app.\n(DEFAULT: 8051)",
+        default=settings["ip_port"],
+        help="Specify the port number for the IP address for the web app.\n(DEFAULT: {})".format(
+            settings["ip_address"]
+        ),
     )
 
     my_parser.add_argument(
-        "-e", "--experiments", type=str, help="Regex for experiments", default=".*"
+        "-e",
+        "--experiments",
+        type=str,
+        help="Regex for experiments",
+        default=settings["experiments"],
     )
 
     my_parser.add_argument(
@@ -233,11 +290,15 @@ def main():
         "--progress-points",
         type=str,
         help="Regex for progress points",
-        default=".*",
+        default=settings["progress_points"],
     )
 
     my_parser.add_argument(
-        "-n", "--num-points", type=int, help="Minimum number of data points", default=5
+        "-n",
+        "--min-points",
+        type=int,
+        help="Minimum number of data points",
+        default=settings["min_points"],
     )
 
     my_parser.add_argument(
@@ -254,7 +315,7 @@ def main():
         "--stddev",
         type=int,
         help="Number of standard deviations to report",
-        default=1,
+        default=settings["stddev"],
     )
 
     my_parser.add_argument(
