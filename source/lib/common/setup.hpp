@@ -86,28 +86,47 @@ namespace omnitrace
 inline namespace common
 {
 inline std::vector<env_config>
-get_environ(int _verbose, std::string _search_paths = {},
-            std::string _omnilib    = "libomnitrace.so",
-            std::string _omnilib_dl = "libomnitrace-dl.so")
+get_environ(int _verbose, std::string _search_paths = {})
 {
-    auto _data            = std::vector<env_config>{};
-    auto _omnilib_path    = path::get_origin(_omnilib);
-    auto _omnilib_dl_path = path::get_origin(_omnilib_dl);
+    auto _data = std::vector<env_config>{};
 
-    if(!_omnilib_path.empty())
+    // get initial values
+    auto _omnilib      = get_env("OMNITRACE_LIBRARY", "libomnitrace.so");
+    auto _omnilib_dl   = get_env("OMNITRACE_DL_LIBRARY", "libomnitrace-dl.so");
+    auto _omnilib_user = get_env("OMNITRACE_USER_LIBRARY", "libomnitrace-user.so");
+
+    // use the origin of one of them for future search paths
+    for(auto* itr : { &_omnilib, &_omnilib_dl, &_omnilib_user })
     {
-        _omnilib      = join('/', _omnilib_path, ::basename(_omnilib.c_str()));
-        _search_paths = join(':', _omnilib_path, _search_paths);
+        auto _itr_path = path::get_origin(*itr);
+        if(!_itr_path.empty())
+        {
+            *itr          = join('/', _itr_path, ::basename(itr->c_str()));
+            _search_paths = join(':', _itr_path, _search_paths);
+        }
     }
 
-    if(!_omnilib_dl_path.empty())
+    // resolve to full paths
+    _omnilib      = common::path::find_path(_omnilib, _verbose, _search_paths);
+    _omnilib_dl   = common::path::find_path(_omnilib_dl, _verbose, _search_paths);
+    _omnilib_user = common::path::find_path(_omnilib_user, _verbose, _search_paths);
+
+    // add to env config
+    _data.emplace_back(env_config{ "OMNITRACE_LIBRARY", _omnilib, 0 });
+    _data.emplace_back(env_config{ "OMNITRACE_DL_LIBRARY", _omnilib_dl, 0 });
+    _data.emplace_back(env_config{ "OMNITRACE_USER_LIBRARY", _omnilib_user, 0 });
+
+    // execute the set_env and sync value to result of get_env
+    for(auto& itr : _data)
     {
-        _omnilib_dl   = join('/', _omnilib_dl_path, ::basename(_omnilib_dl.c_str()));
-        _search_paths = join(':', _omnilib_dl_path, _search_paths);
+        itr();
+        itr.sync();
     }
 
-    _omnilib    = common::path::find_path(_omnilib, _verbose, _search_paths);
-    _omnilib_dl = common::path::find_path(_omnilib_dl, _verbose, _search_paths);
+    // set the value to the env value to ensure ensuing usage is correct
+    _omnilib      = get_env("OMNITRACE_LIBRARY", _omnilib);
+    _omnilib_dl   = get_env("OMNITRACE_DL_LIBRARY", _omnilib_dl);
+    _omnilib_user = get_env("OMNITRACE_USER_LIBRARY", _omnilib_user);
 
 #if defined(OMNITRACE_USE_ROCTRACER) && OMNITRACE_USE_ROCTRACER > 0
     _data.emplace_back(env_config{ "HSA_TOOLS_LIB", _omnilib.c_str(), 0 });
@@ -267,12 +286,9 @@ get_environ(int _verbose, std::string _search_paths = {},
 }
 
 inline void
-setup_environ(int _verbose, const std::string& _search_paths = {},
-              std::string _omnilib    = "libomnitrace.so",
-              std::string _omnilib_dl = "libomnitrace-dl.so")
+setup_environ(int _verbose, const std::string& _search_paths = {})
 {
-    auto _data =
-        get_environ(_verbose, _search_paths, std::move(_omnilib), std::move(_omnilib_dl));
+    auto _data = get_environ(_verbose, _search_paths);
     for(const auto& itr : _data)
         itr(_verbose >= 3);
 }

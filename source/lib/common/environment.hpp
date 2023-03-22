@@ -168,6 +168,8 @@ struct OMNITRACE_INTERNAL_API env_config
     std::string env_value = {};
     int         override  = 0;
 
+    void sync() { env_value = get_env(env_name, env_value); }
+
     auto operator()(bool _verbose = false) const
     {
         if(env_name.empty()) return -1;

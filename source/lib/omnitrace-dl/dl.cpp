@@ -218,27 +218,28 @@ const char* _omnitrace_dl_dlopen_descr = "RTLD_LAZY | RTLD_LOCAL";
 /// This class contains function pointers for omnitrace's instrumentation functions
 struct OMNITRACE_INTERNAL_API indirect
 {
-    OMNITRACE_INLINE indirect(const std::string& _omnilib, const std::string& _userlib,
-                              const std::string& _dllib)
-    : m_omnilib{ common::path::find_path(_omnilib, _omnitrace_dl_verbose) }
-    , m_dllib{ common::path::find_path(_dllib, _omnitrace_dl_verbose) }
-    , m_userlib{ common::path::find_path(_userlib, _omnitrace_dl_verbose) }
+    static OMNITRACE_INLINE void setup()
+    {
+        omnitrace_preinit_library();
+        common::setup_environ(_omnitrace_dl_verbose);
+    }
+
+    OMNITRACE_INLINE indirect()
+    : m_omnilib{ get_env("OMNITRACE_LIBRARY", "libomnitrace.so") }
+    , m_dllib{ get_env("OMNITRACE_DL_LIBRARY", "libomnitrace-dl.so") }
+    , m_userlib{ get_env("OMNITRACE_USER_LIBRARY", "libomnitrace-user.so") }
     {
         if(_omnitrace_dl_verbose >= 1)
         {
             OMNITRACE_COMMON_LIBRARY_LOG_START
-            fprintf(stderr, "[omnitrace][dl][pid=%i] %s resolved to '%s'\n", getpid(),
-                    ::basename(_omnilib.c_str()), m_omnilib.c_str());
-            fprintf(stderr, "[omnitrace][dl][pid=%i] %s resolved to '%s'\n", getpid(),
-                    ::basename(_dllib.c_str()), m_dllib.c_str());
-            fprintf(stderr, "[omnitrace][dl][pid=%i] %s resolved to '%s'\n", getpid(),
-                    ::basename(_userlib.c_str()), m_userlib.c_str());
+            fprintf(stderr, "[omnitrace][dl][pid=%i] %-24s resolved to '%s'\n", getpid(),
+                    "OMNITRACE_LIBRARY", m_omnilib.c_str());
+            fprintf(stderr, "[omnitrace][dl][pid=%i] %-24s resolved to '%s'\n", getpid(),
+                    "OMNITRACE_DL_LIBRARY", m_dllib.c_str());
+            fprintf(stderr, "[omnitrace][dl][pid=%i] %-24s resolved to '%s'\n", getpid(),
+                    "OMNITRACE_USER_LIBRARY", m_userlib.c_str());
             OMNITRACE_COMMON_LIBRARY_LOG_END
         }
-
-        auto _search_paths = common::join(':', common::path::dirname(_omnilib),
-                                          common::path::dirname(_dllib));
-        common::setup_environ(_omnitrace_dl_verbose, _search_paths, _omnilib, _dllib);
 
         m_omnihandle = open(m_omnilib);
         m_userhandle = open(m_userlib);
@@ -488,62 +489,83 @@ get_indirect() OMNITRACE_INTERNAL_API;
 indirect&
 get_indirect()
 {
-    omnitrace_preinit_library();
+    static auto* _v = []() {
+        indirect::setup();
+        return new indirect{};
+    }();
+    return *_v;
+}
 
-    static auto  _libomni = get_env("OMNITRACE_LIBRARY", "libomnitrace.so");
-    static auto  _libuser = get_env("OMNITRACE_USER_LIBRARY", "libomnitrace-user.so");
-    static auto  _libdlib = get_env("OMNITRACE_DL_LIBRARY", "libomnitrace-dl.so");
-    static auto* _v       = new indirect{ _libomni, _libuser, _libdlib };
+struct OMNITRACE_INTERNAL_API global_state_data
+{
+    bool              inited = false;
+    bool              finied = false;
+    bool              active = false;
+    std::atomic<bool> enabled =
+        std::atomic<bool>{ get_env("OMNITRACE_INIT_ENABLED", true) };
+};
+
+auto&
+get_global_state_data()
+{
+    static auto* _v = new global_state_data{};
     return *_v;
 }
 
 auto&
 get_inited()
 {
-    static bool* _v = new bool{ false };
-    return *_v;
+    return get_global_state_data().inited;
 }
 
 auto&
 get_finied()
 {
-    static bool* _v = new bool{ false };
-    return *_v;
+    return get_global_state_data().finied;
 }
 
 auto&
 get_active()
 {
-    static bool* _v = new bool{ false };
-    return *_v;
+    return get_global_state_data().active;
 }
 
 auto&
 get_enabled()
 {
-    static auto* _v = new std::atomic<bool>{ get_env("OMNITRACE_INIT_ENABLED", true) };
-    return *_v;
+    return get_global_state_data().enabled;
+}
+
+struct OMNITRACE_INTERNAL_API thread_state_data
+{
+    bool    enabled      = get_enabled();
+    bool    status       = false;
+    int64_t thread_count = 0;
+};
+
+auto&
+get_thread_state_data()
+{
+    static thread_local auto _v = thread_state_data{};
+    return _v;
 }
 
 auto&
 get_thread_enabled()
 {
-    static thread_local bool _v = get_enabled();
-    return _v;
-}
-
-auto&
-get_thread_count()
-{
-    static thread_local int64_t _v = 0;
-    return _v;
+    return get_thread_state_data().enabled;
 }
 
 auto&
 get_thread_status()
 {
-    static thread_local bool _v = false;
-    return _v;
+    return get_thread_state_data().status;
+}
+
+auto&
+get_thread_count()
+{
+    return get_thread_state_data().thread_count;
 }
 
 InstrumentMode&
@@ -590,20 +612,18 @@ bool _omnitrace_dl_fini = (std::atexit([]() {
     }
 
 using omnitrace::dl::get_indirect;
-namespace dl = omnitrace::dl;
+namespace dl     = omnitrace::dl;
+namespace common = omnitrace::common;
 
 extern "C"
 {
     void omnitrace_preinit_library(void)
     {
-        if(omnitrace::common::get_env("OMNITRACE_MONOCHROME", tim::log::monochrome()))
+        if(common::get_env("OMNITRACE_MONOCHROME", tim::log::monochrome()))
             tim::log::monochrome() = true;
     }
 
-    int omnitrace_preload_library(void)
-    {
-        return (::omnitrace::dl::get_omnitrace_preload()) ? 1 : 0;
-    }
+    int omnitrace_preload_library(void) { return (dl::get_omnitrace_preload()) ? 1 : 0; }
 
     void omnitrace_init_library(void)
     {
@@ -1123,54 +1143,18 @@ namespace
 bool
 omnitrace_preload() OMNITRACE_INTERNAL_API;
 
-std::vector<std::string>
-get_link_map(const char*,
-             std::vector<int>&& = { (RTLD_LAZY | RTLD_NOLOAD) }) OMNITRACE_INTERNAL_API;
-
 const char*
 get_default_mode() OMNITRACE_INTERNAL_API;
 
 void
 verify_instrumented_preloaded() OMNITRACE_INTERNAL_API;
 
-std::vector<std::string>
-get_link_map(const char* _name, std::vector<int>&& _open_modes)
-{
-    void* _handle = nullptr;
-    bool  _noload = false;
-    for(auto _mode : _open_modes)
-    {
-        _handle = dlopen(_name, _mode);
-        _noload = (_mode & RTLD_NOLOAD) == RTLD_NOLOAD;
-        if(_handle) break;
-    }
-
-    auto _chain = std::vector<std::string>{};
-    if(_handle)
-    {
-        struct link_map* _link_map = nullptr;
-        dlinfo(_handle, RTLD_DI_LINKMAP, &_link_map);
-        struct link_map* _next = _link_map->l_next;
-        while(_next)
-        {
-            if(_next->l_name != nullptr && !std::string_view{ _next->l_name }.empty())
-            {
-                _chain.emplace_back(_next->l_name);
-            }
-            _next = _next->l_next;
-        }
-
-        if(_noload == false) dlclose(_handle);
-    }
-    return _chain;
-}
-
 const char*
 get_default_mode()
 {
     if(get_env("OMNITRACE_USE_CAUSAL", false)) return "causal";
 
-    auto _link_map = get_link_map(nullptr);
+    auto _link_map = common::path::get_link_map(nullptr);
     for(const auto& itr : _link_map)
     {
         if(itr.find("libomnitrace-rt.so") != std::string::npos ||
@@ -1249,7 +1233,7 @@ omnitrace_preload()
     auto _preload = get_omnitrace_is_preloaded() && get_omnitrace_preload() &&
                     get_env("OMNITRACE_ENABLED", true);
 
-    auto _link_map = get_link_map(nullptr);
+    auto _link_map = common::path::get_link_map(nullptr);
     auto _instr_mode =
         get_env("OMNITRACE_INSTRUMENT_MODE", dl::InstrumentMode::BinaryRewrite);
     for(const auto& itr : _link_map)
