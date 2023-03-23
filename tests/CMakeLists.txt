@@ -73,7 +73,7 @@ omnitrace_add_test(
     ENVIRONMENT "${_base_environment};OMNITRACE_CRITICAL_TRACE=ON")
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_SAMPLING SKIP_RUNTIME
+    SKIP_BASELINE SKIP_RUNTIME
     NAME transpose-loops
     TARGET transpose
     LABELS "loops"
@@ -97,7 +97,7 @@ omnitrace_add_test(
     REWRITE_FAIL_REGEX "0 instrumented loops in procedure transpose")
 
 omnitrace_add_test(
-    SKIP_PRELOAD SKIP_RUNTIME SKIP_SAMPLING
+    SKIP_SAMPLING SKIP_RUNTIME
     NAME rewrite-caller
     TARGET rewrite-caller
     LABELS "caller-include"
@@ -123,7 +123,7 @@ set(OMNITRACE_ROCM_EVENTS_TEST
 
 if(OMNITRACE_USE_ROCPROFILER)
     omnitrace_add_test(
-        SKIP_BASELINE SKIP_SAMPLING SKIP_RUNTIME
+        SKIP_BASELINE SKIP_RUNTIME
         NAME transpose-rocprofiler
         TARGET transpose
         LABELS "rocprofiler"
@@ -138,7 +138,7 @@ if(OMNITRACE_USE_ROCPROFILER)
         )
 
     omnitrace_add_test(
-        SKIP_BASELINE SKIP_SAMPLING SKIP_RUNTIME
+        SKIP_BASELINE SKIP_RUNTIME
         NAME transpose-rocprofiler-no-roctracer
         TARGET transpose
         LABELS "rocprofiler"
@@ -186,7 +186,7 @@ omnitrace_add_test(
     )
 
 omnitrace_add_test(
-    SKIP_RUNTIME SKIP_SAMPLING
+    SKIP_RUNTIME
     NAME parallel-overhead-locks-timemory
     TARGET parallel-overhead-locks
     LABELS "locks"
@@ -200,7 +200,7 @@ omnitrace_add_test(
     )
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_RUNTIME SKIP_SAMPLING
+    SKIP_BASELINE SKIP_RUNTIME
     NAME parallel-overhead-locks-perfetto
     TARGET parallel-overhead-locks
     LABELS "locks"
@@ -232,7 +232,7 @@ omnitrace_add_test(
     ENVIRONMENT "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF"
     REWRITE_RUN_PASS_REGEX "Pushing custom region :: run.10. x 1000"
     RUNTIME_PASS_REGEX "Pushing custom region :: run.10. x 1000"
-    PRELOAD_PASS_REGEX "Pushing custom region :: run.10. x 1000"
+    SAMPLING_PASS_REGEX "Pushing custom region :: run.10. x 1000"
     BASELINE_FAIL_REGEX "Pushing custom region"
     REWRITE_FAIL_REGEX "0 instrumented loops in procedure")
 
@@ -262,7 +262,7 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
         )
 
     omnitrace_add_test(
-        SKIP_RUNTIME SKIP_SAMPLING
+        SKIP_RUNTIME
         NAME "mpi-flat-mpip"
         TARGET mpi-example
         MPI ON
@@ -285,7 +285,7 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
         )
 
     omnitrace_add_test(
-        SKIP_RUNTIME SKIP_SAMPLING
+        SKIP_RUNTIME
         NAME "mpi-flat"
         TARGET mpi-example
         MPI ON
@@ -339,7 +339,7 @@ if(OMNITRACE_USE_MPI OR OMNITRACE_USE_MPI_HEADERS)
             set(_mpip_${_EXAMPLE}_environment "${_mpip_environment}")
         endif()
         omnitrace_add_test(
-            SKIP_RUNTIME SKIP_SAMPLING SKIP_PRELOAD
+            SKIP_RUNTIME SKIP_SAMPLING
             NAME "mpi-${_EXAMPLE}"
             TARGET mpi-${_EXAMPLE}
             MPI ON
@@ -428,7 +428,7 @@ omnitrace_add_test(
         "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=ON")
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_SAMPLING
+    SKIP_BASELINE
     NAME lulesh-perfetto
     TARGET lulesh
     MPI ${LULESH_USE_MPI}
@@ -451,7 +451,6 @@ omnitrace_add_test(
         "${_perfetto_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=OFF")
 
 omnitrace_add_test(
-    SKIP_SAMPLING
     NAME lulesh-timemory
     TARGET lulesh
     MPI ${LULESH_USE_MPI}
@@ -482,7 +481,6 @@ else()
 endif()
 
 omnitrace_add_test(
-    SKIP_SAMPLING
     NAME openmp-cg
     TARGET openmp-cg
     LABELS "openmp"
@@ -509,7 +507,7 @@ omnitrace_add_test(
     REWRITE_RUN_PASS_REGEX "${_OMPT_PASS_REGEX}"
     REWRITE_FAIL_REGEX "0 instrumented loops in procedure")
 
-set(_ompt_preload_environ
+set(_ompt_sampling_environ
     "${_ompt_environment}"
     "OMNITRACE_VERBOSE=2"
     "OMNITRACE_USE_OMPT=OFF"
@@ -536,42 +534,42 @@ set(_ompt_sample_no_tmpfiles_environ
     "OMNITRACE_USE_TEMPORARY_FILES=OFF"
     "OMNITRACE_MONOCHROME=ON")
 
-set(_ompt_preload_samp_regex
+set(_ompt_sampling_samp_regex
     "Sampler for thread 0 will be triggered 1000.0x per second of CPU-time(.*)Sampler for thread 0 will be triggered 500.0x per second of wall-time(.*)Sampling will be disabled after 0.250000 seconds(.*)Sampling duration of 0.250000 seconds has elapsed. Shutting down sampling"
     )
-set(_ompt_preload_file_regex
-    "sampling-duration-preload/sampling_percent.(json|txt)(.*)sampling-duration-preload/sampling_cpu_clock.(json|txt)(.*)sampling-duration-preload/sampling_wall_clock.(json|txt)"
+set(_ompt_sampling_file_regex
+    "sampling-duration-sampling/sampling_percent.(json|txt)(.*)sampling-duration-sampling/sampling_cpu_clock.(json|txt)(.*)sampling-duration-sampling/sampling_wall_clock.(json|txt)"
     )
-set(_notmp_preload_file_regex
-    "sampling-no-tmp-files-preload/sampling_percent.(json|txt)(.*)sampling-no-tmp-files-preload/sampling_cpu_clock.(json|txt)(.*)sampling-no-tmp-files-preload/sampling_wall_clock.(json|txt)"
+set(_notmp_sampling_file_regex
+    "sampling-no-tmp-files-sampling/sampling_percent.(json|txt)(.*)sampling-no-tmp-files-sampling/sampling_cpu_clock.(json|txt)(.*)sampling-no-tmp-files-sampling/sampling_wall_clock.(json|txt)"
     )
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_RUNTIME SKIP_REWRITE SKIP_SAMPLING
+    SKIP_BASELINE SKIP_RUNTIME SKIP_REWRITE
     NAME openmp-cg-sampling-duration
     TARGET openmp-cg
     LABELS "openmp;sampling-duration"
-    ENVIRONMENT "${_ompt_preload_environ}"
-    PRELOAD_PASS_REGEX "${_ompt_preload_samp_regex}(.*)${_ompt_preload_file_regex}")
+    ENVIRONMENT "${_ompt_sampling_environ}"
+    SAMPLING_PASS_REGEX "${_ompt_sampling_samp_regex}(.*)${_ompt_sampling_file_regex}")
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_RUNTIME SKIP_REWRITE SKIP_SAMPLING
+    SKIP_BASELINE SKIP_RUNTIME SKIP_REWRITE
     NAME openmp-lu-sampling-duration
     TARGET openmp-lu
     LABELS "openmp;sampling-duration"
-    ENVIRONMENT "${_ompt_preload_environ}"
-    PRELOAD_PASS_REGEX "${_ompt_preload_samp_regex}(.*)${_ompt_preload_file_regex}")
+    ENVIRONMENT "${_ompt_sampling_environ}"
+    SAMPLING_PASS_REGEX "${_ompt_sampling_samp_regex}(.*)${_ompt_sampling_file_regex}")
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_RUNTIME SKIP_REWRITE SKIP_SAMPLING
+    SKIP_BASELINE SKIP_RUNTIME SKIP_REWRITE
     NAME openmp-cg-sampling-no-tmp-files
     TARGET openmp-cg
     LABELS "openmp;no-tmp-files"
     ENVIRONMENT "${_ompt_sample_no_tmpfiles_environ}"
-    PRELOAD_PASS_REGEX "${_notmp_preload_file_regex}")
+    SAMPLING_PASS_REGEX "${_notmp_sampling_file_regex}")
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_SAMPLING SKIP_PRELOAD
+    SKIP_BASELINE SKIP_SAMPLING
     NAME code-coverage
     TARGET code-coverage
     REWRITE_ARGS
@@ -610,7 +608,7 @@ omnitrace_add_test(
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) code coverage     ::  66.67%")
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_SAMPLING SKIP_PRELOAD
+    SKIP_BASELINE SKIP_SAMPLING
     NAME code-coverage-hybrid
     TARGET code-coverage
     REWRITE_ARGS -e -v 2 --min-instructions=4 -E ^std:: --coverage function
@@ -637,7 +635,7 @@ omnitrace_add_test(
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) code coverage     ::  66.67%")
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_SAMPLING SKIP_PRELOAD
+    SKIP_BASELINE SKIP_SAMPLING
     NAME code-coverage-basic-blocks
     TARGET code-coverage
     REWRITE_ARGS
@@ -676,7 +674,7 @@ omnitrace_add_test(
     REWRITE_RUN_PASS_REGEX "(\\\[[0-9]+\\\]) function coverage ::  66.67%")
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_SAMPLING SKIP_PRELOAD
+    SKIP_BASELINE SKIP_SAMPLING
     NAME code-coverage-basic-blocks-hybrid
     TARGET code-coverage
     REWRITE_ARGS -e -v 2 --min-instructions=4 -E ^std:: --coverage basic_block
@@ -707,7 +705,7 @@ if(_OS_RELEASE STREQUAL "ubuntu-18.04")
 endif()
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_SAMPLING SKIP_PRELOAD ${_TRACE_WINDOW_SKIP}
+    SKIP_BASELINE SKIP_SAMPLING ${_TRACE_WINDOW_SKIP}
     NAME trace-time-window
     TARGET trace-time-window
     REWRITE_ARGS -e -v 2 --caller-include inner -i 4096
@@ -766,7 +764,7 @@ omnitrace_add_validation_test(
          -p)
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_SAMPLING SKIP_PRELOAD ${_TRACE_WINDOW_SKIP}
+    SKIP_BASELINE SKIP_SAMPLING ${_TRACE_WINDOW_SKIP}
     NAME trace-time-window-delay
     TARGET trace-time-window
     REWRITE_ARGS -e -v 2 --caller-include inner -i 4096
@@ -818,10 +816,10 @@ omnitrace_add_test(
     RUNTIME_ARGS -e -v 1 --label file -i 16
     ENVIRONMENT
         "${_base_environment};OMNITRACE_CRITICAL_TRACE=ON;OMNITRACE_SAMPLING_FREQ=250;OMNITRACE_SAMPLING_REALTIME=ON"
-    PRELOAD_PASS_REGEX "fork.. called on PID"
+    SAMPLING_PASS_REGEX "fork.. called on PID"
     RUNTIME_PASS_REGEX "fork.. called on PID"
     REWRITE_RUN_PASS_REGEX "fork.. called on PID"
-    PRELOAD_FAIL_REGEX
+    SAMPLING_FAIL_REGEX
         "(terminate called after throwing an instance|calling abort.. in |Exit code: [1-9])"
     RUNTIME_FAIL_REGEX
         "(terminate called after throwing an instance|calling abort.. in |Exit code: [1-9])"
@@ -836,7 +834,7 @@ omnitrace_add_test(
 # -------------------------------------------------------------------------------------- #
 
 omnitrace_add_test(
-    SKIP_BASELINE SKIP_RUNTIME SKIP_SAMPLING SKIP_PRELOAD
+    SKIP_BASELINE SKIP_RUNTIME SKIP_SAMPLING
     NAME parallel-overhead-critical-trace
     TARGET parallel-overhead
     LABELS "critical-trace"
@@ -938,7 +936,6 @@ foreach(_TARGET ${RCCL_TEST_TARGETS})
     string(REPLACE "rccl-tests::" "" _NAME "${_TARGET}")
     string(REPLACE "_" "-" _NAME "${_NAME}")
     omnitrace_add_test(
-        SKIP_SAMPLING
         NAME rccl-test-${_NAME}
         TARGET ${_TARGET}
         LABELS "rccl-tests;rcclp"
