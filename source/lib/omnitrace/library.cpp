@@ -157,8 +157,8 @@ ensure_finalization(bool _static_init = false)
 
     if(_static_init)
     {
-        _timemory_manager->add_finalize_callback([](const tim::manager* const _manager) {
-            if(_manager->get_tid() != 0 && !_manager->get_is_main_thread())
+        _timemory_manager->add_finalize_callback([](const tim::manager* const) {
+            if(threading::get_id() > 0)
                 categories::disable_categories(scope::thread_scope{});
         });
     }

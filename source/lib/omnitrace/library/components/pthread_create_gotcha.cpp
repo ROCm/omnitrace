@@ -199,6 +199,7 @@ pthread_create_gotcha::wrapper::operator()() const
                 _thr_bundle->stop();
             if(_bundle) stop_bundle(*_bundle, _tid);
             pthread_create_gotcha::shutdown(_tid);
+            categories::disable_categories(scope::thread_scope{});
             OMNITRACE_BASIC_VERBOSE(
                 1, "[PID=%i][rank=%i] Thread %s (parent: %s) exited\n", process::get_id(),
                 dmp::rank(), _info->index_data->as_string().c_str(),
