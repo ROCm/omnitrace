@@ -353,7 +353,8 @@ function(OMNITRACE_ADD_TEST)
 
     foreach(_PREFIX PRELOAD RUNTIME REWRITE REWRITE_RUN BASELINE)
         if("${${_PREFIX}_FAIL_REGEX}" STREQUAL "")
-            set(${_PREFIX}_FAIL_REGEX "(### ERROR ###|address of faulting memory reference)")
+            set(${_PREFIX}_FAIL_REGEX
+                "(### ERROR ###|address of faulting memory reference)")
         endif()
     endforeach()
 
