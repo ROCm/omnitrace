@@ -152,8 +152,16 @@ ensure_finalization(bool _static_init = false)
 
     if(common::get_env("OMNITRACE_MONOCHROME", false)) tim::log::monochrome() = true;
 
-    (void) tim::manager::instance();
-    (void) tim::settings::shared_instance();
+    if(!_timemory_manager) _timemory_manager = tim::manager::instance();
+    if(!_timemory_settings) _timemory_settings = tim::settings::shared_instance();
+
+    if(_static_init)
+    {
+        _timemory_manager->add_finalize_callback([](const tim::manager* const _manager) {
+            if(_manager->get_tid() != 0 && !_manager->get_is_main_thread())
+                categories::disable_categories(scope::thread_scope{});
+        });
+    }
 
     if(!tim::get_shared_ptr_pair_callback())
     {

@@ -30,6 +30,7 @@
 
 #include <set>
 #include <string>
+#include <type_traits>
 
 namespace omnitrace
 {
@@ -37,25 +38,33 @@ namespace categories
 {
 namespace
 {
-template <typename Tp>
+template <typename Tp, typename ScopeT>
 void
-configure_categories(bool _enable, const std::set<std::string>& _categories)
+configure_categories(bool _enable, ScopeT&&, const std::set<std::string>& _categories)
 {
     auto _name = trait::name<Tp>::value;
     if(_categories.count(_name) > 0)
     {
         OMNITRACE_VERBOSE_F(3, "%s category: %s\n", (_enable) ? "Enabling" : "Disabling",
                             _name);
-        trait::runtime_enabled<Tp>::set(_enable);
+        if constexpr(std::is_same<ScopeT, scope::process_scope>::value)
+            trait::runtime_enabled<Tp>::set(_enable);
+        else
+        {
+            static_assert(
+                std::is_same<ScopeT, scope::thread_scope>::value,
+                "Error! unsupported scope type :: must be process_scope or thread_scope");
+            trait::runtime_enabled<Tp>::set(ScopeT{}, _enable);
+        }
     }
 }
 
-template <size_t... Idx>
+template <typename ScopeT, size_t... Idx>
 void
-configure_categories(bool _enable, const std::set<std::string>& _categories,
+configure_categories(bool _enable, ScopeT&&, const std::set<std::string>& _categories,
                      std::index_sequence<Idx...>)
 {
-    (configure_categories<category_type_id_t<Idx>>(_enable, _categories), ...);
+    (configure_categories<category_type_id_t<Idx>>(_enable, ScopeT{}, _categories), ...);
 }
 
 void
@@ -64,7 +73,7 @@ configure_categories(bool _enable, const std::set<std::string>& _categories)
     OMNITRACE_VERBOSE_F(1, "%s categories...\n", (_enable) ? "Enabling" : "Disabling");
 
     configure_categories(
-        _enable, _categories,
+        _enable, scope::process_scope{}, _categories,
         utility::make_index_sequence_range<1, OMNITRACE_CATEGORY_LAST>{});
 }
 }  // namespace
@@ -73,7 +82,7 @@ void
 enable_categories(const std::set<std::string>& _categories)
 {
     configure_categories(
-        true, _categories,
+        true, scope::process_scope{}, _categories,
         utility::make_index_sequence_range<1, OMNITRACE_CATEGORY_LAST>{});
 }
 
@@ -81,7 +90,23 @@ void
 disable_categories(const std::set<std::string>& _categories)
 {
     configure_categories(
-        false, _categories,
+        false, scope::process_scope{}, _categories,
+        utility::make_index_sequence_range<1, OMNITRACE_CATEGORY_LAST>{});
+}
+
+void
+enable_categories(scope::thread_scope, const std::set<std::string>& _categories)
+{
+    configure_categories(
+        true, scope::thread_scope{}, _categories,
+        utility::make_index_sequence_range<1, OMNITRACE_CATEGORY_LAST>{});
+}
+
+void
+disable_categories(scope::thread_scope, const std::set<std::string>& _categories)
+{
+    configure_categories(
+        false, scope::thread_scope{}, _categories,
         utility::make_index_sequence_range<1, OMNITRACE_CATEGORY_LAST>{});
 }
 

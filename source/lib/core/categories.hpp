@@ -34,6 +34,7 @@
 #include <timemory/api/macros.hpp>
 #include <timemory/mpl/macros.hpp>
 #include <timemory/mpl/types.hpp>
+#include <timemory/utility/types.hpp>
 
 #define OMNITRACE_DEFINE_NAME_TRAIT(NAME, DESC, ...)                                     \
     namespace tim                                                                        \
@@ -203,6 +204,8 @@ using name = perfetto_category<Tp...>;
 
 namespace omnitrace
 {
+namespace scope = ::tim::scope;
+
 inline namespace config
 {
 std::set<std::string>
@@ -219,6 +222,14 @@ enable_categories(const std::set<std::string>& = config::get_enabled_categories(
 
 void
 disable_categories(const std::set<std::string>& = config::get_disabled_categories());
+
+void
+enable_categories(scope::thread_scope,
+                  const std::set<std::string>& = config::get_enabled_categories());
+
+void
+disable_categories(scope::thread_scope,
+                   const std::set<std::string>& = config::get_disabled_categories());
 
 void
 setup();
