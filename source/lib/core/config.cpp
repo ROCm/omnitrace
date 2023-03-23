@@ -697,6 +697,18 @@ configure_settings(bool _init)
                              true, "perfetto", "data", "debugging", "advanced");
 
     OMNITRACE_CONFIG_SETTING(
+        bool, "OMNITRACE_PERFETTO_COMPACT_ROCTRACER_ANNOTATIONS",
+        "When PERFETTO_ANNOTATIONS, USE_ROCTRACER, and ROCTRACER_HIP_API are all "
+        "enabled, enabling this option will result in the arg information for HIP API "
+        "calls to all be within one annotation (e.g., args=\"stream=0x0, dst=0x1F, "
+        "sizeBytes=64, src=0x08, kind=1\"). When disabled, each parameter will be an "
+        "individual annotation (e.g. stream, dst, sizeBytes, etc.). The benefit of the "
+        "former is that it is faster to serialize and consumes less file space; the "
+        "benefit of the latter is that it becomes much easier to find slices in the "
+        "trace with the same value",
+        false, "perfetto", "data", "debugging", "roctracer", "rocm", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(
         uint64_t, "OMNITRACE_THREAD_POOL_SIZE",
         "Max number of threads for processing background tasks",
         std::max<uint64_t>(std::min<uint64_t>(4, std::thread::hardware_concurrency() / 2),
