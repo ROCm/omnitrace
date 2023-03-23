@@ -406,11 +406,7 @@ configure_settings(bool _init)
         "durations are needed, see OMNITRACE_TRACE_PERIODS.",
         0.0, "trace", "profile", "perfetto", "timemory");
 
-    auto _clock_s =
-        config::get_setting_value<std::string>("OMNITRACE_TRACE_PERIOD_CLOCK_ID").second;
-
     auto _clock_choices = std::vector<std::string>{};
-
     for(const auto& itr : constraint::get_valid_clock_ids())
     {
         _clock_choices.emplace_back(
@@ -1107,7 +1103,7 @@ configure_mode_settings(const std::shared_ptr<settings>& _config)
         }
         else
         {
-            bool _changed = get_setting_value<bool>(_name).second != _v;
+            bool _changed = get_setting_value<bool>(_name).value_or(!_v) != _v;
             OMNITRACE_BASIC_VERBOSE(
                 1 && _changed,
                 "[configure_mode_settings] Overriding %s to %s in %s mode...\n",
@@ -1117,7 +1113,7 @@ configure_mode_settings(const std::shared_ptr<settings>& _config)
     };
 
     auto _use_causal = get_setting_value<bool>("OMNITRACE_USE_CAUSAL");
-    if(_use_causal.first && _use_causal.second) set_env("OMNITRACE_MODE", "causal", 1);
+    if(_use_causal && *_use_causal) set_env("OMNITRACE_MODE", "causal", 1);
 
     if(get_mode() == Mode::Coverage)
     {

@@ -735,7 +735,7 @@ hip_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void*
             static auto _compact_annotations =
                 config::get_setting_value<bool>(
                     "OMNITRACE_PERFETTO_COMPACT_ROCTRACER_ANNOTATIONS")
-                    .second;
+                    .value_or(false);
 
             auto _api_id = static_cast<hip_api_id_t>(cid);
             tracing::push_perfetto_ts(
