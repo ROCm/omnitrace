@@ -48,7 +48,7 @@ html {
 
 header {
    position: relative;
-   height: 40%;
+   height: 9vh;
    min-height: 60px;
    width: 100%;
    background: #161415 url(../images/header-background.jpg) no-repeat top center;
@@ -153,6 +153,7 @@ header .scrolldown a:hover { color: #11ABB0; }
 #nav-wrap {
   font: 12px 'opensans-bold', sans-serif;
   width: 100%;
+  max-height: 10vh;
   letter-spacing: 1.5px;
   margin: 0 auto;
   z-index: 100;
@@ -176,18 +177,24 @@ ul#nav {
 ul#nav li {
    position: relative;
    list-style: none;
-   height: 48px;
-   display: inline-block;
+   height: 50%;
+   display: -webkit-box;
+   max-width: 37vw;
+   /* float: left; */
  }
-
+ ul.nav-center {
+   display: inline-grid;
+   float: center;
+}
 /* Filtering */
 .filter {
    vertical-align: top;
    position: relative;
    /* list-style: none; */
    /* height: 48px; */
-   display: inline-block;
+   display: -webkit-box;
    width: auto;
+
    /* float:left; */
 }
 #nav .filter a {
@@ -212,20 +219,65 @@ ul#nav li {
    position: relative;
    list-style: none;
    display: inline-block;
-   /* height: 34px; */
+   height: 34px;
    /* width: 150px; */
-   width: auto;
+   max-width: 23vw;
    min-width: 110px;
+   /* max-height: 3vw; */
    vertical-align: middle;
    letter-spacing: normal;
    /* font-size: 14px; */
    text-align: left; 
+   overflow: hidden;
 }
 
-li.filter input{
+.dash-dropdown[id="Select Workload-filt"] {
+   position: relative;
+   list-style: none;
+   display: inline-block;
+   /* height: 34px; */
+   /* width: 150px; */
+   width: 17vw;
+   /* max-width: 30vw; */
+   /* min-width: 110px; */
+   /* max-height: 3vw; */
+   vertical-align: middle;
+   letter-spacing: normal;
+   /* font-size: 14px; */
+   text-align: left; 
+   overflow: hidden;
+}
+
+.dash-dropdown:hover {
+   position: relative;
+   list-style: none;
+   display: inline-block;
+   /* height: 34px; */
+   /* width: 150px; */
+   /* max-width: 23vw; */
+   /*min-width: 110px;
+   max-height: 3vw;
+   vertical-align: middle; */
+   letter-spacing: normal;
+   /* font-size: 14px; */
+   text-align: left; 
+   overflow: visible;
+   z-index: 10;
+}
+/* .dash-dropdown span{
+   text-overflow: ellipsis;
+   max-width: 32vw;
+} */
+/* .dash-dropdown span:hover{
+   text-overflow: ellipsis;
+   max-width: 32vw;
+   display: contents;
+} */
+
+li input{
    vertical-align: top;
-   width: 100%;
-   height: 40%;
+   width: 60%;
+   /* height: 4vh; */
    /* line-height: 60px; */
    border-width: 1px;
    border-style: dashed;
@@ -234,16 +286,26 @@ li.filter input{
        
 }
 
-li.filter div#upload-drag a {
-   line-height: 100%;
+li.upload div#upload-drag a {
+   /* line-height: 4vh; */
    border-width: 1px;
    width: 100%;
-   height: 40%;
+   /* line-height: 4vh; */
+   display: inline-block;
+   border-style: dashed;
+   border-radius: 5px;
+   text-align: center;
+}
+/* li.upload div#upload-drag {
+   line-height: 4vh;
+   border-width: 1px;
+   width: 100%;
+   height: 18vh;
    border-style: dashed;
    border-radius: 5px;
    text-align: center;
    float: right;
-}
+} */
  
 ul#nav li.filter div.daq-slider--light {
    position: relative;
@@ -265,6 +327,7 @@ ul#nav li.filter div.daq-slider--light svg[class = "sc-jAaTju cEBNup rc-slider-h
    float: right;
 }
 
+
 #nav .nav-left {
    float: left;
 }
@@ -283,19 +346,23 @@ ul#nav li.current a { color: #F06000; }
    margin: auto;
 }
 /* Report Button */
-ul#nav li.filter button.refresh {
+li.refresh{
+   float: right;
+}
+button.refresh {
    color: #fff;
    background-color: #F06000;
    font: 16px 'opensans-bold', sans-serif;
    border: none;
    cursor: pointer;
    /* height: auto; */
-   display: inline-block;
+   /* display: inline-block; */
    border-radius: 3px;
    right:0;
    padding: 8px 13px;
    margin: 0px 13px;
-   vertical-align: top
+   vertical-align: top;
+   /* float: right; */
 }
 
 

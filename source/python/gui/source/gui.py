@@ -85,7 +85,6 @@ def print_speedup_info(data):
 
 
 def build_line_graph():
-    # data_options = sorted(list(set(data.point)))
     layout1 = html.Div(
         id="graph_all",
         className="graph_all",

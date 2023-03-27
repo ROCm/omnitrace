@@ -28,10 +28,12 @@ import dash_bootstrap_components as dbc
 from dash import html, dash_table, dcc
 from matplotlib.style import available
 
+import os
+
 
 def file_path():
     return html.Li(
-        className="filter",
+        className="workload",
         children=[
             dcc.Input(
                 id="file-path",
@@ -45,7 +47,7 @@ def file_path():
 
 def function_filter(_id, _placeholder):
     return html.Li(
-        className="filter",
+        className="regex",
         children=[
             dcc.Input(
                 id=_id,
@@ -59,7 +61,7 @@ def function_filter(_id, _placeholder):
 
 def upload_file():
     return html.Li(
-        className="filter",
+        className="upload",
         children=[
             # drag and drop
             dcc.Upload(
@@ -72,7 +74,7 @@ def upload_file():
 
 def minPoints(name, values):
     return html.Li(
-        className="filter",
+        # className="filter",
         id="min-points",
         children=[
             html.Div(
@@ -93,29 +95,39 @@ def minPoints(name, values):
     )
 
 
+def span(name):
+    total_length = 30
+    base = os.path.basename(name)
+    dir_len = total_length - len(base)
+    if len(name) > total_length:
+        return {
+            "label": html.Span(name[0:dir_len] + "..." + base, title=name),
+            "value": name,
+        }
+    else:
+        return {"label": html.Span(name, title=name), "value": name}
+
+
 def sortBy(name, values, default, multi_):
+    values = list(map(span, values))
     return html.Li(
-        className="filter",
+        # className="filter",
         children=[
-            html.Div(
-                children=[
-                    html.A(children=[name + ":"]),
-                    dcc.Dropdown(
-                        values,
-                        id=name + "-filt",
-                        multi=multi_,
-                        value=default,
-                        clearable=False,
-                    ),
-                ],
-            )
+            html.A(children=[name + ":"]),
+            dcc.Dropdown(
+                values,
+                id=name + "-filt",
+                multi=multi_,
+                value=default,
+                clearable=False,
+            ),
         ],
     )
 
 
 def refresh():
     return html.Li(
-        className="filter",
+        className="refresh",
         children=[
             html.Button(
                 className="refresh",
@@ -147,13 +159,14 @@ def get_header(dropDownMenuItems, input_filters):
             ],
         )
     ]
-
+    filter_children = []
     for filter in input_filters:
         header_nav = children_[0].children[0].children
+
         if filter["type"] == "int":
-            header_nav.append(minPoints(filter["Name"], filter["values"]))
+            filter_children.append(minPoints(filter["Name"], filter["values"]))
         elif filter["type"] == "Name":
-            header_nav.append(
+            filter_children.append(
                 sortBy(
                     filter["Name"],
                     filter["values"],
@@ -165,14 +178,24 @@ def get_header(dropDownMenuItems, input_filters):
         else:
             print("type not supported")
             # sys.exit(1)
+
     header_nav = children_[0].children[0].children
-    header_nav.append(function_filter("function_regex", "Funtion/line regex"))
-    header_nav.append(function_filter("exp_regex", "Experiment regex"))
-
-    # header_nav.append(minPoints())
-
-    header_nav.append(file_path())
-    header_nav.append(upload_file())
-    header_nav.append(refresh())
-
+    filter_children.append(refresh())
+    ul = html.Ul(
+        id="nav-center",
+        className="nav-center",
+        children=[
+            html.Li(className="filter", children=filter_children),
+            html.Li(
+                className="regex",
+                children=[
+                    function_filter("function_regex", "Funtion/line regex"),
+                    function_filter("exp_regex", "Experiment regex"),
+                    file_path(),
+                    upload_file(),
+                ],
+            ),
+        ],
+    )
+    header_nav.append(ul)
     return html.Header(id="home", children=children_)
