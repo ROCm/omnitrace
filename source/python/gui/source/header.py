@@ -127,7 +127,7 @@ def sortBy(name, values, default, multi_):
 
 def refresh():
     return html.Li(
-        className="refresh",
+        className="nav-right",
         children=[
             html.Button(
                 className="refresh",
@@ -180,22 +180,28 @@ def get_header(dropDownMenuItems, input_filters):
             # sys.exit(1)
 
     header_nav = children_[0].children[0].children
-    filter_children.append(refresh())
+    filter_children.append(function_filter("function_regex", "Funtion/line regex"))
+    filter_children.append(function_filter("exp_regex", "Experiment regex"))
+    filter_children.append(file_path())
+    filter_children.append(upload_file())
+    # filter_children.append(refresh())
     ul = html.Ul(
         id="nav-center",
         className="nav-center",
         children=[
             html.Li(className="filter", children=filter_children),
-            html.Li(
-                className="regex",
-                children=[
-                    function_filter("function_regex", "Funtion/line regex"),
-                    function_filter("exp_regex", "Experiment regex"),
-                    file_path(),
-                    upload_file(),
-                ],
-            ),
+            # refresh(),
+            # html.Li(
+            #     className="regex",
+            #     children=[
+            #         function_filter("function_regex", "Funtion/line regex"),
+            #         function_filter("exp_regex", "Experiment regex"),
+            #         file_path(),
+            #         upload_file(),
+            #     ],
+            # ),
         ],
     )
     header_nav.append(ul)
+    header_nav.append(refresh())
     return html.Header(id="home", children=children_)

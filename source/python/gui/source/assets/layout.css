@@ -151,7 +151,7 @@ header .scrolldown a:hover { color: #11ABB0; }
 
 /* nav-wrap */
 #nav-wrap {
-  font: 12px 'opensans-bold', sans-serif;
+  font: 0.5vw 'opensans-bold', sans-serif;
   width: 100%;
   max-height: 10vh;
   letter-spacing: 1.5px;
@@ -184,7 +184,8 @@ ul#nav li {
  }
  ul.nav-center {
    display: inline-grid;
-   float: center;
+   float: left;
+   width:90%
 }
 /* Filtering */
 .filter {
@@ -222,7 +223,7 @@ ul#nav li {
    height: 34px;
    /* width: 150px; */
    max-width: 23vw;
-   min-width: 110px;
+   min-width: 5vw;
    /* max-height: 3vw; */
    vertical-align: middle;
    letter-spacing: normal;
@@ -237,7 +238,7 @@ ul#nav li {
    display: inline-block;
    /* height: 34px; */
    /* width: 150px; */
-   width: 17vw;
+   width: 13vw;
    /* max-width: 30vw; */
    /* min-width: 110px; */
    /* max-height: 3vw; */
@@ -264,6 +265,9 @@ ul#nav li {
    overflow: visible;
    z-index: 10;
 }
+li#min-points{
+   width: 45%;
+}
 /* .dash-dropdown span{
    text-overflow: ellipsis;
    max-width: 32vw;
@@ -274,9 +278,13 @@ ul#nav li {
    display: contents;
 } */
 
-li input{
+li input[type="text"]{
    vertical-align: top;
    width: 60%;
+   min-width: 0;
+   width:auto;
+   padding: 1vw 1vw;
+   font-size:0.5vw;
    /* height: 4vh; */
    /* line-height: 60px; */
    border-width: 1px;
@@ -286,8 +294,9 @@ li input{
        
 }
 
+
 li.upload div#upload-drag a {
-   /* line-height: 4vh; */
+   line-height: 4vh;
    border-width: 1px;
    width: 100%;
    /* line-height: 4vh; */
@@ -310,9 +319,11 @@ li.upload div#upload-drag a {
 ul#nav li.filter div.daq-slider--light {
    position: relative;
    list-style: none;
+   width: 5vw;
    display: inline-block;
    vertical-align: bottom;
 }
+
 ul#nav li.filter div.daq-slider--light div[class="sc-gPEVay cmYtpx rc-slider-handle"] {
    padding: 0px, 0px;
    border-radius: 10px;
@@ -325,11 +336,13 @@ ul#nav li.filter div.daq-slider--light svg[class = "sc-jAaTju cEBNup rc-slider-h
 
 #div .nav-right {
    float: right;
+   width: 5%;;
 }
 
 
 #nav .nav-left {
    float: left;
+   width: 5%;
 }
 
 ul#nav li a:active { background-color: transparent !important; }
@@ -352,15 +365,15 @@ li.refresh{
 button.refresh {
    color: #fff;
    background-color: #F06000;
-   font: 16px 'opensans-bold', sans-serif;
+   font: 100% 'opensans-bold', sans-serif;
    border: none;
    cursor: pointer;
    /* height: auto; */
    /* display: inline-block; */
    border-radius: 3px;
    right:0;
-   padding: 8px 13px;
-   margin: 0px 13px;
+   padding: 8px 9px;
+   /* margin: 0px 13px; */
    vertical-align: top;
    /* float: right; */
 }
@@ -376,8 +389,8 @@ button.report:hover {
 
 .dropdown button {
    display: inline-block;
-   font: 16px 'opensans-bold', sans-serif;
-   margin: 8px 13px;
+   /* font: 16px 'opensans-bold', sans-serif; */
+   margin: 8px 0px;
 }
 .dropdown a.dropdown-item {
    font: 16px 'opensans-bold', sans-serif;
