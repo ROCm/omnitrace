@@ -774,7 +774,7 @@ sample_selection(size_t _nitr, size_t _wait_ns)
 std::deque<binary::symbol>
 get_line_info(uintptr_t _addr, bool _include_discarded)
 {
-    static auto _glob_filters  = get_filters({ sf::BINARY_FILTER });
+    static auto _glob_filters  = get_filters({});
     static auto _scope_filters = get_filters();
     auto        _data          = std::deque<binary::symbol>{};
     auto        _get_line_info = [&](const auto& _info, const auto& _filters) {
@@ -788,7 +788,8 @@ get_line_info(uintptr_t _addr, bool _include_discarded)
                 auto _ipaddr = ditr.ipaddr();
                 if(!_ipaddr.contains(_addr)) continue;
 
-                if(config::get_causal_mode() == CausalMode::Function)
+                if(_include_discarded ||
+                   config::get_causal_mode() == CausalMode::Function)
                 {
                     // check if the primary symbol satisfy the constraints
                     if(ditr(_filters)) _local_data.emplace_back(ditr);
@@ -797,7 +798,8 @@ get_line_info(uintptr_t _addr, bool _include_discarded)
                     // functions may
                     utility::combine(_local_data, ditr.get_inline_symbols(_filters));
                 }
-                else if(config::get_causal_mode() == CausalMode::Line)
+
+                if(_include_discarded || config::get_causal_mode() == CausalMode::Line)
                 {
                     auto _debug_data = std::deque<binary::symbol>{};
                     for(const auto& itr : ditr.get_debug_line_info(_filters))
@@ -806,27 +808,110 @@ get_line_info(uintptr_t _addr, bool _include_discarded)
                     }
                     utility::combine(_local_data, _debug_data);
                 }
-                else
-                {
-                    throw exception<std::runtime_error>(
-                        join(" ", "Causal mode not supported:",
-                             std::to_string(config::get_causal_mode())));
-                }
             }
 
             if(!_local_data.empty())
             {
                 // combine and only allow first match
                 utility::combine(_data, _local_data);
-                break;
+                if(!_include_discarded) break;
             }
         }
     };
 
-    if(_include_discarded)
-        _get_line_info(get_cached_binary_info().first, _glob_filters);
-    else
-        _get_line_info(get_cached_binary_info().second, _scope_filters);
+    _get_line_info(get_cached_binary_info().second, _scope_filters);
+
+    if(!_include_discarded) return _data;
+
+    if(_data.empty()) _get_line_info(get_cached_binary_info().second, _glob_filters);
+
+    using entry_cache_t     = tim::unwind::cache;
+    using symbol_cache_t    = std::unordered_map<uintptr_t, binary::symbol>;
+    using processed_entry_t = tim::unwind::processed_entry;
+    using entry_t           = tim::unwind::entry;
+
+    auto get_processed_entry = [&]() {
+        static auto _entry_cache = entry_cache_t{};
+        auto&       _files       = _entry_cache.files;
+
+        auto citr = _entry_cache.entries.find(entry_t{ _addr });
+        if(citr != _entry_cache.entries.end())
+        {
+            return std::optional<processed_entry_t>{ citr->second };
+        }
+
+        auto _v    = processed_entry_t{};
+        _v.address = _addr;
+        processed_entry_t::construct(_v, &_files);
+
+        if(_v.error == 0)
+        {
+            _entry_cache.entries.emplace(entry_t{ _addr }, _v);
+            return std::optional<processed_entry_t>{ _v };
+        }
+        return std::optional<processed_entry_t>{};
+    };
+
+    if(_data.empty()) _get_line_info(get_cached_binary_info().first, _scope_filters);
+    if(_data.empty()) _get_line_info(get_cached_binary_info().first, _glob_filters);
+
+    if(_data.empty())
+    {
+        static auto _symbol_cache = symbol_cache_t{};
+
+        auto citr = _symbol_cache.find(_addr);
+        if(citr != _symbol_cache.end())
+        {
+            _data.emplace_back(citr->second);
+        }
+        else
+        {
+            auto _symbol    = binary::symbol{};
+            _symbol.address = address_range_t{ _addr };
+
+            auto _info = tim::unwind::dlinfo::construct(_addr);
+            if(_info.symbol && !_info.symbol.name.empty())
+                _symbol.func = _info.symbol.name;
+
+            if(_info.location && !_info.location.name.empty())
+                _symbol.file = _info.location.name;
+
+            auto mitr = tim::procfs::find_map(_addr);
+            if(!mitr.is_empty() && !mitr.pathname.empty())
+            {
+                OMNITRACE_VERBOSE(0, "[%s] %s\n", as_hex(_addr).c_str(),
+                                  mitr.pathname.c_str());
+                _symbol.file         = mitr.pathname;
+                _symbol.load_address = mitr.load_address;
+            }
+
+            auto eitr = get_processed_entry();
+            if(eitr)
+            {
+                _symbol.line = eitr->lineno;
+
+                if(eitr->lineinfo)
+                {
+                    auto _line_info = eitr->lineinfo.get();
+                    if(_line_info)
+                    {
+                        if(!_line_info.name.empty()) _symbol.func = _line_info.name;
+                        if(!_line_info.location.empty())
+                        {
+                            _symbol.file = _line_info.location;
+                            _symbol.line = _line_info.line;
+                        }
+                    }
+                }
+            }
+
+            if(!_symbol.func.empty() || !_symbol.file.empty())
+            {
+                _symbol_cache.emplace(_addr, _symbol);
+                _data.emplace_back(_symbol);
+            }
+        }
+    }
 
     return _data;
 }

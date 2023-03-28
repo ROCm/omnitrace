@@ -486,14 +486,16 @@ experiment::save_experiments(std::string _fname_base, const filename_config_t& _
                     auto _name = (iitr.line > 0) ? join(":", iitr.file, iitr.line)
                                                  : demangle(iitr.func);
 
-                    _name = join(" :: ", as_hex(_addr), _name);
+                    if(_name.empty()) _name = as_hex(_addr);
                     _add_sample(sample{ _count, _addr, _name, iitr });
                 }
 
                 if(_linfo.empty() && config::get_debug())
                 {
-                    _add_sample(
-                        sample{ _count, _addr, as_hex(_addr), sample::line_info{} });
+                    auto _info    = sample::line_info{};
+                    _info.address = address_range_t{ _addr };
+                    _info.func    = as_hex(_addr);
+                    _add_sample(sample{ _count, _addr, as_hex(_addr), _info });
                 }
             }
         }
