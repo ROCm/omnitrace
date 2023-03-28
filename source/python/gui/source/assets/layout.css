@@ -151,7 +151,7 @@ header .scrolldown a:hover { color: #11ABB0; }
 
 /* nav-wrap */
 #nav-wrap {
-  font: 0.5vw 'opensans-bold', sans-serif;
+  font: 10px 'opensans-bold', sans-serif;
   width: 100%;
   max-height: 10vh;
   letter-spacing: 1.5px;
@@ -182,19 +182,20 @@ ul#nav li {
    max-width: 37vw;
    /* float: left; */
  }
- ul.nav-center {
-   display: inline-grid;
-   float: left;
+ div#nav-center {
+   display: inline-block;
+   /* float: left; */
    width:90%
 }
+
 /* Filtering */
 .filter {
-   vertical-align: top;
-   position: relative;
+   /* vertical-align: top; */
+   /* position: relative; */
    /* list-style: none; */
    /* height: 48px; */
-   display: -webkit-box;
-   width: auto;
+   display: contents;
+   /* width: auto; */
 
    /* float:left; */
 }
@@ -238,7 +239,7 @@ ul#nav li {
    display: inline-block;
    /* height: 34px; */
    /* width: 150px; */
-   width: 13vw;
+   max-width: 20vw;
    /* max-width: 30vw; */
    /* min-width: 110px; */
    /* max-height: 3vw; */
@@ -265,8 +266,18 @@ ul#nav li {
    overflow: visible;
    z-index: 10;
 }
-li#min-points{
-   width: 45%;
+div#min-points{
+   display: inline-flex;
+
+}
+.regex{
+   display: inline-block;
+}
+.workload{
+   display: inline-block;
+}
+.upload{
+   display: inline-block;
 }
 /* .dash-dropdown span{
    text-overflow: ellipsis;
@@ -278,13 +289,13 @@ li#min-points{
    display: contents;
 } */
 
-li input[type="text"]{
+div input[type="text"]{
    vertical-align: top;
    width: 60%;
    min-width: 0;
    width:auto;
    padding: 1vw 1vw;
-   font-size:0.5vw;
+   /* font-size:0.5vw; */
    /* height: 4vh; */
    /* line-height: 60px; */
    border-width: 1px;
@@ -295,8 +306,8 @@ li input[type="text"]{
 }
 
 
-li.upload div#upload-drag a {
-   line-height: 4vh;
+div#upload-drag a {
+   line-height: 32px;
    border-width: 1px;
    width: 100%;
    /* line-height: 4vh; */
@@ -304,6 +315,7 @@ li.upload div#upload-drag a {
    border-style: dashed;
    border-radius: 5px;
    text-align: center;
+   font-size: 15px;
 }
 /* li.upload div#upload-drag {
    line-height: 4vh;
@@ -316,25 +328,29 @@ li.upload div#upload-drag a {
    float: right;
 } */
  
-ul#nav li.filter div.daq-slider--light {
+/* div.daq-slider--light {
    position: relative;
    list-style: none;
    width: 5vw;
    display: inline-block;
    vertical-align: bottom;
+} */
+
+.rc-slider{
+   padding: 15px 0;
 }
 
-ul#nav li.filter div.daq-slider--light div[class="sc-gPEVay cmYtpx rc-slider-handle"] {
+div.daq-slider--light div[class="sc-gPEVay cmYtpx rc-slider-handle"] {
    padding: 0px, 0px;
    border-radius: 10px;
    top: 20px;
 }
 
-ul#nav li.filter div.daq-slider--light svg[class = "sc-jAaTju cEBNup rc-slider-handle"]{
+div.daq-slider--light svg[class = "sc-jAaTju cEBNup rc-slider-handle"]{
    height: 10px;
 }
 
-#div .nav-right {
+div.nav-right {
    float: right;
    width: 5%;;
 }
@@ -343,6 +359,7 @@ ul#nav li.filter div.daq-slider--light svg[class = "sc-jAaTju cEBNup rc-slider-h
 #nav .nav-left {
    float: left;
    width: 5%;
+   display: block;
 }
 
 ul#nav li a:active { background-color: transparent !important; }

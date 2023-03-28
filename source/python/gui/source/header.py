@@ -32,7 +32,7 @@ import os
 
 
 def file_path():
-    return html.Li(
+    return html.Div(
         className="workload",
         children=[
             dcc.Input(
@@ -46,7 +46,7 @@ def file_path():
 
 
 def function_filter(_id, _placeholder):
-    return html.Li(
+    return html.Div(
         className="regex",
         children=[
             dcc.Input(
@@ -60,7 +60,7 @@ def function_filter(_id, _placeholder):
 
 
 def upload_file():
-    return html.Li(
+    return html.Div(
         className="upload",
         children=[
             # drag and drop
@@ -73,24 +73,24 @@ def upload_file():
 
 
 def minPoints(name, values):
-    return html.Li(
-        # className="filter",
+    return html.Div(
+        className="filter",
         id="min-points",
         children=[
-            html.Div(
-                children=[
-                    html.A(children=["Min Points:"]),
-                    daq.Slider(
-                        min=0,
-                        max=values,
-                        step=1,
-                        value=1,
-                        id="points-filt",
-                        handleLabel={"showCurrentValue": True, "label": " "},
-                        size=120,
-                    ),
-                ],
+            # html.Div(
+            #     children=[
+            html.A(children=["Min Points:"]),
+            daq.Slider(
+                min=0,
+                max=values,
+                step=1,
+                value=1,
+                id="points-filt",
+                handleLabel={"showCurrentValue": True, "label": " "},
+                size=120,
             ),
+            #     ],
+            # ),
         ],
     )
 
@@ -110,8 +110,8 @@ def span(name):
 
 def sortBy(name, values, default, multi_):
     values = list(map(span, values))
-    return html.Li(
-        # className="filter",
+    return html.Div(
+        className="filter",
         children=[
             html.A(children=[name + ":"]),
             dcc.Dropdown(
@@ -126,7 +126,7 @@ def sortBy(name, values, default, multi_):
 
 
 def refresh():
-    return html.Li(
+    return html.Div(
         className="nav-right",
         children=[
             html.Button(
@@ -185,22 +185,23 @@ def get_header(dropDownMenuItems, input_filters):
     filter_children.append(file_path())
     filter_children.append(upload_file())
     # filter_children.append(refresh())
-    ul = html.Ul(
+    ul = html.Div(
         id="nav-center",
         className="nav-center",
-        children=[
-            html.Li(className="filter", children=filter_children),
-            # refresh(),
-            # html.Li(
-            #     className="regex",
-            #     children=[
-            #         function_filter("function_regex", "Funtion/line regex"),
-            #         function_filter("exp_regex", "Experiment regex"),
-            #         file_path(),
-            #         upload_file(),
-            #     ],
-            # ),
-        ],
+        children=filter_children
+        # [
+        # html.Li(className="filter", children=filter_children),
+        # refresh(),
+        # html.Li(
+        #     className="regex",
+        #     children=[
+        #         function_filter("function_regex", "Funtion/line regex"),
+        #         function_filter("exp_regex", "Experiment regex"),
+        #         file_path(),
+        #         upload_file(),
+        #     ],
+        # ),
+        # ],
     )
     header_nav.append(ul)
     header_nav.append(refresh())
