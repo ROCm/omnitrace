@@ -515,6 +515,8 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
         {
             if(get_state() == State::Finalized)
             {
+                if(_impl_no > 0) return;
+
                 auto _memory = std::stringstream{};
                 auto _binary = std::stringstream{};
                 auto _scoped = std::stringstream{};

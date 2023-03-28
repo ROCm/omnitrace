@@ -222,10 +222,14 @@ experiment::start()
     OMNITRACE_VERBOSE(0, "Starting causal experiment #%-3u: %s\n", index,
                       as_string().c_str());
 
-    current_experiment_value = *this;
-    current_selected_count.store(0);
-    current_experiment.store(this);
-    return true;
+    if(get_state() < State::Finalized)
+    {
+        current_experiment_value = *this;
+        current_selected_count.store(0);
+        current_experiment.store(this);
+        return true;
+    }
+    return false;
 }
 
 bool
