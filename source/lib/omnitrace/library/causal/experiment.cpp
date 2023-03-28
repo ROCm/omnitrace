@@ -278,13 +278,14 @@ experiment::stop()
 
     auto _mean = (_prog_stats.get_count() > 0) ? _prog_stats.get_mean() : 0;
     auto _high = (_prog_stats.get_count() > 0) ? _prog_stats.get_max() : 0;
-    if(_high < 5)
+    auto _lowv = (_prog_stats.get_count() > 0) ? _prog_stats.get_min() : 0;
+    if(_lowv <= 3)
     {
         global_scaling *= 2;
         ++global_scaling_increments;  // keep track of how many successive increments have
                                       // been performed
     }
-    else if(_mean > 10 && global_scaling > 1)
+    else if((_mean > 10 && _lowv >= 8) && global_scaling > 1)
     {
         global_scaling /= 2;
         global_scaling_increments = 0;
@@ -304,7 +305,9 @@ experiment::stop()
 
     if(_high > 0) experiment_history.emplace_back(*this);
 
-    std::this_thread::sleep_for(std::chrono::nanoseconds{ sampling_period * batch_size });
+    std::this_thread::sleep_for(
+        std::chrono::nanoseconds{ 5 * sampling_period * batch_size });
+
     return true;
 }
 
