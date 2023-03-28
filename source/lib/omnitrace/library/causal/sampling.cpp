@@ -60,8 +60,7 @@ namespace sampling
 using ::tim::sampling::dynamic;
 using ::tim::sampling::timer;
 
-using causal_bundle_t =
-    tim::lightweight_tuple<causal::component::sample_rate, causal::component::backtrace>;
+using causal_bundle_t  = tim::lightweight_tuple<causal::component::backtrace>;
 using causal_sampler_t = tim::sampling::sampler<causal_bundle_t, dynamic>;
 }  // namespace sampling
 }  // namespace causal
