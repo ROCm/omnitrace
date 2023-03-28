@@ -108,15 +108,14 @@ delay::process()
     {
         if(get_global() < get_local())
         {
-            auto _diff = (get_local() - get_global());
-            if(_diff > sleep_for_overhead) get_global() += _diff;
+            get_global() += (get_local() - get_global());
         }
-        else if(get_global() > get_local())
+        else if(get_global() > get_local() + sleep_for_overhead)
         {
             ::omnitrace::causal::component::causal_gotcha::block_signals();
             auto _beg = tracing::now();
-            std::this_thread::sleep_for(
-                std::chrono::nanoseconds{ get_global() - get_local() });
+            std::this_thread::sleep_for(std::chrono::nanoseconds{
+                get_global() - get_local() - sleep_for_overhead });
             get_local() += (tracing::now() - _beg);
             ::omnitrace::causal::component::causal_gotcha::unblock_signals();
         }
