@@ -9,7 +9,7 @@ import argparse
 from collections import OrderedDict
 
 
-num_stddev = 1
+num_stddev = 1.0
 
 
 def mean(_data):
@@ -21,7 +21,7 @@ def stddev(_data):
         return 0.0
     _mean = mean(_data)
     _variance = sum([((x - _mean) ** 2) for x in _data]) / float(len(_data))
-    return _variance**0.5
+    return float(num_stddev) * math.sqrt(_variance)
 
 
 def simpsons_rule(a, b, fa, fb):
@@ -195,9 +195,7 @@ class line_speedup(object):
         if self.data is None or self.base is None:
             return f"{self.name}"
         _line_speedup = self.compute_speedup()
-        _line_stddev = (
-            float(num_stddev) * self.compute_speedup_stddev()
-        )  # 3 stddev == 99.87%
+        _line_stddev = self.compute_speedup_stddev()  # 3 stddev == 99.87%
         _name = self.get_name()
         return f"[{_name}][{self.prog}][{self.data.speedup:3}] speedup: {_line_speedup:6.1f} +/- {_line_stddev:6.2f} %"
 
@@ -400,6 +398,8 @@ def get_validations(args):
 def main():
     import argparse
 
+    global num_stddev
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-e", "--experiments", type=str, help="Regex for experiments", default=".*"
@@ -428,9 +428,9 @@ def main():
     parser.add_argument(
         "-d",
         "--stddev",
-        type=int,
+        type=float,
         help="Number of standard deviations to report",
-        default=1,
+        default=1.0,
     )
     parser.add_argument(
         "-v",
