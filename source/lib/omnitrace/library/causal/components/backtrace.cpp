@@ -165,12 +165,7 @@ backtrace::get_period(uint64_t _units)
 {
     using cast_type = std::conditional_t<std::is_floating_point<Tp>::value, Tp, double>;
 
-    double _realtime_freq =
-        (get_use_sampling_realtime()) ? get_sampling_real_freq() : 0.0;
-    double _cputime_freq = (get_use_sampling_cputime()) ? get_sampling_cpu_freq() : 0.0;
-
-    auto    _freq        = std::max<double>(_realtime_freq, _cputime_freq);
-    double  _period      = 1.0 / _freq;
+    double  _period      = 1.0 / 1000.0;
     int64_t _period_nsec = static_cast<int64_t>(_period * units::sec) % units::sec;
     return static_cast<Tp>(_period_nsec) / static_cast<cast_type>(_units);
 }
