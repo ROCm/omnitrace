@@ -45,6 +45,14 @@
     ((10000 * OMNITRACE_HIP_VERSION_MAJOR) + (100 * OMNITRACE_HIP_VERSION_MINOR) +       \
      OMNITRACE_HIP_VERSION_PATCH)
 
+#if OMNITRACE_HIP_VERSION_MAJOR > 0
+#    define OMNITRACE_HIP_VERSION_COMPAT_STRING                                          \
+        "hip compatibility: "                                                            \
+        "v@OMNITRACE_HIP_VERSION_MAJOR@.@OMNITRACE_HIP_VERSION_MINOR@.x"
+#else
+#    define OMNITRACE_HIP_VERSION_COMPAT_STRING
+#endif
+
 // clang-format off
 #if !defined(OMNITRACE_MAX_THREADS)
 #    define OMNITRACE_MAX_THREADS @OMNITRACE_MAX_THREADS@
