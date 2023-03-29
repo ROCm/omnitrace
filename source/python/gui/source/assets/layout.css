@@ -48,8 +48,8 @@ html {
 
 header {
    position: relative;
-   height: 9vh;
-   min-height: 60px;
+   /* height: 9vh; */
+   min-height: 50px;
    width: 100%;
    background: #161415 url(../images/header-background.jpg) no-repeat top center;
    background-size: cover !important;
@@ -153,7 +153,7 @@ header .scrolldown a:hover { color: #11ABB0; }
 #nav-wrap {
   font: 10px 'opensans-bold', sans-serif;
   width: 100%;
-  max-height: 10vh;
+  /* max-height: 10vh; */
   letter-spacing: 1.5px;
   margin: 0 auto;
   z-index: 100;
@@ -168,7 +168,7 @@ header .scrolldown a:hover { color: #11ABB0; }
 #nav-wrap > a.mobile-btn { display: none; }
 
 ul#nav {
-  min-height: 60px;
+  /* min-height: 60px; */
   width: auto;
 
   /* center align the menu */
@@ -239,7 +239,7 @@ ul#nav li {
    display: inline-block;
    /* height: 34px; */
    /* width: 150px; */
-   max-width: 20vw;
+   /* max-width: 20vw; */
    /* max-width: 30vw; */
    /* min-width: 110px; */
    /* max-height: 3vw; */
@@ -295,8 +295,8 @@ div input[type="text"]{
    min-width: 0;
    width:auto;
    padding: 1vw 1vw;
-   /* font-size:0.5vw; */
-   /* height: 4vh; */
+   font-size:10px;
+   height: 34px;
    /* line-height: 60px; */
    border-width: 1px;
    border-style: dashed;
@@ -315,7 +315,7 @@ div#upload-drag a {
    border-style: dashed;
    border-radius: 5px;
    text-align: center;
-   font-size: 15px;
+   font-size: 10px;
 }
 /* li.upload div#upload-drag {
    line-height: 4vh;
