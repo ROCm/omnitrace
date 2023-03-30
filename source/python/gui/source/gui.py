@@ -53,6 +53,7 @@ from os.path import exists
 from .header import get_header
 from .parser import parse_files
 from .parser import parse_uploaded_file
+from .parser import find_causal_files
 import plotly.graph_objects as go
 
 
@@ -386,28 +387,46 @@ def build_causal_layout(
                 )
         elif "refresh" == ctx.triggered_id:
             if verbose >= 3:
-                print("refreshing Data with " + workload_path)
-                print(global_data.keys())
+                print("refreshing Data with ", workload_path)
+
+            files = find_causal_files(workload_path, verbose, False)
+
+            if verbose >= 3:
+                print("files found", files)
 
             global_data, global_samples, global_filenames = parse_files(
-                files=[workload_path], verbose=verbose
+                files=files, verbose=verbose
             )
 
-            func_list = sorted(list(global_data.point.unique()))
-            exp_list = sorted(list(global_data["progress points"].unique()))
             if global_data.empty == False:
+                max_points = global_data.point.value_counts().max().max()
+
+                # reset input_filters
+                global_input_filters = reset_input_filters(
+                    global_filenames, max_points, verbose
+                )
+                header = get_header(dropDownMenuItems, global_input_filters)
+                if verbose >= 3:
+                    print(global_data.keys())
+
+                func_list = sorted(list(global_data.point.unique()))
+                exp_list = sorted(list(global_data["progress points"].unique()))
+
                 screen_data, fig1, fig2 = update_line_graph(
                     sort_filter,
                     func_list,
                     exp_list,
                     global_data,
                     num_points,
-                    workload_filter,
+                    global_samples,
+                    global_filenames,
                 )
         else:
             func_list = []
             exp_list = []
             if global_data.empty == False:
+                if verbose == 3:
+                    print(global_data)
                 func_list = sorted(list(global_data.point.unique()))
                 exp_list = sorted(list(global_data["progress points"].unique()))
                 screen_data, fig1, fig2 = update_line_graph(

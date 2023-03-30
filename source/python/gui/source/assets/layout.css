@@ -185,7 +185,7 @@ ul#nav li {
  div#nav-center {
    display: inline-block;
    /* float: left; */
-   width:90%
+   width:85%
 }
 
 /* Filtering */
@@ -291,10 +291,10 @@ div#min-points{
 
 div input[type="text"]{
    vertical-align: top;
-   width: 60%;
+   width: 100%;
    min-width: 0;
-   width:auto;
-   padding: 1vw 1vw;
+   /* width:auto; */
+   /* padding: 1vw 1vw; */
    font-size:10px;
    height: 34px;
    /* line-height: 60px; */
@@ -352,7 +352,7 @@ div.daq-slider--light svg[class = "sc-jAaTju cEBNup rc-slider-handle"]{
 
 div.nav-right {
    float: right;
-   width: 5%;;
+   width: 10%;;
 }
 
 
@@ -389,8 +389,8 @@ button.refresh {
    /* display: inline-block; */
    border-radius: 3px;
    right:0;
-   padding: 8px 9px;
-   /* margin: 0px 13px; */
+   /* padding: 8px 9px; */
+   margin: 8px 0px;
    vertical-align: top;
    /* float: right; */
 }

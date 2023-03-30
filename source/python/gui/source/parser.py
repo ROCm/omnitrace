@@ -38,6 +38,7 @@ import numpy as np
 import math
 from collections import OrderedDict
 import os
+import glob
 
 num_stddev = 1
 
@@ -850,6 +851,50 @@ def get_speedup_data(data):
                 )
     speedup_df = speedup_df.sort_values(by=["speedup"])
     return speedup_df
+
+
+def find_causal_files(workload_path, verbose, recursive):
+    input_files = []
+
+    def find_causal_files_helper(inp, _files):
+        _input_files_tmp = []
+        for itr in _files:
+            if os.path.isfile(itr) and itr.endswith(".json"):
+                with open(itr, "r") as f:
+                    inp_data = json.load(f)
+                    if (
+                        "omnitrace" not in inp_data.keys()
+                        or "causal" not in inp_data["omnitrace"].keys()
+                    ):
+                        if verbose >= 2:
+                            print(f"{itr} is not a causal profile")
+                            continue
+                _input_files_tmp += [itr]
+            elif os.path.isfile(itr) and itr.endswith(".coz"):
+                _input_files_tmp += [itr]
+        return _input_files_tmp
+
+    for inp in workload_path:
+        if verbose == 3:
+            print("find_causal_files inp:", inp)
+        if os.path.exists(inp):
+            if os.path.isdir(inp):
+                _files = glob.glob(os.path.join(inp, "**"), recursive=recursive)
+                _input_files_tmp = find_causal_files_helper(inp, _files)
+                if len(_input_files_tmp) == 0:
+                    raise ValueError(f"No causal profiles found in {inp}")
+                else:
+                    input_files += _input_files_tmp
+            elif os.path.isfile(inp):
+                input_files += [inp]
+        else:
+            _files = glob.glob(inp, recursive=recursive)
+            _input_files_tmp = find_causal_files_helper(inp, _files)
+            if len(_input_files_tmp) == 0:
+                raise ValueError(f"No causal profiles found in {inp}")
+            else:
+                input_files += _input_files_tmp
+    return input_files
 
 
 def metadata_diff(json1, json2):

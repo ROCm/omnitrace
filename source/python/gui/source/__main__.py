@@ -44,7 +44,7 @@ from yaml import parse
 from collections import OrderedDict
 
 from . import gui
-from .parser import parse_files
+from .parser import parse_files, find_causal_files
 from . import __version__
 
 
@@ -54,42 +54,7 @@ def causal(args):
     workload_path = args.path[:]
     input_files = []
 
-    def find_causal_files(inp, _files):
-        _input_files_tmp = []
-        for itr in _files:
-            if os.path.isfile(itr) and itr.endswith(".json"):
-                with open(itr, "r") as f:
-                    inp_data = json.load(f)
-                    if (
-                        "omnitrace" not in inp_data.keys()
-                        or "causal" not in inp_data["omnitrace"].keys()
-                    ):
-                        if args.verbose >= 2:
-                            print(f"{itr} is not a causal profile")
-                        continue
-                _input_files_tmp += [itr]
-            elif os.path.isfile(itr) and itr.endswith(".coz"):
-                _input_files_tmp += [itr]
-        return _input_files_tmp
-
-    for inp in workload_path:
-        if os.path.exists(inp):
-            if os.path.isdir(inp):
-                _files = glob.glob(os.path.join(inp, "**"), recursive=args.recursive)
-                _input_files_tmp = find_causal_files(inp, _files)
-                if len(_input_files_tmp) == 0:
-                    raise ValueError(f"No causal profiles found in {inp}")
-                else:
-                    input_files += _input_files_tmp
-            elif os.path.isfile(inp):
-                input_files += [inp]
-        else:
-            _files = glob.glob(inp, recursive=args.recursive)
-            _input_files_tmp = find_causal_files(inp, _files)
-            if len(_input_files_tmp) == 0:
-                raise ValueError(f"No causal profiles found in {inp}")
-            else:
-                input_files += _input_files_tmp
+    input_files = find_causal_files(workload_path, args.verbose, args.recursive)
 
     # unique
     input_files = list(set(input_files))
