@@ -50,7 +50,7 @@
         "hip compatibility: "                                                            \
         "v@OMNITRACE_HIP_VERSION_MAJOR@.@OMNITRACE_HIP_VERSION_MINOR@.x"
 #else
-#    define OMNITRACE_HIP_VERSION_COMPAT_STRING
+#    define OMNITRACE_HIP_VERSION_COMPAT_STRING ""
 #endif
 
 // clang-format off
