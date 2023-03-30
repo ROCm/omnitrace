@@ -186,9 +186,7 @@ main(int argc, char** argv)
             std::min<int>(_cols - parser.get_help_width() - 8, 120));
 
     parser.enable_help();
-    parser.enable_version("omnitrace-avail", "v" OMNITRACE_VERSION_STRING,
-                          OMNITRACE_GIT_DESCRIBE, OMNITRACE_GIT_REVISION,
-                          OMNITRACE_HIP_VERSION_COMPAT_STRING);
+    parser.enable_version("omnitrace-avail", OMNITRACE_ARGPARSE_VERSION_INFO);
 
     parser.add_argument({ "--monochrome" }, "Disable colorized output")
         .max_count(1)
