@@ -1190,7 +1190,7 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
     {
         if(options[i]) write_entry(os, _labels.at(i), _widths.at(i), true, false);
     }
-    if(!csv) os << "\n" << banner(_widths, _wusing, '-');
+    os << "\n" << banner(_widths, _wusing, '-');
 
     for(const auto& fitr : fields)
     {
