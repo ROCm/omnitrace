@@ -88,13 +88,13 @@ def print_speedup_info(data):
 def build_line_graph():
     layout1 = html.Div(
         id="graph_all",
-        className="graph_all",
+        className="graph",
         children=[html.H4("All Causal Profiles", style={"color": "white"})],
     )
 
     layout2 = html.Div(
         id="graph_select",
-        className="graph_select",
+        className="graph",
         children=[html.H4("Call Stack Sample Histogram", style={"color": "white"})],
     )
 

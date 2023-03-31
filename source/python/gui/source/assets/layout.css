@@ -48,7 +48,7 @@ html {
 
 header {
    position: relative;
-   /* height: 9vh; */
+   height: 122px;
    min-height: 50px;
    width: 100%;
    background: #161415 url(../images/header-background.jpg) no-repeat top center;
@@ -370,7 +370,7 @@ ul#nav li.current a { color: #F06000; }
    width:90%;
    margin: auto;
 }*/
-.graph_select{
+.graph{
    width:95%;
    height: 100%;
    margin: auto;
