@@ -408,6 +408,9 @@ struct tmp_file
 std::shared_ptr<tmp_file>
 get_tmp_file(std::string _basename, std::string _ext = "dat");
 
+CausalBackend
+get_causal_backend();
+
 CausalMode
 get_causal_mode();
 

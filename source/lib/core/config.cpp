@@ -758,11 +758,21 @@ configure_settings(bool _init)
         get_env<std::string>("TMPDIR", "/tmp"), "io", "data", "advanced");
 
     OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_CAUSAL_BACKEND",
+        "Backend for call-stack sampling. See "
+        "https://amdresearch.github.io/omnitrace/causal_profiling.html#backends for more "
+        "info. If set to \"auto\", omnitrace will attempt to use the perf backend and "
+        "fallback on the timer backend if unavailable",
+        std::string{ "auto" }, "causal", "analysis")
+        ->set_choices({ "auto", "perf", "timer" });
+
+    OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_CAUSAL_MODE",
         "Perform causal experiments at the function-scope or line-scope. Ideally, use "
         "function first to locate function with highest impact and then switch to line "
         "mode + OMNITRACE_CAUSAL_FUNCTION_SCOPE set to the function being targeted.",
-        std::string{ "function" }, "causal", "analysis", "advanced");
+        std::string{ "function" }, "causal", "analysis")
+        ->set_choices({ "func", "line", "function" });
 
     OMNITRACE_CONFIG_SETTING(
         double, "OMNITRACE_CAUSAL_DELAY",
@@ -2589,6 +2599,31 @@ get_tmp_file(std::string _basename, std::string _ext)
     return _existing_files.at(_fname);
 }
 
+CausalBackend
+get_causal_backend()
+{
+    static auto _m = std::unordered_map<std::string_view, CausalBackend>{
+        { "auto", CausalBackend::Auto },
+        { "perf", CausalBackend::Perf },
+        { "timer", CausalBackend::Timer },
+    };
+
+    auto _v = get_config()->find("OMNITRACE_CAUSAL_BACKEND");
+    try
+    {
+        return _m.at(static_cast<tim::tsettings<std::string>&>(*_v->second).get());
+    } catch(std::runtime_error& _e)
+    {
+        auto _mode = static_cast<tim::tsettings<std::string>&>(*_v->second).get();
+        OMNITRACE_THROW("[%s] invalid causal backend %s. Choices: %s\n", __FUNCTION__,
+                        _mode.c_str(),
+                        timemory::join::join(timemory::join::array_config{ ", ", "", "" },
+                                             _v->second->get_choices())
+                            .c_str());
+    }
+    return CausalBackend::Auto;
+}
+
 CausalMode
 get_causal_mode()
 {
@@ -2612,12 +2647,11 @@ get_causal_mode()
         } catch(std::runtime_error& _e)
         {
             auto _mode = static_cast<tim::tsettings<std::string>&>(*_v->second).get();
-            std::stringstream _ss{};
-            for(const auto& itr : _v->second->get_choices())
-                _ss << ", " << itr;
-            auto _msg = (_ss.str().length() > 2) ? _ss.str().substr(2) : std::string{};
-            OMNITRACE_THROW("[%s] invalid causal mode %s. Choices: %s\n", __FUNCTION__,
-                            _mode.c_str(), _msg.c_str());
+            OMNITRACE_THROW(
+                "[%s] invalid causal mode %s. Choices: %s\n", __FUNCTION__, _mode.c_str(),
+                timemory::join::join(timemory::join::array_config{ ", ", "", "" },
+                                     _v->second->get_choices())
+                    .c_str());
         }
         return CausalMode::Function;
     }();

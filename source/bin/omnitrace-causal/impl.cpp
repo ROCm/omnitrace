@@ -634,13 +634,26 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
 
     parser.start_group("CAUSAL PROFILING OPTIONS (General)",
                        "These settings will be applied to all causal profiling runs");
-    parser.add_argument({ "-m", "--mode" }, "Causal profiling mode")
+    parser
+        .add_argument({ "-m", "--mode" },
+                      "Causal profiling mode. Function mode tends to resolve statistics "
+                      "faster than line mode (due to smaller sampling space). Ideally, "
+                      "use function mode first to identify a function to target and then "
+                      "switch to line mode + function scope setting")
         .count(1)
         .dtype("string")
         .choices({ "function", "line" })
         .choice_alias("function", { "func" })
         .action([&](parser_t& p) {
             update_env(_env, "OMNITRACE_CAUSAL_MODE", p.get<std::string>("mode"));
+        });
+
+    parser.add_argument({ "-b", "--backend" }, "Causal profiling sampling backend.")
+        .count(1)
+        .dtype("string")
+        .choices({ "auto", "perf", "timer" })
+        .action([&](parser_t& p) {
+            update_env(_env, "OMNITRACE_CAUSAL_BACKEND", p.get<std::string>("backend"));
         });
 
     parser
