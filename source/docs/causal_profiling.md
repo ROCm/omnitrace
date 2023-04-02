@@ -76,6 +76,7 @@ be found in the future.
 
 | Concept          | Setting                           | Options                          | Description                                                                                                        |
 |------------------|-----------------------------------|----------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| Backend          | `OMNITRACE_CAUSAL_BACKEND`        | `perf`, `timer`                  | Backend for recording samples required to calculate the virtual speed-up                                           |
 | Mode             | `OMNITRACE_CAUSAL_MODE`           | `function`, `line`               | Select entire function or individual line of code for causal experiments                                           |
 | End-to-End       | `OMNITRACE_CAUSAL_END_TO_END`     | boolean                          | Perform a single experiment during the entire run (does not require progress-points)                               |
 | Fixed speedup(s) | `OMNITRACE_CAUSAL_FIXED_SPEEDUP`  | one or more values from [0, 100] | Virtual speedup or pool of virtual speedups to randomly select                                                     |
@@ -88,6 +89,58 @@ be found in the future.
 1. Binary scope defaults to `%MAIN%` (executable). Scope can be expanded to include linked libraries
 2. `<file>` and `<file>:<line>` support requires debug info (i.e. code was compiled with `-g` or, preferably, `-g3`)
 3. Function mode does not require debug info but does not support stripped binaries
+
+### Backends
+
+Both causal profiling backends interrupt each thread 1000x per second of CPU-time to apply virtual speedups.
+The difference between the backends is how the samples which are responsible calculating the virtual speedup are recorded.
+There are 3 key differences between the two backends:
+
+1. `perf` backend requires Linux Perf and elevated security priviledges
+2. `perf` backend interrupts the application less frequently whereas the `timer` backend will interrupt the applicaiton 1000x per second of realtime
+3. `timer` backend has less accurate call-stacks due to instruction pointer skid
+
+In general, the `"perf"` is preferred over the `"timer"` backend when sufficient security priviledges permit it's usage.
+If `"OMNITRACE_CAUSAL_BACKEND"` is set to `"auto"`, Omnitrace will fallback to using the `"timer"` backend only if
+using the `"perf"` backend fails; if `"OMNITRACE_CAUSAL_BACKEND"` is set to `"perf"` and using this backend fails, Omnitrace
+will abort.
+
+#### Instruction Pointer Skid
+
+Instruction pointer (IP) skid is how many instructions execute between an event of interest
+happening and where the IP is when the kernel is able to stop the application.
+For the `"timer"` backend, this translates to the
+difference between when the IP when the timer generated a signal and the IP when the
+signal was actually generated. Although IP skid does still occur with the `"perf"` backend,
+the overhead of pausing the entire thread with the `"timer"` backend makes this much more pronounced
+and, as such, the `"timer"` backend tends to have a lower resolution than the `"perf"` backend,
+especially in `"line"` mode.
+
+#### Installing Linux Perf
+
+Linux Perf is built into the kernel and may already be installed (e.g., included in the default kernel for OpenSUSE).
+The official method of checking whether Linux Perf is installed is checking for the existence of the file
+`/proc/sys/kernel/perf_event_paranoid` -- if the file exists, the kernel has Perf installed.
+
+If this file does not exist, on Debian-based systems like Ubuntu, install (as superuser):
+
+```console
+apt-get install linux-tools-common linux-tools-generic linux-tools-$(uname -r)
+```
+
+and reboot your computer. In order to use the `"perf"` backend, the value of `/proc/sys/kernel/perf_event_paranoid`
+should be <= 2. If the value in this file is greater than 2, you will likely be unable to use the perf backend.
+
+To update the paranoid level temporarily (until the system is rebooted), run one of the following methods
+as a superuser (where `PARANOID_LEVEL=<N>` with `<N>` in the range `[-1, 2]):
+
+```console
+echo ${PARANOID_LEVEL} | sudo tee /proc/sys/kernel/perf_event_paranoid
+sysctl kernel.perf_event_paranoid=${PARANOID_LEVEL}
+```
+
+To make the paranoid level persistent after a reboot, add `kernel.perf_event_paranoid=<N>`
+(where `<N>` is the desired paranoid level) to the `/etc/sysctl.conf` file.
 
 ### Speedup Prediction Variability and `omnitrace-causal` Executable
 
