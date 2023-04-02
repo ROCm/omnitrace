@@ -24,6 +24,7 @@
 
 #include "defines.hpp"
 #include "exception.hpp"
+#include "locking.hpp"
 
 #include <timemory/api.hpp>
 #include <timemory/backends/dmp.hpp>
@@ -109,7 +110,7 @@ struct lock
     ~lock();
 
 private:
-    tim::auto_lock_t m_lk;
+    locking::atomic_lock m_lk;
 };
 //
 template <typename Arg, typename... Args>
