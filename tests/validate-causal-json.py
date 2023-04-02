@@ -343,7 +343,6 @@ def compute_speedups(_data, args):
     for selected, pitr in _data.items():
         for progpt, ditr in pitr.items():
             if 0 not in ditr.keys():
-                # print(f"missing baseline data for {progpt} in {selected}...")
                 continue
             _baseline = ditr[0].mean()
             for speedup, itr in ditr.items():
@@ -351,8 +350,9 @@ def compute_speedups(_data, args):
                     continue
                 if speedup != itr.speedup:
                     raise ValueError(f"in {selected}: {speedup} != {itr.speedup}")
-                _val = line_speedup(selected, progpt, itr, ditr[0])
-                ret.append(_val)
+                if len(itr) > args.min_experiments:
+                    _val = line_speedup(selected, progpt, itr, ditr[0])
+                    ret.append(_val)
 
     ret.sort()
     _last_name = None
@@ -415,6 +415,13 @@ def main():
         "-n", "--num-points", type=int, help="Minimum number of data points", default=5
     )
     parser.add_argument(
+        "-m",
+        "--min-experiments",
+        type=int,
+        help="Minimum number of experiments per speedup (e.g. do not display speedups when there are fewer than X experiments at this speedup)",
+        default=2,
+    )
+    parser.add_argument(
         "-i", "--input", type=str, nargs="*", help="Input file(s)", required=True
     )
     parser.add_argument(
@@ -441,6 +448,12 @@ def main():
         default=[],
     )
     parser.add_argument(
+        "--samples",
+        type=float,
+        help="Report samples within this percentage of the peak (0.0, 100.0] (default: 95%)",
+        default=95.0,
+    )
+    parser.add_argument(
         "--ci",
         action="store_true",
         help="{}. {}".format(
@@ -454,6 +467,13 @@ def main():
     num_stddev = args.stddev
     num_speedups = len(args.speedups)
 
+    percent_samples = args.samples
+    if not percent_samples > 0.0 and not percent_samples <= 100.0:
+        raise ValueError(
+            f"Invalid samples value: {percent_samples}. Supported range: 0.0 < x <= 100.0"
+        )
+    percent_samples = 1.0 - (percent_samples / 100.0)
+
     if num_speedups > 0 and args.num_points > num_speedups:
         args.num_points = num_speedups
 
@@ -466,9 +486,11 @@ def main():
         samp = process_samples(samp, inp_data)
 
     print("Samples:")
-    width = max([len(x) for x in samp.keys()])
-    for name, count in sorted(samp.items()):
-        print(f"    {name:{width}} :: {count}")
+    width = max([int(math.log10(x) + 1) for _, x in samp.items()])
+    samp_peak = max([count for _, count in samp.items()])
+    for name, count in sorted(samp.items(), key=lambda x: x[1], reverse=True):
+        if count >= samp_peak * percent_samples:
+            print(f"    {count:{width}} :: {name}")
 
     results = compute_speedups(data, args)
     print("")
