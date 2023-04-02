@@ -55,6 +55,7 @@
 #include <timemory/operations.hpp>
 #include <timemory/sampling/allocator.hpp>
 #include <timemory/sampling/sampler.hpp>
+#include <timemory/sampling/timer.hpp>
 #include <timemory/storage.hpp>
 #include <timemory/units.hpp>
 #include <timemory/utility/backtrace.hpp>
@@ -585,7 +586,7 @@ configure(bool _setup, int64_t _tid)
         for(auto itr : *_signal_types)
         {
             const char* _type  = (itr == get_realtime_signal()) ? "wall" : "CPU";
-            const auto* _timer = _sampler->get_timer(itr);
+            const auto* _timer = dynamic_cast<const timer*>(_sampler->get_trigger(itr));
             if(_timer)
             {
                 OMNITRACE_VERBOSE(
