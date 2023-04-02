@@ -96,6 +96,15 @@ symbol::operator==(const symbol& _rhs) const
 bool
 symbol::operator<(const symbol& _rhs) const
 {
+    // if both have non-zero load addresses that are not equal, compare based on load
+    // addresses
+    if(load_address > 0 && _rhs.load_address > 0 && load_address != _rhs.load_address)
+        return (load_address < _rhs.load_address);
+
+    // if address is same and name is same, return true if load_address is higher
+    if(address == _rhs.address && base_type::name == _rhs.base_type::name)
+        return load_address > _rhs.load_address;
+
     return std::tie(address, base_type::binding, base_type::visibility, base_type::name) <
            std::tie(_rhs.address, _rhs.base_type::binding, base_type::visibility,
                     base_type::name);
@@ -122,6 +131,10 @@ symbol::operator+=(const symbol& _rhs)
         address += _rhs.address;
         utility::combine(inlines, _rhs.inlines);
         utility::combine(dwarf_info, _rhs.dwarf_info);
+        if(_rhs.binding < binding) binding = _rhs.binding;
+        if(_rhs.visibility < visibility) visibility = _rhs.visibility;
+        if(load_address == 0 && _rhs.load_address > load_address)
+            load_address = _rhs.load_address;
     }
     else
     {
@@ -170,6 +183,20 @@ symbol::read_dwarf_entries(const std::deque<dwarf_entry>& _info)
             itr->address = address_range{ itr->address.low,
                                           _get_next_address(itr, itr->address.low) };
     }
+
+    std::sort(dwarf_info.begin(), dwarf_info.end(),
+              [](const auto& _lhs, const auto& _rhs) {
+                  return std::tie(_lhs.address, _lhs.file, _lhs.line, _lhs.col) <
+                         std::tie(_rhs.address, _rhs.file, _rhs.line, _rhs.col);
+              });
+
+    dwarf_info.erase(std::unique(dwarf_info.begin(), dwarf_info.end(),
+                                 [](const auto& _lhs, const auto& _rhs) {
+                                     return std::tie(_lhs.address, _lhs.file,
+                                                     _lhs.line) ==
+                                            std::tie(_rhs.address, _rhs.file, _rhs.line);
+                                 }),
+                     dwarf_info.end());
 
     return dwarf_info.size();
 }
