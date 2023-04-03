@@ -40,7 +40,13 @@ from collections import OrderedDict
 import os
 import glob
 
-num_stddev = 1
+num_stddev = 1.0
+
+
+def set_num_stddev(_value):
+    global num_stddev
+
+    num_stddev = _value
 
 
 def mean(_data):
@@ -52,7 +58,7 @@ def stddev(_data):
         return 0.0
     _mean = mean(_data)
     _variance = sum([((x - _mean) ** 2) for x in _data]) / float(len(_data))
-    return _variance**0.5
+    return float(num_stddev) * math.sqrt(_variance)
 
 
 class validation(object):
@@ -148,48 +154,15 @@ class latency_point(object):
         return self.speedup < rhs.speedup
 
     def get_data(self):
+        return [y / x for x, y in zip(self.arrivals, self.duration)]
+
+    def get_difference(self):
         _duration = sum(self.duration)
         return [x / _duration for x in self.duration]
 
     def mean(self):
         rate = sum(self.arrivals) / sum(self.duration)
-        return sum(self.get_data()) / rate
-
-    def __init__(self, _data):
-        self.data = _data
-
-    def get_impact(self):
-        """
-        speedup_c = [x.compute_speedup() for x in self.data]
-        speedup_v = [x.virtual_speedup() for x in self.data]
-        impact = []
-        for i in range(len(self.data) - 1):
-            x = speedup_v[i + 1] - speedup_v[i]
-            y_low = speedup_c[i]
-            y_upp = speedup_c[i + 1]
-            a_low = x * min([y_low, y_upp])
-            a_high = 0.5 * x * (max([y_low, y_upp]) - min([y_low, y_upp]))
-            impact += [a_low + a_high]
-        """
-        impact = [x.compute_speedup() for x in self.data]
-        return [sum(impact), mean(impact), stddev(impact)]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __str__(self):
-        _impact_v = self.get_impact()
-        _name = self.data[0].get_name()
-        _prog = self.data[0].prog
-        _impact = [
-            f"[{_name}][{_prog}][sum]  impact: {_impact_v[0]:6.1f}",
-            f"[{_name}][{_prog}][avg]  impact: {_impact_v[1]:6.1f} +/- {_impact_v[2]:6.2f}",
-        ]
-        return "\n".join([f"{x}" for x in self.data] + _impact)
-
-    def __lt__(self, rhs):
-        self.data.sort()
-        return self.get_impact()[0] < rhs.get_impact()[0]
+        return sum(self.get_difference()) / rate
 
 
 class line_speedup(object):
@@ -230,9 +203,7 @@ class line_speedup(object):
         if self.data is None or self.base is None:
             return f"{self.name}"
         _line_speedup = self.compute_speedup()
-        _line_stddev = (
-            float(num_stddev) * self.compute_speedup_stddev()
-        )  # 3 stddev == 99.87%
+        _line_stddev = self.compute_speedup_stddev()  # 3 stddev == 99.87%
         _name = self.get_name()
         return f"[{_name}][{self.prog}][{self.data.speedup:3}] speedup: {_line_speedup:6.1f} +/- {_line_stddev:6.2f} %"
 
@@ -322,12 +293,16 @@ def process_data(data, _data, experiments, progress_points):
                 _data[_value] = throughput_point(_value)
             elif _type == "latency":
                 _data[_value] = latency_point(_value)
+            else:
+                raise RuntimeError(f"unknown data type: {_type}")
         return _data[_value]
 
     if not _data:
         return data
+
     _selection_filter = re.compile(experiments)
     _progresspt_filter = re.compile(progress_points)
+
     for record in _data["omnitrace"]["causal"]["records"]:
         for exp in record["experiments"]:
             _speedup = exp["virtual_speedup"]
@@ -354,12 +329,9 @@ def process_data(data, _data, experiments, progress_points):
                             data[_selected][_name], _speedup, "throughput"
                         )
                         itr += [_delt, _duration]
-                    elif "arrivals" in pts:
-                        if pts["arrivals"] > 0:
-                            itr = find_or_insert(
-                                data[_selected][_name], _speedup, "latency"
-                            )
-                            itr += [pts["arrival"], pts["departure"], _duration]
+                    elif "arrival" in pts and pts["arrival"] > 0:
+                        itr = find_or_insert(data[_selected][_name], _speedup, "latency")
+                        itr += [pts["arrival"], pts["departure"], _duration]
                 else:
                     _delt = pts["laps"]
                     if _delt > 0:
@@ -378,7 +350,6 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], debug=False):
                 data[selected] = {}
             for progpt, ditr in pitr.items():
                 data[selected][progpt] = OrderedDict(sorted(ditr.items()))
-        from os.path import dirname
 
         ret = []
         for selected, pitr in _data.items():
@@ -386,7 +357,6 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], debug=False):
                 if 0 not in ditr.keys():
                     print(f"missing baseline data for {progpt} in {selected}...")
                     continue
-                _baseline = ditr[0].mean()
                 for speedup, itr in ditr.items():
                     if len(speedups) > 0 and speedup not in speedups:
                         continue
@@ -412,7 +382,7 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], debug=False):
                 impact = experiment_prog.get_impact()
                 for itrx in itr:
                     speedup = itrx.compute_speedup()
-                    line_stddev = float(num_stddev) * itrx.compute_speedup_stddev()
+                    line_stddev = itrx.compute_speedup_stddev()
                     if speedup <= 200 and speedup >= -100:
                         out = pd.concat(
                             [
@@ -493,8 +463,8 @@ def get_validations(validate):
         return data
     elif _len % 5 != 0:
         raise ValueError(
-            "validation requires format: {experiment regex} {progress-point regex} {virtual-speedup} {expected-speedup} {tolerance} (i.e. 5 args per validation. There are {} extra/missing arguments".format(
-                _len % 5
+            "validation requires format: {0}experiment regex{1} {0}progress-point regex{1} {0}virtual-speedup{1} {0}expected-speedup{1} {0}tolerance{1} (i.e. 5 args per validation. There are {2} extra/missing arguments".format(
+                "{", "}", _len % 5
             )
         )
     v = validate
@@ -532,7 +502,7 @@ def compute_sorts(_data):
 
 
 def is_valid_data_point(data):
-    return math.isnan(data) == False and math.isinf(data) == False
+    return not math.isnan(data) and not math.isinf(data)
 
 
 def get_value(splice):
@@ -571,16 +541,21 @@ def add_latency(df, experiment, value):
     ix = (experiment["selected"], experiment["speedup"])
     df_points = list(df.index)
     if ix not in df_points:
-        new_row = pd.Dataframe(
-            data={
-                "selected": [experiment["selected"]],
-                "point": [value["name"]],
-                "speedup": [float(experiment["speedup"])],
-                "arrivals": [float(value["arrivals"])],
-                "departures": [float(value["departures"])],
-                "duration": [0],
-                "type": ["latency"],
-            }
+        df = pd.concat(
+            [
+                df,
+                pd.Dataframe(
+                    data={
+                        "selected": [experiment["selected"]],
+                        "point": [value["name"]],
+                        "speedup": [float(experiment["speedup"])],
+                        "arrivals": [float(value["arrivals"])],
+                        "departures": [float(value["departures"])],
+                        "duration": [0],
+                        "type": ["latency"],
+                    }
+                ),
+            ]
         )
 
     if value.duration == 0:
@@ -611,13 +586,11 @@ def parse_files(
     result_df = pd.DataFrame()
     sample_df = pd.DataFrame()
 
-    cli_out = []
-
-    name_wo_ext = lambda x: x.replace(".json", "").replace(".coz", "")
+    def name_wo_ext(x):
+        return x.replace(".json", "").replace(".coz", "")
 
     json_files = [x for x in filter(lambda y: y.endswith(".json"), files)]
     coz_files = [x for x in filter(lambda y: y.endswith(".coz"), files)]
-    base_files = [name_wo_ext(x) for x in coz_files + json_files]
     read_files = []
     file_names = []
 
@@ -687,7 +660,6 @@ def parse_files(
 
             for line in lines:
                 if line != "\n":
-                    isExperiment = False
                     data_type = ""
                     value = {}
                     sections = line.split("\t")
@@ -698,8 +670,6 @@ def parse_files(
                         splice = section.split("\n")[0].split("=")
                         if len(splice) > 1:
                             val = get_value(splice)
-                            if isinstance(val, str) and "/" in val:
-                                val = val[val.rfind("/") + 1 :]
                             value[splice[0]] = val
                         else:
                             data_type = splice[0]
@@ -760,7 +730,6 @@ def parse_uploaded_file(file_name, file, experiments=".*", progress_points=".*")
         # coz
         for line in file.split("\n"):
             if len(line) > 0:
-                isExperiment = False
                 data_type = ""
                 value = {}
                 sections = line.split("\t")
@@ -806,7 +775,6 @@ def get_data_point(data):
 
 
 def get_speedup_data(data):
-    cur_data = data.iloc[0]
     baseline_data_point = get_data_point(data.iloc[0])
     speedup_df = pd.DataFrame()
     curr_selected = ""
