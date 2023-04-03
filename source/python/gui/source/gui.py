@@ -94,7 +94,7 @@ def build_line_graph():
 
 
 def update_line_graph(
-    sort_filter, func_list, exp_list, data, num_points, samples, workloads
+    sort_filter, experiment_list, progpt_list, data, num_points, samples, workloads
 ):
     if "Alphabetical" in sort_filter:
         data = data.sort_values(by=["point", "idx"])
@@ -111,8 +111,8 @@ def update_line_graph(
     if num_points > 0:
         data = data[data["point count"] > num_points]
 
-    mask = data[data.point.isin(func_list)]
-    mask = mask[mask["progress points"].isin(exp_list)]
+    mask = data[data.point.isin(experiment_list)]
+    mask = mask[mask["progress points"].isin(progpt_list)]
     mask = mask[mask["workload"].isin(workloads)]
 
     progress_points = list(mask["progress points"].unique())
@@ -308,8 +308,8 @@ def build_causal_layout(
         fig1 = None
         fig2 = None
         global new_data
-        global func_list
-        global exp_list
+        global experiment_list
+        global progpt_list
         global global_samples
         screen_data = pd.DataFrame()
 
@@ -328,8 +328,8 @@ def build_causal_layout(
             global_data, global_samples, global_filenames = parse_files(
                 workload_path, verbose=verbose
             )
-            func_list = sorted(list(global_data.point.unique()))
-            exp_list = sorted(list(global_data["progress points"].unique()))
+            experiment_list = sorted(list(global_data.point.unique()))
+            progpt_list = sorted(list(global_data["progress points"].unique()))
 
             max_points = global_data.point.value_counts().max().max()
 
@@ -339,8 +339,8 @@ def build_causal_layout(
 
             screen_data, fig1, fig2 = update_line_graph(
                 sort_filter,
-                func_list,
-                exp_list,
+                experiment_list,
+                progpt_list,
                 global_data,
                 num_points,
                 global_samples,
@@ -360,8 +360,8 @@ def build_causal_layout(
 
                 max_points = new_data.point.value_counts().max().max()
 
-                func_list = sorted(list(global_data.point.unique()))
-                exp_list = sorted(list(global_data["progress points"].unique()))
+                experiment_list = sorted(list(global_data.point.unique()))
+                progpt_list = sorted(list(global_data["progress points"].unique()))
 
                 # reset input_filters
                 global_input_filters = reset_input_filters(
@@ -370,8 +370,8 @@ def build_causal_layout(
 
                 screen_data, fig1, fig2 = update_line_graph(
                     sort_filter,
-                    func_list,
-                    exp_list,
+                    experiment_list,
+                    progpt_list,
                     new_data,
                     num_points,
                     global_samples,
@@ -385,13 +385,13 @@ def build_causal_layout(
                 if experiment_regex is not None:
                     p = re.compile(experiment_regex, flags=0)
 
-                    func_list = [
+                    experiment_list = [
                         s for s in list(global_data["point"].unique()) if p.match(s)
                     ]
                 if progpt_regex is not None:
                     p = re.compile(progpt_regex, flags=0)
 
-                    exp_list = [
+                    progpt_list = [
                         s
                         for s in list(global_data["progress points"].unique())
                         if p.match(s)
@@ -399,8 +399,8 @@ def build_causal_layout(
 
                 screen_data, fig1, fig2 = update_line_graph(
                     sort_filter,
-                    func_list,
-                    exp_list,
+                    experiment_list,
+                    progpt_list,
                     global_data,
                     num_points,
                     global_samples,
@@ -430,30 +430,30 @@ def build_causal_layout(
                 if verbose >= 3:
                     print(global_data.keys())
 
-                func_list = sorted(list(global_data.point.unique()))
-                exp_list = sorted(list(global_data["progress points"].unique()))
+                experiment_list = sorted(list(global_data.point.unique()))
+                progpt_list = sorted(list(global_data["progress points"].unique()))
 
                 screen_data, fig1, fig2 = update_line_graph(
                     sort_filter,
-                    func_list,
-                    exp_list,
+                    experiment_list,
+                    progpt_list,
                     global_data,
                     num_points,
                     global_samples,
                     global_filenames,
                 )
         else:
-            func_list = []
-            exp_list = []
+            experiment_list = []
+            progpt_list = []
             if not global_data.empty:
                 if verbose == 3:
                     print(global_data)
-                func_list = sorted(list(global_data.point.unique()))
-                exp_list = sorted(list(global_data["progress points"].unique()))
+                experiment_list = sorted(list(global_data.point.unique()))
+                progpt_list = sorted(list(global_data["progress points"].unique()))
                 screen_data, fig1, fig2 = update_line_graph(
                     sort_filter,
-                    func_list,
-                    exp_list,
+                    experiment_list,
+                    progpt_list,
                     global_data,
                     num_points,
                     global_samples,
