@@ -29,22 +29,16 @@ __license__ = "MIT"
 __maintainer__ = "AMD Research"
 __status__ = "Development"
 
-import sys
 import argparse
 import os.path
 import dash
 import dash_bootstrap_components as dbc
-import copy
 import json
-import glob
-import pandas as pd
 
 from pathlib import Path
-from yaml import parse
-from collections import OrderedDict
 
 from . import gui
-from .parser import parse_files, find_causal_files
+from .parser import parse_files, find_causal_files, set_num_stddev
 from . import __version__
 
 
@@ -59,7 +53,7 @@ def causal(args):
     # unique
     input_files = list(set(input_files))
 
-    num_stddev = args.stddev
+    set_num_stddev(args.stddev)
     num_speedups = len(args.speedups)
 
     if num_speedups > 0 and args.min_points > num_speedups:
@@ -142,7 +136,7 @@ def main():
     default_settings["min_points"] = 5
     default_settings["recursive"] = False
     default_settings["verbose"] = 0
-    default_settings["stddev"] = 1
+    default_settings["stddev"] = 1.0
 
     for key, value in default_settings.items():
         if key not in settings:
@@ -278,7 +272,7 @@ def main():
     my_parser.add_argument(
         "-d",
         "--stddev",
-        type=int,
+        type=float,
         help="Number of standard deviations to report",
         default=settings["stddev"],
     )

@@ -21,14 +21,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sys
+import os
+
 import dash_daq as daq
 import dash_bootstrap_components as dbc
 
-from dash import html, dash_table, dcc
-from matplotlib.style import available
-
-import os
+from dash import html, dcc
 
 
 def file_path():
@@ -180,8 +178,8 @@ def get_header(dropDownMenuItems, input_filters):
             # sys.exit(1)
 
     header_nav = children_[0].children[0].children
-    filter_children.append(function_filter("function_regex", "Funtion/line regex"))
-    filter_children.append(function_filter("exp_regex", "Experiment regex"))
+    filter_children.append(function_filter("experiment_regex", "Experiment regex"))
+    filter_children.append(function_filter("progpt_regex", "Progress Point regex"))
     filter_children.append(file_path())
     filter_children.append(upload_file())
     # filter_children.append(refresh())
@@ -195,8 +193,8 @@ def get_header(dropDownMenuItems, input_filters):
         # html.Li(
         #     className="regex",
         #     children=[
-        #         function_filter("function_regex", "Funtion/line regex"),
-        #         function_filter("exp_regex", "Experiment regex"),
+        #         function_filter("experiment_regex", "Funtion/line regex"),
+        #         function_filter("progpt_regex", "Experiment regex"),
         #         file_path(),
         #         upload_file(),
         #     ],
