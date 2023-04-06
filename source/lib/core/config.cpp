@@ -27,6 +27,7 @@
 #include "defines.hpp"
 #include "gpu.hpp"
 #include "mproc.hpp"
+#include "perf.hpp"
 #include "perfetto.hpp"
 
 #include <timemory/backends/dmp.hpp>
@@ -454,6 +455,11 @@ configure_settings(bool _init)
         "Defaults to OMNITRACE_SAMPLING_FREQ when <= 0.0",
         -1.0, "sampling", "advanced");
 
+    OMNITRACE_CONFIG_SETTING(double, "OMNITRACE_SAMPLING_OVERFLOW_FREQ",
+                             "Number of events in between each sample. "
+                             "Defaults to OMNITRACE_SAMPLING_FREQ when <= 0.0",
+                             -1.0, "sampling", "advanced");
+
     OMNITRACE_CONFIG_SETTING(
         double, "OMNITRACE_SAMPLING_DELAY",
         "Time (in seconds) to wait before the first sampling signal is delivered, "
@@ -518,15 +524,22 @@ configure_settings(bool _init)
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_SAMPLING_CPUTIME_TIDS",
         "Same as OMNITRACE_SAMPLING_TIDS but applies specifically to samplers whose "
-        "timers are based on the CPU-time. This is useful when both "
-        "OMNITRACE_SAMPLING_CPUTIME=ON and OMNITRACE_SAMPLING_REALTIME=ON",
+        "timers are based on the CPU-time. This is useful when you want to restrict "
+        "samples to particular threads.",
         std::string{}, "sampling", "advanced");
 
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_SAMPLING_REALTIME_TIDS",
         "Same as OMNITRACE_SAMPLING_TIDS but applies specifically to samplers whose "
-        "timers are based on the real (wall) time. This is useful when both "
-        "OMNITRACE_SAMPLING_CPUTIME=ON and OMNITRACE_SAMPLING_REALTIME=ON",
+        "timers are based on the real (wall) time. This is useful when you want to "
+        "restrict samples to particular threads.",
+        std::string{}, "sampling", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(
+        std::string, "OMNITRACE_SAMPLING_OVERFLOW_TIDS",
+        "Same as OMNITRACE_SAMPLING_TIDS but applies specifically to samplers whose "
+        "samples are based on the overflow of a particular event. This is useful when "
+        "you want to restrict samples to particular threads.",
         std::string{}, "sampling", "advanced");
 
     auto _backend = tim::get_env_choice<std::string>(
@@ -593,29 +606,45 @@ configure_settings(bool _init)
         "thread started by the application.",
         8, "sampling", "debugging", "advanced");
 
+    OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_SAMPLING_OVERFLOW",
+                             "Enable sampling via an overflow of a HW counter. This "
+                             "requires Linux perf (/proc/sys/kernel/perf_event_paranoid "
+                             "created by OS) with a value of 2 or less in that file",
+                             false, "sampling", "advanced");
+
     OMNITRACE_CONFIG_SETTING(
         bool, "OMNITRACE_SAMPLING_REALTIME",
-        "Enable sampling frequency via a wall-clock timer on child threads. This may "
-        "result in typically idle child threads consuming an unnecessary large amount of "
-        "CPU time. The main thread always has this enabled.",
+        "Enable sampling frequency via a wall-clock timer. This may result in typically "
+        "idle child threads consuming an unnecessary large amount of CPU time.",
         false, "sampling", "advanced");
 
-    OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_SAMPLING_CPUTIME",
-                             "Enable sampling frequency via a timer that measures both "
-                             "CPU time used by the current process, "
-                             "and CPU time expended on behalf of the process by the "
-                             "system. This is recommended.",
-                             true, "sampling", "advanced");
-
-    auto _sigrt_range = SIGRTMAX - SIGRTMIN;
-
     OMNITRACE_CONFIG_SETTING(
-        int, "OMNITRACE_SAMPLING_REALTIME_OFFSET",
-        std::string{
-            "Modify this value only if the target process is also using SIGRTMIN. E.g. "
-            "the signal used is SIGRTMIN + <THIS_VALUE>. Value must be <= " } +
-            std::to_string(_sigrt_range),
-        0, "sampling", "advanced");
+        bool, "OMNITRACE_SAMPLING_CPUTIME",
+        "Enable sampling frequency via a timer that measures both CPU time used by the "
+        "current process, and CPU time expended on behalf of the process by the system. "
+        "This is recommended.",
+        false, "sampling", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(int, "OMNITRACE_SAMPLING_CPUTIME_SIGNAL",
+                             "Modify this value only if the target process is also using "
+                             "the same signal (SIGPROF)",
+                             SIGPROF, "sampling", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(int, "OMNITRACE_SAMPLING_REALTIME_SIGNAL",
+                             "Modify this value only if the target process is also using "
+                             "the same signal (SIGRTMIN)",
+                             SIGRTMIN, "sampling", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(int, "OMNITRACE_SAMPLING_OVERFLOW_SIGNAL",
+                             "Modify this value only if the target process is also using "
+                             "the same signal (SIGRTMIN + 1)",
+                             SIGRTMIN + 1, "sampling", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_SAMPLING_OVERFLOW_EVENT",
+                             "Metric for overflow sampling",
+                             std::string{ "perf::PERF_COUNT_HW_CACHE_REFERENCES" },
+                             "sampling", "hardware_counters")
+        ->set_choices(perf::get_config_choices());
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_ROCTRACER_HIP_API",
                              "Enable HIP API tracing support", true, "roctracer", "rocm",
@@ -1316,16 +1345,25 @@ configure_signal_handler(const std::shared_ptr<settings>& _config)
     }
 }
 
-int
-get_realtime_signal()
+bool
+get_use_sampling_overflow()
 {
-    return SIGRTMIN + get_sampling_rtoffset();
+    static auto _v = get_config()->find("OMNITRACE_SAMPLING_OVERFLOW");
+    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
-int
-get_cputime_signal()
+bool
+get_use_sampling_realtime()
 {
-    return SIGPROF;
+    static auto _v = get_config()->find("OMNITRACE_SAMPLING_REALTIME");
+    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
+}
+
+bool
+get_use_sampling_cputime()
+{
+    static auto _v = get_config()->find("OMNITRACE_SAMPLING_CPUTIME");
+    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
 std::set<int> get_sampling_signals(int64_t)
@@ -1333,13 +1371,22 @@ std::set<int> get_sampling_signals(int64_t)
     auto _v = std::set<int>{};
     if(get_use_causal())
     {
-        _v.emplace(get_cputime_signal());
-        _v.emplace(get_realtime_signal());
+        _v.emplace(get_sampling_cputime_signal());
+        _v.emplace(get_sampling_realtime_signal());
     }
     else
     {
-        if(get_use_sampling_cputime()) _v.emplace(get_cputime_signal());
-        if(get_use_sampling_realtime()) _v.emplace(get_realtime_signal());
+        if(get_use_sampling() && !get_use_sampling_cputime() &&
+           !get_use_sampling_realtime() && !get_use_sampling_overflow())
+        {
+            OMNITRACE_VERBOSE_F(1, "sampling enabled by cputime/realtime/overflow not "
+                                   "specified. defaulting to cputime...\n");
+            set_setting_value("OMNITRACE_SAMPLING_CPUTIME", true);
+        }
+
+        if(get_use_sampling_cputime()) _v.emplace(get_sampling_cputime_signal());
+        if(get_use_sampling_realtime()) _v.emplace(get_sampling_realtime_signal());
+        if(get_use_sampling_overflow()) _v.emplace(get_sampling_overflow_signal());
     }
 
     return _v;
@@ -2018,24 +2065,24 @@ get_sampling_keep_internal()
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
-bool
-get_use_sampling_realtime()
+int
+get_sampling_overflow_signal()
 {
-    static auto _v = get_config()->find("OMNITRACE_SAMPLING_REALTIME");
-    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
-}
-
-bool
-get_use_sampling_cputime()
-{
-    static auto _v = get_config()->find("OMNITRACE_SAMPLING_CPUTIME");
-    return static_cast<tim::tsettings<bool>&>(*_v->second).get();
+    static auto _v = get_config()->find("OMNITRACE_SAMPLING_OVERFLOW_SIGNAL");
+    return static_cast<tim::tsettings<int>&>(*_v->second).get();
 }
 
 int
-get_sampling_rtoffset()
+get_sampling_realtime_signal()
 {
-    static auto _v = get_config()->find("OMNITRACE_SAMPLING_REALTIME_OFFSET");
+    static auto _v = get_config()->find("OMNITRACE_SAMPLING_REALTIME_SIGNAL");
+    return static_cast<tim::tsettings<int>&>(*_v->second).get();
+}
+
+int
+get_sampling_cputime_signal()
+{
+    static auto _v = get_config()->find("OMNITRACE_SAMPLING_CPUTIME_SIGNAL");
     return static_cast<tim::tsettings<int>&>(*_v->second).get();
 }
 
@@ -2251,7 +2298,7 @@ get_sampling_freq()
 }
 
 double
-get_sampling_cpu_freq()
+get_sampling_cputime_freq()
 {
     static auto _v   = get_config()->find("OMNITRACE_SAMPLING_CPUTIME_FREQ");
     auto&       _val = static_cast<tim::tsettings<double>&>(*_v->second).get();
@@ -2260,9 +2307,18 @@ get_sampling_cpu_freq()
 }
 
 double
-get_sampling_real_freq()
+get_sampling_realtime_freq()
 {
     static auto _v   = get_config()->find("OMNITRACE_SAMPLING_REALTIME_FREQ");
+    auto&       _val = static_cast<tim::tsettings<double>&>(*_v->second).get();
+    if(_val <= 0.0) _val = get_sampling_freq();
+    return _val;
+}
+
+double
+get_sampling_overflow_freq()
+{
+    static auto _v   = get_config()->find("OMNITRACE_SAMPLING_OVERFLOW_FREQ");
     auto&       _val = static_cast<tim::tsettings<double>&>(*_v->second).get();
     if(_val <= 0.0) _val = get_sampling_freq();
     return _val;
@@ -2276,7 +2332,7 @@ get_sampling_delay()
 }
 
 double
-get_sampling_cpu_delay()
+get_sampling_cputime_delay()
 {
     static auto _v   = get_config()->find("OMNITRACE_SAMPLING_CPUTIME_DELAY");
     auto&       _val = static_cast<tim::tsettings<double>&>(*_v->second).get();
@@ -2285,7 +2341,7 @@ get_sampling_cpu_delay()
 }
 
 double
-get_sampling_real_delay()
+get_sampling_realtime_delay()
 {
     static auto _v   = get_config()->find("OMNITRACE_SAMPLING_REALTIME_DELAY");
     auto&       _val = static_cast<tim::tsettings<double>&>(*_v->second).get();
@@ -2303,30 +2359,38 @@ get_sampling_duration()
 std::string
 get_sampling_cpus()
 {
-    static auto _v = get_config()->find("OMNITRACE_SAMPLING_CPUS");
+    auto _v = get_config()->find("OMNITRACE_SAMPLING_CPUS");
     return static_cast<tim::tsettings<std::string>&>(*_v->second).get();
 }
 
 std::set<int64_t>
 get_sampling_tids()
 {
-    static auto _v = get_config()->find("OMNITRACE_SAMPLING_TIDS");
+    auto _v = get_config()->find("OMNITRACE_SAMPLING_TIDS");
     return parse_numeric_range<>(
         static_cast<tim::tsettings<std::string>&>(*_v->second).get(), "thread IDs", 1);
 }
 
 std::set<int64_t>
-get_sampling_cpu_tids()
+get_sampling_cputime_tids()
 {
-    static auto _v = get_config()->find("OMNITRACE_SAMPLING_CPUTIME_TIDS");
+    auto _v = get_config()->find("OMNITRACE_SAMPLING_CPUTIME_TIDS");
     return parse_numeric_range<>(
         static_cast<tim::tsettings<std::string>&>(*_v->second).get(), "thread IDs", 1);
 }
 
 std::set<int64_t>
-get_sampling_real_tids()
+get_sampling_realtime_tids()
 {
-    static auto _v = get_config()->find("OMNITRACE_SAMPLING_REALTIME_TIDS");
+    auto _v = get_config()->find("OMNITRACE_SAMPLING_REALTIME_TIDS");
+    return parse_numeric_range<>(
+        static_cast<tim::tsettings<std::string>&>(*_v->second).get(), "thread IDs", 1);
+}
+
+std::set<int64_t>
+get_sampling_overflow_tids()
+{
+    auto _v = get_config()->find("OMNITRACE_SAMPLING_OVERFLOW_TIDS");
     return parse_numeric_range<>(
         static_cast<tim::tsettings<std::string>&>(*_v->second).get(), "thread IDs", 1);
 }
