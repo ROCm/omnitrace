@@ -312,7 +312,7 @@ omnitrace-causal        \
 
 
 # 20 iterations in line mode with 1 speedup group
-# and source scope restricted to lines 155 and 165
+# and source scope restricted to lines 100 and 110
 # in the causal.cpp file.
 #
 # outputs to files:
@@ -326,7 +326,7 @@ omnitrace-causal                \
     -s ${SPEEDUPS}              \
     -m line                     \
     -o experiments.line         \
-    -S "causal\\.cpp:(155|165)" \
+    -S "causal\\.cpp:(100|110)" \
     --                          \
     ./causal-omni-cpu "${@}"
 
@@ -355,8 +355,8 @@ omnitrace-causal            \
 
 # 3 iterations in line mode of 15 singular speedups
 # in end-to-end mode with 2 different source scopes
-# where one is restricted to line 155 in causal.cpp
-# and another is restricted to line 165 in causal.cpp.
+# where one is restricted to line 100 in causal.cpp
+# and another is restricted to line 110 in causal.cpp.
 #
 # outputs to files:
 #   - causal/experiments.line.e2e.coz
@@ -370,8 +370,8 @@ omnitrace-causal            \
     -m line                 \
     -e                      \
     -o experiments.line.e2e \
-    -S "causal\\.cpp:155"   \
-       "causal\\.cpp:165"   \
+    -S "causal\\.cpp:100"   \
+       "causal\\.cpp:110"   \
     --                      \
     ./causal-omni-cpu "${@}"
 
@@ -518,9 +518,7 @@ OmniTrace provides several additional features and utilities for causal profilin
 | Scope options        |                  Supports binary and source scopes                  |        Supports binary, source, and function scopes        | See Note #4, #5, and #6 below |
 | Scope inclusion      |          Uses `%` as wildcard for binary and source scopes          | Full regex support for binary, source, and function scopes |                               |
 | Scope exclusion      |                            Not supported                            |   Supports regexes for excluding binary/source/function    | See Note #7 below             |
-| Call-stack sampling  |                             Linux perf                              |                         libunwind                          | See Note #8 below             |
-
-### Notes
+| Call-stack sampling  |                             Linux perf                              |                         Linux perf, libunwind                          | See Note #8 below             |
 
 1. OmniTrace supports a "function" mode which does not require debug info
 2. OmniTrace supports selecting entire range of instruction pointers for a function instead of instruction pointer for one line. In large codes, "function" mode
@@ -531,3 +529,5 @@ OmniTrace provides several additional features and utilities for causal profilin
 6. OmniTrace supports a "function" scope which narrows the functions/lines which are eligible for causal experiments to those within the matching functions
 7. OmniTrace supports a second filter on scopes for removing binary/source/function caught by inclusive match, e.g. `BINARY_SCOPE=.*` + `BINARY_EXCLUDE=libmpi.*`
    initially includes all binaries but exclude regex removes MPI libraries
+8. In Omnitrace, the Linux perf backend is preferred over use libunwind. However, Linux perf usage can be restricted for security reasons.
+   Omnitrace will fallback to using a second POSIX timer and libunwind if Linux perf is not available.
