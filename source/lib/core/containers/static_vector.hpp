@@ -94,6 +94,9 @@ struct static_vector
     decltype(auto) back() { return *(m_data.begin() + size() - 1); }
     decltype(auto) back() const { return *(m_data.begin() + size() - 1); }
 
+    auto*       data() { return m_data.data(); }
+    const auto* data() const { return m_data.data(); }
+
     void swap(this_type& _v);
 
     friend void swap(this_type& _lhs, this_type& _rhs) { _lhs.swap(_rhs); }
