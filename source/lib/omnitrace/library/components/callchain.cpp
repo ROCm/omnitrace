@@ -34,7 +34,6 @@
 #include "library/runtime.hpp"
 #include "library/sampling.hpp"
 #include "library/thread_info.hpp"
-#include "timemory/unwind/entry.hpp"
 
 #include <timemory/backends/papi.hpp>
 #include <timemory/backends/threading.hpp>
@@ -55,6 +54,7 @@
 #include <timemory/operations.hpp>
 #include <timemory/storage.hpp>
 #include <timemory/units.hpp>
+#include <timemory/unwind/entry.hpp>
 #include <timemory/utility/demangle.hpp>
 #include <timemory/utility/types.hpp>
 #include <timemory/variadic.hpp>
