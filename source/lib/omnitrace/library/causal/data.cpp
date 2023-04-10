@@ -28,11 +28,13 @@
 #include "binary/scope_filter.hpp"
 #include "core/binary/fwd.hpp"
 #include "core/config.hpp"
+#include "core/containers/c_array.hpp"
 #include "core/debug.hpp"
 #include "core/state.hpp"
 #include "core/utility.hpp"
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
+#include "library/causal/sample_data.hpp"
 #include "library/causal/sampling.hpp"
 #include "library/causal/selected_entry.hpp"
 #include "library/ptl.hpp"
@@ -643,6 +645,18 @@ save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
 }
 
 void
+set_current_selection(uint64_t itr)
+{
+    if(experiment::is_active()) return;
+
+    auto& _pcs = latest_eligible_pc.at(0);
+    if(_pcs && is_eligible_address(itr))
+    {
+        _pcs->write(&itr);
+    }
+}
+
+void
 set_current_selection(unwind_addr_t _stack)
 {
     if(experiment::is_active()) return;
@@ -650,6 +664,26 @@ set_current_selection(unwind_addr_t _stack)
     size_t _n = 0;
     for(auto itr : _stack)
     {
+        if(itr == 0) continue;
+        auto& _pcs = latest_eligible_pc.at(_n);
+        if(_pcs && is_eligible_address(itr))
+        {
+            _pcs->write(&itr);
+            // increment after valid found -> first valid pc for call-stack
+            ++_n;
+        }
+    }
+}
+
+void
+set_current_selection(container::c_array<uint64_t> _stack)
+{
+    if(experiment::is_active()) return;
+
+    size_t _n = 0;
+    for(auto itr : _stack)
+    {
+        if(itr == 0) continue;
         auto& _pcs = latest_eligible_pc.at(_n);
         if(_pcs && is_eligible_address(itr))
         {
@@ -774,7 +808,7 @@ sample_selection(size_t _nitr, size_t _wait_ns)
 std::deque<binary::symbol>
 get_line_info(uintptr_t _addr, bool _include_discarded)
 {
-    static auto _glob_filters  = get_filters({});
+    static auto _glob_filters  = get_filters({ sf::BINARY_FILTER });
     static auto _scope_filters = get_filters();
     auto        _data          = std::deque<binary::symbol>{};
     auto        _get_line_info = [&](const auto& _info, const auto& _filters) {
@@ -783,9 +817,28 @@ get_line_info(uintptr_t _addr, bool _include_discarded)
         {
             auto _local_data = std::deque<binary::symbol>{};
 
+            // make sure the address is in the coarse grained mapped regions
+            // before performing an exhaustive search
+            bool _is_mapped = std::find_if(litr.mappings.begin(), litr.mappings.end(),
+                                           [_addr](const auto& mitr) {
+                                               return address_range_t{ mitr.load_address,
+                                                                       mitr.last_address }
+                                                   .contains(_addr);
+                                           }) != litr.mappings.end();
+
+            if(!_is_mapped) return;
+
             for(const auto& ditr : litr.symbols)
             {
+                // skip if load address is greater than address
+                if(_addr < ditr.load_address) continue;
+                // compute the symbols ip address range
                 auto _ipaddr = ditr.ipaddr();
+                // if the lower bound of the ip address range is greater than the address,
+                // all following symbols are not worth searching since they are at higher
+                // addresses than this symbol (sorted by address)
+                // if(_ipaddr.low > _addr) break;
+
                 if(!_ipaddr.contains(_addr)) continue;
 
                 if(_include_discarded ||
@@ -804,6 +857,11 @@ get_line_info(uintptr_t _addr, bool _include_discarded)
                     auto _debug_data = std::deque<binary::symbol>{};
                     for(const auto& itr : ditr.get_debug_line_info(_filters))
                     {
+                        if(!_ipaddr.contains(itr.ipaddr()))
+                            OMNITRACE_THROW(
+                                "Error! debug line info ipaddr (%s) is not contained in "
+                                "symbol ipaddr (%s)",
+                                as_hex(itr.ipaddr()).c_str(), as_hex(_ipaddr).c_str());
                         if(itr.ipaddr().contains(_addr)) _debug_data.emplace_back(itr);
                     }
                     utility::combine(_local_data, _debug_data);
@@ -819,99 +877,10 @@ get_line_info(uintptr_t _addr, bool _include_discarded)
         }
     };
 
-    _get_line_info(get_cached_binary_info().second, _scope_filters);
-
-    if(!_include_discarded) return _data;
-
-    if(_data.empty()) _get_line_info(get_cached_binary_info().second, _glob_filters);
-
-    using entry_cache_t     = tim::unwind::cache;
-    using symbol_cache_t    = std::unordered_map<uintptr_t, binary::symbol>;
-    using processed_entry_t = tim::unwind::processed_entry;
-    using entry_t           = tim::unwind::entry;
-
-    auto get_processed_entry = [&]() {
-        static auto _entry_cache = entry_cache_t{};
-        auto&       _files       = _entry_cache.files;
-
-        auto citr = _entry_cache.entries.find(entry_t{ _addr });
-        if(citr != _entry_cache.entries.end())
-        {
-            return std::optional<processed_entry_t>{ citr->second };
-        }
-
-        auto _v    = processed_entry_t{};
-        _v.address = _addr;
-        processed_entry_t::construct(_v, &_files);
-
-        if(_v.error == 0)
-        {
-            _entry_cache.entries.emplace(entry_t{ _addr }, _v);
-            return std::optional<processed_entry_t>{ _v };
-        }
-        return std::optional<processed_entry_t>{};
-    };
-
-    if(_data.empty()) _get_line_info(get_cached_binary_info().first, _scope_filters);
-    if(_data.empty()) _get_line_info(get_cached_binary_info().first, _glob_filters);
-
-    if(_data.empty())
-    {
-        static auto _symbol_cache = symbol_cache_t{};
-
-        auto citr = _symbol_cache.find(_addr);
-        if(citr != _symbol_cache.end())
-        {
-            _data.emplace_back(citr->second);
-        }
-        else
-        {
-            auto _symbol    = binary::symbol{};
-            _symbol.address = address_range_t{ _addr };
-
-            auto _info = tim::unwind::dlinfo::construct(_addr);
-            if(_info.symbol && !_info.symbol.name.empty())
-                _symbol.func = _info.symbol.name;
-
-            if(_info.location && !_info.location.name.empty())
-                _symbol.file = _info.location.name;
-
-            auto mitr = tim::procfs::find_map(_addr);
-            if(!mitr.is_empty() && !mitr.pathname.empty())
-            {
-                OMNITRACE_VERBOSE(0, "[%s] %s\n", as_hex(_addr).c_str(),
-                                  mitr.pathname.c_str());
-                _symbol.file         = mitr.pathname;
-                _symbol.load_address = mitr.load_address;
-            }
-
-            auto eitr = get_processed_entry();
-            if(eitr)
-            {
-                _symbol.line = eitr->lineno;
-
-                if(eitr->lineinfo)
-                {
-                    auto _line_info = eitr->lineinfo.get();
-                    if(_line_info)
-                    {
-                        if(!_line_info.name.empty()) _symbol.func = _line_info.name;
-                        if(!_line_info.location.empty())
-                        {
-                            _symbol.file = _line_info.location;
-                            _symbol.line = _line_info.line;
-                        }
-                    }
-                }
-            }
-
-            if(!_symbol.func.empty() || !_symbol.file.empty())
-            {
-                _symbol_cache.emplace(_addr, _symbol);
-                _data.emplace_back(_symbol);
-            }
-        }
-    }
+    if(_include_discarded)
+        _get_line_info(get_cached_binary_info().first, _glob_filters);
+    else
+        _get_line_info(get_cached_binary_info().second, _scope_filters);
 
     return _data;
 }

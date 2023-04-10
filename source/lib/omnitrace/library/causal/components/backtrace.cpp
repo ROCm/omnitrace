@@ -29,6 +29,7 @@
 #include "library/causal/data.hpp"
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
+#include "library/perf.hpp"
 #include "library/runtime.hpp"
 #include "library/thread_data.hpp"
 #include "library/thread_info.hpp"
@@ -45,6 +46,7 @@
 
 #include <atomic>
 #include <ctime>
+#include <execinfo.h>
 #include <type_traits>
 
 namespace omnitrace
@@ -88,27 +90,83 @@ backtrace::stop()
 void
 sample_rate::sample(int _sig)
 {
-    if(_sig != get_realtime_signal()) return;
+    if(_sig != get_sampling_realtime_signal()) return;
+
+    OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
 
     // update the last sample for backtrace signal(s) even when in use
     static thread_local int64_t _last_sample = 0;
 
+    auto  _tid         = threading::get_id();
     auto  _this_sample = tracing::now();
-    auto& _period_stat = get_delay_statistics()->at(threading::get_id());
+    auto& _period_stat = get_delay_statistics()->at(_tid);
+
     if(_last_sample > 0) _period_stat += (_this_sample - _last_sample);
+
     _last_sample = _this_sample;
+}
+
+void
+overflow::sample(int)
+{
+    OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
+
+    static thread_local const auto& _tinfo      = thread_info::get();
+    auto                            _tid        = _tinfo->index_data->sequent_value;
+    auto&                           _perf_event = perf::get_instance(_tid);
+
+    if(!_perf_event) return;
+
+    m_index = causal::experiment::get_index();
+
+    _perf_event->stop();
+
+    for(auto itr : *_perf_event)
+    {
+        if(itr.is_sample())
+        {
+            auto _sample_ip = itr.get_ip();
+            auto _data      = callchain_t{};
+            _data.emplace_back(_sample_ip);
+            for(auto ditr : itr.get_callchain())
+            {
+                if(ditr != _sample_ip) _data.emplace_back(ditr);
+                if(_data.size() == _data.capacity()) break;
+            }
+
+            if(causal::experiment::is_active() && causal::experiment::is_selected(_data))
+            {
+                ++m_selected;
+                causal::experiment::add_selected();
+                auto _delay = 1.0 * units::msec * causal::experiment::get_delay_scaling();
+                causal::delay::get_local() += _delay;
+            }
+            else if(!causal::experiment::is_active())
+            {
+                causal::set_current_selection(_data);
+            }
+
+            m_stack.emplace_back(_data);
+        }
+    }
+
+    _perf_event->start();
+
+    // if(_sig == get_sampling_cputime_signal() && causal::experiment::is_active())
+    //    causal::delay::process();
 }
 
 void
 backtrace::sample(int _sig)
 {
+    if(_sig == get_sampling_overflow_signal()) return;
+
     constexpr size_t  depth        = ::omnitrace::causal::unwind_depth;
     constexpr int64_t ignore_depth = ::omnitrace::causal::unwind_offset;
 
     // update the last sample for backtrace signal(s) even when in use
-    static thread_local size_t _protect_flag = 0;
-
-    // sampling_guard _guard{};
+    static thread_local size_t      _protect_flag = 0;
+    static thread_local const auto& _tinfo        = thread_info::get();
 
     if((_protect_flag & 1) == 1 ||
        OMNITRACE_UNLIKELY(!trait::runtime_enabled<causal::component::backtrace>::get()))
@@ -125,17 +183,17 @@ backtrace::sample(int _sig)
     // the batch handler timer delivers a signal according to the thread CPU
     // clock, ensuring that setting the current selection and processing the
     // delays only happens when the thread is active
-    if(_sig == get_cputime_signal())
+    if(_sig == get_sampling_cputime_signal())
     {
-        if(!causal::experiment::is_active())
-            causal::set_current_selection(m_stack);
-        else
+        if(causal::experiment::is_active())
             causal::delay::process();
+        else
+            causal::set_current_selection(m_stack);
     }
-    else if(_sig == get_realtime_signal())
+    else if(_sig == get_sampling_realtime_signal())
     {
-        static thread_local auto _tid         = threading::get_id();
-        auto&                    _period_stat = get_delay_statistics()->at(_tid);
+        auto  _tid         = _tinfo->index_data->sequent_value;
+        auto& _period_stat = get_delay_statistics()->at(_tid);
 
         if(causal::experiment::is_active() && causal::experiment::is_selected(m_stack))
         {
