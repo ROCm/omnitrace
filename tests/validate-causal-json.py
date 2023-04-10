@@ -350,7 +350,7 @@ def compute_speedups(_data, args):
                     continue
                 if speedup != itr.speedup:
                     raise ValueError(f"in {selected}: {speedup} != {itr.speedup}")
-                if len(itr) > args.min_experiments:
+                if len(itr) >= args.min_experiments:
                     _val = line_speedup(selected, progpt, itr, ditr[0])
                     ret.append(_val)
 

@@ -262,7 +262,11 @@ function(OMNITRACE_WRITE_TEST_CONFIG _FILE _ENV)
     set(_FILE_CONTENTS)
     set(_ENV_CONTENTS)
 
+    set(_DEBUG_SETTINGS ON)
     foreach(_VAL ${${_ENV}})
+        if("${_VAL}" MATCHES "^OMNITRACE_DEBUG_SETTINGS=")
+            set(_DEBUG_SETTINGS OFF)
+        endif()
         if("${_VAL}" MATCHES "^OMNITRACE_" AND NOT "${_VAL}" MATCHES "${_ENV_ONLY}")
             set(_FILE_CONTENTS "${_FILE_CONTENTS}${_VAL}\n")
         else()
@@ -290,7 +294,9 @@ OMNITRACE_ROCTRACER_HSA_ACTIVITY = ON
 ${_FILE_CONTENTS}
 ")
     list(APPEND _ENV_CONTENTS "OMNITRACE_CONFIG_FILE=${_CONFIG_FILE}")
-    list(APPEND _ENV_CONTENTS "OMNITRACE_DEBUG_SETTINGS=1")
+    if(_DEBUG_SETTINGS)
+        list(APPEND _ENV_CONTENTS "OMNITRACE_DEBUG_SETTINGS=1")
+    endif()
     set(${_ENV}
         "${_ENV_CONTENTS}"
         PARENT_SCOPE)
@@ -354,7 +360,8 @@ function(OMNITRACE_ADD_TEST)
     foreach(_PREFIX PRELOAD RUNTIME REWRITE REWRITE_RUN BASELINE)
         if("${${_PREFIX}_FAIL_REGEX}" STREQUAL "")
             set(${_PREFIX}_FAIL_REGEX
-                "(### ERROR ###|address of faulting memory reference)")
+                "(### ERROR ###|address of faulting memory reference|exiting with non-zero exit code)"
+                )
         endif()
     endforeach()
 
@@ -632,6 +639,12 @@ function(OMNITRACE_ADD_CAUSAL_TEST)
         set(TEST_CAUSAL_VALIDATE_TIMEOUT 60)
     endif()
 
+    if("${TEST_CAUSAL_FAIL_REGEX}" STREQUAL "")
+        set(TEST_CAUSAL_FAIL_REGEX
+            "(### ERROR ###|address of faulting memory reference|exiting with non-zero exit code)"
+            )
+    endif()
+
     if(TARGET ${TEST_TARGET})
         set(COMMAND_PREFIX $<TARGET_FILE:omnitrace-causal> --reset -m ${TEST_CAUSAL_MODE}
                            ${TEST_CAUSAL_ARGS} --)
@@ -692,7 +705,10 @@ function(OMNITRACE_ADD_CAUSAL_TEST)
                 "OMNITRACE_OUTPUT_PREFIX=${_prefix}"
                 "OMNITRACE_CI=ON"
                 "OMNITRACE_USE_PID=OFF"
-                "OMNITRACE_THREAD_POOL_SIZE=1"
+                "OMNITRACE_THREAD_POOL_SIZE=0"
+                "OMNITRACE_VERBOSE=0"
+                "OMNITRACE_DL_VERBOSE=0"
+                "OMNITRACE_DEBUG_SETTINGS=0"
                 "${TEST_ENVIRONMENT}")
 
             set(_timeout ${TEST_CAUSAL_TIMEOUT})
