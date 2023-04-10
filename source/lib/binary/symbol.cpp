@@ -233,15 +233,12 @@ symbol::read_bfd_line_info(bfd_file& _bfd)
     auto* _syms = reinterpret_cast<asymbol**>(_bfd.syms);
 
     {
-        const char*  _file          = nullptr;
-        const char*  _func          = nullptr;
-        unsigned int _line          = 0;
-        unsigned int _discriminator = 0;
+        const char*  _file = nullptr;
+        const char*  _func = nullptr;
+        unsigned int _line = 0;
 
-        // if(bfd_find_nearest_line(_inp, _section, _syms, _pc - _vma, &_file,
-        //                         &_func, &_line) != 0)
-        if(bfd_find_nearest_line_discriminator(_inp, _section, _syms, _pc - _vma, &_file,
-                                               &_func, &_line, &_discriminator) != 0)
+        if(bfd_find_nearest_line(_inp, _section, _syms, _pc - _vma, &_file, &_func,
+                                 &_line) != 0)
         {
             if(_file) file = _file;
             if(_func) func = _func;
@@ -366,6 +363,18 @@ symbol::serialize(ArchiveT& ar, const unsigned int)
     if constexpr(concepts::is_output_archive<ArchiveT>::value)
         ar(cereal::make_nvp("dfunc", demangle(func)));
 }
+
+template void
+inlined_symbol::serialize<cereal::JSONInputArchive>(cereal::JSONInputArchive&,
+                                                    const unsigned int);
+
+template void
+inlined_symbol::serialize<cereal::MinimalJSONOutputArchive>(
+    cereal::MinimalJSONOutputArchive&, const unsigned int);
+
+template void
+inlined_symbol::serialize<cereal::PrettyJSONOutputArchive>(
+    cereal::PrettyJSONOutputArchive&, const unsigned int);
 
 template void
 symbol::serialize<cereal::JSONInputArchive>(cereal::JSONInputArchive&,
