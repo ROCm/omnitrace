@@ -1108,8 +1108,8 @@ endmacro()
 causal_e2e_args_and_validation(_causal_slow_func slow-func "-F" "cpu_slow_func" 10 20 20
                                5)
 causal_e2e_args_and_validation(_causal_fast_func fast-func "-F" "cpu_fast_func" 0 0 0 5)
-causal_e2e_args_and_validation(_causal_line_155 line-155 "-S" "causal.cpp:155" 10 20 20 5)
-causal_e2e_args_and_validation(_causal_line_165 line-165 "-S" "causal.cpp:165" 0 0 0 5)
+causal_e2e_args_and_validation(_causal_line_100 line-100 "-S" "causal.cpp:100" 10 20 20 5)
+causal_e2e_args_and_validation(_causal_line_110 line-110 "-S" "causal.cpp:110" 0 0 0 5)
 
 omnitrace_add_causal_test(
     SKIP_BASELINE
@@ -1137,24 +1137,24 @@ omnitrace_add_causal_test(
 
 omnitrace_add_causal_test(
     SKIP_BASELINE
-    NAME cpu-omni-line-155-e2e
+    NAME cpu-omni-line-100-e2e
     TARGET causal-cpu-omni
     RUN_ARGS 80 12 432525 500000000
     CAUSAL_MODE "line"
-    CAUSAL_ARGS ${_causal_line_155_args}
-    CAUSAL_VALIDATE_ARGS ${_causal_line_155_valid}
+    CAUSAL_ARGS ${_causal_line_100_args}
+    CAUSAL_VALIDATE_ARGS ${_causal_line_100_valid}
     CAUSAL_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
     PROPERTIES PROCESSORS 2 PROCESSOR_AFFINITY ON)
 
 omnitrace_add_causal_test(
     SKIP_BASELINE
-    NAME cpu-omni-line-165-e2e
+    NAME cpu-omni-line-110-e2e
     TARGET causal-cpu-omni
     RUN_ARGS 80 12 432525 500000000
     CAUSAL_MODE "line"
-    CAUSAL_ARGS ${_causal_line_165_args}
-    CAUSAL_VALIDATE_ARGS ${_causal_line_165_valid}
+    CAUSAL_ARGS ${_causal_line_110_args}
+    CAUSAL_VALIDATE_ARGS ${_causal_line_110_valid}
     CAUSAL_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
     PROPERTIES PROCESSORS 2 PROCESSOR_AFFINITY OFF)
