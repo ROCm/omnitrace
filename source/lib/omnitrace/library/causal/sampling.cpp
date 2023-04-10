@@ -295,12 +295,12 @@ configure(bool _setup, int64_t _tid)
             auto _perf_error = _activate_perf_backend();
             OMNITRACE_REQUIRE(!_perf_error)
                 << "perf backend for causal profiling failed to activate: "
-                << *_perf_error;
+                << *_perf_error << "\n";
         }
         else if(get_causal_backend() == CausalBackend::Timer)
         {
             OMNITRACE_REQUIRE(_activate_timer_backend())
-                << "timer backend for causal profiling failed to activate";
+                << "timer backend for causal profiling failed to activate\n";
         }
         else if(get_causal_backend() == CausalBackend::Auto)
         {
@@ -313,11 +313,11 @@ configure(bool _setup, int64_t _tid)
             else
             {
                 OMNITRACE_WARNING_F(
-                    0, "perf backend for causal profiling failed to activate: %s",
+                    0, "perf backend for causal profiling failed to activate: %s\n",
                     _perf_error->c_str());
 
                 OMNITRACE_REQUIRE(_activate_timer_backend())
-                    << "timer backend for causal profiling failed to activate";
+                    << "timer backend for causal profiling failed to activate\n";
 
                 config::set_setting_value("OMNITRACE_CAUSAL_BACKEND",
                                           std::string{ "timer" });
