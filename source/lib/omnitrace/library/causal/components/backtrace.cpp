@@ -95,8 +95,6 @@ backtrace::global_init()
 void
 overflow::sample(int _sig)
 {
-    if(_sig == realtime_signal) return;
-
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
 
     static thread_local const auto& _tinfo      = thread_info::get();
@@ -145,12 +143,11 @@ overflow::sample(int _sig)
 void
 backtrace::sample(int _sig)
 {
-    if(_sig == overflow_signal) return;
-
     constexpr size_t  depth        = ::omnitrace::causal::unwind_depth;
     constexpr int64_t ignore_depth = ::omnitrace::causal::unwind_offset;
     constexpr size_t  select_init  = std::numeric_limits<size_t>::max();
-    constexpr size_t  select_ival  = 5;  // interval at which realtime signal contributes
+    // constexpr size_t  select_ival  = 5;  // interval at which realtime signal
+    // contributes
 
     // update the last sample for backtrace signal(s) even when in use
     static thread_local size_t _protect_flag = 0;
@@ -215,8 +212,9 @@ backtrace::sample(int _sig)
             // the cputime signal is never delivered when executing the particular
             // line/function... despite the line/function executing in between the
             // the cputime signals. This is rare but has been observed
-            if(_select_count == 0 && _select_zeros >= select_ival)
-                _set_current_selection(m_stack);
+            //
+            // if(_select_count == 0 && _select_zeros >= select_ival)
+            if(_select_count == 0) _set_current_selection(m_stack);
         }
     }
     else
