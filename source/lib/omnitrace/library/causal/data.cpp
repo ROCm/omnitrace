@@ -704,6 +704,9 @@ set_current_selection(uint64_t itr)
     if(is_eligible_address(itr))
     {
         auto _idx = latest_eligible_pc_idx++ % latest_eligible_pc.size();
+        if(get_causal_end_to_end())
+            OMNITRACE_VERBOSE(0, "[A][%zu] setting current selection to %s\n", _idx,
+                              as_hex(itr).c_str());
         latest_eligible_pc.at(_idx)->store(itr);
     }
 }
@@ -719,6 +722,9 @@ set_current_selection(unwind_addr_t _stack)
         if(is_eligible_address(itr))
         {
             auto _idx = latest_eligible_pc_idx++ % latest_eligible_pc.size();
+            if(get_causal_end_to_end())
+                OMNITRACE_VERBOSE(0, "[B][%zu] setting current selection to %s\n", _idx,
+                                  as_hex(itr).c_str());
             latest_eligible_pc.at(_idx)->store(itr);
         }
     }
@@ -735,6 +741,9 @@ set_current_selection(container::c_array<uint64_t> _stack)
         if(is_eligible_address(itr))
         {
             auto _idx = latest_eligible_pc_idx++ % latest_eligible_pc.size();
+            if(get_causal_end_to_end())
+                OMNITRACE_VERBOSE(0, "[C][%zu] setting current selection to %s\n", _idx,
+                                  as_hex(itr).c_str());
             latest_eligible_pc.at(_idx)->store(itr);
         }
     }
