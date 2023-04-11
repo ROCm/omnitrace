@@ -51,7 +51,10 @@ struct static_vector
     static_vector& operator=(static_vector&&) noexcept = default;
 
     static_vector(size_t _n, Tp _v = {});
-    static_vector(c_array<Tp>);
+    explicit static_vector(c_array<Tp>&&);
+
+    template <size_t M>
+    explicit static_vector(std::array<Tp, M>&&);
 
     static_vector& operator=(std::initializer_list<Tp>&& _v);
     static_vector& operator=(std::pair<std::array<Tp, N>, size_t>&&);
@@ -117,9 +120,18 @@ static_vector<Tp, N, AtomicSizeV>::static_vector(size_t _n, Tp _v)
 }
 
 template <typename Tp, size_t N, bool AtomicSizeV>
-static_vector<Tp, N, AtomicSizeV>::static_vector(c_array<Tp> _v)
+static_vector<Tp, N, AtomicSizeV>::static_vector(c_array<Tp>&& _v)
 {
     auto _n = std::min<size_t>(N, _v.size());
+    for(size_t i = 0; i < _n; ++i, ++m_size)
+        m_data[i] = _v[i];
+}
+
+template <typename Tp, size_t N, bool AtomicSizeV>
+template <size_t M>
+static_vector<Tp, N, AtomicSizeV>::static_vector(std::array<Tp, M>&& _v)
+{
+    auto _n = std::min<size_t>(N, M);
     for(size_t i = 0; i < _n; ++i, ++m_size)
         m_data[i] = _v[i];
 }
