@@ -696,25 +696,26 @@ save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
            get_cached_binary_info().second, { true, true, false });
 }
 
-void
+size_t
 set_current_selection(uint64_t itr)
 {
-    if(experiment::is_active()) return;
+    if(experiment::is_active())
+        return latest_eligible_pc_idx.load(std::memory_order_relaxed);
 
     if(is_eligible_address(itr))
     {
         auto _idx = latest_eligible_pc_idx++ % latest_eligible_pc.size();
-        if(get_causal_end_to_end())
-            OMNITRACE_VERBOSE(0, "[A][%zu] setting current selection to %s\n", _idx,
-                              as_hex(itr).c_str());
         latest_eligible_pc.at(_idx)->store(itr);
     }
+
+    return latest_eligible_pc_idx.load(std::memory_order_relaxed);
 }
 
-void
+size_t
 set_current_selection(unwind_addr_t _stack)
 {
-    if(experiment::is_active()) return;
+    if(experiment::is_active())
+        return latest_eligible_pc_idx.load(std::memory_order_relaxed);
 
     for(auto itr : _stack)
     {
@@ -722,18 +723,18 @@ set_current_selection(unwind_addr_t _stack)
         if(is_eligible_address(itr))
         {
             auto _idx = latest_eligible_pc_idx++ % latest_eligible_pc.size();
-            if(get_causal_end_to_end())
-                OMNITRACE_VERBOSE(0, "[B][%zu] setting current selection to %s\n", _idx,
-                                  as_hex(itr).c_str());
             latest_eligible_pc.at(_idx)->store(itr);
         }
     }
+
+    return latest_eligible_pc_idx.load(std::memory_order_relaxed);
 }
 
-void
+size_t
 set_current_selection(container::c_array<uint64_t> _stack)
 {
-    if(experiment::is_active()) return;
+    if(experiment::is_active())
+        return latest_eligible_pc_idx.load(std::memory_order_relaxed);
 
     for(auto itr : _stack)
     {
@@ -741,12 +742,11 @@ set_current_selection(container::c_array<uint64_t> _stack)
         if(is_eligible_address(itr))
         {
             auto _idx = latest_eligible_pc_idx++ % latest_eligible_pc.size();
-            if(get_causal_end_to_end())
-                OMNITRACE_VERBOSE(0, "[C][%zu] setting current selection to %s\n", _idx,
-                                  as_hex(itr).c_str());
             latest_eligible_pc.at(_idx)->store(itr);
         }
     }
+
+    return latest_eligible_pc_idx.load(std::memory_order_relaxed);
 }
 
 void

@@ -52,15 +52,15 @@ get_line_info(uintptr_t _addr, bool include_discarded = true);
 
 bool is_eligible_address(uintptr_t);
 
-void set_current_selection(uint64_t);
-void set_current_selection(unwind_addr_t);
-void set_current_selection(container::c_array<uint64_t>);
+size_t set_current_selection(uint64_t);
+size_t set_current_selection(unwind_addr_t);
+size_t set_current_selection(container::c_array<uint64_t>);
 
 template <size_t N>
-void
+size_t
 set_current_selection(std::array<uint64_t, N> _v)
 {
-    set_current_selection(container::c_array<uint64_t>{ _v.data(), _v.size() });
+    return set_current_selection(container::c_array<uint64_t>{ _v.data(), _v.size() });
 }
 
 void

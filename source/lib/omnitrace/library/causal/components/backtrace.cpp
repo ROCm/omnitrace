@@ -149,9 +149,16 @@ backtrace::sample(int _sig)
 
     constexpr size_t  depth        = ::omnitrace::causal::unwind_depth;
     constexpr int64_t ignore_depth = ::omnitrace::causal::unwind_offset;
+    constexpr size_t  select_init  = std::numeric_limits<size_t>::max();
+    constexpr size_t  select_ival  = 5;  // interval at which realtime signal contributes
 
     // update the last sample for backtrace signal(s) even when in use
     static thread_local size_t _protect_flag = 0;
+
+    // the select_count is initialized to max so that realtime signal does
+    // not initially set the current selection
+    static thread_local size_t _select_count = select_init;
+    static thread_local size_t _select_zeros = 0;
 
     if((_protect_flag & 1) == 1 ||
        OMNITRACE_UNLIKELY(!trait::runtime_enabled<causal::component::backtrace>::get()))
@@ -165,15 +172,31 @@ backtrace::sample(int _sig)
     m_index = causal::experiment::get_index();
     m_stack = get_unw_signal_frame_stack_raw<depth, ignore_depth>();
 
+    auto _set_current_selection = [](auto _stack) {
+        // save the former selection count
+        auto _former_count = _select_count;
+        // get the current selection count
+        _select_count = causal::set_current_selection(_stack);
+        // if the selection count was reduced, reset select zeros.
+        // this typically means that a new experiment was started
+        if(_former_count > _select_count) _select_zeros = 0;
+        // if no PCs were selected, increment the select zeros.
+        // if the cputime signal has not selected a PC in select_ival iterations,
+        // then the realtime signal will start contributing to the current
+        // selection. We generally want only the cputime signal to contribute
+        // because those PCs are in-use (since the thread CPU clock in increasing)
+        if(_select_count == 0) ++_select_zeros;
+    };
+
     // the batch handler timer delivers a signal according to the thread CPU
-    // clock, ensuring that setting the current selection and processing the
-    // delays only happens when the thread is active
+    // clock, ensuring that setting the current selection is preferred when the thread
+    // is active and processing the delays happens only when the thread is active
     if(_sig == cputime_signal)
     {
         if(causal::experiment::is_active())
             causal::delay::process();
         else
-            causal::set_current_selection(m_stack);
+            _set_current_selection(m_stack);
     }
     else if(_sig == realtime_signal)
     {
@@ -182,6 +205,18 @@ backtrace::sample(int _sig)
             m_selected = true;
             causal::experiment::add_selected();
             causal::delay::get_local() += causal::experiment::get_delay();
+        }
+        else if(!causal::experiment::is_active())
+        {
+            // if no PCs have been selected after at least "select_ival" call-stacks via
+            // the cputime signal, then contribute the call-stack via the realtime signal.
+            // This can be particularly relevant in end-to-end runs targeting a particular
+            // line/function since it is possible that the line/function is situated such
+            // the cputime signal is never delivered when executing the particular
+            // line/function... despite the line/function executing in between the
+            // the cputime signals. This is rare but has been observed
+            if(_select_count == 0 && _select_zeros >= select_ival)
+                _set_current_selection(m_stack);
         }
     }
     else
