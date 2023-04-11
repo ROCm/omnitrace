@@ -740,6 +740,16 @@ set_current_selection(container::c_array<uint64_t> _stack)
     }
 }
 
+void
+reset_sample_selection()
+{
+    latest_eligible_pc_idx.store(0);
+    for(auto& itr : latest_eligible_pc)
+    {
+        if(itr) itr->store(0);
+    }
+}
+
 selected_entry
 sample_selection(size_t _nitr, size_t _wait_ns)
 {

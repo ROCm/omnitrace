@@ -259,6 +259,7 @@ experiment::start()
         current_experiment_value = *this;
         current_selected_count.store(0);
         current_experiment.store(this);
+        reset_sample_selection();
         return true;
     }
     return false;

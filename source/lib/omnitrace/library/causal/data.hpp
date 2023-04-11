@@ -63,6 +63,9 @@ set_current_selection(std::array<uint64_t, N> _v)
     set_current_selection(container::c_array<uint64_t>{ _v.data(), _v.size() });
 }
 
+void
+reset_sample_selection();
+
 selected_entry
 sample_selection(size_t _nitr = 1000, size_t _wait_ns = 1000);
 
