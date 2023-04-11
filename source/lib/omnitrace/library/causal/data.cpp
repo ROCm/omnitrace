@@ -447,17 +447,7 @@ compute_eligible_lines()
     });
 }
 
-// thread-safe read/write ring-buffer via atomics
-using pc_ring_buffer_t = tim::data_storage::atomic_ring_buffer<uintptr_t>;
-// latest_eligible_pcs is an array of unwind_depth size -> samples will
-// use lowest indexes for most recent functions address in the call-stack
-auto latest_eligible_pc = []() {
-    auto _arr = std::array<std::unique_ptr<pc_ring_buffer_t>, unwind_depth>{};
-    for(auto& itr : _arr)
-        itr = std::make_unique<pc_ring_buffer_t>(units::get_page_size() /
-                                                 (sizeof(uintptr_t) + 1));
-    return _arr;
-}();
+auto eligible_pc_history = std::map<uintptr_t, size_t>{};
 
 void
 perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
@@ -563,23 +553,20 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
                     }
                 }
 
-                for(size_t i = 0; i < latest_eligible_pc.size(); ++i)
+                auto _eligible_pc_hist = std::vector<std::pair<uintptr_t, size_t>>{};
+                for(const auto& itr : eligible_pc_history)
                 {
-                    auto& itr = latest_eligible_pc.at(i);
-                    if(itr && itr->count() > 0)
-                    {
-                        _eligible << "[" << i << "][" << std::setw(2) << itr->count()
-                                  << "] ";
-                        while(itr->count() > 0)
-                        {
-                            uintptr_t _pc = 0;
-                            if(itr->read(&_pc))
-                            {
-                                _eligible << as_hex(_pc) << " ";
-                            }
-                        }
-                        _eligible << "\n";
-                    }
+                    _eligible_pc_hist.emplace_back(std::make_pair(itr.first, itr.second));
+                }
+
+                std::sort(
+                    _eligible_pc_hist.begin(), _eligible_pc_hist.end(),
+                    [](auto&& _lhs, auto&& _rhs) { return _lhs.second > _rhs.second; });
+
+                for(const auto& itr : _eligible_pc_hist)
+                {
+                    _eligible << "    " << std::setw(8) << itr.second
+                              << " :: " << as_hex(itr.first) << "\n";
                 }
 
                 auto _samples = std::vector<std::pair<uintptr_t, size_t>>{};
@@ -596,19 +583,23 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
                 {
                     if(itr.second > 0)
                     {
+                        auto _is_eligible = is_eligible_address(itr.first) &&
+                                            !get_line_info(itr.first, false).empty();
                         auto _linfo = binary::lookup_ipaddr_entry<true>(itr.first);
                         if(_linfo)
                         {
                             _sample << "    " << std::setw(8) << itr.second
-                                    << " :: " << as_hex(itr.first) << " "
+                                    << " :: " << std::setw(5) << std::boolalpha
+                                    << _is_eligible << " :: " << as_hex(itr.first) << " "
                                     << _linfo->location << ":" << _linfo->lineno << " ["
                                     << demangle(_linfo->name) << "]\n";
                             for(const auto& iitr : _linfo->lineinfo.lines)
                             {
                                 _sample << "    " << std::setw(8) << itr.second
-                                        << " :: " << as_hex(itr.first) << " "
-                                        << iitr.location << ":" << iitr.line << " ["
-                                        << demangle(iitr.name) << "]\n";
+                                        << " :: " << std::setw(5) << std::boolalpha
+                                        << _is_eligible << " :: " << as_hex(itr.first)
+                                        << " " << iitr.location << ":" << iitr.line
+                                        << " [" << demangle(iitr.name) << "]\n";
                             }
                         }
                     }
@@ -652,6 +643,18 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
         if(_exceeded_duration()) return;
     }
 }
+
+// thread-safe read/write ring-buffer via atomics
+using pc_ring_buffer_t = tim::data_storage::atomic_ring_buffer<uintptr_t>;
+// latest_eligible_pcs is an array of unwind_depth size -> samples will
+// use lowest indexes for most recent functions address in the call-stack
+auto latest_eligible_pc = []() {
+    auto _arr = std::array<std::unique_ptr<pc_ring_buffer_t>, unwind_depth>{};
+    for(auto& itr : _arr)
+        itr = std::make_unique<pc_ring_buffer_t>(units::get_page_size() /
+                                                 (sizeof(uintptr_t) + 1));
+    return _arr;
+}();
 }  // namespace
 
 //--------------------------------------------------------------------------------------//
@@ -747,7 +750,7 @@ sample_selection(size_t _nitr, size_t _wait_ns)
 
     size_t _n = 0;
 
-    auto _select_address = [&](auto& _address_vec) {
+    auto _select_address = [&](const auto& _address_vec) {
         // this isn't necessary bc of check before calling this lambda but
         // kept because of size() - 1 in distribution range
         if(OMNITRACE_UNLIKELY(_address_vec.empty()))
@@ -756,19 +759,13 @@ sample_selection(size_t _nitr, size_t _wait_ns)
             return selected_entry{};
         }
 
-        while(!_address_vec.empty())
+        for(uintptr_t _addr : _address_vec)
         {
-            // randomly select an address
-            auto _dist =
-                std::uniform_int_distribution<size_t>{ 0, _address_vec.size() - 1 };
-            auto _idx = _dist(get_engine<selected_entry>());
-
-            uintptr_t _addr        = _address_vec.at(_idx);
             uintptr_t _sym_addr    = 0;
             uintptr_t _lookup_addr = _addr;
             auto      _dl_info     = unwind::dlinfo::construct(_addr);
 
-            _address_vec.erase(_address_vec.begin() + _idx);
+            eligible_pc_history[_addr] += 1;
 
             if(get_causal_mode() == CausalMode::Function)
                 _sym_addr = (_dl_info.symbol) ? _dl_info.symbol.address() : _addr;
@@ -833,12 +830,12 @@ sample_selection(size_t _nitr, size_t _wait_ns)
                     if(_addr > 0) _addresses.emplace_back(_addr);
                 }
             }
+        }
 
-            if(!_addresses.empty())
-            {
-                auto _selection = _select_address(_addresses);
-                if(_selection) return _selection;
-            }
+        if(!_addresses.empty())
+        {
+            auto _selection = _select_address(_addresses);
+            if(_selection) return _selection;
         }
 
         std::this_thread::sleep_for(std::chrono::nanoseconds{ _wait_ns * _n++ });
