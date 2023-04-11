@@ -15,7 +15,7 @@ main(int argc, char** argv)
     size_t   nitr     = 50;
     double   frac     = 70;
     int64_t  slow_val = 200000000L;
-    size_t   nsync    = 50;
+    size_t   nsync    = 1;
 
     if(argc > 1) frac = std::stod(argv[1]);
     if(argc > 2) nitr = std::stoull(argv[2]);
@@ -23,14 +23,14 @@ main(int argc, char** argv)
     if(argc > 4) slow_val = std::stol(argv[4]);
     if(argc > 5) nsync = std::stoull(argv[5]);
 
-    nsync            = std::max<size_t>(nitr / nsync, 1);
+    nsync            = std::min<size_t>(std::max<size_t>(nsync, 1), nitr);
     int64_t fast_val = (frac / 100.0) * slow_val;
     double  rfrac    = (fast_val / static_cast<double>(slow_val));
     if(argc > 5) fast_val = std::stol(argv[5]);
 
-    printf("\nIterations: %zu, fraction: %6.2f, random seed: %lu :: slow = %zu, "
-           "fast = %zu, expected ratio = %6.2f\n",
-           nitr, frac, rseed, slow_val, fast_val, rfrac * 100.0);
+    printf("\nFraction: %6.2f, iterations: %zu, random seed: %lu :: slow = %zu, "
+           "fast = %zu, expected ratio = %6.2f, sync every %lu iterations\n",
+           frac, nitr, rseed, slow_val, fast_val, rfrac * 100.0, nsync);
 
     auto _wait_barrier = pthread_barrier_t{};
     pthread_barrier_init(&_wait_barrier, nullptr, 3);
@@ -56,7 +56,7 @@ main(int argc, char** argv)
     for(size_t i = 0; i < nitr; ++i)
     {
         if(i == 0 || i + 1 == nitr || i % (nitr / 5) == 0)
-            printf("executing iteration: %zu\n", i);
+            (printf("executing iteration: %zu\n", i), fflush(stdout));
         if(i % nsync == (nsync - 1)) pthread_barrier_wait(&_wait_barrier);
     }
     for(auto& itr : _threads)
