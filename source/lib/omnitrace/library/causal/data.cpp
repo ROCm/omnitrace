@@ -287,7 +287,6 @@ compute_eligible_lines_impl()
         auto& _scoped    = _scoped_info.emplace_back();
         _scoped.bfd      = litr.bfd;
         _scoped.mappings = litr.mappings;
-        _scoped.ranges   = litr.ranges;
         _scoped.sections = litr.sections;
 
         for(const auto& ditr : litr.symbols)
@@ -302,6 +301,7 @@ compute_eligible_lines_impl()
 
             if(ditr(_filters) || (_sym.inlines.size() + _sym.dwarf_info.size()) > 0)
             {
+                _scoped.ranges.emplace_back(_sym.ipaddr());
                 _scoped.symbols.emplace_back(_sym);
             }
         }
@@ -322,23 +322,21 @@ compute_eligible_lines_impl()
     auto& _eligible_ar = get_eligible_address_ranges();
     for(const auto& litr : _scoped_info)
     {
-        for(const auto& ditr : litr.mappings)
-        {
-            _eligible_ar +=
-                std::make_pair(binary::address_multirange::coarse{},
-                               address_range_t{ ditr.load_address, ditr.last_address });
-        }
-
         for(const auto& ditr : litr.symbols)
         {
             _eligible_ar += ditr.ipaddr();
+        }
+
+        for(auto ditr : litr.ranges)
+        {
+            _eligible_ar += ditr;
         }
     }
 
     OMNITRACE_VERBOSE(
         0, "[causal] eligible address ranges: %zu, coarse address range: %zu [%s]\n",
         _eligible_ar.size(), _eligible_ar.range_size(),
-        _eligible_ar.coarse_range.as_string().c_str());
+        _eligible_ar.get_coarse_range().as_string().c_str());
 
     if(_eligible_ar.empty())
     {
@@ -665,7 +663,7 @@ auto latest_eligible_pc = []() {
 bool
 is_eligible_address(uintptr_t _v)
 {
-    return get_eligible_address_ranges().coarse_range.contains(_v);
+    return get_eligible_address_ranges().contains(_v);
 }
 
 void
@@ -753,7 +751,7 @@ sample_selection(size_t _nitr, size_t _wait_ns)
 
     size_t _n = 0;
 
-    auto _select_address = [&](const auto& _address_vec) {
+    auto _select_address = [&](auto& _address_vec) {
         // this isn't necessary bc of check before calling this lambda but
         // kept because of size() - 1 in distribution range
         if(OMNITRACE_UNLIKELY(_address_vec.empty()))
@@ -762,11 +760,19 @@ sample_selection(size_t _nitr, size_t _wait_ns)
             return selected_entry{};
         }
 
-        for(uintptr_t _addr : _address_vec)
+        while(!_address_vec.empty())
         {
+            // randomly select an address
+            auto _dist =
+                std::uniform_int_distribution<size_t>{ 0, _address_vec.size() - 1 };
+            auto _idx = _dist(get_engine<selected_entry>());
+
+            uintptr_t _addr        = _address_vec.at(_idx);
             uintptr_t _sym_addr    = 0;
             uintptr_t _lookup_addr = _addr;
             auto      _dl_info     = unwind::dlinfo::construct(_addr);
+
+            _address_vec.erase(_address_vec.begin() + _idx);
 
             eligible_pc_history[_addr] += 1;
 
@@ -811,7 +817,7 @@ sample_selection(size_t _nitr, size_t _wait_ns)
         return selected_entry{};
     };
 
-    while(_n < _nitr)
+    while(_n++ < _nitr)
     {
         auto _addresses = std::deque<uintptr_t>{};
         for(auto& aitr : latest_eligible_pc)
@@ -841,7 +847,7 @@ sample_selection(size_t _nitr, size_t _wait_ns)
             if(_selection) return _selection;
         }
 
-        std::this_thread::sleep_for(std::chrono::nanoseconds{ _wait_ns * _n++ });
+        std::this_thread::sleep_for(std::chrono::nanoseconds{ _wait_ns });
     }
 
     return selected_entry{};
