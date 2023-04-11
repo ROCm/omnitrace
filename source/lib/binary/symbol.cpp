@@ -82,7 +82,7 @@ read_inliner_info(bfd* _inp)
 
 symbol::symbol(const base_type& _v)
 : base_type{ _v }
-, address{ _v.address, _v.address + _v.symsize }
+, address{ _v.address, _v.address + _v.symsize + 1 }
 , func{ std::string{ base_type::name } }
 {}
 
