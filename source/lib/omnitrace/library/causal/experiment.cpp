@@ -208,8 +208,6 @@ experiment::serialize(ArchiveT& ar, const unsigned)
         }
         ar(cereal::make_nvp("progress_points", _ppts));
     }
-
-    ar(cereal::make_nvp("period_stats", period_stats));
 }
 
 std::string
@@ -240,9 +238,6 @@ experiment::start()
 
     // sampling period in nanoseconds
     sampling_period = backtrace_causal::get_period(units::nsec);
-    // adjust for the real sampling period
-    period_stats = causal::component::backtrace::get_period_stats();
-    if(period_stats.get_count() > 10) sampling_period = period_stats.get_mean();
 
     // experiment time is scaled up for longer speedups
     index           = experiment_history.size() + 1;
@@ -299,7 +294,6 @@ experiment::stop()
     total_delay     = (global_delay - total_delay);
     duration      = (experiment_time > total_delay) ? (experiment_time - total_delay) : 0;
     fini_progress = component::progress_point::get_progress_points();
-    period_stats  = causal::component::backtrace::get_period_stats();
 
     // sync data
     delay::sync();

@@ -143,7 +143,6 @@ struct experiment
     selected_entry    selection       = {};   /// which line was selected
     progress_points_t init_progress   = {};   /// progress points at start
     progress_points_t fini_progress   = {};   /// progress points at end
-    period_stats_t    period_stats    = {};   /// stats for sampling period
 };
 }  // namespace causal
 }  // namespace omnitrace

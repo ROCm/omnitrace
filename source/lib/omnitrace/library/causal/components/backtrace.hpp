@@ -46,12 +46,6 @@ namespace causal
 {
 namespace component
 {
-struct sample_rate : comp::empty_base
-{
-    using value_type = void;
-    static void sample(int = -1);
-};
-
 struct overflow : comp::empty_base
 {
     static constexpr auto alt_stack_size = perf::perf_event::max_batch_size;
@@ -99,9 +93,6 @@ struct backtrace : comp::empty_base
 
     template <typename Tp = uint64_t>
     static Tp get_period(uint64_t _units = units::nsec);
-
-    static tim::statistics<int64_t> get_period_stats();
-    static void                     reset_period_stats();
 
 private:
     bool                  m_selected = false;

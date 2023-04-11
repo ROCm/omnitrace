@@ -59,20 +59,6 @@ namespace
 {
 using ::tim::backtrace::get_unw_signal_frame_stack_raw;
 
-auto&
-get_delay_statistics()
-{
-    using thread_data_t =
-        thread_data<identity<tim::statistics<int64_t>>, category::sampling>;
-
-    static_assert(
-        use_placement_new_when_generating_unique_ptr<thread_data_t>::value,
-        "delay statistics thread data should use placement new to allocate unique_ptr");
-
-    static auto& _v = thread_data_t::instance(construct_on_init{});
-    return _v;
-}
-
 int realtime_signal = 0;
 int cputime_signal  = 0;
 int overflow_signal = 0;
@@ -85,7 +71,6 @@ generic_global_init()
     // the sample interrupts a malloc call
     if(realtime_signal + cputime_signal + overflow_signal == 0)
     {
-        (void) get_delay_statistics();
         realtime_signal = get_sampling_realtime_signal();
         cputime_signal  = get_sampling_cputime_signal();
         overflow_signal = get_sampling_overflow_signal();
@@ -105,25 +90,6 @@ backtrace::global_init()
 {
     // do not delete these lines.
     generic_global_init();
-}
-
-void
-sample_rate::sample(int _sig)
-{
-    if(_sig != realtime_signal) return;
-
-    OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
-
-    // update the last sample for backtrace signal(s) even when in use
-    static thread_local int64_t _last_sample = 0;
-
-    auto  _tid         = threading::get_id();
-    auto  _this_sample = tracing::now();
-    auto& _period_stat = get_delay_statistics()->at(_tid);
-
-    if(_last_sample > 0) _period_stat += (_this_sample - _last_sample);
-
-    _last_sample = _this_sample;
 }
 
 void
@@ -160,8 +126,7 @@ overflow::sample(int _sig)
             {
                 ++m_selected;
                 causal::experiment::add_selected();
-                auto _delay = 1.0 * units::msec * causal::experiment::get_delay_scaling();
-                causal::delay::get_local() += _delay;
+                causal::delay::get_local() += causal::experiment::get_delay();
             }
             else if(!causal::experiment::is_active())
             {
@@ -187,8 +152,7 @@ backtrace::sample(int _sig)
     constexpr int64_t ignore_depth = ::omnitrace::causal::unwind_offset;
 
     // update the last sample for backtrace signal(s) even when in use
-    static thread_local size_t      _protect_flag = 0;
-    static thread_local const auto& _tinfo        = thread_info::get();
+    static thread_local size_t _protect_flag = 0;
 
     if((_protect_flag & 1) == 1 ||
        OMNITRACE_UNLIKELY(!trait::runtime_enabled<causal::component::backtrace>::get()))
@@ -214,21 +178,11 @@ backtrace::sample(int _sig)
     }
     else if(_sig == realtime_signal)
     {
-        auto  _tid         = _tinfo->index_data->sequent_value;
-        auto& _period_stat = get_delay_statistics()->at(_tid);
-
         if(causal::experiment::is_active() && causal::experiment::is_selected(m_stack))
         {
             m_selected = true;
             causal::experiment::add_selected();
-            // compute the delay time based on the rate of taking samples,
-            // unless we have taken less than 10, in which case, we just
-            // use the pre-computed value.
-            auto _delay =
-                (_period_stat.get_count() < 10)
-                    ? causal::experiment::get_delay()
-                    : (_period_stat.get_mean() * causal::experiment::get_delay_scaling());
-            causal::delay::get_local() += _delay;
+            causal::delay::get_local() += causal::experiment::get_delay();
         }
     }
     else
@@ -248,27 +202,6 @@ backtrace::get_period(uint64_t _units)
     double  _period      = 1.0 / 1000.0;
     int64_t _period_nsec = static_cast<int64_t>(_period * units::sec) % units::sec;
     return static_cast<Tp>(_period_nsec) / static_cast<cast_type>(_units);
-}
-
-tim::statistics<int64_t>
-backtrace::get_period_stats()
-{
-    auto _data = tim::statistics<int64_t>{};
-    if(!get_delay_statistics()) return _data;
-    for(auto itr : *get_delay_statistics())
-    {
-        if(itr.get_count() > 1) _data += itr;
-    }
-    return _data;
-}
-
-void
-backtrace::reset_period_stats()
-{
-    for(auto& itr : *get_delay_statistics())
-    {
-        itr.reset();
-    }
 }
 }  // namespace component
 }  // namespace causal
