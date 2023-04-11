@@ -450,7 +450,7 @@ def main():
     parser.add_argument(
         "--samples",
         type=float,
-        help="Report samples within this percentage of the peak (0.0, 100.0] (default: 95%)",
+        help="Report samples within this percentage of the peak (0.0, 100.0] (default: 95 percent)",
         default=95.0,
     )
     parser.add_argument(
