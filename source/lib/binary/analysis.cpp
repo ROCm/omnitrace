@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "core/config.hpp"
+
 #if !defined(TIMEMORY_USE_BFD)
 #    error "BFD support not enabled"
 #endif
@@ -29,7 +31,6 @@
 #include <bfd.h>
 
 #include "analysis.hpp"
-#include "binary/link_map.hpp"
 #include "binary_info.hpp"
 #include "core/binary/address_range.hpp"
 #include "core/binary/fwd.hpp"
@@ -40,6 +41,7 @@
 #include "core/state.hpp"
 #include "core/utility.hpp"
 #include "dwarf_entry.hpp"
+#include "link_map.hpp"
 #include "scope_filter.hpp"
 #include "symbol.hpp"
 
