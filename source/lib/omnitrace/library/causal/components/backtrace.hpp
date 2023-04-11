@@ -60,6 +60,9 @@ struct overflow : comp::empty_base
     using callchain_t = container::static_vector<uintptr_t, unwind_depth>;
     using alt_stack_t = container::static_vector<callchain_t, alt_stack_size>;
 
+    static std::string label() { return "causal::overflow"; }
+    static void        global_init();
+
     void sample(int = -1);
 
     auto        get_selected() const { return m_selected; }
@@ -78,10 +81,7 @@ struct backtrace : comp::empty_base
     using callchain_t = container::static_vector<uint64_t, unwind_depth>;
 
     static std::string label() { return "causal::backtrace"; }
-    static std::string description()
-    {
-        return "Causal profiling data collected in backtrace";
-    }
+    static void        global_init();
 
     backtrace()                     = default;
     ~backtrace()                    = default;
@@ -90,9 +90,6 @@ struct backtrace : comp::empty_base
 
     backtrace& operator=(const backtrace&) = default;
     backtrace& operator=(backtrace&&) noexcept = default;
-
-    static void start();
-    static void stop();
 
     void sample(int = -1);
 

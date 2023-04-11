@@ -70,7 +70,9 @@ using ::tim::sampling::timer;
 
 using causal_bundle_t =
     tim::lightweight_tuple<causal::component::overflow, causal::component::backtrace>;
-using causal_sampler_t = tim::sampling::sampler<causal_bundle_t, dynamic>;
+using causal_sampler_t  = tim::sampling::sampler<causal_bundle_t, dynamic>;
+using backtrace_enabled = trait::runtime_enabled<component::backtrace>;
+using overflow_enabled  = trait::runtime_enabled<component::overflow>;
 }  // namespace sampling
 }  // namespace causal
 }  // namespace omnitrace
@@ -225,6 +227,19 @@ configure(bool _setup, int64_t _tid)
 
     if(_setup && _signal_types.empty()) _signal_types = get_sampling_signals(_tid);
 
+    // initialize
+    if(_setup)
+    {
+        using global_init_mode = operation::mode_constant<operation::init_mode::global>;
+        using thread_init_mode = operation::mode_constant<operation::init_mode::thread>;
+        // initialize backtrace
+        operation::init<component::backtrace>{}(global_init_mode{});
+        operation::init<component::backtrace>{}(thread_init_mode{});
+        // initialize overflow
+        operation::init<component::overflow>{}(global_init_mode{});
+        operation::init<component::overflow>{}(thread_init_mode{});
+    }
+
     if(_setup && !_causal && !_running && !_signal_types.empty())
     {
         auto _verbose = std::min<int>(get_verbose() - 2, 2);
@@ -256,7 +271,10 @@ configure(bool _setup, int64_t _tid)
             }
             else
             {
-                // trait::runtime_enabled<component::backtrace>::set(false);
+                overflow_enabled::set(true);
+                overflow_enabled::set(scope::thread_scope{}, true);
+                backtrace_enabled::set(false);
+                backtrace_enabled::set(scope::thread_scope{}, false);
                 _causal->configure(overflow{ get_sampling_overflow_signal(),
                                              [](int, pid_t, long, int64_t) {
                                                  // perf::get_instance(_idx)->set_ready_signal(_sig);
@@ -276,7 +294,10 @@ configure(bool _setup, int64_t _tid)
         };
 
         auto _activate_timer_backend = [&_causal, &_tid]() {
-            trait::runtime_enabled<component::overflow>::set(false);
+            backtrace_enabled::set(true);
+            backtrace_enabled::set(scope::thread_scope{}, true);
+            overflow_enabled::set(false);
+            overflow_enabled::set(scope::thread_scope{}, false);
             _causal->configure(timer{ get_sampling_realtime_signal(), CLOCK_REALTIME,
                                       SIGEV_THREAD_ID, 1000.0, 1.0e-6, _tid,
                                       threading::get_sys_tid() });
@@ -329,7 +350,6 @@ configure(bool _setup, int64_t _tid)
                                   threading::get_sys_tid() });
 
         _running = true;
-        if(_tid == 0) causal::component::backtrace::start();
         _causal->start();
     }
     else if(!_setup && _causal && _running)

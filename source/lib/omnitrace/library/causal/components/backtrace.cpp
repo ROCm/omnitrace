@@ -72,25 +72,45 @@ get_delay_statistics()
     static auto& _v = thread_data_t::instance(construct_on_init{});
     return _v;
 }
-}  // namespace
+
+int realtime_signal = 0;
+int cputime_signal  = 0;
+int overflow_signal = 0;
 
 void
-backtrace::start()
+generic_global_init()
 {
     // do not delete these lines. The thread data needs to be allocated
     // before it is called in sampler or else a deadlock will occur when
     // the sample interrupts a malloc call
-    (void) get_delay_statistics();
+    if(realtime_signal + cputime_signal + overflow_signal == 0)
+    {
+        (void) get_delay_statistics();
+        realtime_signal = get_sampling_realtime_signal();
+        cputime_signal  = get_sampling_cputime_signal();
+        overflow_signal = get_sampling_overflow_signal();
+    }
+}
+}  // namespace
+
+void
+overflow::global_init()
+{
+    // do not delete these lines.
+    generic_global_init();
 }
 
 void
-backtrace::stop()
-{}
+backtrace::global_init()
+{
+    // do not delete these lines.
+    generic_global_init();
+}
 
 void
 sample_rate::sample(int _sig)
 {
-    if(_sig != get_sampling_realtime_signal()) return;
+    if(_sig != realtime_signal) return;
 
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
 
@@ -107,8 +127,10 @@ sample_rate::sample(int _sig)
 }
 
 void
-overflow::sample(int)
+overflow::sample(int _sig)
 {
+    if(_sig == realtime_signal) return;
+
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
 
     static thread_local const auto& _tinfo      = thread_info::get();
@@ -152,14 +174,14 @@ overflow::sample(int)
 
     _perf_event->start();
 
-    // if(_sig == get_sampling_cputime_signal() && causal::experiment::is_active())
-    //    causal::delay::process();
+    if(_sig == cputime_signal && causal::experiment::is_active())
+        causal::delay::process();
 }
 
 void
 backtrace::sample(int _sig)
 {
-    if(_sig == get_sampling_overflow_signal()) return;
+    if(_sig == overflow_signal) return;
 
     constexpr size_t  depth        = ::omnitrace::causal::unwind_depth;
     constexpr int64_t ignore_depth = ::omnitrace::causal::unwind_offset;
@@ -183,14 +205,14 @@ backtrace::sample(int _sig)
     // the batch handler timer delivers a signal according to the thread CPU
     // clock, ensuring that setting the current selection and processing the
     // delays only happens when the thread is active
-    if(_sig == get_sampling_cputime_signal())
+    if(_sig == cputime_signal)
     {
         if(causal::experiment::is_active())
             causal::delay::process();
         else
             causal::set_current_selection(m_stack);
     }
-    else if(_sig == get_sampling_realtime_signal())
+    else if(_sig == realtime_signal)
     {
         auto  _tid         = _tinfo->index_data->sequent_value;
         auto& _period_stat = get_delay_statistics()->at(_tid);
