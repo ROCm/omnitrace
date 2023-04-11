@@ -50,6 +50,7 @@
 #include <timemory/unwind/dlinfo.hpp>
 #include <timemory/unwind/processed_entry.hpp>
 #include <timemory/utility/procfs/maps.hpp>
+#include <timemory/utility/types.hpp>
 
 #include <algorithm>
 #include <atomic>
@@ -371,9 +372,10 @@ save_maps_info_impl(std::ostream& _ofs)
 
 void
 save_line_info_impl(std::ostream&                           _ofs,
-                    const std::vector<binary::binary_info>& _binary_data)
+                    const std::vector<binary::binary_info>& _binary_data,
+                    const std::array<bool, 3>&              _info = { true, true, true })
 {
-    auto _write_impl = [&_ofs](const binary::binary_info& _data) {
+    auto _write_impl = [&_ofs, &_info](const binary::binary_info& _data) {
         for(const auto& itr : _data.mappings)
         {
             _ofs << itr.pathname << " [" << as_hex(itr.load_address) << " - "
@@ -391,28 +393,38 @@ save_line_info_impl(std::ostream&                           _ofs,
             if(!itr.func.empty()) _ofs << " [" << tim::demangle(itr.func) << "]";
             _ofs << "\n";
 
-            for(const auto& ditr : itr.inlines)
+            if(std::get<0>(_info))
             {
-                _ofs << "        " << ditr.file << ":" << ditr.line;
-                if(!ditr.func.empty()) _ofs << " [" << tim::demangle(ditr.func) << "]";
-                _ofs << "\n";
+                for(const auto& ditr : itr.inlines)
+                {
+                    _ofs << "        " << ditr.file << ":" << ditr.line;
+                    if(!ditr.func.empty())
+                        _ofs << " [" << tim::demangle(ditr.func) << "]";
+                    _ofs << "\n";
+                }
             }
 
-            for(const auto& ditr : itr.dwarf_info)
+            if(std::get<1>(_info))
             {
-                _ofs << "        " << as_hex(ditr.address) << " :: " << ditr.file << ":"
-                     << ditr.line;
-                _ofs << "\n";
-                _emitted_dwarf_addresses.emplace(ditr.address.low);
+                for(const auto& ditr : itr.dwarf_info)
+                {
+                    _ofs << "        " << as_hex(ditr.address) << " :: " << ditr.file
+                         << ":" << ditr.line;
+                    _ofs << "\n";
+                    _emitted_dwarf_addresses.emplace(ditr.address.low);
+                }
             }
         }
 
-        for(const auto& itr : _data.debug_info)
+        if(std::get<2>(_info))
         {
-            if(_emitted_dwarf_addresses.count(itr.address.low) > 0) continue;
-            _ofs << "    " << as_hex(itr.address) << " :: " << itr.file << ":"
-                 << itr.line;
-            _ofs << "\n";
+            for(const auto& itr : _data.debug_info)
+            {
+                if(_emitted_dwarf_addresses.count(itr.address.low) > 0) continue;
+                _ofs << "    " << as_hex(itr.address) << " :: " << itr.file << ":"
+                     << itr.line;
+                _ofs << "\n";
+            }
         }
 
         _ofs << "\n" << std::flush;
@@ -434,6 +446,18 @@ compute_eligible_lines()
         save_line_info(_cfg, config::get_verbose());
     });
 }
+
+// thread-safe read/write ring-buffer via atomics
+using pc_ring_buffer_t = tim::data_storage::atomic_ring_buffer<uintptr_t>;
+// latest_eligible_pcs is an array of unwind_depth size -> samples will
+// use lowest indexes for most recent functions address in the call-stack
+auto latest_eligible_pc = []() {
+    auto _arr = std::array<std::unique_ptr<pc_ring_buffer_t>, unwind_depth>{};
+    for(auto& itr : _arr)
+        itr = std::make_unique<pc_ring_buffer_t>(units::get_page_size() /
+                                                 (sizeof(uintptr_t) + 1));
+    return _arr;
+}();
 
 void
 perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
@@ -457,19 +481,18 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
     // notify that thread has started
     if(_started) _started->set_value();
 
-    // pause at least one second to determine sampling rate
-    // std::this_thread::sleep_for(std::chrono::seconds{ 1 });
-
     if(!config::get_causal_end_to_end())
     {
         // wait for at least one progress point to start
         while(num_progress_points.load(std::memory_order_relaxed) == 0)
         {
+            std::this_thread::yield();
             std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
         }
     }
 
     // allow ~10 samples to be collected
+    std::this_thread::yield();
     std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
 
     double _delay_sec =
@@ -483,6 +506,7 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
         OMNITRACE_VERBOSE(1, "[causal] delaying experimentation for %.2f seconds...\n",
                           _delay_sec);
         uint64_t _delay_nsec = _delay_sec * units::sec;
+        std::this_thread::yield();
         std::this_thread::sleep_for(std::chrono::nanoseconds{ _delay_nsec });
     }
 
@@ -519,51 +543,84 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
             {
                 if(_impl_no > 0) return;
 
-                auto _memory = std::stringstream{};
-                auto _binary = std::stringstream{};
-                auto _scoped = std::stringstream{};
-                auto _sample = std::stringstream{};
+                auto _memory   = std::stringstream{};
+                auto _binary   = std::stringstream{};
+                auto _scoped   = std::stringstream{};
+                auto _sample   = std::stringstream{};
+                auto _eligible = std::stringstream{};
                 save_maps_info_impl(_memory);
-                save_line_info_impl(_binary, get_cached_binary_info().first);
-                save_line_info_impl(_scoped, get_cached_binary_info().second);
+                save_line_info_impl(_binary, get_cached_binary_info().first,
+                                    { true, true, false });
+                save_line_info_impl(_scoped, get_cached_binary_info().second,
+                                    { true, true, false });
 
-                auto _samples = std::map<uintptr_t, size_t>{};
+                auto _samples_map = std::map<uintptr_t, size_t>{};
                 for(const auto& itr : get_samples())
                 {
                     for(const auto& iitr : itr.second)
                     {
-                        _samples[iitr.address] += iitr.count;
+                        _samples_map[iitr.address] += iitr.count;
                     }
                 }
+
+                for(size_t i = 0; i < latest_eligible_pc.size(); ++i)
+                {
+                    auto& itr = latest_eligible_pc.at(i);
+                    if(itr && itr->count() > 0)
+                    {
+                        _eligible << "[" << i << "][" << std::setw(2) << itr->count()
+                                  << "] ";
+                        while(itr->count() > 0)
+                        {
+                            uintptr_t _pc = 0;
+                            if(itr->read(&_pc))
+                            {
+                                _eligible << as_hex(_pc) << " ";
+                            }
+                        }
+                        _eligible << "\n";
+                    }
+                }
+
+                auto _samples = std::vector<std::pair<uintptr_t, size_t>>{};
+                for(const auto& itr : _samples_map)
+                    _samples.emplace_back(std::make_pair(itr.first, itr.second));
+
+                // sort by most samples
+                std::sort(_samples.begin(), _samples.end(),
+                          [](const auto& _lhs, const auto& _rhs) {
+                              return _lhs.second > _rhs.second;
+                          });
 
                 for(const auto& itr : _samples)
                 {
                     if(itr.second > 0)
                     {
-                        auto _linfo = get_line_info(itr.first, true);
-                        // if(_linfo.size() > 1) _linfo.pop_front();
-                        for(const auto& iitr : _linfo)
+                        auto _linfo = binary::lookup_ipaddr_entry<true>(itr.first);
+                        if(_linfo)
                         {
                             _sample << "    " << std::setw(8) << itr.second
-                                    << " :: " << as_hex(itr.first) << " [" << iitr.file
-                                    << ":" << iitr.line << "][" << demangle(iitr.func)
-                                    << "]\n";
-                        }
-
-                        if(_linfo.empty())
-                        {
-                            _sample << "    " << std::setw(8) << itr.second
-                                    << " :: " << as_hex(itr.first) << "\n";
+                                    << " :: " << as_hex(itr.first) << " "
+                                    << _linfo->location << ":" << _linfo->lineno << " ["
+                                    << demangle(_linfo->name) << "]\n";
+                            for(const auto& iitr : _linfo->lineinfo.lines)
+                            {
+                                _sample << "    " << std::setw(8) << itr.second
+                                        << " :: " << as_hex(itr.first) << " "
+                                        << iitr.location << ":" << iitr.line << " ["
+                                        << demangle(iitr.name) << "]\n";
+                            }
                         }
                     }
                 }
 
                 std::cerr << std::flush;
                 auto _cerr = tim::log::warning_stream(std::cerr);
+                _cerr << "\nsamples:\n\n" << _sample.str() << "\n";
+                _cerr << "\neligible:\n\n" << _eligible.str() << "\n";
                 _cerr << "\nscoped:\n\n" << _scoped.str() << "\n";
                 _cerr << "\nbinary:\n\n" << _binary.str() << "\n";
                 _cerr << "\nmaps:\n\n" << _memory.str() << "\n";
-                _cerr << "\nsample:\n\n" << _sample.str() << "\n";
                 std::cerr << std::flush;
 
                 OMNITRACE_CONDITIONAL_THROW(_impl_no == 0, "experiment never started");
@@ -595,18 +652,6 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
         if(_exceeded_duration()) return;
     }
 }
-
-// thread-safe read/write ring-buffer via atomics
-using pc_ring_buffer_t = tim::data_storage::atomic_ring_buffer<uintptr_t>;
-// latest_eligible_pcs is an array of unwind_depth size -> samples will
-// use lowest indexes for most recent functions address in the call-stack
-auto latest_eligible_pc = []() {
-    auto _arr = std::array<std::unique_ptr<pc_ring_buffer_t>, unwind_depth>{};
-    for(auto& itr : _arr)
-        itr = std::make_unique<pc_ring_buffer_t>(units::get_page_size() /
-                                                 (sizeof(uintptr_t) + 1));
-    return _arr;
-}();
 }  // namespace
 
 //--------------------------------------------------------------------------------------//
@@ -620,14 +665,15 @@ is_eligible_address(uintptr_t _v)
 void
 save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
 {
-    auto _write = [_verbose](const std::string& ofname, const auto& _data) {
+    auto _write = [_verbose](const std::string& ofname, const auto& _data,
+                             const std::array<bool, 3>& _info) {
         auto _ofs = std::ofstream{};
         if(tim::filepath::open(_ofs, ofname))
         {
             if(_verbose >= 0)
                 operation::file_output_message<binary::symbol>{}(
                     ofname, std::string{ "causal_symbol_info" });
-            save_line_info_impl(_ofs, _data);
+            save_line_info_impl(_ofs, _data, _info);
             save_maps_info_impl(_ofs);
         }
         else
@@ -638,10 +684,10 @@ save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
 
     _write(tim::settings::compose_output_filename(
                join('-', config::get_causal_output_filename(), "binary"), "txt", _cfg),
-           get_cached_binary_info().first);
+           get_cached_binary_info().first, { true, true, true });
     _write(tim::settings::compose_output_filename(
                join('-', config::get_causal_output_filename(), "scoped"), "txt", _cfg),
-           get_cached_binary_info().second);
+           get_cached_binary_info().second, { true, true, false });
 }
 
 void
@@ -761,14 +807,11 @@ sample_selection(size_t _nitr, size_t _wait_ns)
                                  ? linfo.front()
                                  : linfo.back();
             return selected_entry{ _addr, _sym_addr, _linfo_v };
-            // return selected_entry{ address_range_t{ _addr },
-            //                       address_range_t{ _sym_addr },
-            //                       { _linfo_v.second } };
         }
         return selected_entry{};
     };
 
-    while(_n++ < _nitr)
+    while(_n < _nitr)
     {
         auto _addresses = std::deque<uintptr_t>{};
         for(auto& aitr : latest_eligible_pc)
@@ -798,8 +841,7 @@ sample_selection(size_t _nitr, size_t _wait_ns)
             }
         }
 
-        std::this_thread::yield();
-        std::this_thread::sleep_for(std::chrono::nanoseconds{ _wait_ns });
+        std::this_thread::sleep_for(std::chrono::nanoseconds{ _wait_ns * _n++ });
     }
 
     return selected_entry{};

@@ -64,7 +64,7 @@ set_current_selection(std::array<uint64_t, N> _v)
 }
 
 selected_entry
-sample_selection(size_t _nitr = 1000, size_t _wait_ns = 10000);
+sample_selection(size_t _nitr = 1000, size_t _wait_ns = 1000);
 
 void push_progress_point(std::string_view);
 
