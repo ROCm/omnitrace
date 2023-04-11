@@ -27,12 +27,13 @@
 #include "common/environment.hpp"
 #include "common/join.hpp"
 #include "common/setup.hpp"
+#include "core/utility.hpp"
 
-#include <regex>
 #include <timemory/environment.hpp>
 #include <timemory/log/color.hpp>
 #include <timemory/utility/argparse.hpp>
 #include <timemory/utility/console.hpp>
+#include <timemory/utility/delimit.hpp>
 #include <timemory/utility/filepath.hpp>
 #include <timemory/utility/join.hpp>
 
@@ -45,6 +46,7 @@
 #include <cstring>
 #include <gnu/lib-names.h>
 #include <iostream>
+#include <regex>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -57,10 +59,11 @@ namespace color    = ::tim::log::color;
 namespace filepath = ::tim::filepath;
 namespace console  = ::tim::utility::console;
 namespace argparse = ::tim::argparse;
-using namespace timemory::join;
-using tim::get_env;
-using tim::log::monochrome;
-using tim::log::stream;
+using namespace ::timemory::join;
+using ::omnitrace::utility::parse_numeric_range;
+using ::tim::get_env;
+using ::tim::log::monochrome;
+using ::tim::log::stream;
 
 namespace std
 {
@@ -732,16 +735,42 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         "scopes (MAIN+foo, MAIN+bar, MAIN+foo, MAIN+bar)");
 
     parser
-        .add_argument({ "-s", "--speedups" },
-                      "Pool of virtual speedups to sample from during experimentation. "
-                      "Each space designates a group and multiple speedups can be "
-                      "grouped together by commas, e.g. -s 0 0,10,20-50 is two groups: "
-                      "group #1 is '0' and group #2 is '0 10 20 25 30 35 40 45 50'")
-        .min_count(0)
+        .add_argument(
+            { "-s", "--speedups" },
+            "Pool of virtual speedups to sample from during experimentation. "
+            "Each space designates a group and multiple speedups can be "
+            "grouped together by commas, e.g. '-s 0 0,10,20-50' is two groups: "
+            "group #1 is '0' and group #2 is '0 10 20 25 30 35 40 45 50' -- "
+            "unless end-to-end mode is activated: in end-to-end mode, only one "
+            "speedup is selected for the entire run so all groups are "
+            "expanded. If a range is specified, the default increment is 5, "
+            "however, this can be overridden by suffixing the range with a colon and the "
+            "desired increment, e.g., '0-40:10' would expand to '0 10 20 30 40'")
+        .min_count(1)
         .max_count(-1)
-        .dtype("integers")
+        .dtype("integer | range | range:increment")
         .action([&](parser_t& p) {
-            _virtual_speedups = p.get<std::vector<std::string>>("speedups");
+            auto _val = p.get<std::vector<std::string>>("speedups");
+            if(p.get<bool>("end-to-end"))
+            {
+                _virtual_speedups.clear();
+                for(const auto& itr : _val)
+                {
+                    for(const auto& ditr : tim::delimit(itr, ",; \t\n\r"))
+                    {
+                        for(auto nitr :
+                            parse_numeric_range<int64_t, std::vector<int64_t>>(
+                                ditr, "virtual speedup", 5L))
+                        {
+                            _virtual_speedups.emplace_back(std::to_string(nitr));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                _virtual_speedups = _val;
+            }
         });
 
     parser
