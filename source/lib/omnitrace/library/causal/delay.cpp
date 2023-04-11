@@ -111,12 +111,12 @@ delay::process()
         {
             get_global() += (get_local() - get_global());
         }
-        else if(get_global() > get_local() + sleep_for_overhead)
+        else if(get_global() > get_local())
         {
             ::omnitrace::causal::sampling::pause();
             auto _beg = tracing::now();
-            std::this_thread::sleep_for(std::chrono::nanoseconds{
-                get_global() - get_local() - sleep_for_overhead });
+            std::this_thread::sleep_for(
+                std::chrono::nanoseconds{ get_global() - get_local() });
             get_local() += (tracing::now() - _beg);
             ::omnitrace::causal::sampling::resume();
         }

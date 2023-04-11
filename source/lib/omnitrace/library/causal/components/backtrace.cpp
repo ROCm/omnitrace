@@ -139,8 +139,7 @@ overflow::sample(int _sig)
 
     _perf_event->start();
 
-    if(_sig == cputime_signal && causal::experiment::is_active())
-        causal::delay::process();
+    if(_sig == cputime_signal) causal::delay::process();
 }
 
 void
