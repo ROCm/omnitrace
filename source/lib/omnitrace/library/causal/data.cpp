@@ -120,7 +120,7 @@ get_eligible_address_ranges()
 using sf = binary::scope_filter;
 
 auto
-get_filters(std::set<binary::scope_filter::filter_scope> _scopes = {
+get_filters(const std::set<binary::scope_filter::filter_scope>& _scopes = {
                 sf::BINARY_FILTER, sf::SOURCE_FILTER, sf::FUNCTION_FILTER })
 {
     auto _filters = std::vector<binary::scope_filter>{};
@@ -279,29 +279,16 @@ auto
 compute_eligible_lines_impl()
 {
     const auto& _binary_info = get_cached_binary_info().first;
-    auto&       _filter_info = get_cached_binary_info().second;
+    auto&       _scoped_info = get_cached_binary_info().second;
     auto        _filters     = get_filters();
 
-    auto& _eligible_ar = get_eligible_address_ranges();
     for(const auto& litr : _binary_info)
     {
-        for(const auto& ditr : litr.mappings)
-        {
-            _eligible_ar +=
-                std::make_pair(binary::address_multirange::coarse{},
-                               address_range_t{ ditr.load_address, ditr.last_address });
-        }
-
-        for(const auto& ditr : litr.symbols)
-        {
-            _eligible_ar += ditr.address + ditr.load_address;
-        }
-
-        auto& _filtered    = _filter_info.emplace_back();
-        _filtered.bfd      = litr.bfd;
-        _filtered.mappings = litr.mappings;
-        _filtered.ranges   = litr.ranges;
-        _filtered.sections = litr.sections;
+        auto& _scoped    = _scoped_info.emplace_back();
+        _scoped.bfd      = litr.bfd;
+        _scoped.mappings = litr.mappings;
+        _scoped.ranges   = litr.ranges;
+        _scoped.sections = litr.sections;
 
         for(const auto& ditr : litr.symbols)
         {
@@ -315,7 +302,7 @@ compute_eligible_lines_impl()
 
             if(ditr(_filters) || (_sym.inlines.size() + _sym.dwarf_info.size()) > 0)
             {
-                _filtered.symbols.emplace_back(_sym);
+                _scoped.symbols.emplace_back(_sym);
             }
         }
 
@@ -325,11 +312,27 @@ compute_eligible_lines_impl()
                sf::satisfies_filter(_filters, sf::SOURCE_FILTER,
                                     join(':', ditr.file, ditr.line)))
             {
-                _filtered.debug_info.emplace_back(ditr);
+                _scoped.debug_info.emplace_back(ditr);
             }
         }
 
-        _filtered.sort();
+        _scoped.sort();
+    }
+
+    auto& _eligible_ar = get_eligible_address_ranges();
+    for(const auto& litr : _scoped_info)
+    {
+        for(const auto& ditr : litr.mappings)
+        {
+            _eligible_ar +=
+                std::make_pair(binary::address_multirange::coarse{},
+                               address_range_t{ ditr.load_address, ditr.last_address });
+        }
+
+        for(const auto& ditr : litr.symbols)
+        {
+            _eligible_ar += ditr.ipaddr();
+        }
     }
 
     OMNITRACE_VERBOSE(
