@@ -449,7 +449,9 @@ compute_eligible_lines()
     });
 }
 
-auto eligible_pc_history = std::map<uintptr_t, size_t>{};
+auto eligible_pc_history    = std::map<uintptr_t, size_t>{};
+auto eligible_pc_idx        = std::atomic<size_t>{ 0 };
+auto eligible_pc_candidates = std::atomic<size_t>{ 0 };
 
 void
 perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
@@ -531,6 +533,10 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
         // loop until started or finalized
         while(!_experim.start())
         {
+            OMNITRACE_VERBOSE(
+                0, "[causal] experiment failed to start. Eligible PC candidates: %zu\n",
+                eligible_pc_candidates.load());
+
             if(get_state() == State::Finalized)
             {
                 if(_impl_no > 0) return;
@@ -621,6 +627,11 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
             }
         }
 
+        OMNITRACE_VERBOSE(0, "[causal] experiment started. Eligible PC candidates: %zu\n",
+                          eligible_pc_candidates.load());
+
+        reset_sample_selection();
+
         // wait for the experiment to complete
         if(config::get_causal_end_to_end())
         {
@@ -650,14 +661,12 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
 // use lowest indexes for most recent functions address in the call-stack
 auto latest_eligible_pc = []() {
     using atomic_uintptr_t      = std::atomic<uintptr_t>;
-    constexpr size_t array_size = OMNITRACE_MAX_THREADS * unwind_depth;
+    constexpr size_t array_size = unwind_depth;
     auto             _arr = std::array<std::unique_ptr<atomic_uintptr_t>, array_size>{};
     for(auto& itr : _arr)
         itr = std::make_unique<std::atomic<uintptr_t>>(0);
     return _arr;
 }();
-
-auto latest_eligible_pc_idx = std::atomic<size_t>{ 0 };
 }  // namespace
 
 //--------------------------------------------------------------------------------------//
@@ -697,62 +706,44 @@ save_line_info(const settings::compose_filename_config& _cfg, int _verbose)
 }
 
 size_t
-set_current_selection(uint64_t itr)
-{
-    if(experiment::is_active())
-        return latest_eligible_pc_idx.load(std::memory_order_relaxed);
-
-    if(is_eligible_address(itr))
-    {
-        auto _idx = latest_eligible_pc_idx++ % latest_eligible_pc.size();
-        latest_eligible_pc.at(_idx)->store(itr);
-    }
-
-    return latest_eligible_pc_idx.load(std::memory_order_relaxed);
-}
-
-size_t
 set_current_selection(unwind_addr_t _stack)
 {
-    if(experiment::is_active())
-        return latest_eligible_pc_idx.load(std::memory_order_relaxed);
-
     for(auto itr : _stack)
     {
         if(itr == 0) continue;
+        ++eligible_pc_candidates;
         if(is_eligible_address(itr))
         {
-            auto _idx = latest_eligible_pc_idx++ % latest_eligible_pc.size();
+            auto _idx = eligible_pc_idx++ % latest_eligible_pc.size();
             latest_eligible_pc.at(_idx)->store(itr);
         }
     }
 
-    return latest_eligible_pc_idx.load(std::memory_order_relaxed);
+    return eligible_pc_idx.load(std::memory_order_relaxed);
 }
 
 size_t
 set_current_selection(container::c_array<uint64_t> _stack)
 {
-    if(experiment::is_active())
-        return latest_eligible_pc_idx.load(std::memory_order_relaxed);
-
     for(auto itr : _stack)
     {
         if(itr == 0) continue;
+        ++eligible_pc_candidates;
         if(is_eligible_address(itr))
         {
-            auto _idx = latest_eligible_pc_idx++ % latest_eligible_pc.size();
+            auto _idx = eligible_pc_idx++ % latest_eligible_pc.size();
             latest_eligible_pc.at(_idx)->store(itr);
         }
     }
 
-    return latest_eligible_pc_idx.load(std::memory_order_relaxed);
+    return eligible_pc_idx.load(std::memory_order_relaxed);
 }
 
 void
 reset_sample_selection()
 {
-    latest_eligible_pc_idx.store(0);
+    eligible_pc_idx.store(0);
+    eligible_pc_candidates.store(0);
     for(auto& itr : latest_eligible_pc)
     {
         if(itr) itr->store(0);
@@ -830,7 +821,7 @@ sample_selection(size_t _nitr, size_t _wait_ns)
         return selected_entry{};
     };
 
-    while(latest_eligible_pc_idx.load(std::memory_order_relaxed) == 0)
+    while(eligible_pc_idx.load(std::memory_order_relaxed) == 0)
     {
         if(get_state() >= State::Finalized) return selected_entry{};
         std::this_thread::yield();

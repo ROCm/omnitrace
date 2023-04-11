@@ -52,22 +52,14 @@ get_line_info(uintptr_t _addr, bool include_discarded = true);
 
 bool is_eligible_address(uintptr_t);
 
-size_t set_current_selection(uint64_t);
 size_t set_current_selection(unwind_addr_t);
 size_t set_current_selection(container::c_array<uint64_t>);
-
-template <size_t N>
-size_t
-set_current_selection(std::array<uint64_t, N> _v)
-{
-    return set_current_selection(container::c_array<uint64_t>{ _v.data(), _v.size() });
-}
 
 void
 reset_sample_selection();
 
 selected_entry
-sample_selection(size_t _nitr = 1000, size_t _wait_ns = 1000);
+sample_selection(size_t _nitr = 1000, size_t _wait_ns = 100000);
 
 void push_progress_point(std::string_view);
 

@@ -259,7 +259,6 @@ experiment::start()
         current_experiment_value = *this;
         current_selected_count.store(0);
         current_experiment.store(this);
-        reset_sample_selection();
         return true;
     }
     return false;
@@ -312,7 +311,6 @@ experiment::stop()
     std::sort(_prog_vals.begin(), _prog_vals.end());
     for(auto itr : _prog_vals)
         _prog_stats += itr;
-    // _prog_stats += itr * (1.0 + delay_scaling);
 
     auto _nvals = _prog_vals.size();
     auto _medi  = (_nvals > 2) ? _prog_vals.at(_nvals / 2) : _prog_vals.front();
@@ -372,7 +370,6 @@ experiment::as_string() const
         _ss << ", duration: " << std::setw(5) << std::fixed << std::setprecision(3)
             << _dur << " sec";
     _ss << " :: experiment: " << as_hex(selection.address) << " ";
-    //_ss << " [" << selection.info.ipaddr().as_string() << "]";
     if(selection.symbol_address > 0 && selection.address != selection.symbol_address)
         _ss << "(symbol@" << as_hex(selection.symbol_address) << ") ";
     if(!selection.symbol.file.empty() && selection.symbol.line > 0)
@@ -481,9 +478,6 @@ void  // NOLINTNEXTLINE
 experiment::save_experiments(std::string _fname_base, const filename_config_t& _cfg)
 {
     const auto& _info0 = thread_info::get(0, InternalTID);
-
-    // if(experiment_history.size() > 1)
-    //    experiment_history.erase(experiment_history.begin());
 
     auto current_record    = record{};
     current_record.startup = _info0->lifetime.first;
