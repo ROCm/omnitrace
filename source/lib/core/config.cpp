@@ -29,6 +29,7 @@
 #include "mproc.hpp"
 #include "perf.hpp"
 #include "perfetto.hpp"
+#include "utility.hpp"
 
 #include <timemory/backends/dmp.hpp>
 #include <timemory/backends/mpi.hpp>
@@ -110,59 +111,7 @@ get_available_categories()
     return _v;
 }
 
-template <typename Tp = int64_t, typename ContainerT = std::set<Tp>, typename Up = Tp>
-ContainerT
-parse_numeric_range(std::string _input_string, const std::string& _label, Up _incr)
-{
-    auto _get_value = [](const std::string& _inp) {
-        std::stringstream iss{ _inp };
-        auto              var = Tp{};
-        iss >> var;
-        return var;
-    };
-
-    for(auto& itr : _input_string)
-        itr = tolower(itr);
-    auto _result = ContainerT{};
-    for(const auto& _v : tim::delimit(_input_string, ",; \t\n\r"))
-    {
-        if(_v.find_first_not_of("0123456789-") != std::string::npos)
-        {
-            OMNITRACE_VERBOSE_F(
-                0,
-                "Invalid %s specification. Only numerical values (e.g., 0) or "
-                "ranges (e.g., 0-7) are permitted. Ignoring %s...",
-                _label.c_str(), _v.c_str());
-            continue;
-        }
-        if(_v.find('-') != std::string::npos)
-        {
-            auto _vv = tim::delimit(_v, "-");
-            OMNITRACE_CONDITIONAL_THROW(
-                _vv.size() != 2,
-                "Invalid %s range specification: %s. Required format N-M, e.g. 0-4",
-                _label.c_str(), _v.c_str());
-            Tp _vn = _get_value(_vv.at(0));
-            Tp _vN = _get_value(_vv.at(1));
-            do
-            {
-                if constexpr(std::is_same<ContainerT, std::set<Tp>>::value)
-                    _result.emplace(_vn);
-                else
-                    _result.emplace_back(_vn);
-                _vn += _incr;
-            } while(_vn <= _vN);
-        }
-        else
-        {
-            if constexpr(std::is_same<ContainerT, std::set<Tp>>::value)
-                _result.emplace(std::stol(_v));
-            else
-                _result.emplace_back(std::stol(_v));
-        }
-    }
-    return _result;
-}
+using utility::parse_numeric_range;
 
 #define OMNITRACE_CONFIG_SETTING(TYPE, ENV_NAME, DESCRIPTION, INITIAL_VALUE, ...)        \
     [&]() {                                                                              \
@@ -2368,7 +2317,7 @@ get_sampling_tids()
 {
     auto _v = get_config()->find("OMNITRACE_SAMPLING_TIDS");
     return parse_numeric_range<>(
-        static_cast<tim::tsettings<std::string>&>(*_v->second).get(), "thread IDs", 1);
+        static_cast<tim::tsettings<std::string>&>(*_v->second).get(), "thread IDs", 1L);
 }
 
 std::set<int64_t>
@@ -2376,7 +2325,7 @@ get_sampling_cputime_tids()
 {
     auto _v = get_config()->find("OMNITRACE_SAMPLING_CPUTIME_TIDS");
     return parse_numeric_range<>(
-        static_cast<tim::tsettings<std::string>&>(*_v->second).get(), "thread IDs", 1);
+        static_cast<tim::tsettings<std::string>&>(*_v->second).get(), "thread IDs", 1L);
 }
 
 std::set<int64_t>
@@ -2384,7 +2333,7 @@ get_sampling_realtime_tids()
 {
     auto _v = get_config()->find("OMNITRACE_SAMPLING_REALTIME_TIDS");
     return parse_numeric_range<>(
-        static_cast<tim::tsettings<std::string>&>(*_v->second).get(), "thread IDs", 1);
+        static_cast<tim::tsettings<std::string>&>(*_v->second).get(), "thread IDs", 1L);
 }
 
 std::set<int64_t>
@@ -2392,7 +2341,7 @@ get_sampling_overflow_tids()
 {
     auto _v = get_config()->find("OMNITRACE_SAMPLING_OVERFLOW_TIDS");
     return parse_numeric_range<>(
-        static_cast<tim::tsettings<std::string>&>(*_v->second).get(), "thread IDs", 1);
+        static_cast<tim::tsettings<std::string>&>(*_v->second).get(), "thread IDs", 1L);
 }
 
 bool
@@ -2735,7 +2684,7 @@ get_causal_fixed_speedup()
     static auto _v = get_config()->find("OMNITRACE_CAUSAL_FIXED_SPEEDUP");
     return parse_numeric_range<int64_t, std::vector<int64_t>>(
         static_cast<tim::tsettings<std::string>&>(*_v->second).get(),
-        "causal fixed speedup", 5);
+        "causal fixed speedup", 5L);
 }
 
 std::string
