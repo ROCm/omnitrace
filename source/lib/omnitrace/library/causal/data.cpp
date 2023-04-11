@@ -34,6 +34,7 @@
 #include "core/utility.hpp"
 #include "library/causal/delay.hpp"
 #include "library/causal/experiment.hpp"
+#include "library/causal/fwd.hpp"
 #include "library/causal/sample_data.hpp"
 #include "library/causal/sampling.hpp"
 #include "library/causal/selected_entry.hpp"
@@ -645,17 +646,18 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
     }
 }
 
-// thread-safe read/write ring-buffer via atomics
-using pc_ring_buffer_t = tim::data_storage::atomic_ring_buffer<uintptr_t>;
 // latest_eligible_pcs is an array of unwind_depth size -> samples will
 // use lowest indexes for most recent functions address in the call-stack
 auto latest_eligible_pc = []() {
-    auto _arr = std::array<std::unique_ptr<pc_ring_buffer_t>, unwind_depth>{};
+    using atomic_uintptr_t      = std::atomic<uintptr_t>;
+    constexpr size_t array_size = OMNITRACE_MAX_THREADS * unwind_depth;
+    auto             _arr = std::array<std::unique_ptr<atomic_uintptr_t>, array_size>{};
     for(auto& itr : _arr)
-        itr = std::make_unique<pc_ring_buffer_t>(units::get_page_size() /
-                                                 (sizeof(uintptr_t) + 1));
+        itr = std::make_unique<std::atomic<uintptr_t>>(0);
     return _arr;
 }();
+
+auto latest_eligible_pc_idx = std::atomic<size_t>{ 0 };
 }  // namespace
 
 //--------------------------------------------------------------------------------------//
@@ -699,10 +701,10 @@ set_current_selection(uint64_t itr)
 {
     if(experiment::is_active()) return;
 
-    auto& _pcs = latest_eligible_pc.at(0);
-    if(_pcs && is_eligible_address(itr))
+    if(is_eligible_address(itr))
     {
-        _pcs->write(&itr);
+        auto _idx = latest_eligible_pc_idx++ % latest_eligible_pc.size();
+        latest_eligible_pc.at(_idx)->store(itr);
     }
 }
 
@@ -711,16 +713,13 @@ set_current_selection(unwind_addr_t _stack)
 {
     if(experiment::is_active()) return;
 
-    size_t _n = 0;
     for(auto itr : _stack)
     {
         if(itr == 0) continue;
-        auto& _pcs = latest_eligible_pc.at(_n);
-        if(_pcs && is_eligible_address(itr))
+        if(is_eligible_address(itr))
         {
-            _pcs->write(&itr);
-            // increment after valid found -> first valid pc for call-stack
-            ++_n;
+            auto _idx = latest_eligible_pc_idx++ % latest_eligible_pc.size();
+            latest_eligible_pc.at(_idx)->store(itr);
         }
     }
 }
@@ -730,16 +729,13 @@ set_current_selection(container::c_array<uint64_t> _stack)
 {
     if(experiment::is_active()) return;
 
-    size_t _n = 0;
     for(auto itr : _stack)
     {
         if(itr == 0) continue;
-        auto& _pcs = latest_eligible_pc.at(_n);
-        if(_pcs && is_eligible_address(itr))
+        if(is_eligible_address(itr))
         {
-            _pcs->write(&itr);
-            // increment after valid found -> first valid pc for call-stack
-            ++_n;
+            auto _idx = latest_eligible_pc_idx++ % latest_eligible_pc.size();
+            latest_eligible_pc.at(_idx)->store(itr);
         }
     }
 }
@@ -748,8 +744,6 @@ selected_entry
 sample_selection(size_t _nitr, size_t _wait_ns)
 {
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
-
-    size_t _n = 0;
 
     auto _select_address = [&](auto& _address_vec) {
         // this isn't necessary bc of check before calling this lambda but
@@ -817,28 +811,26 @@ sample_selection(size_t _nitr, size_t _wait_ns)
         return selected_entry{};
     };
 
-    while(_n++ < _nitr)
+    while(latest_eligible_pc_idx.load(std::memory_order_relaxed) == 0)
+    {
+        if(get_state() >= State::Finalized) return selected_entry{};
+        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::nanoseconds{ _wait_ns });
+    }
+
+    for(size_t _n = 0; _n < _nitr; ++_n)
     {
         auto _addresses = std::deque<uintptr_t>{};
         for(auto& aitr : latest_eligible_pc)
         {
             if(OMNITRACE_UNLIKELY(!aitr))
             {
-                OMNITRACE_WARNING(0, "invalid ring buffer...\n");
+                OMNITRACE_WARNING(0, "invalid atomic pc...\n");
                 continue;
             }
 
-            auto _naddrs = aitr->count();
-            if(_naddrs == 0) continue;
-
-            for(size_t i = 0; i < _naddrs; ++i)
-            {
-                uintptr_t _addr = 0;
-                if(!aitr->is_empty() && aitr->read(&_addr) != nullptr)
-                {
-                    if(_addr > 0) _addresses.emplace_back(_addr);
-                }
-            }
+            uintptr_t _addr = aitr->load();
+            if(_addr > 0) _addresses.emplace_back(_addr);
         }
 
         if(!_addresses.empty())
@@ -846,8 +838,6 @@ sample_selection(size_t _nitr, size_t _wait_ns)
             auto _selection = _select_address(_addresses);
             if(_selection) return _selection;
         }
-
-        std::this_thread::sleep_for(std::chrono::nanoseconds{ _wait_ns });
     }
 
     return selected_entry{};
