@@ -533,13 +533,14 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
         // loop until started or finalized
         while(!_experim.start())
         {
-            OMNITRACE_VERBOSE(
-                0, "[causal] experiment failed to start. Eligible PC candidates: %zu\n",
-                eligible_pc_candidates.load());
-
             if(get_state() == State::Finalized)
             {
                 if(_impl_no > 0) return;
+
+                OMNITRACE_VERBOSE(
+                    0,
+                    "[causal] experiment failed to start. Number of PC candidates: %zu\n",
+                    eligible_pc_candidates.load());
 
                 auto _memory   = std::stringstream{};
                 auto _binary   = std::stringstream{};
@@ -641,9 +642,17 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
 
                 return;
             }
+            else
+            {
+                OMNITRACE_VERBOSE(
+                    1,
+                    "[causal] experiment failed to start. Number of PC candidates: %zu\n",
+                    eligible_pc_candidates.load());
+            }
         }
 
-        OMNITRACE_VERBOSE(0, "[causal] experiment started. Eligible PC candidates: %zu\n",
+        OMNITRACE_VERBOSE(3,
+                          "[causal] experiment started. Number of PC candidates: %zu\n",
                           eligible_pc_candidates.load());
 
         reset_sample_selection();
