@@ -627,8 +627,18 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
                 }
                 std::cerr << std::flush;
 
-                OMNITRACE_CONDITIONAL_THROW(_impl_no == 0,
-                                            "causal experiment never started");
+                // if launched via omnitrace-causal, allow end-to-end runs that do not
+                // start experiments
+                auto _omni_causal_launcher =
+                    get_env<std::string>("OMNITRACE_LAUNCHER", "", false) ==
+                    "omnitrace-causal";
+
+                if(!(get_causal_end_to_end() && _omni_causal_launcher))
+                {
+                    OMNITRACE_CONDITIONAL_THROW(_impl_no == 0,
+                                                "causal experiment never started");
+                }
+
                 return;
             }
         }
