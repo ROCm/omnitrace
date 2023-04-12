@@ -82,10 +82,6 @@ def causal(args):
         args.cli,
     )
 
-    samples_df = pd.DataFrame(
-        [{"location": loc, "count": count} for loc, count in sorted(samp.items())]
-    )
-
     if not args.cli:
         max_points = 9
         sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]

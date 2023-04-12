@@ -95,7 +95,6 @@ class validation(object):
                 f"  [{_exp_name}][{_pp_name}][{_virt_speedup}] program speedup has stddev > 2 * tolerance (+/- {_prog_speedup_stddev:.3f}). Relaxing validation...\n"
             )
             _tolerance += math.sqrt(_prog_speedup_stddev)
-
         return _prog_speedup >= (self.program_speedup - _tolerance) and _prog_speedup <= (
             self.program_speedup + _tolerance
         )
@@ -728,9 +727,7 @@ def parse_files(
 def parse_uploaded_file(file_name, file, experiments=".*", progress_points=".*"):
     data = pd.DataFrame()
     if "{" in file:
-        raise RuntimeError("bar")
         dict_data = {}
-        sample_data = {}
         _data = json.loads(file)
 
         dict_data = {
