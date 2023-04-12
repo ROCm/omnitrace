@@ -613,16 +613,22 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
                     }
                 }
 
+                OMNITRACE_PRINT_COLOR(fatal, "causal experiment never started\n");
+
                 std::cerr << std::flush;
                 auto _cerr = tim::log::warning_stream(std::cerr);
-                _cerr << "\nsamples:\n\n" << _sample.str() << "\n";
-                _cerr << "\neligible:\n\n" << _eligible.str() << "\n";
-                _cerr << "\nscoped:\n\n" << _scoped.str() << "\n";
-                _cerr << "\nbinary:\n\n" << _binary.str() << "\n";
-                _cerr << "\nmaps:\n\n" << _memory.str() << "\n";
+                _cerr << "\npc samples:\n\n" << _sample.str() << "\n";
+                _cerr << "\neligible pcs:\n\n" << _eligible.str() << "\n";
+                _cerr << "\nscoped pcs:\n\n" << _scoped.str() << "\n";
+                if(get_verbose() >= 1)
+                {
+                    _cerr << "\nbinary pcs:\n\n" << _binary.str() << "\n";
+                    _cerr << "\nmaps:\n\n" << _memory.str() << "\n";
+                }
                 std::cerr << std::flush;
 
-                OMNITRACE_CONDITIONAL_THROW(_impl_no == 0, "experiment never started");
+                OMNITRACE_CONDITIONAL_THROW(_impl_no == 0,
+                                            "causal experiment never started");
                 return;
             }
         }
