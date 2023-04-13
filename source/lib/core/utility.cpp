@@ -27,6 +27,32 @@ namespace omnitrace
 {
 namespace utility
 {
+namespace
+{
+template <typename ContainerT, typename Arg>
+auto
+emplace_impl(ContainerT& _targ, Arg&& _v, int)
+    -> decltype(_targ.emplace(std::forward<Arg>(_v)))
+{
+    return _targ.emplace(std::forward<Arg>(_v));
+}
+
+template <typename ContainerT, typename Arg>
+auto
+emplace_impl(ContainerT& _targ, Arg&& _v, long)
+    -> decltype(_targ.emplace_back(std::forward<Arg>(_v)))
+{
+    return _targ.emplace_back(std::forward<Arg>(_v));
+}
+
+template <typename ContainerT, typename Arg>
+decltype(auto)
+emplace(ContainerT& _targ, Arg&& _v)
+{
+    return emplace_impl(_targ, std::forward<Arg>(_v), 0);
+}
+}  // namespace
+
 template <typename Tp, typename ContainerT, typename Up>
 ContainerT
 parse_numeric_range(std::string _input_string, const std::string& _label, Up _incr)
@@ -74,19 +100,13 @@ parse_numeric_range(std::string _input_string, const std::string& _label, Up _in
             Tp _vN = _get_value(_vv.at(1));
             do
             {
-                if constexpr(std::is_same<ContainerT, std::set<Tp>>::value)
-                    _result.emplace(_vn);
-                else
-                    _result.emplace_back(_vn);
+                emplace(_result, _vn);
                 _vn += _incr_v;
             } while(_vn <= _vN);
         }
         else
         {
-            if constexpr(std::is_same<ContainerT, std::set<Tp>>::value)
-                _result.emplace(std::stol(_v));
-            else
-                _result.emplace_back(std::stol(_v));
+            emplace(_result, std::stoll(_v));
         }
     }
     return _result;
@@ -96,5 +116,8 @@ template std::set<int64_t>
 parse_numeric_range<int64_t, std::set<int64_t>>(std::string, const std::string&, long);
 template std::vector<int64_t>
 parse_numeric_range<int64_t, std::vector<int64_t>>(std::string, const std::string&, long);
+template std::unordered_set<int64_t>
+parse_numeric_range<int64_t, std::unordered_set<int64_t>>(std::string, const std::string&,
+                                                          long);
 }  // namespace utility
 }  // namespace omnitrace

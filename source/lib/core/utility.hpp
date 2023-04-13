@@ -249,5 +249,8 @@ extern template std::set<int64_t>
 parse_numeric_range<int64_t, std::set<int64_t>>(std::string, const std::string&, long);
 extern template std::vector<int64_t>
 parse_numeric_range<int64_t, std::vector<int64_t>>(std::string, const std::string&, long);
+extern template std::unordered_set<int64_t>
+parse_numeric_range<int64_t, std::unordered_set<int64_t>>(std::string, const std::string&,
+                                                          long);
 }  // namespace utility
 }  // namespace omnitrace
