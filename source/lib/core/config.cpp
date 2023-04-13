@@ -2438,14 +2438,8 @@ get_trace_thread_join()
 bool
 get_debug_tid()
 {
-    static auto _vlist = []() {
-        std::unordered_set<int64_t> _tids{};
-        for(auto itr : tim::delimit<std::vector<int64_t>>(
-                tim::get_env<std::string>("OMNITRACE_DEBUG_TIDS", ""),
-                ",: ", [](const std::string& _v) { return std::stoll(_v); }))
-            _tids.insert(itr);
-        return _tids;
-    }();
+    static auto _vlist = parse_numeric_range<int64_t, std::unordered_set<int64_t>>(
+        tim::get_env<std::string>("OMNITRACE_DEBUG_TIDS", ""), "debug tids", 1L);
     static thread_local bool _v =
         _vlist.empty() || _vlist.count(tim::threading::get_id()) > 0;
     return _v;
@@ -2454,14 +2448,8 @@ get_debug_tid()
 bool
 get_debug_pid()
 {
-    static auto _vlist = []() {
-        std::unordered_set<int64_t> _pids{};
-        for(auto itr : tim::delimit<std::vector<int64_t>>(
-                tim::get_env<std::string>("OMNITRACE_DEBUG_PIDS", ""),
-                ",: ", [](const std::string& _v) { return std::stoll(_v); }))
-            _pids.insert(itr);
-        return _pids;
-    }();
+    static auto _vlist = parse_numeric_range<int64_t, std::unordered_set<int64_t>>(
+        tim::get_env<std::string>("OMNITRACE_DEBUG_PIDS", ""), "debug pids", 1L);
     static bool _v = _vlist.empty() || _vlist.count(tim::process::get_id()) > 0 ||
                      _vlist.count(dmp::rank()) > 0;
     return _v;
