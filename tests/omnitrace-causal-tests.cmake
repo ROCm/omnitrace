@@ -91,8 +91,9 @@ omnitrace_add_causal_test(
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
     )
 
-# set(_causal_e2e_exe_args 80 100 432525 100000000)
-set(_causal_e2e_exe_args 80 12 432525 500000000)
+# set(_causal_e2e_exe_args 80 100 432525 100000000) set(_causal_e2e_exe_args 80 12 432525
+# 500000000)
+set(_causal_e2e_exe_args 80 50 432525 100000000)
 set(_causal_common_args
     "-n 5 -e -s 0 10 20 30 -B $<TARGET_FILE_BASE_NAME:causal-cpu-omni>")
 
@@ -130,18 +131,20 @@ omnitrace_add_causal_test(
     SKIP_BASELINE
     NAME cpu-omni-slow-func-e2e
     TARGET causal-cpu-omni
+    LABELS "causal-e2e"
     RUN_ARGS ${_causal_e2e_exe_args}
     CAUSAL_MODE "func"
     CAUSAL_ARGS ${_causal_slow_func_args}
     CAUSAL_VALIDATE_ARGS ${_causal_slow_func_valid}
     CAUSAL_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
-    PROPERTIES PROCESSORS 2 PROCESSOR_AFFINITY ON)
+    PROPERTIES PROCESSORS 2 PROCESSOR_AFFINITY OFF)
 
 omnitrace_add_causal_test(
     SKIP_BASELINE
     NAME cpu-omni-fast-func-e2e
     TARGET causal-cpu-omni
+    LABELS "causal-e2e"
     RUN_ARGS ${_causal_e2e_exe_args}
     CAUSAL_MODE "func"
     CAUSAL_ARGS ${_causal_fast_func_args}
@@ -154,18 +157,20 @@ omnitrace_add_causal_test(
     SKIP_BASELINE
     NAME cpu-omni-line-100-e2e
     TARGET causal-cpu-omni
+    LABELS "causal-e2e"
     RUN_ARGS ${_causal_e2e_exe_args}
     CAUSAL_MODE "line"
     CAUSAL_ARGS ${_causal_line_100_args}
     CAUSAL_VALIDATE_ARGS ${_causal_line_100_valid}
     CAUSAL_PASS_REGEX
         "Starting causal experiment #1(.*)causal/experiments.json(.*)causal/experiments.coz"
-    PROPERTIES PROCESSORS 2 PROCESSOR_AFFINITY ON)
+    PROPERTIES PROCESSORS 2 PROCESSOR_AFFINITY OFF)
 
 omnitrace_add_causal_test(
     SKIP_BASELINE
     NAME cpu-omni-line-110-e2e
     TARGET causal-cpu-omni
+    LABELS "causal-e2e"
     RUN_ARGS ${_causal_e2e_exe_args}
     CAUSAL_MODE "line"
     CAUSAL_ARGS ${_causal_line_110_args}
