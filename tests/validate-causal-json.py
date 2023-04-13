@@ -66,21 +66,28 @@ class validation(object):
             return None
 
         _tolerance = self.tolerance
-
-        if _ci is True and _virt_speedup > 10:
-            """On GitHub Action servers, you typically only get one core with two hyperthreads.
-            The hyperthreading causes the speedup potential to drop off at higher virtual speedups
-            so we consider
+        _reason = "[unspecified reason]"
+        if _ci is True:
+            """On GitHub Action servers, you typically only get two CPUs, which may be one
+            core with two hyperthreads. The hyperthreading can causes the speedup potential
+            to drop. Furthermore, these are typically shared resources so the runtime may
+            vary significantly. Thus, always account for stddev to prevent failures due to
+            these causes
             """
             _tolerance += max([_base_speedup_stddev, _prog_speedup_stddev])
+            _reason = "results obtained on a shared CI system... potentially artificially deflating speedup predictions"
         elif _base_speedup_stddev > self.tolerance:
             _tolerance += math.sqrt(_base_speedup_stddev)
+            _reason = (
+                f"large standard deviation of the baseline ({_base_speedup_stddev:.3f})"
+            )
         elif _prog_speedup_stddev > 1.0:
             _tolerance += math.sqrt(_prog_speedup_stddev)
+            _reason = f"large standard deviation of the program speedup ({_prog_speedup_stddev:.3f})"
 
         if _tolerance > self.tolerance:
             sys.stderr.write(
-                f"    [{_exp_name}][{_pp_name}][{_virt_speedup}] Tolerance adjusted due to stddev or to account for hyperthreading on CI systems ({self.tolerance:.3f} increased to {_tolerance:.3f})...\n"
+                f"    [{_exp_name}][{_pp_name}][{_virt_speedup}] Tolerance increased: {_reason} ({self.tolerance:.3f} increased to {_tolerance:.3f})...\n"
             )
 
         def _compute(_speedup_v, _tolerance_v):
