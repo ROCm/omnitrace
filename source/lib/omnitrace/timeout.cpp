@@ -27,9 +27,9 @@
 #include "core/state.hpp"
 #include "library/components/pthread_gotcha.hpp"
 #include "library/thread_info.hpp"
-#include "timemory/signals/types.hpp"
 
 #include <timemory/log/color.hpp>
+#include <timemory/signals/types.hpp>
 #include <timemory/unwind/backtrace.hpp>
 
 #include <chrono>
