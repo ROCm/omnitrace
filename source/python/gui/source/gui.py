@@ -29,7 +29,6 @@ __license__ = "MIT"
 __maintainer__ = "AMD Research"
 __status__ = "Development"
 
-import glob
 import re
 import base64
 import os
@@ -81,13 +80,13 @@ def build_line_graph():
     layout1 = html.Div(
         id="graph_all",
         className="graph",
-        children=[html.H4("All Causal Profiles", style={"color": text_color})],
+        # children=[html.H4("All Causal Profiles", style={"color": text_color})],
     )
 
     layout2 = html.Div(
         id="graph_select",
         className="graph",
-        children=[html.H4("Call Stack Sample Histogram", style={"color": text_color})],
+        # children=[html.H4("Call Stack Sample Histogram", style={"color": text_color})],
     )
 
     return layout1, layout2
@@ -109,7 +108,7 @@ def update_line_graph(
         data = data.sort_values(by=["min speedup", "idx"])
 
     if num_points > 0:
-        data = data[data["point count"] > num_points]
+        data = data[data["point count"] >= num_points]
 
     mask = data[data.point.isin(experiment_list)]
     mask = mask[mask["progress points"].isin(progpt_list)]
@@ -165,6 +164,7 @@ def update_line_graph(
                     line_shape="spline",
                     name=prog,
                     mode="lines+markers",
+                    showlegend=True,
                 ),
             ).update_xaxes(dtick=5).update_yaxes(range=y_ranges, dtick=10).update_layout(
                 xaxis={"title": x_label},
@@ -196,20 +196,20 @@ def reset_input_filters(workloads, max_points, verbosity):
 
     input_filters = [
         {
-            "Name": "Sort by",
+            "name": "Sort by",
             "values": list(map(str, sortOptions)),
             "default": "Impact",
-            "type": "Name",
+            "type": "name",
             "multi": False,
         },
         {
-            "Name": "Select Workload",
+            "name": "Select Workload",
             "values": workloads,
             "default": workloads,
-            "type": "Name",
+            "type": "name",
             "multi": True,
         },
-        {"Name": "points", "filter": [], "values": max_points, "type": "int"},
+        {"Name": "points", "num_points": 1, "values": max_points, "type": "int"},
     ]
     return input_filters
 
@@ -315,18 +315,19 @@ def build_causal_layout(
 
         if _workload_path is not None and os.path.exists(_workload_path):
             files = []
-            if os.path.isfile(_workload_path):
-                files.append(_workload_path)
-                workload_path = [_workload_path]
-            elif os.path.isdir(_workload_path):
-                _files = glob.glob(os.path.join(_workload_path, "*.json"))
-                # subfiles = glob.glob(os.path.join(workload_path, "*/*.coz")) +
-                subfiles = glob.glob(os.path.join(_workload_path, "*/*.json"))
-                # metadata = glob.glob(os.path.join(_workload_path, "*/metadata*.json"))
-                files = _files + subfiles
-                workload_path = files
+            files = find_causal_files([_workload_path], verbosity, True)
+            # if os.path.isfile(_workload_path):
+            #     files.append(_workload_path)
+            #     workload_path = [_workload_path]
+            # elif os.path.isdir(_workload_path):
+            #     _files = glob.glob(os.path.join(_workload_path, "*.json"))
+            #     # subfiles = glob.glob(os.path.join(workload_path, "*/*.coz")) +
+            #     subfiles = glob.glob(os.path.join(_workload_path, "*/*.json"))
+            #     # metadata = glob.glob(os.path.join(_workload_path, "*/metadata*.json"))
+            #     files = _files + subfiles
+            #     workload_path = files
             global_data, global_samples, global_filenames = parse_files(
-                workload_path, verbose=verbose
+                files, verbose=verbose
             )
             experiment_list = sorted(list(global_data.point.unique()))
             progpt_list = sorted(list(global_data["progress points"].unique()))
@@ -334,7 +335,7 @@ def build_causal_layout(
             max_points = global_data.point.value_counts().max().max()
 
             # reset input_filters
-            workloads = [os.path.basename(file) for file in files]
+            workloads = sorted(list(global_data.workload.unique()))
             global_input_filters = reset_input_filters(workloads, max_points, verbose)
 
             screen_data, fig1, fig2 = update_line_graph(
@@ -375,7 +376,7 @@ def build_causal_layout(
                     new_data,
                     num_points,
                     global_samples,
-                    workload_filter,
+                    [filename],
                 )
                 header = get_header(dropDownMenuItems, global_input_filters)
 

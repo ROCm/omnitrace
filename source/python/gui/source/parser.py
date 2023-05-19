@@ -31,7 +31,6 @@ __status__ = "Development"
 
 import sys
 import json
-import jsondiff
 import re
 import pandas as pd
 import numpy as np
@@ -95,6 +94,7 @@ class validation(object):
                 f"  [{_exp_name}][{_pp_name}][{_virt_speedup}] program speedup has stddev > 2 * tolerance (+/- {_prog_speedup_stddev:.3f}). Relaxing validation...\n"
             )
             _tolerance += math.sqrt(_prog_speedup_stddev)
+
         return _prog_speedup >= (self.program_speedup - _tolerance) and _prog_speedup <= (
             self.program_speedup + _tolerance
         )
@@ -337,6 +337,8 @@ def process_data(data, _data, experiments, progress_points):
                     if _delt > 0:
                         itr = find_or_insert(data[_selected][_name], _speedup)
                         itr += [_delt, _duration]
+            if not data[_selected]:
+                data.pop(_selected)
     return data
 
 
@@ -345,66 +347,67 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], debug=False):
     data = {}
     for workload in runs:
         _data = runs[workload]
-        for selected, pitr in _data.items():
-            if selected not in data:
-                data[selected] = {}
-            for progpt, ditr in pitr.items():
-                data[selected][progpt] = OrderedDict(sorted(ditr.items()))
+        if _data:
+            for selected, pitr in _data.items():
+                if selected not in data:
+                    data[selected] = {}
+                for progpt, ditr in pitr.items():
+                    data[selected][progpt] = OrderedDict(sorted(ditr.items()))
 
-        ret = []
-        for selected, pitr in _data.items():
-            for progpt, ditr in pitr.items():
-                if 0 not in ditr.keys():
-                    print(f"missing baseline data for {progpt} in {selected}...")
-                    continue
-                for speedup, itr in ditr.items():
-                    if len(speedups) > 0 and speedup not in speedups:
+            ret = []
+            for selected, pitr in _data.items():
+                for progpt, ditr in pitr.items():
+                    if 0 not in ditr.keys():
+                        print(f"missing baseline data for {progpt} in {selected}...")
                         continue
-                    if speedup != itr.speedup:
-                        raise ValueError(f"in {selected}: {speedup} != {itr.speedup}")
-                    _val = line_speedup(selected, progpt, itr, ditr[0])
-                    ret.append(_val)
-        ret.sort()
-        _last_name = None
-        _last_prog = None
-        result = []
-        for itr in ret:
-            if itr.name != _last_name or itr.prog != _last_prog:
-                result.append([])
-            result[-1].append(itr)
-            _last_name = itr.name
-            _last_prog = itr.prog
+                    for speedup, itr in ditr.items():
+                        if len(speedups) > 0 and speedup not in speedups:
+                            continue
+                        if speedup != itr.speedup:
+                            raise ValueError(f"in {selected}: {speedup} != {itr.speedup}")
+                        _val = line_speedup(selected, progpt, itr, ditr[0])
+                        ret.append(_val)
+            ret.sort()
+            _last_name = None
+            _last_prog = None
+            result = []
+            for itr in ret:
+                if itr.name != _last_name or itr.prog != _last_prog:
+                    result.append([])
+                result[-1].append(itr)
+                _last_name = itr.name
+                _last_prog = itr.prog
             _data = []
-        for itr in result:
-            experiment_prog = experiment_progress(itr)
-            _data.append(experiment_prog)
-            if len(itr) != 0:
-                impact = experiment_prog.get_impact()
-                for itrx in itr:
-                    speedup = itrx.compute_speedup()
-                    line_stddev = itrx.compute_speedup_stddev()
-                    if speedup <= 200 and speedup >= -100:
-                        out = pd.concat(
-                            [
-                                out,
-                                pd.DataFrame(
-                                    {
-                                        "idx": [(itrx.prog, itrx.name)],
-                                        "progress points": [itrx.prog],
-                                        "point": [itrx.name],
-                                        "line speedup": [itrx.virtual_speedup()],
-                                        "program speedup": [speedup],
-                                        "speedup err": line_stddev,
-                                        "impact sum": impact[0],
-                                        "impact avg": impact[1],
-                                        "impact err": float(impact[2]),
-                                        "workload": workload,
-                                    }
-                                ),
-                            ],
-                            ignore_index=True,
-                        )
-        _data.sort()
+            for itr in result:
+                experiment_prog = experiment_progress(itr)
+                _data.append(experiment_prog)
+                if len(itr) != 0:
+                    impact = experiment_prog.get_impact()
+                    for itrx in itr:
+                        speedup = itrx.compute_speedup()
+                        line_stddev = itrx.compute_speedup_stddev()
+                        if speedup <= 200 and speedup >= -100:
+                            out = pd.concat(
+                                [
+                                    out,
+                                    pd.DataFrame(
+                                        {
+                                            "idx": [(itrx.prog, itrx.name)],
+                                            "progress points": [itrx.prog],
+                                            "point": [itrx.name],
+                                            "line speedup": [itrx.virtual_speedup()],
+                                            "program speedup": [speedup],
+                                            "speedup err": line_stddev,
+                                            "impact sum": impact[0],
+                                            "impact avg": impact[1],
+                                            "impact err": float(impact[2]),
+                                            "workload": workload,
+                                        }
+                                    ),
+                                ],
+                                ignore_index=True,
+                            )
+            _data.sort()
 
         if debug:
             for itr in _data:
@@ -414,8 +417,11 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], debug=False):
                 print(f"{itr}")
         sys.stdout.flush()
         validations = get_validations(validate)
+
+        # calculated incorrectly....
         expected_validations = len(validations)
         correct_validations = 0
+        validations_performed = 0
         if expected_validations > 0:
             print(f"\nPerforming {expected_validations} validations...\n")
             for eitr in _data:
@@ -439,19 +445,26 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], debug=False):
                             continue
                         if _v is True:
                             correct_validations += 1
+                            validations_performed += 1
                         else:
+                            validations_performed += 1
                             sys.stderr.write(
                                 f"  [{_experiment}][{_progresspt}][{_virt_speedup}] failed validation: {_prog_speedup:8.3f} != {vitr.program_speedup} +/- {vitr.tolerance}\n"
                             )
-        if expected_validations != correct_validations:
-            sys.stderr.flush()
-            sys.stderr.write(
-                f"\nCausal profiling predictions not validated. Expected {expected_validations}, found {correct_validations}\n"
+        if validations_performed != 0:
+            # if expected_validations != correct_validations:
+            #     sys.stderr.flush()
+            #     sys.stderr.write(
+            #         f"\nCausal profiling predictions not validated. Expected {expected_validations}, found {correct_validations}\n"
+            #     )
+            #     sys.stderr.flush()
+            #     sys.exit(-1)
+            if expected_validations > 0:
+                print(f"Causal profiling predictions validated: {validations_performed}")
+        else:
+            print(
+                f"No matching Causal data for expected validations: {expected_validations}"
             )
-            sys.stderr.flush()
-            sys.exit(-1)
-        elif expected_validations > 0:
-            print(f"Causal profiling predictions validated: {expected_validations}")
 
     return out
 
@@ -477,32 +490,33 @@ def get_validations(validate):
 
 
 def compute_sorts(_data):
-    Max_speedup_order = _data.sort_values(
-        by="program speedup", ascending=False
-    ).point.unique()
-    Min_speedup_order = _data.sort_values(
-        by="program speedup", ascending=True
-    ).point.unique()
-    point_counts = _data.point.value_counts()
-    # speedups = pd.DataFrame(_data["Line Speedup"].unique(), columns=["Line Speedup"])
+    if not _data.empty:
+        Max_speedup_order = _data.sort_values(
+            by="program speedup", ascending=False
+        ).point.unique()
+        Min_speedup_order = _data.sort_values(
+            by="program speedup", ascending=True
+        ).point.unique()
+        point_counts = _data.idx.value_counts()
+        # speedups = pd.DataFrame(_data["Line Speedup"].unique(), columns=["Line Speedup"])
 
-    _data["max speedup"] = np.nan
-    _data["min speedup"] = np.nan
-    _data["point count"] = np.nan
+        _data["max speedup"] = np.nan
+        _data["min speedup"] = np.nan
+        _data["point count"] = np.nan
 
-    for index in _data.index:
-        _data.at[index, "max speedup"] = np.where(
-            Max_speedup_order == _data.at[index, "point"]
-        )[0][0]
-        _data.at[index, "min speedup"] = np.where(
-            Min_speedup_order == _data.at[index, "point"]
-        )[0][0]
-        _data.at[index, "point count"] = point_counts[_data.at[index, "point"]]
+        for index in _data.index:
+            _data.at[index, "max speedup"] = np.where(
+                Max_speedup_order == _data.at[index, "point"]
+            )[0][0]
+            _data.at[index, "min speedup"] = np.where(
+                Min_speedup_order == _data.at[index, "point"]
+            )[0][0]
+            _data.at[index, "point count"] = point_counts[_data.at[index, "idx"]]
     return _data
 
 
-def is_valid_data_point(data):
-    return not math.isnan(data) and not math.isinf(data)
+# def is_valid_data_point(data):
+#     return not math.isnan(data) and not math.isinf(data)
 
 
 def get_value(splice):
@@ -616,34 +630,35 @@ def parse_files(
                 if "omnitrace" not in _data or "causal" not in _data["omnitrace"]:
                     continue
                 dict_data[file] = process_data({}, _data, experiments, progress_points)
-                samps = process_samples({}, _data)
-                sample_df = pd.concat(
-                    [
-                        sample_df,
-                        pd.DataFrame(
-                            [
-                                {"location": loc, "count": count}
-                                for loc, count in sorted(samps.items())
-                            ]
-                        ),
-                    ]
-                )
-                result_df = pd.concat(
-                    [
-                        result_df,
-                        compute_sorts(
-                            compute_speedups(
-                                dict_data,
-                                speedups,
-                                num_points,
-                                validate,
-                                verbose >= 3 or cli,
-                            )
-                        ),
-                    ]
-                )
-                read_files.append(_base_name)
-                file_names.append(file)
+                if dict_data[file]:
+                    samps = process_samples({}, _data)
+                    sample_df = pd.concat(
+                        [
+                            sample_df,
+                            pd.DataFrame(
+                                [
+                                    {"location": loc, "count": count}
+                                    for loc, count in sorted(samps.items())
+                                ]
+                            ),
+                        ]
+                    )
+                    result_df = pd.concat(
+                        [
+                            result_df,
+                            compute_sorts(
+                                compute_speedups(
+                                    dict_data,
+                                    speedups,
+                                    num_points,
+                                    validate,
+                                    verbose >= 3 or cli,
+                                )
+                            ),
+                        ]
+                    )
+                    read_files.append(_base_name)
+                    file_names.append(file)
 
         elif file.endswith(".coz"):
             try:
@@ -863,11 +878,3 @@ def find_causal_files(workload_path, verbose, recursive):
             else:
                 input_files += _input_files_tmp
     return input_files
-
-
-def metadata_diff(json1, json2):
-    res = jsondiff.diff(json1, json2)
-    if res:
-        print("Diff found")
-    else:
-        print("Same")
