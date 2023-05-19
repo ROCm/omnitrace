@@ -41,6 +41,19 @@ from . import gui
 from .parser import parse_files, find_causal_files, set_num_stddev
 from . import __version__
 
+default_settings = {}
+default_settings["path"] = ""
+default_settings["cli"] = False
+default_settings["light"] = False
+default_settings["ip_address"] = "0.0.0.0"
+default_settings["ip_port"] = 8051
+default_settings["experiments"] = ".*"
+default_settings["progress_points"] = ".*"
+default_settings["min_points"] = 5
+default_settings["recursive"] = False
+default_settings["verbose"] = 0
+default_settings["stddev"] = 1.0
+
 
 def causal(args):
     app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
@@ -75,20 +88,25 @@ def causal(args):
         sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
         input_filters = [
             {
-                "Name": "Sort by",
+                "name": "Sort by",
                 "values": list(map(str, sortOptions)),
                 "default": "Impact",
-                "type": "Name",
+                "type": "name",
                 "multi": False,
             },
             {
-                "Name": "Select Workload",
+                "name": "Select Workload",
                 "values": file_names,
                 "default": file_names,
-                "type": "Name",
+                "type": "name",
                 "multi": True,
             },
-            {"Name": "points", "filter": [], "values": max_points, "type": "int"},
+            {
+                "name": "points",
+                "num_points": args.min_points,
+                "values": max_points,
+                "type": "int",
+            },
         ]
 
         gui.build_causal_layout(
@@ -107,41 +125,7 @@ def causal(args):
         )
 
 
-def main():
-    settings = {}
-
-    this_dir = Path(__file__).resolve().parent
-    if os.path.basename(this_dir) == "source":
-        settings_path = os.path.join(f"{this_dir.parent}", "settings.json")
-    else:
-        settings_path = os.path.join(f"{this_dir}", "settings.json")
-
-    for itr in [
-        settings_path,
-        os.path.join(os.environ.get("HOME"), ".omnitrace-causal-plot.json"),
-    ]:
-        if os.path.exists(itr):
-            with open(itr, "r") as f:
-                settings = json.load(f)
-            break
-
-    default_settings = {}
-    default_settings["path"] = ""
-    default_settings["cli"] = False
-    default_settings["light"] = False
-    default_settings["ip_address"] = "0.0.0.0"
-    default_settings["ip_port"] = 8051
-    default_settings["experiments"] = ".*"
-    default_settings["progress_points"] = ".*"
-    default_settings["min_points"] = 5
-    default_settings["recursive"] = False
-    default_settings["verbose"] = 0
-    default_settings["stddev"] = 1.0
-
-    for key, value in default_settings.items():
-        if key not in settings:
-            settings[key] = value
-
+def create_parser(settings):
     my_parser = argparse.ArgumentParser(
         description="AMD's OmniTrace Causal Profiling GUI",
         prog="tool",
@@ -285,6 +269,32 @@ def main():
         help="Validate speedup: {experiment regex} {progress-point regex} {virtual-speedup} {expected-speedup} {tolerance}",
         default=[],
     )
+    return my_parser
+
+
+def main():
+    settings = {}
+
+    this_dir = Path(__file__).resolve().parent
+    if os.path.basename(this_dir) == "source":
+        settings_path = os.path.join(f"{this_dir.parent}", "settings.json")
+    else:
+        settings_path = os.path.join(f"{this_dir}", "settings.json")
+
+    for itr in [
+        settings_path,
+        os.path.join(os.environ.get("HOME"), ".omnitrace-causal-plot.json"),
+    ]:
+        if os.path.exists(itr):
+            with open(itr, "r") as f:
+                settings = json.load(f)
+            break
+
+    for key, value in default_settings.items():
+        if key not in settings:
+            settings[key] = value
+
+    my_parser = create_parser(settings)
 
     args = my_parser.parse_args()
 
