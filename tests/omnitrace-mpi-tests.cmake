@@ -25,8 +25,7 @@ omnitrace_add_test(
         args
         --min-instructions
         0
-    ENVIRONMENT
-        "${_base_environment};OMNITRACE_VERBOSE=1;OMNITRACE_SAMPLING_OVERFLOW=ON;OMNITRACE_SAMPLING_OVERFLOW_EVENT=PERF_COUNT_HW_INSTRUCTIONS;OMNITRACE_SAMPLING_OVERFLOW_FREQ=100000"
+    ENVIRONMENT "${_base_environment};OMNITRACE_VERBOSE=1"
     REWRITE_RUN_PASS_REGEX
         "(/[A-Za-z-]+/perfetto-trace-0.proto).*(/[A-Za-z-]+/wall_clock-0.txt')"
     REWRITE_RUN_FAIL_REGEX

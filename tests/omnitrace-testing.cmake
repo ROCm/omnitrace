@@ -213,6 +213,40 @@ execute_process(
     RESULT_VARIABLE _mpiexec_oversubscribe
     OUTPUT_QUIET ERROR_QUIET)
 
+set(omnitrace_perf_event_paranoid "4")
+set(omnitrace_cap_sys_admin "1")
+set(omnitrace_cap_perfmon "1")
+
+if(EXISTS "/proc/sys/kernel/perf_event_paranoid")
+    file(STRINGS "/proc/sys/kernel/perf_event_paranoid" omnitrace_perf_event_paranoid
+         LIMIT_COUNT 1)
+endif()
+
+execute_process(
+    COMMAND ${CMAKE_CXX_COMPILER} -O2 -g -std=c++17
+            ${CMAKE_CURRENT_LIST_DIR}/omnitrace-capchk.cpp -o omnitrace-capchk
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/bin
+    RESULT_VARIABLE _capchk_compile
+    OUTPUT_QUIET ERROR_QUIET)
+
+if(_capchk_compile EQUAL 0)
+    execute_process(
+        COMMAND ${PROJECT_BINARY_DIR}/bin/omnitrace-capchk CAP_SYS_ADMIN effective
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        RESULT_VARIABLE omnitrace_cap_sys_admin
+        OUTPUT_QUIET ERROR_QUIET)
+
+    execute_process(
+        COMMAND ${PROJECT_BINARY_DIR}/bin/omnitrace-capchk CAP_PERFMON effective
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        RESULT_VARIABLE omnitrace_cap_perfmon
+        OUTPUT_QUIET ERROR_QUIET)
+endif()
+
+omnitrace_message(STATUS "perf_event_paranoid: ${omnitrace_perf_event_paranoid}")
+omnitrace_message(STATUS "CAP_SYS_ADMIN: ${omnitrace_cap_sys_admin}")
+omnitrace_message(STATUS "CAP_PERFMON: ${omnitrace_cap_perfmon}")
+
 if(_mpiexec_oversubscribe EQUAL 0)
     list(APPEND MPIEXEC_EXECUTABLE_ARGS --oversubscribe)
 endif()
@@ -278,7 +312,7 @@ endmacro()
 
 function(OMNITRACE_WRITE_TEST_CONFIG _FILE _ENV)
     set(_ENV_ONLY
-        "OMNITRACE_(CI|CI_TIMEOUT|MODE|USE_MPIP|DEBUG_SETTINGS|FORCE_ROCPROFILER_INIT|DEFAULT_MIN_INSTRUCTIONS|MONOCHROME|VERBOSE)="
+        "OMNITRACE_(CI|CI_TIMEOUT|MODE|USE_MPIP|DEBUG_[A-Z_]+|FORCE_ROCPROFILER_INIT|DEFAULT_MIN_INSTRUCTIONS|MONOCHROME|VERBOSE)="
         )
     set(_FILE_CONTENTS)
     set(_ENV_CONTENTS)
