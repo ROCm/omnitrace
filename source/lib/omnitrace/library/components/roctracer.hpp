@@ -74,7 +74,7 @@ struct roctracer
 
 #if !defined(OMNITRACE_USE_ROCTRACER)
 inline void
-roctracer::setup()
+roctracer::setup(void*, bool)
 {}
 
 inline void
