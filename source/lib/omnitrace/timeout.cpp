@@ -26,6 +26,7 @@
 #include "core/locking.hpp"
 #include "core/state.hpp"
 #include "library/components/pthread_gotcha.hpp"
+#include "library/runtime.hpp"
 #include "library/thread_info.hpp"
 
 #include <timemory/log/color.hpp>
@@ -81,8 +82,11 @@ ci_timeout_backtrace(int)
 }
 
 void
-ensure_ci_timeout_backtrace(double _ci_timeout_seconds)
+ensure_ci_timeout_backtrace(double             _ci_timeout_seconds,
+                            std::promise<void> _ci_timeout_ready)
 {
+    _ci_timeout_ready.set_value();
+
     thread_info::init(true);
     OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Disabled);
 
@@ -203,6 +207,9 @@ setup()
             ci_timeout_active = true;
             _lk.unlock();
 
+            OMNITRACE_SCOPED_THREAD_STATE(ThreadState::Internal);
+            OMNITRACE_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
+
             // enable the signal handler for when the timeout is reached
             struct sigaction _action = {};
             sigemptyset(&_action.sa_mask);
@@ -211,7 +218,12 @@ setup()
             sigaction(timeout_signal_v, &_action, nullptr);
 
             // start a background thread that handles waiting for the timeout
-            std::thread{ ensure_ci_timeout_backtrace, _ci_timeout_seconds }.detach();
+            auto _ci_timeout_ready = std::promise<void>{};
+            auto _ci_timeout_wait  = _ci_timeout_ready.get_future();
+            std::thread{ ensure_ci_timeout_backtrace, _ci_timeout_seconds,
+                         std::move(_ci_timeout_ready) }
+                .detach();
+            _ci_timeout_wait.wait_for(std::chrono::seconds{ 1 });
         }
     }
 }
