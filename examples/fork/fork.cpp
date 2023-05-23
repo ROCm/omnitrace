@@ -13,7 +13,11 @@
 void
 print_info(const char* _name)
 {
+    fflush(stdout);
+    fflush(stderr);
     printf("[%s] pid = %i, ppid = %i\n", _name, getpid(), getppid());
+    fflush(stdout);
+    fflush(stderr);
 }
 
 int
@@ -35,7 +39,7 @@ run(const char* _name, int nchildren)
                 exit(EXIT_SUCCESS);
             }
         };
-        std::thread{ _run }.join();
+        std::thread{ _run }.detach();
         omnitrace_user_pop_region("launch_child");
     }
 
