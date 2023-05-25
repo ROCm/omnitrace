@@ -56,12 +56,7 @@ titles = [
     "cpu_fast_func(long, int)",
     "cpu_slow_func(long, int)",
 ]
-file_names = [
-    os.path.join(workload_dir, "experiments.json"),
-    # os.path.join(workload_dir, "experiments.coz"),
-    os.path.join(workload_dir, "experiments3.json"),
-    os.path.join(workload_dir, "experiments4.json"),
-]
+
 
 file_names_recursive = [
     os.path.join(workload_dir, "experiments.json"),
@@ -96,6 +91,12 @@ all_data_keys = [
 
 
 def test_find_causal_files():
+    file_names = [
+    os.path.join(workload_dir, "experiments.json"),
+    os.path.join(workload_dir, "experiments.coz"),
+    os.path.join(workload_dir, "experiments3.json"),
+    os.path.join(workload_dir, "experiments4.json"),
+]
     # given a valid directory
     files_found = find_causal_files([workload_dir], default_settings["verbose"], False)
     assert len(files_found) == 4
@@ -116,6 +117,11 @@ def test_find_causal_files():
 
 
 def test_parse_files():
+    file_names = [
+    os.path.join(workload_dir, "experiments.json"),
+    os.path.join(workload_dir, "experiments3.json"),
+    os.path.join(workload_dir, "experiments4.json"),
+]
     results_df_expected_impact_sum = np.full(4, -41.6965)
     results_df_expected_impact_avg = np.full(4, -13.8988)
     results_df_expected_impact_err = np.full(4, 3.6046)
@@ -431,25 +437,29 @@ def test_parse_files():
         default_settings["recursive"],
         default_settings["cli"],
     )
-    samples_df_expected_locations = ['0x00005555f6213863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71',
- '0x00005555f62138e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71',
- '0x00005555f6213f1e :: _start',
- '0x00005600f87738e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71',
- '0x00005600f8773f1e :: _start',
- '0x000056075b7a6863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71']
-    
+    samples_df_expected_locations = [
+        "0x00005555f6213863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71",
+        "0x00005555f62138e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71",
+        "0x00005555f6213f1e :: _start",
+        "0x00005600f87738e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71",
+        "0x00005600f8773f1e :: _start",
+        "0x000056075b7a6863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71",
+    ]
+
     samples_df_expected_counts = [4, 2, 6, 3, 4, 4]
 
-    assert (file_names_run == ['/home/jose/omnitrace/omnitrace-build/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/experiments.coz'])
+    assert file_names_run == [
+        "/home/jose/omnitrace/omnitrace-build/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/experiments.coz"
+    ]
     samples_df_locations = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
     )["location"].to_numpy()
     samples_df_counts = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
     )["count"].to_numpy()
-    
-    assert ((samples_df_locations == samples_df_expected_locations).all())
-    assert ((samples_df_counts == samples_df_expected_counts).all())
+
+    assert (samples_df_locations == samples_df_expected_locations).all()
+    assert (samples_df_counts == samples_df_expected_counts).all()
 
     results_df = results_df.round(4)
     # returns only .coz outputs since filtering is done in process_data
@@ -508,10 +518,10 @@ def test_parse_files():
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
     )["count"].to_numpy()
 
-    samples_df_expected_counts = [ 152,  304,  152,  152,  152,  152, 3648,  456,  760]
+    samples_df_expected_counts = [152, 304, 152, 152, 152, 152, 3648, 456, 760]
 
-    assert ((samples_df_locations == samples_df_expected_locations).all())
-    assert ((samples_df_counts == samples_df_expected_counts).all())
+    assert (samples_df_locations == samples_df_expected_locations).all()
+    assert (samples_df_counts == samples_df_expected_counts).all()
 
     # assert expected speedup err
     assert (
@@ -667,7 +677,7 @@ def test_parse_files():
     assert (results_df["point"].to_numpy() == expected_points).all()
     assert (results_df["speedup"].to_numpy() == expected_speedup).all()
     assert (results_df["progress_speedup"].to_numpy() == expected_progress).all()
-    
+
     ##################################################################################
     # test given valid speedup
     results_df, samples_df, file_names_run = parse_files(
@@ -789,8 +799,6 @@ def test_parse_files():
     results_df_expected_impact_err = np.full(2, 0)
     results_df_expected_point_count = np.full(2, 2.0)
 
-
-    
     # assert expected speedup err
     assert (
         bottom_df["program speedup"].round(4).to_numpy()
@@ -837,7 +845,6 @@ def test_parse_files():
         == results_df_expected_point_count
     ).all()
 
-
     #############################################################################################
     # test given invalid speedup
     results_df, samples_df, file_names_run = parse_files(
@@ -857,11 +864,11 @@ def test_parse_files():
     samples_df_counts = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
     )["count"].to_numpy()
-    
-    assert ((samples_df_locations == samples_df_expected_locations).all())
-    assert ((samples_df_counts == samples_df_expected_counts).all())
 
-    assert(results_df.empty)
+    assert (samples_df_locations == samples_df_expected_locations).all()
+    assert (samples_df_counts == samples_df_expected_counts).all()
+
+    assert results_df.empty
 
     ##############################################################################################
     # test given valid min points
@@ -1868,12 +1875,6 @@ def set_up(ip_addr="localhost", ip_port="8051"):
 
     return driver
 
-
-# @pytest.fixture(autouse=True)
-# def capfd(self, capfd):
-#     self.capfd = capfd
-
-
 # test order of chart titles
 def test_title_order():
     my_parser = create_parser(default_settings)
@@ -1889,25 +1890,13 @@ def test_title_order():
     time.sleep(10)
 
     driver = set_up()
-    # time.sleep(10)
     main_page = page.MainPage(driver)
 
-    expected_title_set = []
+    expected_title_set = ['Selected Causal Profiles', 'cpu_slow_func(long, int)', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)']
     captured_output = main_page.get_titles()
     t.terminate()
     t.join()
     driver.quit()
-
-    test_name = "test_title_order"
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    if "test_title_order" in expected_results:
-        expected_title_set = expected_results[test_name]["titles"]
-    else:
-        expected_results["test_title_order"] = {}
-        expected_title_set = expected_results[test_name]["titles"] = captured_output
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
 
     assert captured_output == expected_title_set
 
@@ -1927,8 +1916,8 @@ def test_alphabetical_title_order():
     driver = set_up()
     main_page = page.MainPage(driver)
 
-    expected_output = []
-    captured_output = main_page.get_alphabetical_titles()
+    expected_title_set = ['Selected Causal Profiles', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)', 'cpu_slow_func(long, int)']
+    title_set = main_page.get_alphabetical_titles()
     captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
 
@@ -1936,18 +1925,7 @@ def test_alphabetical_title_order():
     t.join()
     driver.quit()
 
-    test_name = "test_alphabetical_title_order"
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    if test_name in expected_results:
-        expected_output = expected_results[test_name]["titles"]
-    else:
-        expected_results[test_name] = {}
-        expected_output = expected_results[test_name]["titles"] = captured_output
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
-
-    assert captured_output == expected_output
+    assert (title_set == expected_title_set)
 
 
 def test_max_speedup_title_order():
@@ -2078,7 +2056,6 @@ def test_min_points_slider():
     time.sleep(10)
 
     driver = set_up()
-    # driver.refresh()
     main_page = page.MainPage(driver)
     expected_title_set = []
     captured_output = main_page.get_min_points_titles()
@@ -2101,42 +2078,6 @@ def test_min_points_slider():
 
     assert captured_output == expected_title_set
 
-
-def test_workload_flag_gui():
-    my_parser = create_parser(default_settings)
-    parser_args = my_parser.parse_args(
-        [
-            "-w",
-            workload_dir,
-        ]
-    )
-
-    t = multiprocessing.Process(target=causal, args=(parser_args,))
-    t.start()
-    time.sleep(10)
-    driver = set_up()
-
-    main_page = page.MainPage(driver)
-    expected_title_set = []
-    captured_output = main_page.get_titles()
-
-    t.terminate()
-    t.join()
-    driver.quit()
-    test_name = "test_workload_flag_gui"
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    if test_name in expected_results:
-        expected_title_set = expected_results[test_name]["titles"]
-    else:
-        expected_results[test_name] = {}
-        expected_title_set = expected_results[test_name]["titles"] = captured_output
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
-
-    assert captured_output == expected_title_set
-
-
 def test_verbose_gui_flag_1():
     t = subprocess.Popen(
         [sys.executable, "-m", "source", "-w", workload_dir, "--verbose", "1", "-n", "0"],
@@ -2147,39 +2088,15 @@ def test_verbose_gui_flag_1():
     driver = set_up()
     main_page = page.MainPage(driver)
 
-    expected_title_set = []
-    expected_output = ""
+    expected_title_set = ['Selected Causal Profiles', 'cpu_slow_func(long, int)', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)']
     captured_title_set = main_page.get_titles()
-    # driver.close()
     t.terminate()
-    # t.join()
     driver.quit()
     captured_output = t.communicate(timeout=15)[0].decode("utf-8")
 
-    test_name = "test_verbose_gui_flag_1"
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    if test_name in expected_results:
-        expected_output = expected_results[test_name]["cli"]
-        expected_title_set = expected_results[test_name]["titles"]
-    else:
-        expected_results[test_name] = {}
+    assert (captured_title_set == expected_title_set)
+    assert (captured_output)
 
-        expected_output = expected_results[test_name]["cli"] = captured_output
-        expected_title_set = expected_results[test_name]["titles"] = captured_title_set
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
-
-    assert captured_title_set == expected_title_set
-    assert captured_output == expected_output
-
-
-# works with cli not gui
-# t = subprocess.run(["omnitrace-causal-plot", "-w","/home/jose/omnitrace/source/python/gui/workloads/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/","--verbose","2", "-n", "0", "--cli"], capture_output=True)
-# out, err = self.capfd.readouterr()
-
-
-# output = subprocess.check_output( stdin=t.stdout)
 def test_verbose_gui_flag_2():
     my_parser = create_parser(default_settings)
     parser_args = my_parser.parse_args(
@@ -2189,68 +2106,34 @@ def test_verbose_gui_flag_2():
         ]
     )
 
-    # t = multiprocessing.Process(target=causal, args=(parser_args,))
-    # t.start()
-    # print("opening")
-    # works with cli not gui
-    # t = subprocess.run(["omnitrace-causal-plot", "-w","/home/jose/omnitrace/source/python/gui/workloads/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/","--verbose","2", "-n", "0", "--cli"], capture_output=True)
-
     t = subprocess.Popen(
         [sys.executable, "-m", "source", "-w", workload_dir, "--verbose", "2", "-n", "0"],
         stdout=subprocess.PIPE,
     )
 
-    expected_title_set = []
-    # print("\nexpected_title_set: ", expected_title_set)
+    expected_title_set = ['Selected Causal Profiles', 'cpu_slow_func(long, int)', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)']
     time.sleep(10)
     driver = set_up()
-
-    # driver.refresh()
-    # time.sleep(20)
     main_page = page.MainPage(driver)
-
-    # out, err = self.capfd.readouterr()
-
     captured_title_set = main_page.get_titles()
-
-    # print("\nexpected_title_set_run: ", captured_title_set)
-    # driver.close()
-    # output = subprocess.check_output( stdin=t.stdout)
     t.terminate()
-    # t.join()
     driver.quit()
     captured_output = t.communicate(timeout=15)[0].decode("utf-8")
-    # print(captured_output)
-    # t.terminate()
-    # t.join()
-    expected_cli_output = ""
 
-    test_name = "test_verbose_gui_flag_2"
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    if test_name in expected_results:
-        expected_title_set = expected_results[test_name]["titles"]
-        expected_cli_output = expected_results[test_name]["cli"]
-    else:
-        expected_results[test_name] = {}
-        expected_title_set = expected_results[test_name]["titles"] = captured_title_set
-        expected_cli_output = expected_results[test_name]["cli"] = captured_output
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
-
-    assert captured_output == expected_cli_output
-    assert captured_title_set == expected_title_set
+    assert (captured_output)
+    assert (captured_title_set == expected_title_set)
 
 
 def test_verbose_gui_flag_3():
-    # t = subprocess.Popen(["omnitrace-causal-plot", "-w","/home/jose/omnitrace/source/python/gui/workloads/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/","--verbose","3", "-n", "0"], stdout=subprocess.PIPE)
+    expected_title_set = ['Selected Causal Profiles', 'cpu_slow_func(long, int)', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)']
+
     t = subprocess.Popen(
         [
             sys.executable,
             "-m",
             "source",
             "-w",
-            "/home/jose/omnitrace/source/python/gui/workloads/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/",
+            workload_dir,
             "--verbose",
             "3",
             "-n",
@@ -2261,99 +2144,26 @@ def test_verbose_gui_flag_3():
 
     time.sleep(10)
     driver = set_up()
-
-    ## driver.refresh()
-    # time.sleep(20)
     main_page = page.MainPage(driver)
 
-    expected_title_set = []
-
-    # out, err = self.capfd.readouterr()
-    expected_output = ""
-
     captured_title_set = main_page.get_titles()
-    print("\nexpected_title_set: ", expected_title_set)
-    # driver.close()
-    # output = subprocess.check_output( stdin=t.stdout)
     t.terminate()
-    # t.join()
     driver.quit()
     captured_output = t.communicate(timeout=15)[0].decode("utf-8")
 
-    # print(captured_output)
-    test_name = "test_verbose_gui_flag_3"
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    if test_name in expected_results:
-        expected_output = expected_results[test_name]["cli"]
-        expected_title_set = expected_results[test_name]["titles"]
-    else:
-        expected_results[test_name] = {}
-        expected_output = expected_results[test_name]["cli"] = captured_output
-        expected_title_set = expected_results[test_name]["titles"] = captured_title_set
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
-
-    assert captured_title_set == expected_title_set
-    assert captured_output == expected_output
-
-
-def test_ip_addr_flag():
-    t = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "source",
-            "-w",
-            "/home/jose/omnitrace/source/python/gui/workloads/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/",
-            "--ip_addr",
-            "0.0.0.1",
-        ],
-        stdout=subprocess.PIPE,
-    )
-
-    time.sleep(10)
-    driver = set_up(ip_addr="0.0.0.1")
-    main_page = page.MainPage(driver)
-
-    expected_title_set = []
-    # out, err = self.capfd.readouterr()
-    expected_output = ""
-    captured_title_set = main_page.get_titles()
-    # print("\nexpected_title_set: ", expected_title_set)
-    # driver.close()
-    # output = subprocess.check_output( stdin=t.stdout)
-    t.terminate()
-    # t.join()
-    driver.quit()
-    captured_output = t.communicate(timeout=15)[0].decode("utf-8")
-    # print(capture)
-
-    test_name = "test_ip_addr_flag"
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    if test_name in expected_results:
-        expected_output = expected_results[test_name]["cli"]
-        captured_title_set = expected_results[test_name]["titles"]
-    else:
-        expected_results[test_name] = {}
-        expected_output = expected_results[test_name]["cli"] = captured_output
-        expected_results[test_name]["titles"] = captured_title_set
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
-
-    assert captured_title_set == expected_title_set
-    assert captured_output == expected_output
+    assert (captured_title_set == expected_title_set)
+    assert (captured_output)
 
 
 def test_ip_port_flag():
+    
     t = subprocess.Popen(
         [
             sys.executable,
             "-m",
             "source",
             "-w",
-            "/home/jose/omnitrace/source/python/gui/workloads/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/",
+            workload_dir,
             "--port",
             "8052",
         ],
@@ -2364,27 +2174,15 @@ def test_ip_port_flag():
     driver = set_up(ip_port="8052")
     main_page = page.MainPage(driver)
 
-    expected_title_set = []
-    expected_output = "8052"
+    expected_title_set = ['Selected Causal Profiles', 'cpu_slow_func(long, int)', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)']
+    expected_output = "running on http://0.0.0.0:8052"
 
     captured_title_set = main_page.get_titles()
     t.terminate()
-    driver.quit()
     captured_output = t.communicate(timeout=15)[0].decode("utf-8")
 
-    test_name = "test_ip_port_flag"
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    if test_name in expected_results:
-        expected_title_set = expected_results[test_name]["titles"]
-    else:
-        expected_results[test_name] = {}
-        expected_results[test_name]["titles"] = captured_title_set
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
-
-    assert captured_title_set == expected_title_set
-    assert expected_output in captured_output
+    assert (captured_title_set == expected_title_set)
+    assert (expected_output in captured_output)
 
 
 def test_experiments_flag():
@@ -2395,7 +2193,7 @@ def test_experiments_flag():
             "-m",
             "source",
             "-w",
-            "/home/jose/omnitrace/source/python/gui/workloads/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/",
+            workload_dir,
             "--verbose",
             "3",
             "-n",
@@ -2446,7 +2244,7 @@ def test_progress_points_flag(capfd):
             "-m",
             "source",
             "-w",
-            "/home/jose/omnitrace/source/python/gui/workloads/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/",
+            workload_dir,
             "-n",
             "0",
             "--cli",
