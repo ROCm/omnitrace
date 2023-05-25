@@ -13,6 +13,8 @@ import subprocess
 import sys, os
 import time
 import multiprocessing
+import pandas as pd
+import numpy as np
 
 que = os.path.realpath(os.path.dirname(__file__) + "/..")
 sys.path.append(que)
@@ -56,7 +58,7 @@ titles = [
 ]
 file_names = [
     os.path.join(workload_dir, "experiments.json"),
-    os.path.join(workload_dir, "experiments.coz"),
+    # os.path.join(workload_dir, "experiments.coz"),
     os.path.join(workload_dir, "experiments3.json"),
     os.path.join(workload_dir, "experiments4.json"),
 ]
@@ -68,6 +70,20 @@ file_names_recursive = [
     os.path.join(workload_dir, *"part2/experiments1.json".split("/")),
     os.path.join(workload_dir, "experiments3.json"),
     os.path.join(workload_dir, "experiments4.json"),
+]
+keys = [
+    ("causal-cpu-omni", "cpu_fast_func(long, int)"),
+    ("causal-cpu-omni", "cpu_fast_func(long, int)"),
+    ("causal-cpu-omni", "cpu_fast_func(long, int)"),
+    ("causal-cpu-omni", "cpu_fast_func(long, int)"),
+    ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165"),
+    ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165"),
+    ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165"),
+    ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165"),
+    ("causal-cpu-omni", "cpu_slow_func(long, int)"),
+    ("causal-cpu-omni", "cpu_slow_func(long, int)"),
+    ("causal-cpu-omni", "cpu_slow_func(long, int)"),
+    ("causal-cpu-omni", "cpu_slow_func(long, int)"),
 ]
 
 
@@ -100,10 +116,15 @@ def test_find_causal_files():
 
 
 def test_parse_files():
+    results_df_expected_impact_sum = np.full(4, -41.6965)
+    results_df_expected_impact_avg = np.full(4, -13.8988)
+    results_df_expected_impact_err = np.full(4, 3.6046)
+
     input_files = find_causal_files(
         [workload_dir], default_settings["verbose"], default_settings["recursive"]
     )
-    results_df, samples_df, file_names = parse_files(
+    #####################################################################################
+    results_df, samples_df, file_names_run = parse_files(
         input_files,
         default_settings["experiments"],
         default_settings["progress_points"],
@@ -114,36 +135,185 @@ def test_parse_files():
         default_settings["cli"],
     )
 
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    test_name = "test_parse_files"
-    if test_name in expected_results:
-        expected_results_df = expected_results[test_name]["results_df"]
-        expected_samples_df = expected_results[test_name]["samples_df"]
-        expected_file_names = expected_results[test_name]["file_names"]
+    top_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+    ][:2]
 
-    else:
-        expected_results[test_name] = {}
-        expected_results_df = expected_results[test_name][
-            "results_df"
-        ] = results_df.to_json(orient="split")
-        expected_samples_df = expected_results[test_name][
-            "samples_df"
-        ] = samples_df.to_json(orient="split")
-        expected_file_names = expected_results[test_name]["file_names"] = file_names
+    # sparse testing
+    results_df_expected_program_speedup = [0.0, -1.7623]
+    results_df_expected_speedup_err = [0.0264, 0.3931]
+    results_df_expected_impact_sum = np.full(2, -41.6965)
+    results_df_expected_impact_avg = np.full(2, -13.8988)
+    results_df_expected_impact_err = np.full(2, 3.6046)
+    results_df_expected_point_count = np.full(2, 4.0)
+    samples_df_expected_locations = [
+        "/home/jose/omnitrace/examples/causal/causal.cpp:103",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:110",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:112",
+        "/usr/include/c++/9/bits/stl_vector.h:125",
+        "/usr/include/c++/9/bits/stl_vector.h:128",
+        "/usr/include/c++/9/bits/stl_vector.h:285",
+        "/usr/include/c++/9/ext/string_conversions.h:83",
+        "/usr/include/c++/9/ext/string_conversions.h:84",
+        "/usr/include/c++/9/ext/string_conversions.h:85",
+    ]
+    samples_df_expected_counts = [
+        152,
+        304,
+        152,
+        152,
+        152,
+        152,
+        3648,
+        456,
+        760,
+    ]
 
-        # if (results_df.to_json(orient="split") != expected_results_df):
-        #     expected_results[test_name]["last run"] = results_df.to_json(orient="split")
+    assert file_names_run == file_names
 
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
+    samples_df_locations = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["location"].to_numpy()
+    samples_df_counts = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["count"].to_numpy()
 
-    assert results_df.to_json(orient="split") == expected_results_df
-    assert samples_df.to_json(orient="split") == expected_samples_df
-    assert file_names == expected_file_names
+    assert (samples_df_locations == samples_df_expected_locations).all()
+    assert (samples_df_counts == samples_df_expected_counts).all()
 
+    # assert expected speedup err
+    assert (
+        top_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        top_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    middle_df = results_df[
+        results_df["idx"]
+        == ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, -1.4123]
+    results_df_expected_speedup_err = [0.0407, 0.2638]
+    results_df_expected_impact_sum = np.full(2, -37.3877)
+    results_df_expected_impact_avg = np.full(2, -12.4626)
+    results_df_expected_impact_err = np.full(2, 3.8331)
+    results_df_expected_point_count = np.full(2, 4.0)
+
+    # assert expected speedup err
+    assert (
+        middle_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        middle_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    # assert exoected impact sum
+    assert (
+        middle_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        middle_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        middle_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        middle_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    bottom_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, 10.3991]
+    results_df_expected_speedup_err = [0.9115, 0.9072]
+    results_df_expected_impact_sum = np.full(2, 385.195)
+    results_df_expected_impact_avg = np.full(2, 128.3983)
+    results_df_expected_impact_err = np.full(2, 56.9176)
+    results_df_expected_point_count = np.full(2, 4.0)
+
+    # assert expected speedup err
+    assert (
+        bottom_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        bottom_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact sum"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact avg"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact err"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        bottom_df["point count"][:2].round(4).to_numpy()
+        == results_df_expected_point_count
+    ).all()
+
+    #################################################################
     # test given valid experiment
-    results_df_2, samples_df_2, file_names_2 = parse_files(
+    results_df, samples_df, file_names_run = parse_files(
         input_files,
         "fast",
         default_settings["progress_points"],
@@ -154,33 +324,104 @@ def test_parse_files():
         default_settings["cli"],
     )
 
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    test_name = "test_parse_files_2"
-    if test_name in expected_results:
-        expected_results_df_2 = expected_results[test_name]["results_df_2"]
-        expected_samples_df_2 = expected_results[test_name]["samples_df_2"]
-        expected_file_names_2 = expected_results[test_name]["file_names_2"]
+    top_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+    ][:1]
 
-    else:
-        expected_results[test_name] = {}
-        expected_results_df_2 = expected_results[test_name][
-            "results_df_2"
-        ] = results_df_2.to_json(orient="split")
-        expected_samples_df_2 = expected_results[test_name][
-            "samples_df_2"
-        ] = samples_df_2.to_json(orient="split")
-        expected_file_names_2 = expected_results[test_name]["file_names_2"] = file_names_2
+    # sparse testing
+    results_df_expected_program_speedup = [0.0]
+    results_df_expected_speedup_err = [0.0264]
+    results_df_expected_impact_sum = [-41.6965]
+    results_df_expected_impact_avg = [-13.8988]
+    results_df_expected_impact_err = [3.6046]
+    results_df_expected_point_count = [4.0]
 
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
+    assert file_names_run == [
+        "/home/jose/omnitrace/omnitrace-build/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/experiments.json"
+    ]
 
-    assert results_df_2.to_json(orient="split") == expected_results_df_2
-    assert samples_df_2.to_json(orient="split") == expected_samples_df_2
-    assert file_names_2 == expected_file_names_2
+    samples_df_locations = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["location"].to_numpy()
+    samples_df_counts = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["count"].to_numpy()
 
+    assert (samples_df_locations == samples_df_expected_locations).all()
+    assert (samples_df_counts == samples_df_expected_counts).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        top_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    bottom_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+    ][-1:]
+
+    results_df_expected_program_speedup = [-1.6489]
+    results_df_expected_speedup_err = [1.1804]
+    results_df_expected_impact_sum = [-41.6965]
+    results_df_expected_impact_avg = [-13.8988]
+    results_df_expected_impact_err = [3.6046]
+    results_df_expected_point_count = [4.0]
+
+    # assert expected speedup err
+    assert (
+        bottom_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        bottom_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        bottom_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        bottom_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        bottom_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert bottom_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+
+    ############################################################
     # test given invalid experiment
-    results_df_3, samples_df_3, file_names_3 = parse_files(
+    results_df, samples_df, file_names_run = parse_files(
         input_files,
         "this_is_my_invalid_regex",
         default_settings["progress_points"],
@@ -190,34 +431,41 @@ def test_parse_files():
         default_settings["recursive"],
         default_settings["cli"],
     )
+    samples_df_expected_locations = ['0x00005555f6213863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71',
+ '0x00005555f62138e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71',
+ '0x00005555f6213f1e :: _start',
+ '0x00005600f87738e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71',
+ '0x00005600f8773f1e :: _start',
+ '0x000056075b7a6863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71']
+    
+    samples_df_expected_counts = [4, 2, 6, 3, 4, 4]
 
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    test_name = "test_parse_files_3"
-    if test_name in expected_results:
-        expected_results_df_3 = expected_results[test_name]["results_df_3"]
-        expected_samples_df_3 = expected_results[test_name]["samples_df_3"]
-        expected_file_names_3 = expected_results[test_name]["file_names_3"]
+    assert (file_names_run == ['/home/jose/omnitrace/omnitrace-build/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/experiments.coz'])
+    samples_df_locations = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["location"].to_numpy()
+    samples_df_counts = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["count"].to_numpy()
+    
+    assert ((samples_df_locations == samples_df_expected_locations).all())
+    assert ((samples_df_counts == samples_df_expected_counts).all())
 
-    else:
-        expected_results[test_name] = {}
-        expected_results_df_3 = expected_results[test_name][
-            "results_df_3"
-        ] = results_df_3.to_json(orient="split")
-        expected_samples_df_3 = expected_results[test_name][
-            "samples_df_3"
-        ] = samples_df_3.to_json(orient="split")
-        expected_file_names_3 = expected_results[test_name]["file_names_3"] = file_names_3
+    results_df = results_df.round(4)
+    # returns only .coz outputs since filtering is done in process_data
+    expected_points = np.full(4, "cpu_fast_func(long, int)")
+    expected_speedup = np.array([0.0, 10.0, 20.0, 30.0])
+    expected_progress = np.array([0.0, -1.7623, -1.5829, -1.6489])
 
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
+    assert (results_df["point"].to_numpy() == expected_points).all()
 
-    assert results_df_3.to_json(orient="split") == expected_results_df_3
-    assert samples_df_3.to_json(orient="split") == expected_samples_df_3
-    assert file_names_3 == expected_file_names_3
+    assert (results_df["point"].to_numpy() == expected_points).all()
+    assert (results_df["speedup"].to_numpy() == expected_speedup).all()
+    assert (results_df["progress_speedup"].to_numpy() == expected_progress).all()
 
+    ###########################################################################################
     # test given valid progress_point regex
-    results_df_4, samples_df_4, file_names_4 = parse_files(
+    results_df, samples_df, file_names_run = parse_files(
         input_files,
         default_settings["experiments"],
         "cpu",
@@ -228,33 +476,176 @@ def test_parse_files():
         default_settings["cli"],
     )
 
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    test_name = "test_parse_files_4"
-    if test_name in expected_results:
-        expected_results_df_4 = expected_results[test_name]["results_df_4"]
-        expected_samples_df_4 = expected_results[test_name]["samples_df_4"]
-        expected_file_names_4 = expected_results[test_name]["file_names_4"]
+    # sparse testing
+    results_df_expected_program_speedup = [0.0, -1.7623]
+    results_df_expected_speedup_err = [0.0264, 0.3931]
+    results_df_expected_impact_sum = np.full(2, -41.6965)
+    results_df_expected_impact_avg = np.full(2, -13.8988)
+    results_df_expected_impact_err = np.full(2, 3.6046)
+    results_df_expected_point_count = np.full(2, 4.0)
+    samples_df_expected_locations = [
+        "/home/jose/omnitrace/examples/causal/causal.cpp:103",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:110",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:112",
+        "/usr/include/c++/9/bits/stl_vector.h:125",
+        "/usr/include/c++/9/bits/stl_vector.h:128",
+        "/usr/include/c++/9/bits/stl_vector.h:285",
+        "/usr/include/c++/9/ext/string_conversions.h:83",
+        "/usr/include/c++/9/ext/string_conversions.h:84",
+        "/usr/include/c++/9/ext/string_conversions.h:85",
+    ]
 
-    else:
-        expected_results[test_name] = {}
-        expected_results_df_4 = expected_results[test_name][
-            "results_df_4"
-        ] = results_df_4.to_json(orient="split")
-        expected_samples_df_4 = expected_results[test_name][
-            "samples_df_4"
-        ] = samples_df_4.to_json(orient="split")
-        expected_file_names_4 = expected_results[test_name]["file_names_4"] = file_names_4
+    top_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+    ][:2]
 
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
+    assert file_names_run == file_names
 
-    assert results_df_4.to_json(orient="split") == expected_results_df_4
-    assert samples_df_4.to_json(orient="split") == expected_samples_df_4
-    assert file_names_4 == expected_file_names_4
+    samples_df_locations = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["location"].to_numpy()
+    samples_df_counts = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["count"].to_numpy()
 
+    samples_df_expected_counts = [ 152,  304,  152,  152,  152,  152, 3648,  456,  760]
+
+    assert ((samples_df_locations == samples_df_expected_locations).all())
+    assert ((samples_df_counts == samples_df_expected_counts).all())
+
+    # assert expected speedup err
+    assert (
+        top_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        top_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    middle_df = results_df[
+        results_df["idx"]
+        == ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, -1.4123]
+    results_df_expected_speedup_err = [0.0407, 0.2638]
+    results_df_expected_impact_sum = np.full(2, -37.3877)
+    results_df_expected_impact_avg = np.full(2, -12.4626)
+    results_df_expected_impact_err = np.full(2, 3.8331)
+    results_df_expected_point_count = np.full(2, 4.0)
+
+    # assert expected speedup err
+    assert (
+        middle_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        middle_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    # assert exoected impact sum
+    assert (
+        middle_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        middle_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        middle_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        middle_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    bottom_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, 10.3991]
+    results_df_expected_speedup_err = [0.9115, 0.9072]
+    results_df_expected_impact_sum = np.full(2, 385.195)
+    results_df_expected_impact_avg = np.full(2, 128.3983)
+    results_df_expected_impact_err = np.full(2, 56.9176)
+    results_df_expected_point_count = np.full(2, 4.0)
+
+    # assert expected speedup err
+    assert (
+        bottom_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        bottom_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact sum"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact avg"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact err"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        bottom_df["point count"][:2].round(4).to_numpy()
+        == results_df_expected_point_count
+    ).all()
+
+    #################################################################################
     # test given invalid progress_point regex
-    results_df_5, samples_df_5, file_names_5 = parse_files(
+    results_df, samples_df, file_names_run = parse_files(
         input_files,
         default_settings["experiments"],
         "this_is_my_invalid_regex",
@@ -265,33 +656,21 @@ def test_parse_files():
         default_settings["cli"],
     )
 
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    test_name = "test_parse_files_5"
-    if test_name in expected_results:
-        expected_results_df_5 = expected_results[test_name]["results_df_5"]
-        expected_samples_df_5 = expected_results[test_name]["samples_df_5"]
-        expected_file_names_5 = expected_results[test_name]["file_names_5"]
+    results_df = results_df.round(4)
+    # returns only .coz outputs since filtering is done in process_data
+    expected_points = np.full(4, "cpu_fast_func(long, int)")
+    expected_speedup = np.array([0.0, 10.0, 20.0, 30.0])
+    expected_progress = np.array([0.0, -1.7623, -1.5829, -1.6489])
 
-    else:
-        expected_results[test_name] = {}
-        expected_results_df_5 = expected_results[test_name][
-            "results_df_5"
-        ] = results_df_5.to_json(orient="split")
-        expected_samples_df_5 = expected_results[test_name][
-            "samples_df_5"
-        ] = samples_df_5.to_json(orient="split")
-        expected_file_names_5 = expected_results[test_name]["file_names_5"] = file_names_5
+    assert (results_df["point"].to_numpy() == expected_points).all()
 
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
-
-    assert results_df_5.to_json(orient="split") == expected_results_df_5
-    assert samples_df_5.to_json(orient="split") == expected_samples_df_5
-    assert file_names_5 == expected_file_names_5
-
+    assert (results_df["point"].to_numpy() == expected_points).all()
+    assert (results_df["speedup"].to_numpy() == expected_speedup).all()
+    assert (results_df["progress_speedup"].to_numpy() == expected_progress).all()
+    
+    ##################################################################################
     # test given valid speedup
-    results_df_6, samples_df_6, file_names_6 = parse_files(
+    results_df, samples_df, file_names_run = parse_files(
         input_files,
         default_settings["experiments"],
         default_settings["progress_points"],
@@ -302,33 +681,166 @@ def test_parse_files():
         default_settings["cli"],
     )
 
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    test_name = "test_parse_files_6"
-    if test_name in expected_results:
-        expected_results_df_6 = expected_results[test_name]["results_df_6"]
-        expected_samples_df_6 = expected_results[test_name]["samples_df_6"]
-        expected_file_names_6 = expected_results[test_name]["file_names_6"]
+    top_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+    ][:2]
 
-    else:
-        expected_results[test_name] = {}
-        expected_results_df_6 = expected_results[test_name][
-            "results_df_6"
-        ] = results_df_6.to_json(orient="split")
-        expected_samples_df_6 = expected_results[test_name][
-            "samples_df_6"
-        ] = samples_df_6.to_json(orient="split")
-        expected_file_names_6 = expected_results[test_name]["file_names_6"] = file_names_6
+    # sparse testing
+    results_df_expected_program_speedup = [0.0, -1.7623]
+    results_df_expected_speedup_err = [0.0264, 0.3931]
+    results_df_expected_impact_sum = np.full(2, -8.8117)
+    results_df_expected_impact_avg = np.full(2, -8.8117)
+    results_df_expected_impact_err = np.full(2, 0)
+    results_df_expected_point_count = np.full(2, 2.0)
 
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
+    assert file_names_run == file_names
 
-    assert results_df_6.to_json(orient="split") == expected_results_df_6
-    assert samples_df_6.to_json(orient="split") == expected_samples_df_6
-    assert file_names_6 == expected_file_names_6
+    samples_df_locations = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["location"].to_numpy()
+    samples_df_counts = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["count"].to_numpy()
 
+    assert (samples_df_locations == samples_df_expected_locations).all()
+    assert (samples_df_counts == samples_df_expected_counts).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        top_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    middle_df = results_df[
+        results_df["idx"]
+        == ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, -1.4123]
+    results_df_expected_speedup_err = [0.0407, 0.2638]
+    results_df_expected_impact_sum = np.full(2, -7.0613)
+    results_df_expected_impact_avg = np.full(2, -7.0613)
+    results_df_expected_impact_err = np.full(2, 0)
+    results_df_expected_point_count = np.full(2, 2.0)
+
+    # assert expected speedup err
+    assert (
+        middle_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        middle_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    # assert exoected impact sum
+    assert (
+        middle_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        middle_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        middle_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        middle_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    bottom_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, 10.3991]
+    results_df_expected_speedup_err = [0.9115, 0.9072]
+    results_df_expected_impact_sum = np.full(2, 51.9953)
+    results_df_expected_impact_avg = np.full(2, 51.9953)
+    results_df_expected_impact_err = np.full(2, 0)
+    results_df_expected_point_count = np.full(2, 2.0)
+
+
+    
+    # assert expected speedup err
+    assert (
+        bottom_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        bottom_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact sum"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact avg"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact err"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        bottom_df["point count"][:2].round(4).to_numpy()
+        == results_df_expected_point_count
+    ).all()
+
+
+    #############################################################################################
     # test given invalid speedup
-    results_df_7, samples_df_7, file_names_7 = parse_files(
+    results_df, samples_df, file_names_run = parse_files(
         input_files,
         default_settings["experiments"],
         default_settings["progress_points"],
@@ -339,33 +851,21 @@ def test_parse_files():
         default_settings["cli"],
     )
 
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    test_name = "test_parse_files_7"
-    if test_name in expected_results:
-        expected_results_df_7 = expected_results[test_name]["results_df_7"]
-        expected_samples_df_7 = expected_results[test_name]["samples_df_7"]
-        expected_file_names_7 = expected_results[test_name]["file_names_7"]
+    samples_df_locations = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["location"].to_numpy()
+    samples_df_counts = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["count"].to_numpy()
+    
+    assert ((samples_df_locations == samples_df_expected_locations).all())
+    assert ((samples_df_counts == samples_df_expected_counts).all())
 
-    else:
-        expected_results[test_name] = {}
-        expected_results_df_7 = expected_results[test_name][
-            "results_df_7"
-        ] = results_df_7.to_json(orient="split")
-        expected_samples_df_7 = expected_results[test_name][
-            "samples_df_7"
-        ] = samples_df_7.to_json(orient="split")
-        expected_file_names_7 = expected_results[test_name]["file_names_7"] = file_names_7
+    assert(results_df.empty)
 
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
-
-    assert results_df_7.to_json(orient="split") == expected_results_df_7
-    assert samples_df_7.to_json(orient="split") == expected_samples_df_7
-    assert file_names_7 == expected_file_names_7
-
+    ##############################################################################################
     # test given valid min points
-    results_df_8, samples_df_8, file_names_8 = parse_files(
+    results_df, samples_df, file_names_run = parse_files(
         input_files,
         default_settings["experiments"],
         default_settings["progress_points"],
@@ -376,33 +876,185 @@ def test_parse_files():
         default_settings["cli"],
     )
 
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    test_name = "test_parse_files_8"
-    if test_name in expected_results:
-        expected_results_df_8 = expected_results[test_name]["results_df_8"]
-        expected_samples_df_8 = expected_results[test_name]["samples_df_8"]
-        expected_file_names_8 = expected_results[test_name]["file_names_8"]
+    top_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+    ][:2]
 
-    else:
-        expected_results[test_name] = {}
-        expected_results_df_8 = expected_results[test_name][
-            "results_df_8"
-        ] = results_df_8.to_json(orient="split")
-        expected_samples_df_8 = expected_results[test_name][
-            "samples_df_8"
-        ] = samples_df_8.to_json(orient="split")
-        expected_file_names_8 = expected_results[test_name]["file_names_8"] = file_names_8
+    # sparse testing
+    results_df_expected_program_speedup = [0.0, -1.7623]
+    results_df_expected_speedup_err = [0.0264, 0.3931]
+    results_df_expected_impact_sum = np.full(2, -41.6965)
+    results_df_expected_impact_avg = np.full(2, -13.8988)
+    results_df_expected_impact_err = np.full(2, 3.6046)
+    results_df_expected_point_count = np.full(2, 4.0)
+    samples_df_expected_locations = [
+        "/home/jose/omnitrace/examples/causal/causal.cpp:103",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:110",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:112",
+        "/usr/include/c++/9/bits/stl_vector.h:125",
+        "/usr/include/c++/9/bits/stl_vector.h:128",
+        "/usr/include/c++/9/bits/stl_vector.h:285",
+        "/usr/include/c++/9/ext/string_conversions.h:83",
+        "/usr/include/c++/9/ext/string_conversions.h:84",
+        "/usr/include/c++/9/ext/string_conversions.h:85",
+    ]
+    samples_df_expected_counts = [
+        152,
+        304,
+        152,
+        152,
+        152,
+        152,
+        3648,
+        456,
+        760,
+    ]
 
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
+    assert file_names_run == file_names
 
-    assert results_df_8.to_json(orient="split") == expected_results_df_8
-    assert samples_df_8.to_json(orient="split") == expected_samples_df_8
-    assert file_names_8 == expected_file_names_8
+    samples_df_locations = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["location"].to_numpy()
+    samples_df_counts = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["count"].to_numpy()
 
-    # test given invalid min points
-    results_df_9, samples_df_9, file_names_9 = parse_files(
+    assert (samples_df_locations == samples_df_expected_locations).all()
+    assert (samples_df_counts == samples_df_expected_counts).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        top_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    middle_df = results_df[
+        results_df["idx"]
+        == ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, -1.4123]
+    results_df_expected_speedup_err = [0.0407, 0.2638]
+    results_df_expected_impact_sum = np.full(2, -37.3877)
+    results_df_expected_impact_avg = np.full(2, -12.4626)
+    results_df_expected_impact_err = np.full(2, 3.8331)
+    results_df_expected_point_count = np.full(2, 4.0)
+
+    # assert expected speedup err
+    assert (
+        middle_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        middle_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    # assert exoected impact sum
+    assert (
+        middle_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        middle_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        middle_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        middle_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    bottom_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, 10.3991]
+    results_df_expected_speedup_err = [0.9115, 0.9072]
+    results_df_expected_impact_sum = np.full(2, 385.195)
+    results_df_expected_impact_avg = np.full(2, 128.3983)
+    results_df_expected_impact_err = np.full(2, 56.9176)
+    results_df_expected_point_count = np.full(2, 4.0)
+
+    # assert expected speedup err
+    assert (
+        bottom_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        bottom_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact sum"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact avg"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact err"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        bottom_df["point count"][:2].round(4).to_numpy()
+        == results_df_expected_point_count
+    ).all()
+
+    ###################################################################################
+    # test given too high min points
+    results_df, samples_df, file_names_run = parse_files(
         input_files,
         default_settings["experiments"],
         default_settings["progress_points"],
@@ -412,34 +1064,185 @@ def test_parse_files():
         default_settings["recursive"],
         default_settings["cli"],
     )
+    top_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+    ][:2]
 
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    test_name = "test_parse_files_9"
-    if test_name in expected_results:
-        expected_results_df_9 = expected_results[test_name]["results_df_9"]
-        expected_samples_df_9 = expected_results[test_name]["samples_df_9"]
-        expected_file_names_9 = expected_results[test_name]["file_names_9"]
+    # sparse testing
+    results_df_expected_program_speedup = [0.0, -1.7623]
+    results_df_expected_speedup_err = [0.0264, 0.3931]
+    results_df_expected_impact_sum = np.full(2, -41.6965)
+    results_df_expected_impact_avg = np.full(2, -13.8988)
+    results_df_expected_impact_err = np.full(2, 3.6046)
+    results_df_expected_point_count = np.full(2, 4.0)
+    samples_df_expected_locations = [
+        "/home/jose/omnitrace/examples/causal/causal.cpp:103",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:110",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:112",
+        "/usr/include/c++/9/bits/stl_vector.h:125",
+        "/usr/include/c++/9/bits/stl_vector.h:128",
+        "/usr/include/c++/9/bits/stl_vector.h:285",
+        "/usr/include/c++/9/ext/string_conversions.h:83",
+        "/usr/include/c++/9/ext/string_conversions.h:84",
+        "/usr/include/c++/9/ext/string_conversions.h:85",
+    ]
+    samples_df_expected_counts = [
+        152,
+        304,
+        152,
+        152,
+        152,
+        152,
+        3648,
+        456,
+        760,
+    ]
 
-    else:
-        expected_results[test_name] = {}
-        expected_results_df_9 = expected_results[test_name][
-            "results_df_9"
-        ] = results_df_9.to_json(orient="split")
-        expected_samples_df_9 = expected_results[test_name][
-            "samples_df_9"
-        ] = samples_df_9.to_json(orient="split")
-        expected_file_names_9 = expected_results[test_name]["file_names_9"] = file_names_9
+    assert file_names_run == file_names
 
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
+    samples_df_locations = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["location"].to_numpy()
+    samples_df_counts = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["count"].to_numpy()
 
-    assert results_df_9.to_json(orient="split") == expected_results_df_9
-    assert samples_df_9.to_json(orient="split") == expected_samples_df_9
-    assert file_names_9 == expected_file_names_9
+    assert (samples_df_locations == samples_df_expected_locations).all()
+    assert (samples_df_counts == samples_df_expected_counts).all()
 
+    # assert expected speedup err
+    assert (
+        top_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        top_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    middle_df = results_df[
+        results_df["idx"]
+        == ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, -1.4123]
+    results_df_expected_speedup_err = [0.0407, 0.2638]
+    results_df_expected_impact_sum = np.full(2, -37.3877)
+    results_df_expected_impact_avg = np.full(2, -12.4626)
+    results_df_expected_impact_err = np.full(2, 3.8331)
+    results_df_expected_point_count = np.full(2, 4.0)
+
+    # assert expected speedup err
+    assert (
+        middle_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        middle_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    # assert exoected impact sum
+    assert (
+        middle_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        middle_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        middle_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        middle_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    bottom_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, 10.3991]
+    results_df_expected_speedup_err = [0.9115, 0.9072]
+    results_df_expected_impact_sum = np.full(2, 385.195)
+    results_df_expected_impact_avg = np.full(2, 128.3983)
+    results_df_expected_impact_err = np.full(2, 56.9176)
+    results_df_expected_point_count = np.full(2, 4.0)
+
+    # assert expected speedup err
+    assert (
+        bottom_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        bottom_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact sum"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact avg"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact err"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        bottom_df["point count"][:2].round(4).to_numpy()
+        == results_df_expected_point_count
+    ).all()
+
+    ##################################################################################################
     # test given valid validation
-    results_df_10, samples_df_10, file_names_10 = parse_files(
+    results_df, samples_df, file_names_run = parse_files(
         input_files,
         default_settings["experiments"],
         default_settings["progress_points"],
@@ -450,35 +1253,184 @@ def test_parse_files():
         default_settings["cli"],
     )
 
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    test_name = "test_parse_files_10"
-    if test_name in expected_results:
-        expected_results_df_10 = expected_results[test_name]["results_df_10"]
-        expected_samples_df_10 = expected_results[test_name]["samples_df_10"]
-        expected_file_names_10 = expected_results[test_name]["file_names_10"]
+    top_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+    ][:2]
 
-    else:
-        expected_results[test_name] = {}
-        expected_results_df_10 = expected_results[test_name][
-            "results_df_10"
-        ] = results_df_10.to_json(orient="split")
-        expected_samples_df_10 = expected_results[test_name][
-            "samples_df_10"
-        ] = samples_df_10.to_json(orient="split")
-        expected_file_names_10 = expected_results[test_name][
-            "file_names_10"
-        ] = file_names_10
+    # sparse testing
+    results_df_expected_program_speedup = [0.0, -1.7623]
+    results_df_expected_speedup_err = [0.0264, 0.3931]
+    results_df_expected_impact_sum = np.full(2, -41.6965)
+    results_df_expected_impact_avg = np.full(2, -13.8988)
+    results_df_expected_impact_err = np.full(2, 3.6046)
+    results_df_expected_point_count = np.full(2, 4.0)
+    samples_df_expected_locations = [
+        "/home/jose/omnitrace/examples/causal/causal.cpp:103",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:110",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:112",
+        "/usr/include/c++/9/bits/stl_vector.h:125",
+        "/usr/include/c++/9/bits/stl_vector.h:128",
+        "/usr/include/c++/9/bits/stl_vector.h:285",
+        "/usr/include/c++/9/ext/string_conversions.h:83",
+        "/usr/include/c++/9/ext/string_conversions.h:84",
+        "/usr/include/c++/9/ext/string_conversions.h:85",
+    ]
+    samples_df_expected_counts = [
+        152,
+        304,
+        152,
+        152,
+        152,
+        152,
+        3648,
+        456,
+        760,
+    ]
 
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
+    assert file_names_run == file_names
 
-    assert results_df_10.to_json(orient="split") == expected_results_df_10
-    assert samples_df_10.to_json(orient="split") == expected_samples_df_10
-    assert file_names_10 == expected_file_names_10
+    samples_df_locations = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["location"].to_numpy()
+    samples_df_counts = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["count"].to_numpy()
+
+    assert (samples_df_locations == samples_df_expected_locations).all()
+    assert (samples_df_counts == samples_df_expected_counts).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        top_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    middle_df = results_df[
+        results_df["idx"]
+        == ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, -1.4123]
+    results_df_expected_speedup_err = [0.0407, 0.2638]
+    results_df_expected_impact_sum = np.full(2, -37.3877)
+    results_df_expected_impact_avg = np.full(2, -12.4626)
+    results_df_expected_impact_err = np.full(2, 3.8331)
+    results_df_expected_point_count = np.full(2, 4.0)
+
+    # assert expected speedup err
+    assert (
+        middle_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        middle_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    # assert exoected impact sum
+    assert (
+        middle_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        middle_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        middle_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        middle_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    bottom_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, 10.3991]
+    results_df_expected_speedup_err = [0.9115, 0.9072]
+    results_df_expected_impact_sum = np.full(2, 385.195)
+    results_df_expected_impact_avg = np.full(2, 128.3983)
+    results_df_expected_impact_err = np.full(2, 56.9176)
+    results_df_expected_point_count = np.full(2, 4.0)
+
+    # assert expected speedup err
+    assert (
+        bottom_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        bottom_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact sum"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact avg"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact err"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        bottom_df["point count"][:2].round(4).to_numpy()
+        == results_df_expected_point_count
+    ).all()
 
     # test given invalid validation
-    results_df_11, samples_df_11, file_names_11 = parse_files(
+    results_df, samples_df_, file_names_run = parse_files(
         input_files,
         default_settings["experiments"],
         default_settings["progress_points"],
@@ -489,32 +1441,181 @@ def test_parse_files():
         default_settings["cli"],
     )
 
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    test_name = "test_parse_files_11"
-    if test_name in expected_results.keys():
-        expected_results_df_11 = expected_results[test_name]["results_df_11"]
-        expected_samples_df_11 = expected_results[test_name]["samples_df_11"]
-        expected_file_names_11 = expected_results[test_name]["file_names_11"]
+    top_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+    ][:2]
 
-    else:
-        expected_results[test_name] = {}
-        expected_results_df_11 = expected_results[test_name][
-            "results_df_11"
-        ] = results_df_11.to_json(orient="split")
-        expected_samples_df_11 = expected_results[test_name][
-            "samples_df_11"
-        ] = samples_df_11.to_json(orient="split")
-        expected_file_names_11 = expected_results[test_name][
-            "file_names_11"
-        ] = file_names_11
+    # sparse testing
+    results_df_expected_program_speedup = [0.0, -1.7623]
+    results_df_expected_speedup_err = [0.0264, 0.3931]
+    results_df_expected_impact_sum = np.full(2, -41.6965)
+    results_df_expected_impact_avg = np.full(2, -13.8988)
+    results_df_expected_impact_err = np.full(2, 3.6046)
+    results_df_expected_point_count = np.full(2, 4.0)
+    samples_df_expected_locations = [
+        "/home/jose/omnitrace/examples/causal/causal.cpp:103",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:110",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:112",
+        "/usr/include/c++/9/bits/stl_vector.h:125",
+        "/usr/include/c++/9/bits/stl_vector.h:128",
+        "/usr/include/c++/9/bits/stl_vector.h:285",
+        "/usr/include/c++/9/ext/string_conversions.h:83",
+        "/usr/include/c++/9/ext/string_conversions.h:84",
+        "/usr/include/c++/9/ext/string_conversions.h:85",
+    ]
+    samples_df_expected_counts = [
+        152,
+        304,
+        152,
+        152,
+        152,
+        152,
+        3648,
+        456,
+        760,
+    ]
 
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
+    assert file_names_run == file_names
 
-    assert results_df_11.to_json(orient="split") == expected_results_df_11
-    assert samples_df_11.to_json(orient="split") == expected_samples_df_11
-    assert file_names_11 == expected_file_names_11
+    samples_df_locations = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["location"].to_numpy()
+    samples_df_counts = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["count"].to_numpy()
+
+    assert (samples_df_locations == samples_df_expected_locations).all()
+    assert (samples_df_counts == samples_df_expected_counts).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        top_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    middle_df = results_df[
+        results_df["idx"]
+        == ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, -1.4123]
+    results_df_expected_speedup_err = [0.0407, 0.2638]
+    results_df_expected_impact_sum = np.full(2, -37.3877)
+    results_df_expected_impact_avg = np.full(2, -12.4626)
+    results_df_expected_impact_err = np.full(2, 3.8331)
+    results_df_expected_point_count = np.full(2, 4.0)
+
+    # assert expected speedup err
+    assert (
+        middle_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        middle_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    # assert exoected impact sum
+    assert (
+        middle_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        middle_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        middle_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        middle_df["point count"].round(4).to_numpy() == results_df_expected_point_count
+    ).all()
+
+    bottom_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")
+    ][:2]
+
+    results_df_expected_program_speedup = [0.0, 10.3991]
+    results_df_expected_speedup_err = [0.9115, 0.9072]
+    results_df_expected_impact_sum = np.full(2, 385.195)
+    results_df_expected_impact_avg = np.full(2, 128.3983)
+    results_df_expected_impact_err = np.full(2, 56.9176)
+    results_df_expected_point_count = np.full(2, 4.0)
+
+    # assert expected speedup err
+    assert (
+        bottom_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        bottom_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact sum"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact avg"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
+            "impact err"
+        ][:2]
+        .round(4)
+        .to_numpy()
+        == results_df_expected_impact_err
+    ).all()
+
+    # assert expected point count
+    assert (
+        bottom_df["point count"][:2].round(4).to_numpy()
+        == results_df_expected_point_count
+    ).all()
 
     # test given invalid validation len
     with pytest.raises(Exception) as e_info:
