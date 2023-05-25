@@ -92,11 +92,11 @@ all_data_keys = [
 
 def test_find_causal_files():
     file_names = [
-    os.path.join(workload_dir, "experiments.json"),
-    os.path.join(workload_dir, "experiments.coz"),
-    os.path.join(workload_dir, "experiments3.json"),
-    os.path.join(workload_dir, "experiments4.json"),
-]
+        os.path.join(workload_dir, "experiments.json"),
+        os.path.join(workload_dir, "experiments.coz"),
+        os.path.join(workload_dir, "experiments3.json"),
+        os.path.join(workload_dir, "experiments4.json"),
+    ]
     # given a valid directory
     files_found = find_causal_files([workload_dir], default_settings["verbose"], False)
     assert len(files_found) == 4
@@ -118,10 +118,10 @@ def test_find_causal_files():
 
 def test_parse_files():
     file_names = [
-    os.path.join(workload_dir, "experiments.json"),
-    os.path.join(workload_dir, "experiments3.json"),
-    os.path.join(workload_dir, "experiments4.json"),
-]
+        os.path.join(workload_dir, "experiments.json"),
+        os.path.join(workload_dir, "experiments3.json"),
+        os.path.join(workload_dir, "experiments4.json"),
+    ]
     results_df_expected_impact_sum = np.full(4, -41.6965)
     results_df_expected_impact_avg = np.full(4, -13.8988)
     results_df_expected_impact_err = np.full(4, 3.6046)
@@ -1875,6 +1875,7 @@ def set_up(ip_addr="localhost", ip_port="8051"):
 
     return driver
 
+
 # test order of chart titles
 def test_title_order():
     my_parser = create_parser(default_settings)
@@ -1892,7 +1893,12 @@ def test_title_order():
     driver = set_up()
     main_page = page.MainPage(driver)
 
-    expected_title_set = ['Selected Causal Profiles', 'cpu_slow_func(long, int)', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)']
+    expected_title_set = [
+        "Selected Causal Profiles",
+        "cpu_slow_func(long, int)",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+        "cpu_fast_func(long, int)",
+    ]
     captured_output = main_page.get_titles()
     t.terminate()
     t.join()
@@ -1916,7 +1922,12 @@ def test_alphabetical_title_order():
     driver = set_up()
     main_page = page.MainPage(driver)
 
-    expected_title_set = ['Selected Causal Profiles', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)', 'cpu_slow_func(long, int)']
+    expected_title_set = [
+        "Selected Causal Profiles",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+        "cpu_fast_func(long, int)",
+        "cpu_slow_func(long, int)",
+    ]
     title_set = main_page.get_alphabetical_titles()
     captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
@@ -1925,7 +1936,7 @@ def test_alphabetical_title_order():
     t.join()
     driver.quit()
 
-    assert (title_set == expected_title_set)
+    assert title_set == expected_title_set
 
 
 def test_max_speedup_title_order():
@@ -2078,6 +2089,7 @@ def test_min_points_slider():
 
     assert captured_output == expected_title_set
 
+
 def test_verbose_gui_flag_1():
     t = subprocess.Popen(
         [sys.executable, "-m", "source", "-w", workload_dir, "--verbose", "1", "-n", "0"],
@@ -2088,14 +2100,20 @@ def test_verbose_gui_flag_1():
     driver = set_up()
     main_page = page.MainPage(driver)
 
-    expected_title_set = ['Selected Causal Profiles', 'cpu_slow_func(long, int)', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)']
+    expected_title_set = [
+        "Selected Causal Profiles",
+        "cpu_slow_func(long, int)",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+        "cpu_fast_func(long, int)",
+    ]
     captured_title_set = main_page.get_titles()
     t.terminate()
     driver.quit()
     captured_output = t.communicate(timeout=15)[0].decode("utf-8")
 
-    assert (captured_title_set == expected_title_set)
-    assert (captured_output)
+    assert captured_title_set == expected_title_set
+    assert captured_output
+
 
 def test_verbose_gui_flag_2():
     my_parser = create_parser(default_settings)
@@ -2111,7 +2129,12 @@ def test_verbose_gui_flag_2():
         stdout=subprocess.PIPE,
     )
 
-    expected_title_set = ['Selected Causal Profiles', 'cpu_slow_func(long, int)', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)']
+    expected_title_set = [
+        "Selected Causal Profiles",
+        "cpu_slow_func(long, int)",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+        "cpu_fast_func(long, int)",
+    ]
     time.sleep(10)
     driver = set_up()
     main_page = page.MainPage(driver)
@@ -2120,12 +2143,17 @@ def test_verbose_gui_flag_2():
     driver.quit()
     captured_output = t.communicate(timeout=15)[0].decode("utf-8")
 
-    assert (captured_output)
-    assert (captured_title_set == expected_title_set)
+    assert captured_output
+    assert captured_title_set == expected_title_set
 
 
 def test_verbose_gui_flag_3():
-    expected_title_set = ['Selected Causal Profiles', 'cpu_slow_func(long, int)', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)']
+    expected_title_set = [
+        "Selected Causal Profiles",
+        "cpu_slow_func(long, int)",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+        "cpu_fast_func(long, int)",
+    ]
 
     t = subprocess.Popen(
         [
@@ -2151,12 +2179,11 @@ def test_verbose_gui_flag_3():
     driver.quit()
     captured_output = t.communicate(timeout=15)[0].decode("utf-8")
 
-    assert (captured_title_set == expected_title_set)
-    assert (captured_output)
+    assert captured_title_set == expected_title_set
+    assert captured_output
 
 
 def test_ip_port_flag():
-    
     t = subprocess.Popen(
         [
             sys.executable,
@@ -2174,15 +2201,20 @@ def test_ip_port_flag():
     driver = set_up(ip_port="8052")
     main_page = page.MainPage(driver)
 
-    expected_title_set = ['Selected Causal Profiles', 'cpu_slow_func(long, int)', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)']
+    expected_title_set = [
+        "Selected Causal Profiles",
+        "cpu_slow_func(long, int)",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+        "cpu_fast_func(long, int)",
+    ]
     expected_output = "running on http://0.0.0.0:8052"
 
     captured_title_set = main_page.get_titles()
     t.terminate()
     captured_output = t.communicate(timeout=15)[0].decode("utf-8")
 
-    assert (captured_title_set == expected_title_set)
-    assert (expected_output in captured_output)
+    assert captured_title_set == expected_title_set
+    assert expected_output in captured_output
 
 
 def test_experiments_flag():
