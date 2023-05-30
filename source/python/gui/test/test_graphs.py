@@ -29,13 +29,8 @@ from source.parser import (
     process_data,
     compute_speedups,
 )
-from threading import Thread
-
 
 import json
-
-# import logging
-# LOGGER = logging.getLogger(__name__)
 
 from pathlib import Path
 
@@ -57,46 +52,50 @@ titles = [
     "cpu_slow_func(long, int)",
 ]
 
-
-file_names_recursive = [
-    os.path.join(workload_dir, "experiments.json"),
-    os.path.join(workload_dir, "experiments.coz"),
-    os.path.join(workload_dir, *"part2/experiments2.json".split("/")),
-    os.path.join(workload_dir, *"part2/experiments1.json".split("/")),
-    os.path.join(workload_dir, "experiments3.json"),
-    os.path.join(workload_dir, "experiments4.json"),
+samples_df_expected_locations = [
+    "/home/jose/omnitrace/examples/causal/causal.cpp:103",
+    "/home/jose/omnitrace/examples/causal/causal.cpp:110",
+    "/home/jose/omnitrace/examples/causal/causal.cpp:112",
+    "/usr/include/c++/9/bits/stl_vector.h:125",
+    "/usr/include/c++/9/bits/stl_vector.h:128",
+    "/usr/include/c++/9/bits/stl_vector.h:285",
+    "/usr/include/c++/9/ext/string_conversions.h:83",
+    "/usr/include/c++/9/ext/string_conversions.h:84",
+    "/usr/include/c++/9/ext/string_conversions.h:85",
 ]
-keys = [
-    ("causal-cpu-omni", "cpu_fast_func(long, int)"),
-    ("causal-cpu-omni", "cpu_fast_func(long, int)"),
-    ("causal-cpu-omni", "cpu_fast_func(long, int)"),
-    ("causal-cpu-omni", "cpu_fast_func(long, int)"),
-    ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165"),
-    ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165"),
-    ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165"),
-    ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165"),
-    ("causal-cpu-omni", "cpu_slow_func(long, int)"),
-    ("causal-cpu-omni", "cpu_slow_func(long, int)"),
-    ("causal-cpu-omni", "cpu_slow_func(long, int)"),
-    ("causal-cpu-omni", "cpu_slow_func(long, int)"),
-]
-
-
-all_data_keys = [
-    "cpu_fast_func(long, int)",
-    "cpu_slow_func(long, int)",
-    "bool rng_func_impl<false>(long, unsigned long)",
-    "bool rng_func_impl<true>(long, unsigned long)",
+samples_df_expected_counts = [
+    152,
+    304,
+    152,
+    152,
+    152,
+    152,
+    3648,
+    456,
+    760,
 ]
 
+input_files = find_causal_files(
+    [workload_dir], default_settings["verbose"], default_settings["recursive"]
+)
 
-def test_find_causal_files():
+
+def test_find_causal_files_valid_directory():
     file_names = [
         os.path.join(workload_dir, "experiments.json"),
         os.path.join(workload_dir, "experiments.coz"),
         os.path.join(workload_dir, "experiments3.json"),
         os.path.join(workload_dir, "experiments4.json"),
     ]
+    file_names_recursive = [
+        os.path.join(workload_dir, "experiments.json"),
+        os.path.join(workload_dir, "experiments.coz"),
+        os.path.join(workload_dir, *"part2/experiments2.json".split("/")),
+        os.path.join(workload_dir, *"part2/experiments1.json".split("/")),
+        os.path.join(workload_dir, "experiments3.json"),
+        os.path.join(workload_dir, "experiments4.json"),
+    ]
+
     # given a valid directory
     files_found = find_causal_files([workload_dir], default_settings["verbose"], False)
     assert len(files_found) == 4
@@ -116,7 +115,7 @@ def test_find_causal_files():
         find_causal_files(["nonsense"], default_settings["verbose"], True)
 
 
-def test_parse_files():
+def test_parse_files_default():
     file_names = [
         os.path.join(workload_dir, "experiments.json"),
         os.path.join(workload_dir, "experiments3.json"),
@@ -126,10 +125,6 @@ def test_parse_files():
     results_df_expected_impact_avg = np.full(4, -13.8988)
     results_df_expected_impact_err = np.full(4, 3.6046)
 
-    input_files = find_causal_files(
-        [workload_dir], default_settings["verbose"], default_settings["recursive"]
-    )
-    #####################################################################################
     results_df, samples_df, file_names_run = parse_files(
         input_files,
         default_settings["experiments"],
@@ -152,28 +147,6 @@ def test_parse_files():
     results_df_expected_impact_avg = np.full(2, -13.8988)
     results_df_expected_impact_err = np.full(2, 3.6046)
     results_df_expected_point_count = np.full(2, 4.0)
-    samples_df_expected_locations = [
-        "/home/jose/omnitrace/examples/causal/causal.cpp:103",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:110",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:112",
-        "/usr/include/c++/9/bits/stl_vector.h:125",
-        "/usr/include/c++/9/bits/stl_vector.h:128",
-        "/usr/include/c++/9/bits/stl_vector.h:285",
-        "/usr/include/c++/9/ext/string_conversions.h:83",
-        "/usr/include/c++/9/ext/string_conversions.h:84",
-        "/usr/include/c++/9/ext/string_conversions.h:85",
-    ]
-    samples_df_expected_counts = [
-        152,
-        304,
-        152,
-        152,
-        152,
-        152,
-        3648,
-        456,
-        760,
-    ]
 
     assert file_names_run == file_names
 
@@ -317,8 +290,12 @@ def test_parse_files():
         == results_df_expected_point_count
     ).all()
 
-    #################################################################
+
+def test_parse_files_valid_directory():
     # test given valid experiment
+    file_names = [
+        "/home/jose/omnitrace/omnitrace-build/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/experiments.json"
+    ]
     results_df, samples_df, file_names_run = parse_files(
         input_files,
         "fast",
@@ -342,9 +319,7 @@ def test_parse_files():
     results_df_expected_impact_err = [3.6046]
     results_df_expected_point_count = [4.0]
 
-    assert file_names_run == [
-        "/home/jose/omnitrace/omnitrace-build/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/experiments.json"
-    ]
+    assert file_names_run == file_names
 
     samples_df_locations = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
@@ -425,7 +400,10 @@ def test_parse_files():
     # assert expected point count
     assert bottom_df["point count"].round(4).to_numpy() == results_df_expected_point_count
 
+
+def test_parse_files_invalid_experiment():
     ############################################################
+    
     # test given invalid experiment
     results_df, samples_df, file_names_run = parse_files(
         input_files,
@@ -446,11 +424,13 @@ def test_parse_files():
         "0x000056075b7a6863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71",
     ]
 
-    samples_df_expected_counts = [4, 2, 6, 3, 4, 4]
-
-    assert file_names_run == [
+    file_names = [
         "/home/jose/omnitrace/omnitrace-build/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/experiments.coz"
     ]
+
+    samples_df_expected_counts = [4, 2, 6, 3, 4, 4]
+
+    assert file_names_run == file_names
     samples_df_locations = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
     )["location"].to_numpy()
@@ -473,7 +453,14 @@ def test_parse_files():
     assert (results_df["speedup"].to_numpy() == expected_speedup).all()
     assert (results_df["progress_speedup"].to_numpy() == expected_progress).all()
 
-    ###########################################################################################
+
+def test_parse_files_valid_progress_regex():
+    file_names = [
+        os.path.join(workload_dir, "experiments.json"),
+        os.path.join(workload_dir, "experiments3.json"),
+        os.path.join(workload_dir, "experiments4.json"),
+    ]
+
     # test given valid progress_point regex
     results_df, samples_df, file_names_run = parse_files(
         input_files,
@@ -493,17 +480,6 @@ def test_parse_files():
     results_df_expected_impact_avg = np.full(2, -13.8988)
     results_df_expected_impact_err = np.full(2, 3.6046)
     results_df_expected_point_count = np.full(2, 4.0)
-    samples_df_expected_locations = [
-        "/home/jose/omnitrace/examples/causal/causal.cpp:103",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:110",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:112",
-        "/usr/include/c++/9/bits/stl_vector.h:125",
-        "/usr/include/c++/9/bits/stl_vector.h:128",
-        "/usr/include/c++/9/bits/stl_vector.h:285",
-        "/usr/include/c++/9/ext/string_conversions.h:83",
-        "/usr/include/c++/9/ext/string_conversions.h:84",
-        "/usr/include/c++/9/ext/string_conversions.h:85",
-    ]
 
     top_df = results_df[
         results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
@@ -653,7 +629,8 @@ def test_parse_files():
         == results_df_expected_point_count
     ).all()
 
-    #################################################################################
+
+def test_parse_files_invalid_progress_regex():
     # test given invalid progress_point regex
     results_df, samples_df, file_names_run = parse_files(
         input_files,
@@ -666,7 +643,26 @@ def test_parse_files():
         default_settings["cli"],
     )
 
+    samples_df_expected_locations = [
+        "0x00005555f6213863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71",
+        "0x00005555f62138e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71",
+        "0x00005555f6213f1e :: _start",
+        "0x00005600f87738e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71",
+        "0x00005600f8773f1e :: _start",
+        "0x000056075b7a6863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71",
+    ]
+
+    file_names = [
+        "/home/jose/omnitrace/omnitrace-build/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/experiments.coz"
+    ]
+
     results_df = results_df.round(4)
+    samples_df_locations = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["location"].to_numpy()
+    samples_df_counts = pd.concat(
+        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+    )["count"].to_numpy()
     # returns only .coz outputs since filtering is done in process_data
     expected_points = np.full(4, "cpu_fast_func(long, int)")
     expected_speedup = np.array([0.0, 10.0, 20.0, 30.0])
@@ -677,8 +673,18 @@ def test_parse_files():
     assert (results_df["point"].to_numpy() == expected_points).all()
     assert (results_df["speedup"].to_numpy() == expected_speedup).all()
     assert (results_df["progress_speedup"].to_numpy() == expected_progress).all()
+    assert (file_names_run == file_names)
+    assert (samples_df_locations == samples_df_expected_locations).all()
 
-    ##################################################################################
+
+def test_parse_files_valid_speedup():
+
+    file_names = [
+        os.path.join(workload_dir, "experiments.json"),
+        os.path.join(workload_dir, "experiments3.json"),
+        os.path.join(workload_dir, "experiments4.json"),
+    ]
+
     # test given valid speedup
     results_df, samples_df, file_names_run = parse_files(
         input_files,
@@ -845,7 +851,8 @@ def test_parse_files():
         == results_df_expected_point_count
     ).all()
 
-    #############################################################################################
+
+def test_parse_files_invalid_speedup():
     # test given invalid speedup
     results_df, samples_df, file_names_run = parse_files(
         input_files,
@@ -869,6 +876,14 @@ def test_parse_files():
     assert (samples_df_counts == samples_df_expected_counts).all()
 
     assert results_df.empty
+
+
+def test_parse_files_valid_min_points():
+    file_names = [
+        os.path.join(workload_dir, "experiments.json"),
+        os.path.join(workload_dir, "experiments3.json"),
+        os.path.join(workload_dir, "experiments4.json"),
+    ]
 
     ##############################################################################################
     # test given valid min points
@@ -894,28 +909,6 @@ def test_parse_files():
     results_df_expected_impact_avg = np.full(2, -13.8988)
     results_df_expected_impact_err = np.full(2, 3.6046)
     results_df_expected_point_count = np.full(2, 4.0)
-    samples_df_expected_locations = [
-        "/home/jose/omnitrace/examples/causal/causal.cpp:103",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:110",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:112",
-        "/usr/include/c++/9/bits/stl_vector.h:125",
-        "/usr/include/c++/9/bits/stl_vector.h:128",
-        "/usr/include/c++/9/bits/stl_vector.h:285",
-        "/usr/include/c++/9/ext/string_conversions.h:83",
-        "/usr/include/c++/9/ext/string_conversions.h:84",
-        "/usr/include/c++/9/ext/string_conversions.h:85",
-    ]
-    samples_df_expected_counts = [
-        152,
-        304,
-        152,
-        152,
-        152,
-        152,
-        3648,
-        456,
-        760,
-    ]
 
     assert file_names_run == file_names
 
@@ -1059,6 +1052,13 @@ def test_parse_files():
         == results_df_expected_point_count
     ).all()
 
+
+def test_parse_files_high_min_points():
+    file_names = [
+        os.path.join(workload_dir, "experiments.json"),
+        os.path.join(workload_dir, "experiments3.json"),
+        os.path.join(workload_dir, "experiments4.json"),
+    ]
     ###################################################################################
     # test given too high min points
     results_df, samples_df, file_names_run = parse_files(
@@ -1082,28 +1082,6 @@ def test_parse_files():
     results_df_expected_impact_avg = np.full(2, -13.8988)
     results_df_expected_impact_err = np.full(2, 3.6046)
     results_df_expected_point_count = np.full(2, 4.0)
-    samples_df_expected_locations = [
-        "/home/jose/omnitrace/examples/causal/causal.cpp:103",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:110",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:112",
-        "/usr/include/c++/9/bits/stl_vector.h:125",
-        "/usr/include/c++/9/bits/stl_vector.h:128",
-        "/usr/include/c++/9/bits/stl_vector.h:285",
-        "/usr/include/c++/9/ext/string_conversions.h:83",
-        "/usr/include/c++/9/ext/string_conversions.h:84",
-        "/usr/include/c++/9/ext/string_conversions.h:85",
-    ]
-    samples_df_expected_counts = [
-        152,
-        304,
-        152,
-        152,
-        152,
-        152,
-        3648,
-        456,
-        760,
-    ]
 
     assert file_names_run == file_names
 
@@ -1246,6 +1224,14 @@ def test_parse_files():
         bottom_df["point count"][:2].round(4).to_numpy()
         == results_df_expected_point_count
     ).all()
+
+
+def test_parse_files_validation():
+    file_names = [
+        os.path.join(workload_dir, "experiments.json"),
+        os.path.join(workload_dir, "experiments3.json"),
+        os.path.join(workload_dir, "experiments4.json"),
+    ]
 
     ##################################################################################################
     # test given valid validation
@@ -1271,28 +1257,6 @@ def test_parse_files():
     results_df_expected_impact_avg = np.full(2, -13.8988)
     results_df_expected_impact_err = np.full(2, 3.6046)
     results_df_expected_point_count = np.full(2, 4.0)
-    samples_df_expected_locations = [
-        "/home/jose/omnitrace/examples/causal/causal.cpp:103",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:110",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:112",
-        "/usr/include/c++/9/bits/stl_vector.h:125",
-        "/usr/include/c++/9/bits/stl_vector.h:128",
-        "/usr/include/c++/9/bits/stl_vector.h:285",
-        "/usr/include/c++/9/ext/string_conversions.h:83",
-        "/usr/include/c++/9/ext/string_conversions.h:84",
-        "/usr/include/c++/9/ext/string_conversions.h:85",
-    ]
-    samples_df_expected_counts = [
-        152,
-        304,
-        152,
-        152,
-        152,
-        152,
-        3648,
-        456,
-        760,
-    ]
 
     assert file_names_run == file_names
 
@@ -1459,28 +1423,6 @@ def test_parse_files():
     results_df_expected_impact_avg = np.full(2, -13.8988)
     results_df_expected_impact_err = np.full(2, 3.6046)
     results_df_expected_point_count = np.full(2, 4.0)
-    samples_df_expected_locations = [
-        "/home/jose/omnitrace/examples/causal/causal.cpp:103",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:110",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:112",
-        "/usr/include/c++/9/bits/stl_vector.h:125",
-        "/usr/include/c++/9/bits/stl_vector.h:128",
-        "/usr/include/c++/9/bits/stl_vector.h:285",
-        "/usr/include/c++/9/ext/string_conversions.h:83",
-        "/usr/include/c++/9/ext/string_conversions.h:84",
-        "/usr/include/c++/9/ext/string_conversions.h:85",
-    ]
-    samples_df_expected_counts = [
-        152,
-        304,
-        152,
-        152,
-        152,
-        152,
-        3648,
-        456,
-        760,
-    ]
 
     assert file_names_run == file_names
 
@@ -1624,6 +1566,8 @@ def test_parse_files():
         == results_df_expected_point_count
     ).all()
 
+
+def test_parse_files_invalid_validation():
     # test given invalid validation len
     with pytest.raises(Exception) as e_info:
         parse_files(
@@ -2000,16 +1944,6 @@ def test_min_speedup_title_order():
     t.terminate()
     t.join()
     driver.quit()
-    test_name = "test_min_speedup_title_order"
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    if test_name in expected_results:
-        expected_title_set = expected_results[test_name]["titles"]
-    else:
-        expected_results[test_name] = {}
-        expected_title_set = expected_results[test_name]["titles"] = captured_output
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
 
     assert captured_output == expected_title_set
 
@@ -2039,16 +1973,6 @@ def test_impact_title_order():
     t.terminate()
     t.join()
     driver.quit()
-    test_name = "test_impact_title_order"
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    if test_name in expected_results:
-        expected_title_set = expected_results[test_name]["titles"]
-    else:
-        expected_results[test_name] = {}
-        expected_title_set = expected_results[test_name]["titles"] = captured_output
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
 
     assert captured_output == expected_title_set
 
@@ -2076,16 +2000,6 @@ def test_min_points_slider():
     t.terminate()
     t.join()
     driver.quit()
-    test_name = "test_min_points_slider"
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    if test_name in expected_results:
-        expected_title_set = expected_results[test_name]["titles"]
-    else:
-        expected_results[test_name] = {}
-        expected_title_set = expected_results[test_name]["titles"] = captured_output
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
 
     assert captured_output == expected_title_set
 
@@ -2218,7 +2132,7 @@ def test_ip_port_flag():
 
 
 def test_experiments_flag():
-    return true
+    return True
     t = subprocess.Popen(
         [
             sys.executable,
@@ -2269,7 +2183,7 @@ def test_experiments_flag():
 
 
 def test_progress_points_flag(capfd):
-    return true
+    return True
     t = subprocess.Popen(
         [
             sys.executable,
