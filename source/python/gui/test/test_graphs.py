@@ -45,6 +45,7 @@ workload_dir = os.path.realpath(
         ),
     )
 )
+
 titles = [
     "Selected Causal Profiles",
     "/home/jose/omnitrace/examples/causal/causal.cpp:165",
@@ -63,6 +64,7 @@ samples_df_expected_locations = [
     "/usr/include/c++/9/ext/string_conversions.h:84",
     "/usr/include/c++/9/ext/string_conversions.h:85",
 ]
+
 samples_df_expected_counts = [
     152,
     304,
@@ -403,7 +405,7 @@ def test_parse_files_valid_directory():
 
 def test_parse_files_invalid_experiment():
     ############################################################
-    
+
     # test given invalid experiment
     results_df, samples_df, file_names_run = parse_files(
         input_files,
@@ -673,12 +675,11 @@ def test_parse_files_invalid_progress_regex():
     assert (results_df["point"].to_numpy() == expected_points).all()
     assert (results_df["speedup"].to_numpy() == expected_speedup).all()
     assert (results_df["progress_speedup"].to_numpy() == expected_progress).all()
-    assert (file_names_run == file_names)
+    assert file_names_run == file_names
     assert (samples_df_locations == samples_df_expected_locations).all()
 
 
 def test_parse_files_valid_speedup():
-
     file_names = [
         os.path.join(workload_dir, "experiments.json"),
         os.path.join(workload_dir, "experiments3.json"),
@@ -854,6 +855,12 @@ def test_parse_files_valid_speedup():
 
 def test_parse_files_invalid_speedup():
     # test given invalid speedup
+    file_names = [
+        os.path.join(workload_dir, "experiments.json"),
+        os.path.join(workload_dir, "experiments3.json"),
+        os.path.join(workload_dir, "experiments4.json"),
+    ]
+
     results_df, samples_df, file_names_run = parse_files(
         input_files,
         default_settings["experiments"],
@@ -864,6 +871,8 @@ def test_parse_files_invalid_speedup():
         default_settings["recursive"],
         default_settings["cli"],
     )
+
+    assert file_names_run == file_names
 
     samples_df_locations = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
@@ -1614,7 +1623,7 @@ def test_process_data():
     assert True
 
 
-def test_compute_speedups():
+def test_compute_speedups_verb_1():
     with open(os.path.join(workload_dir, "experiments.json")) as file:
         _data = json.loads(file.read())
 
@@ -1627,166 +1636,399 @@ def test_compute_speedups():
         results_df = compute_speedups(
             dict_data, [], default_settings["min_points"], [], 3
         )
-        with open("test_results.json", "r") as test_results:
-            expected_results = json.load(test_results)
-            test_name = "test_compute_speedups"
-            if test_name in expected_results:
-                expected_results_df = expected_results[test_name]["results_df"]
 
-            else:
-                expected_results[test_name] = {}
-                expected_results_df = expected_results[test_name][
-                    "results_df"
-                ] = results_df.to_json(orient="split")
-                with open("test_results.json", "w") as test_results:
-                    json.dump(expected_results, test_results, sort_keys=True, indent=4)
-            assert results_df.to_json(orient="split") == expected_results_df
+        top_df = results_df[
+            results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+        ][:2]
 
+        # sparse testing
+        results_df_expected_program_speedup = [0.0, -1.7623]
+        results_df_expected_speedup_err = [0.0264, 0.3931]
+        results_df_expected_impact_sum = np.full(2, -41.6965)
+        results_df_expected_impact_avg = np.full(2, -13.8988)
+        results_df_expected_impact_err = np.full(2, 3.6046)
+
+        # assert expected speedup err
+        assert (
+            top_df["program speedup"].round(4).to_numpy()
+            == results_df_expected_program_speedup
+        ).all()
+
+        # assert expected speedup err
+        assert (
+            top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+        ).all()
+
+        assert (
+            top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+        ).all()
+
+        # assert expected impact avg
+        assert (
+            top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+        ).all()
+
+        # assert expected impact err
+        assert (
+            top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+        ).all()
+
+
+def test_compute_speedups_verb_2():
+    with open(os.path.join(workload_dir, "experiments.json")) as file:
+        _data = json.loads(file.read())
+
+        dict_data = {}
+        dict_data[os.path.join(workload_dir, "experiments.json")] = process_data(
+            {}, _data, ".*", ".*"
+        )
         # Testing verbosity
-        results_df_1 = compute_speedups(
+        results_df = compute_speedups(
             dict_data, [], default_settings["min_points"], [], 2
         )
-        with open("test_results.json", "r") as test_results:
-            expected_results = json.load(test_results)
-            test_name = "test_compute_speedups_1"
-            if test_name in expected_results:
-                expected_results_df_1 = expected_results[test_name]["results_df_1"]
+        top_df = results_df[
+            results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+        ][:2]
 
-            else:
-                expected_results[test_name] = {}
-                expected_results_df_1 = expected_results[test_name][
-                    "results_df_1"
-                ] = results_df_1.to_json(orient="split")
-                with open("test_results.json", "w") as test_results:
-                    json.dump(expected_results, test_results, sort_keys=True, indent=4)
-            assert results_df_1.to_json(orient="split") == expected_results_df_1
+        # sparse testing
+        results_df_expected_program_speedup = [0.0, -1.7623]
+        results_df_expected_speedup_err = [0.0264, 0.3931]
+        results_df_expected_impact_sum = np.full(2, -41.6965)
+        results_df_expected_impact_avg = np.full(2, -13.8988)
+        results_df_expected_impact_err = np.full(2, 3.6046)
 
+        # assert expected speedup err
+        assert (
+            top_df["program speedup"].round(4).to_numpy()
+            == results_df_expected_program_speedup
+        ).all()
+
+        # assert expected speedup err
+        assert (
+            top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+        ).all()
+
+        assert (
+            top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+        ).all()
+
+        # assert expected impact avg
+        assert (
+            top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+        ).all()
+
+        # assert expected impact err
+        assert (
+            top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+        ).all()
+
+
+def test_compute_speedups_verb_1():
+    with open(os.path.join(workload_dir, "experiments.json")) as file:
+        _data = json.loads(file.read())
+
+        dict_data = {}
+        dict_data[os.path.join(workload_dir, "experiments.json")] = process_data(
+            {}, _data, ".*", ".*"
+        )
         # Testing verbosity
-        results_df_2 = compute_speedups(
+        results_df = compute_speedups(
             dict_data, [], default_settings["min_points"], [], 1
         )
-        with open("test_results.json", "r") as test_results:
-            expected_results = json.load(test_results)
-            test_name = "test_compute_speedups_2"
-            if test_name in expected_results:
-                expected_results_df_2 = expected_results[test_name]["results_df_2"]
 
-            else:
-                expected_results[test_name] = {}
-                expected_results_df_2 = expected_results[test_name][
-                    "results_df_2"
-                ] = results_df_2.to_json(orient="split")
-                with open("test_results.json", "w") as test_results:
-                    json.dump(expected_results, test_results, sort_keys=True, indent=4)
-            assert results_df_2.to_json(orient="split") == expected_results_df_2
+        print(results_df)
+        top_df = results_df[
+            results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+        ][:2]
+
+        # sparse testing
+        results_df_expected_program_speedup = [0.0, -1.7623]
+        results_df_expected_speedup_err = [0.0264, 0.3931]
+        results_df_expected_impact_sum = np.full(2, -41.6965)
+        results_df_expected_impact_avg = np.full(2, -13.8988)
+        results_df_expected_impact_err = np.full(2, 3.6046)
+
+        # assert expected speedup err
+        assert (
+            top_df["program speedup"].round(4).to_numpy()
+            == results_df_expected_program_speedup
+        ).all()
+
+        # assert expected speedup err
+        assert (
+            top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+        ).all()
+
+        assert (
+            top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+        ).all()
+
+        # assert expected impact avg
+        assert (
+            top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+        ).all()
+
+        # assert expected impact err
+        assert (
+            top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+        ).all()
+
+
+def test_compute_speedups_verb_0():
+    with open(os.path.join(workload_dir, "experiments.json")) as file:
+        _data = json.loads(file.read())
+
+        dict_data = {}
+        dict_data[os.path.join(workload_dir, "experiments.json")] = process_data(
+            {}, _data, ".*", ".*"
+        )
 
         # Testing verbosity
-        results_df_3 = compute_speedups(
+        results_df = compute_speedups(
             dict_data, [], default_settings["min_points"], [], 0
         )
-        with open("test_results.json", "r") as test_results:
-            expected_results = json.load(test_results)
-            test_name = "test_compute_speedups_3"
-            if test_name in expected_results:
-                expected_results_df_3 = expected_results[test_name]["results_df_3"]
 
-            else:
-                expected_results[test_name] = {}
-                expected_results_df_3 = expected_results[test_name][
-                    "results_df_3"
-                ] = results_df_3.to_json(orient="split")
-                with open("test_results.json", "w") as test_results:
-                    json.dump(expected_results, test_results, sort_keys=True, indent=4)
-            assert results_df_3.to_json(orient="split") == expected_results_df_3
+        top_df = results_df[
+            results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+        ][:2]
 
+        # sparse testing
+        results_df_expected_program_speedup = [0.0, -1.7623]
+        results_df_expected_speedup_err = [0.0264, 0.3931]
+        results_df_expected_impact_sum = np.full(2, -41.6965)
+        results_df_expected_impact_avg = np.full(2, -13.8988)
+        results_df_expected_impact_err = np.full(2, 3.6046)
+
+        # assert expected speedup err
+        assert (
+            top_df["program speedup"].round(4).to_numpy()
+            == results_df_expected_program_speedup
+        ).all()
+
+        # assert expected speedup err
+        assert (
+            top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+        ).all()
+
+        assert (
+            top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+        ).all()
+
+        # assert expected impact avg
+        assert (
+            top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+        ).all()
+
+        # assert expected impact err
+        assert (
+            top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+        ).all()
+
+
+def test_compute_speedups_verb_4():
+    with open(os.path.join(workload_dir, "experiments.json")) as file:
+        _data = json.loads(file.read())
+
+        dict_data = {}
+        dict_data[os.path.join(workload_dir, "experiments.json")] = process_data(
+            {}, _data, ".*", ".*"
+        )
         # Testing verbosity
-        results_df_4 = compute_speedups(
+        results_df = compute_speedups(
             dict_data, [], default_settings["min_points"], [], 4
         )
-        with open("test_results.json", "r") as test_results:
-            expected_results = json.load(test_results)
-            test_name = "test_compute_speedups_4"
-            if test_name in expected_results:
-                expected_results_df_4 = expected_results[test_name]["results_df_4"]
 
-            else:
-                expected_results[test_name] = {}
-                expected_results_df_4 = expected_results[test_name][
-                    "results_df_4"
-                ] = results_df_4.to_json(orient="split")
-                with open("test_results.json", "w") as test_results:
-                    json.dump(expected_results, test_results, sort_keys=True, indent=4)
-            assert results_df_4.to_json(orient="split") == expected_results_df_4
+        top_df = results_df[
+            results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+        ][:2]
 
+        # sparse testing
+        results_df_expected_program_speedup = [0.0, -1.7623]
+        results_df_expected_speedup_err = [0.0264, 0.3931]
+        results_df_expected_impact_sum = np.full(2, -41.6965)
+        results_df_expected_impact_avg = np.full(2, -13.8988)
+        results_df_expected_impact_err = np.full(2, 3.6046)
+
+        # assert expected speedup err
+        assert (
+            top_df["program speedup"].round(4).to_numpy()
+            == results_df_expected_program_speedup
+        ).all()
+
+        # assert expected speedup err
+        assert (
+            top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+        ).all()
+
+        assert (
+            top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+        ).all()
+
+        # assert expected impact avg
+        assert (
+            top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+        ).all()
+
+        # assert expected impact err
+        assert (
+            top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+        ).all()
+
+
+def test_compute_speedups_high_min_points():
+    with open(os.path.join(workload_dir, "experiments.json")) as file:
+        _data = json.loads(file.read())
+
+        dict_data = {}
+        dict_data[os.path.join(workload_dir, "experiments.json")] = process_data(
+            {}, _data, ".*", ".*"
+        )
         # min points too high
-        results_df_5 = compute_speedups(dict_data, [], 247, [], 3)
-        with open("test_results.json", "r") as test_results:
-            expected_results = json.load(test_results)
-            test_name = "test_compute_speedups_5"
-            if test_name in expected_results:
-                expected_results_df_5 = expected_results[test_name]["results_df_5"]
+        results_df = compute_speedups(dict_data, [], 247, [], 3)
 
-            else:
-                expected_results[test_name] = {}
-                expected_results_df_5 = expected_results[test_name][
-                    "results_df_5"
-                ] = results_df_5.to_json(orient="split")
-                with open("test_results.json", "w") as test_results:
-                    json.dump(expected_results, test_results, sort_keys=True, indent=4)
-            assert results_df_5.to_json(orient="split") == expected_results_df_5
+        top_df = results_df[
+            results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+        ][:2]
 
+        # sparse testing
+        results_df_expected_program_speedup = [0.0, -1.7623]
+        results_df_expected_speedup_err = [0.0264, 0.3931]
+        results_df_expected_impact_sum = np.full(2, -41.6965)
+        results_df_expected_impact_avg = np.full(2, -13.8988)
+        results_df_expected_impact_err = np.full(2, 3.6046)
+
+        # assert expected speedup err
+        assert (
+            top_df["program speedup"].round(4).to_numpy()
+            == results_df_expected_program_speedup
+        ).all()
+
+        # assert expected speedup err
+        assert (
+            top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+        ).all()
+
+        assert (
+            top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+        ).all()
+
+        # assert expected impact avg
+        assert (
+            top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+        ).all()
+
+        # assert expected impact err
+        assert (
+            top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+        ).all()
+
+
+def test_compute_speedups_min_points_0():
+    with open(os.path.join(workload_dir, "experiments.json")) as file:
+        _data = json.loads(file.read())
+
+        dict_data = {}
+        dict_data[os.path.join(workload_dir, "experiments.json")] = process_data(
+            {}, _data, ".*", ".*"
+        )
         # min points 0
-        results_df_6 = compute_speedups(dict_data, [], 0, [], 3)
-        with open("test_results.json", "r") as test_results:
-            expected_results = json.load(test_results)
-            test_name = "test_compute_speedups_6"
-            if test_name in expected_results:
-                expected_results_df_6 = expected_results[test_name]["results_df_6"]
+        results_df = compute_speedups(dict_data, [], 0, [], 3)
 
-            else:
-                expected_results[test_name] = {}
-                expected_results_df_6 = expected_results[test_name][
-                    "results_df_6"
-                ] = results_df_6.to_json(orient="split")
-                with open("test_results.json", "w") as test_results:
-                    json.dump(expected_results, test_results, sort_keys=True, indent=4)
-            assert results_df_6.to_json(orient="split") == expected_results_df_6
+        top_df = results_df[
+            results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+        ][:2]
 
+        # sparse testing
+        results_df_expected_program_speedup = [0.0, -1.7623]
+        results_df_expected_speedup_err = [0.0264, 0.3931]
+        results_df_expected_impact_sum = np.full(2, -41.6965)
+        results_df_expected_impact_avg = np.full(2, -13.8988)
+        results_df_expected_impact_err = np.full(2, 3.6046)
+
+        # assert expected speedup err
+        assert (
+            top_df["program speedup"].round(4).to_numpy()
+            == results_df_expected_program_speedup
+        ).all()
+
+        # assert expected speedup err
+        assert (
+            top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+        ).all()
+
+        assert (
+            top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+        ).all()
+
+        # assert expected impact avg
+        assert (
+            top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+        ).all()
+
+        # assert expected impact err
+        assert (
+            top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+        ).all()
+
+
+def test_compute_speedups_min_points_1():
+    with open(os.path.join(workload_dir, "experiments.json")) as file:
+        _data = json.loads(file.read())
+
+        dict_data = {}
+        dict_data[os.path.join(workload_dir, "experiments.json")] = process_data(
+            {}, _data, ".*", ".*"
+        )
         # min points 1
-        results_df_7 = compute_speedups(dict_data, [], 1, [], 3)
-        with open("test_results.json", "r") as test_results:
-            expected_results = json.load(test_results)
-            test_name = "test_compute_speedups_7"
-            if test_name in expected_results:
-                expected_results_df_7 = expected_results[test_name]["results_df_7"]
+        results_df = compute_speedups(dict_data, [], 1, [], 3)
+        top_df = results_df[
+            results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+        ][:2]
 
-            else:
-                expected_results[test_name] = {}
-                expected_results_df_7 = expected_results[test_name][
-                    "results_df_7"
-                ] = results_df_7.to_json(orient="split")
-                with open("test_results.json", "w") as test_results:
-                    json.dump(expected_results, test_results, sort_keys=True, indent=4)
-            assert results_df_7.to_json(orient="split") == expected_results_df_7
+        # sparse testing
+        results_df_expected_program_speedup = [0.0, -1.7623]
+        results_df_expected_speedup_err = [0.0264, 0.3931]
+        results_df_expected_impact_sum = np.full(2, -41.6965)
+        results_df_expected_impact_avg = np.full(2, -13.8988)
+        results_df_expected_impact_err = np.full(2, 3.6046)
 
+        # assert expected speedup err
+        assert (
+            top_df["program speedup"].round(4).to_numpy()
+            == results_df_expected_program_speedup
+        ).all()
+
+        # assert expected speedup err
+        assert (
+            top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+        ).all()
+
+        assert (
+            top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+        ).all()
+
+        # assert expected impact avg
+        assert (
+            top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+        ).all()
+
+        # assert expected impact err
+        assert (
+            top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+        ).all()
+
+
+def test_compute_speedups_empty_dict():
+    with open(os.path.join(workload_dir, "experiments.json")) as file:
+        _data = json.loads(file.read())
+
+        dict_data = {}
+        dict_data[os.path.join(workload_dir, "experiments.json")] = process_data(
+            {}, _data, ".*", ".*"
+        )
         # empty dict_data
-        results_df_8 = compute_speedups({}, [], 0, [], 3)
-        with open("test_results.json", "r") as test_results:
-            expected_results = json.load(test_results)
-            test_name = "test_compute_speedups_8"
-            if test_name in expected_results:
-                expected_results_df_8 = expected_results[test_name]["results_df_8"]
-
-            else:
-                expected_results[test_name] = {}
-                expected_results_df_8 = expected_results[test_name][
-                    "results_df_8"
-                ] = results_df_8.to_json(orient="split")
-                with open("test_results.json", "w") as test_results:
-                    json.dump(expected_results, test_results, sort_keys=True, indent=4)
-            assert results_df_8.to_json(orient="split") == expected_results_df_8
-
-    assert True
+        results_df = compute_speedups({}, [], 0, [], 3)
+        assert results_df.empty
 
 
 def test_get_validations():
@@ -1815,7 +2057,6 @@ def set_up(ip_addr="localhost", ip_port="8051"):
     fireFoxOptions.add_argument("--headless")
     driver = webdriver.Firefox(options=fireFoxOptions)
     driver.get("http://" + ip_addr + ":" + ip_port + "/")
-    # end works for linux
 
     return driver
 
@@ -1872,13 +2113,30 @@ def test_alphabetical_title_order():
         "cpu_fast_func(long, int)",
         "cpu_slow_func(long, int)",
     ]
+
+    # expected_histogram_x = ['/home/jose/omnitrace/examples/causal/causal.cpp:153', '/home/jose/omnitrace/examples/causal/causal.cpp:155']
+    # expected_histogram_y = [3036, 14983] 
+
     title_set = main_page.get_alphabetical_titles()
-    captured_histogram_data = main_page.get_histogram_data()
+    # captured_histogram = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
+    
+    # captured_histogram_x = captured_histogram["x"][0:2]
+    # captured_histogram_y = captured_histogram["y"][-2:]
 
     t.terminate()
     t.join()
     driver.quit()
+
+    # assert captured_histogram_x == expected_histogram_x
+    # assert captured_histogram_y ==expected_histogram_y
+
+    assert((np.array(captured_plot_data[0]["error_y"]["array"]).round(4) == [0.9115, 0.9072, 0.9204, 0.3939]).all())
+    assert(captured_plot_data[0]["x"]== [0, 10, 20, 30])
+    assert((np.array(captured_plot_data[0]["y"]).round(4)== [ 0.,10.3991 ,18.533  ,19.1749]).all())
+    assert((np.array(captured_plot_data[2]["error_y"]["array"]).round(4)== [0.0264, 0.3931, 1.271 , 1.1804]).all())
+    assert(captured_plot_data[2]["x"]== [0, 10, 20, 30])
+    assert((np.array(captured_plot_data[2]["y"]).round(4)== [ 0.,-1.7623 ,-1.5829 ,-1.6489]).all())
 
     assert title_set == expected_title_set
 
@@ -1901,21 +2159,18 @@ def test_max_speedup_title_order():
     captured_output = main_page.get_max_speedup_titles()
     captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
-    expected_title_set = []
+    expected_title_set = ['Selected Causal Profiles', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)', 'cpu_slow_func(long, int)']
 
     t.terminate()
     t.join()
     driver.quit()
-    test_name = "test_max_speedup_title_order"
-    with open("test_results.json", "r") as test_results:
-        expected_results = json.load(test_results)
-    if test_name in expected_results:
-        expected_title_set = expected_results[test_name]["titles"]
-    else:
-        expected_results[test_name] = {}
-        expected_title_set = expected_results[test_name]["titles"] = captured_output
-        with open("test_results.json", "w") as test_results:
-            json.dump(expected_results, test_results, sort_keys=True, indent=4)
+
+    assert((np.array(captured_plot_data[0]["error_y"]["array"]).round(4) == [0.9115, 0.9072, 0.9204, 0.3939]).all())
+    assert(captured_plot_data[0]["x"]== [0, 10, 20, 30])
+    assert((np.array(captured_plot_data[0]["y"]).round(4)== [ 0.,10.3991 ,18.533  ,19.1749]).all())
+    assert((np.array(captured_plot_data[2]["error_y"]["array"]).round(4)== [0.0264, 0.3931, 1.271 , 1.1804]).all())
+    assert(captured_plot_data[2]["x"]== [0, 10, 20, 30])
+    assert((np.array(captured_plot_data[2]["y"]).round(4)== [ 0.,-1.7623 ,-1.5829 ,-1.6489]).all())
 
     assert captured_output == expected_title_set
 
@@ -1936,7 +2191,7 @@ def test_min_speedup_title_order():
 
     main_page = page.MainPage(driver)
 
-    expected_title_set = []
+    expected_title_set = ['Selected Causal Profiles', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)', 'cpu_slow_func(long, int)']
     captured_output = main_page.get_min_speedup_titles()
     captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
@@ -1944,6 +2199,13 @@ def test_min_speedup_title_order():
     t.terminate()
     t.join()
     driver.quit()
+
+    assert((np.array(captured_plot_data[0]["error_y"]["array"]).round(4) == [0.9115, 0.9072, 0.9204, 0.3939]).all())
+    assert(captured_plot_data[0]["x"]== [0, 10, 20, 30])
+    assert((np.array(captured_plot_data[0]["y"]).round(4)== [ 0.,10.3991 ,18.533  ,19.1749]).all())
+    assert((np.array(captured_plot_data[2]["error_y"]["array"]).round(4)== [0.0264, 0.3931, 1.271 , 1.1804]).all())
+    assert(captured_plot_data[2]["x"]== [0, 10, 20, 30])
+    assert((np.array(captured_plot_data[2]["y"]).round(4)== [ 0.,-1.7623 ,-1.5829 ,-1.6489]).all())
 
     assert captured_output == expected_title_set
 
@@ -1965,7 +2227,7 @@ def test_impact_title_order():
 
     main_page = page.MainPage(driver)
 
-    expected_title_set = []
+    expected_title_set = ['Selected Causal Profiles', 'cpu_slow_func(long, int)', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)']
     captured_output = main_page.get_impact_titles()
     captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
@@ -1973,6 +2235,13 @@ def test_impact_title_order():
     t.terminate()
     t.join()
     driver.quit()
+
+    assert((np.array(captured_plot_data[0]["error_y"]["array"]).round(4) == [0.9115, 0.9072, 0.9204, 0.3939]).all())
+    assert(captured_plot_data[0]["x"]== [0, 10, 20, 30])
+    assert((np.array(captured_plot_data[0]["y"]).round(4)== [ 0.,10.3991 ,18.533  ,19.1749]).all())
+    assert((np.array(captured_plot_data[2]["error_y"]["array"]).round(4)== [0.0264, 0.3931, 1.271 , 1.1804]).all())
+    assert(captured_plot_data[2]["x"]== [0, 10, 20, 30])
+    assert((np.array(captured_plot_data[2]["y"]).round(4)== [ 0.,-1.7623 ,-1.5829 ,-1.6489]).all())
 
     assert captured_output == expected_title_set
 
@@ -2030,14 +2299,6 @@ def test_verbose_gui_flag_1():
 
 
 def test_verbose_gui_flag_2():
-    my_parser = create_parser(default_settings)
-    parser_args = my_parser.parse_args(
-        [
-            "-w",
-            workload_dir,
-        ]
-    )
-
     t = subprocess.Popen(
         [sys.executable, "-m", "source", "-w", workload_dir, "--verbose", "2", "-n", "0"],
         stdout=subprocess.PIPE,
@@ -2130,59 +2391,6 @@ def test_ip_port_flag():
     assert captured_title_set == expected_title_set
     assert expected_output in captured_output
 
-
-def test_experiments_flag():
-    return True
-    t = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "source",
-            "-w",
-            workload_dir,
-            "--verbose",
-            "3",
-            "-n",
-            "0",
-            "-e",
-            ".*",
-        ],
-        stdout=subprocess.PIPE,
-    )
-
-    time.sleep(20)
-    driver = set_up()
-
-    ## driver.refresh()
-    # time.sleep(20)
-    main_page = page.MainPage(driver)
-
-    expected_title_set = [
-        "Selected Causal Profiles",
-        "cpu_slow_func(long, int)",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-        "cpu_fast_func(long, int)",
-    ]
-    # out, err = self.capfd.readouterr()
-    expected_output = ""
-
-    expected_title_set_run = main_page.get_titles()
-    print("\nexpected_title_set: ", expected_title_set)
-    driver.close()
-    # output = subprocess.check_output( stdin=t.stdout)
-    t.terminate()
-    t.join()
-    driver.quit()
-    captured_output = t.communicate(timeout=15)
-
-    print(captured_output)
-    with open("capture_output.txt", "w") as text_file:
-        text_file.write(captured_output[0].decode("utf-8"))
-    assert expected_title_set_run == expected_title_set
-    assert expected_output in captured_output
-
-
-def test_progress_points_flag(capfd):
     return True
     t = subprocess.Popen(
         [
@@ -2239,7 +2447,3 @@ def test_progress_points_flag(capfd):
 
     # def test_validate_flag():
     #     self.assertTrue(True,True)
-
-
-# if __name__ == "__main__":
-#     unittest.main()
