@@ -347,7 +347,7 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], debug=False):
     data = {}
     for workload in runs:
         _data = runs[workload]
-        if (_data):
+        if _data:
             for selected, pitr in _data.items():
                 if selected not in data:
                     data[selected] = {}
@@ -417,11 +417,11 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], debug=False):
                 print(f"{itr}")
         sys.stdout.flush()
         validations = get_validations(validate)
-        
+
         # calculated incorrectly....
         expected_validations = len(validations)
         correct_validations = 0
-        validations_performed =0 
+        validations_performed = 0
         if expected_validations > 0:
             print(f"\nPerforming {expected_validations} validations...\n")
             for eitr in _data:
@@ -462,8 +462,9 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], debug=False):
             if expected_validations > 0:
                 print(f"Causal profiling predictions validated: {validations_performed}")
         else:
-            print(f"No matching Causal data for expected validations: {expected_validations}")
-
+            print(
+                f"No matching Causal data for expected validations: {expected_validations}"
+            )
 
     return out
 
@@ -489,14 +490,14 @@ def get_validations(validate):
 
 
 def compute_sorts(_data):
-    if(not _data.empty):
+    if not _data.empty:
         Max_speedup_order = _data.sort_values(
             by="program speedup", ascending=False
         ).point.unique()
         Min_speedup_order = _data.sort_values(
             by="program speedup", ascending=True
         ).point.unique()
-        point_counts = _data.point.value_counts()
+        point_counts = _data.idx.value_counts()
         # speedups = pd.DataFrame(_data["Line Speedup"].unique(), columns=["Line Speedup"])
 
         _data["max speedup"] = np.nan
@@ -510,7 +511,7 @@ def compute_sorts(_data):
             _data.at[index, "min speedup"] = np.where(
                 Min_speedup_order == _data.at[index, "point"]
             )[0][0]
-            _data.at[index, "point count"] = point_counts[_data.at[index, "point"]]
+            _data.at[index, "point count"] = point_counts[_data.at[index, "idx"]]
     return _data
 
 
@@ -629,7 +630,7 @@ def parse_files(
                 if "omnitrace" not in _data or "causal" not in _data["omnitrace"]:
                     continue
                 dict_data[file] = process_data({}, _data, experiments, progress_points)
-                if (dict_data[file]):
+                if dict_data[file]:
                     samps = process_samples({}, _data)
                     sample_df = pd.concat(
                         [

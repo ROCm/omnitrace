@@ -54,6 +54,7 @@ default_settings["recursive"] = False
 default_settings["verbose"] = 0
 default_settings["stddev"] = 1.0
 
+
 def causal(args):
     app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 
@@ -117,6 +118,7 @@ def causal(args):
             host=args.ip_address,
             port=args.ip_port,
         )
+
 
 def create_parser(settings):
     my_parser = argparse.ArgumentParser(
@@ -263,6 +265,7 @@ def create_parser(settings):
         default=[],
     )
     return my_parser
+
 
 def main():
     settings = {}

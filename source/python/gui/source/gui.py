@@ -81,13 +81,13 @@ def build_line_graph():
     layout1 = html.Div(
         id="graph_all",
         className="graph",
-        #children=[html.H4("All Causal Profiles", style={"color": text_color})],
+        # children=[html.H4("All Causal Profiles", style={"color": text_color})],
     )
 
     layout2 = html.Div(
         id="graph_select",
         className="graph",
-        #children=[html.H4("Call Stack Sample Histogram", style={"color": text_color})],
+        # children=[html.H4("Call Stack Sample Histogram", style={"color": text_color})],
     )
 
     return layout1, layout2
@@ -109,7 +109,7 @@ def update_line_graph(
         data = data.sort_values(by=["min speedup", "idx"])
 
     if num_points > 0:
-        data = data[data["point count"] > num_points]
+        data = data[data["point count"] >= num_points]
 
     mask = data[data.point.isin(experiment_list)]
     mask = mask[mask["progress points"].isin(progpt_list)]
