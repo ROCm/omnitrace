@@ -24,8 +24,8 @@ from source.__main__ import causal, create_parser, default_settings
 from source.parser import (
     parse_files,
     find_causal_files,
-    set_num_stddev,
     parse_uploaded_file,
+    get_validations,
     process_data,
     compute_speedups,
 )
@@ -1235,366 +1235,6 @@ def test_parse_files_high_min_points():
     ).all()
 
 
-def test_parse_files_validation():
-    file_names = [
-        os.path.join(workload_dir, "experiments.json"),
-        os.path.join(workload_dir, "experiments3.json"),
-        os.path.join(workload_dir, "experiments4.json"),
-    ]
-
-    ##################################################################################################
-    # test given valid validation
-    results_df, samples_df, file_names_run = parse_files(
-        input_files,
-        default_settings["experiments"],
-        default_settings["progress_points"],
-        [],
-        0,
-        ["fast", ".*", "10", "-2", "1"],
-        default_settings["recursive"],
-        default_settings["cli"],
-    )
-
-    top_df = results_df[
-        results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
-    ][:2]
-
-    # sparse testing
-    results_df_expected_program_speedup = [0.0, -1.7623]
-    results_df_expected_speedup_err = [0.0264, 0.3931]
-    results_df_expected_impact_sum = np.full(2, -41.6965)
-    results_df_expected_impact_avg = np.full(2, -13.8988)
-    results_df_expected_impact_err = np.full(2, 3.6046)
-    results_df_expected_point_count = np.full(2, 4.0)
-
-    assert file_names_run == file_names
-
-    samples_df_locations = pd.concat(
-        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
-    )["location"].to_numpy()
-    samples_df_counts = pd.concat(
-        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
-    )["count"].to_numpy()
-
-    assert (samples_df_locations == samples_df_expected_locations).all()
-    assert (samples_df_counts == samples_df_expected_counts).all()
-
-    # assert expected speedup err
-    assert (
-        top_df["program speedup"].round(4).to_numpy()
-        == results_df_expected_program_speedup
-    ).all()
-
-    # assert expected speedup err
-    assert (
-        top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
-    ).all()
-
-    assert (
-        top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
-    ).all()
-
-    # assert expected impact avg
-    assert (
-        top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
-    ).all()
-
-    # assert expected impact err
-    assert (
-        top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
-    ).all()
-
-    # assert expected point count
-    assert (
-        top_df["point count"].round(4).to_numpy() == results_df_expected_point_count
-    ).all()
-
-    middle_df = results_df[
-        results_df["idx"]
-        == ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165")
-    ][:2]
-
-    results_df_expected_program_speedup = [0.0, -1.4123]
-    results_df_expected_speedup_err = [0.0407, 0.2638]
-    results_df_expected_impact_sum = np.full(2, -37.3877)
-    results_df_expected_impact_avg = np.full(2, -12.4626)
-    results_df_expected_impact_err = np.full(2, 3.8331)
-    results_df_expected_point_count = np.full(2, 4.0)
-
-    # assert expected speedup err
-    assert (
-        middle_df["program speedup"].round(4).to_numpy()
-        == results_df_expected_program_speedup
-    ).all()
-
-    # assert expected speedup err
-    assert (
-        middle_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
-    ).all()
-
-    # assert exoected impact sum
-    assert (
-        middle_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
-    ).all()
-
-    # assert expected impact avg
-    assert (
-        middle_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
-    ).all()
-
-    # assert expected impact err
-    assert (
-        middle_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
-    ).all()
-
-    # assert expected point count
-    assert (
-        middle_df["point count"].round(4).to_numpy() == results_df_expected_point_count
-    ).all()
-
-    bottom_df = results_df[
-        results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")
-    ][:2]
-
-    results_df_expected_program_speedup = [0.0, 10.3991]
-    results_df_expected_speedup_err = [0.9115, 0.9072]
-    results_df_expected_impact_sum = np.full(2, 385.195)
-    results_df_expected_impact_avg = np.full(2, 128.3983)
-    results_df_expected_impact_err = np.full(2, 56.9176)
-    results_df_expected_point_count = np.full(2, 4.0)
-
-    # assert expected speedup err
-    assert (
-        bottom_df["program speedup"].round(4).to_numpy()
-        == results_df_expected_program_speedup
-    ).all()
-
-    # assert expected speedup err
-    assert (
-        bottom_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
-    ).all()
-
-    assert (
-        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
-            "impact sum"
-        ][:2]
-        .round(4)
-        .to_numpy()
-        == results_df_expected_impact_sum
-    ).all()
-
-    # assert expected impact avg
-    assert (
-        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
-            "impact avg"
-        ][:2]
-        .round(4)
-        .to_numpy()
-        == results_df_expected_impact_avg
-    ).all()
-
-    # assert expected impact err
-    assert (
-        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
-            "impact err"
-        ][:2]
-        .round(4)
-        .to_numpy()
-        == results_df_expected_impact_err
-    ).all()
-
-    # assert expected point count
-    assert (
-        bottom_df["point count"][:2].round(4).to_numpy()
-        == results_df_expected_point_count
-    ).all()
-
-    # test given invalid validation
-    results_df, samples_df_, file_names_run = parse_files(
-        input_files,
-        default_settings["experiments"],
-        default_settings["progress_points"],
-        [],
-        0,
-        ["fast", "fast", "12", "1024", "0"],
-        default_settings["recursive"],
-        default_settings["cli"],
-    )
-
-    top_df = results_df[
-        results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
-    ][:2]
-
-    # sparse testing
-    results_df_expected_program_speedup = [0.0, -1.7623]
-    results_df_expected_speedup_err = [0.0264, 0.3931]
-    results_df_expected_impact_sum = np.full(2, -41.6965)
-    results_df_expected_impact_avg = np.full(2, -13.8988)
-    results_df_expected_impact_err = np.full(2, 3.6046)
-    results_df_expected_point_count = np.full(2, 4.0)
-
-    assert file_names_run == file_names
-
-    samples_df_locations = pd.concat(
-        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
-    )["location"].to_numpy()
-    samples_df_counts = pd.concat(
-        [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
-    )["count"].to_numpy()
-
-    assert (samples_df_locations == samples_df_expected_locations).all()
-    assert (samples_df_counts == samples_df_expected_counts).all()
-
-    # assert expected speedup err
-    assert (
-        top_df["program speedup"].round(4).to_numpy()
-        == results_df_expected_program_speedup
-    ).all()
-
-    # assert expected speedup err
-    assert (
-        top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
-    ).all()
-
-    assert (
-        top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
-    ).all()
-
-    # assert expected impact avg
-    assert (
-        top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
-    ).all()
-
-    # assert expected impact err
-    assert (
-        top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
-    ).all()
-
-    # assert expected point count
-    assert (
-        top_df["point count"].round(4).to_numpy() == results_df_expected_point_count
-    ).all()
-
-    middle_df = results_df[
-        results_df["idx"]
-        == ("causal-cpu-omni", "/home/jose/omnitrace/examples/causal/causal.cpp:165")
-    ][:2]
-
-    results_df_expected_program_speedup = [0.0, -1.4123]
-    results_df_expected_speedup_err = [0.0407, 0.2638]
-    results_df_expected_impact_sum = np.full(2, -37.3877)
-    results_df_expected_impact_avg = np.full(2, -12.4626)
-    results_df_expected_impact_err = np.full(2, 3.8331)
-    results_df_expected_point_count = np.full(2, 4.0)
-
-    # assert expected speedup err
-    assert (
-        middle_df["program speedup"].round(4).to_numpy()
-        == results_df_expected_program_speedup
-    ).all()
-
-    # assert expected speedup err
-    assert (
-        middle_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
-    ).all()
-
-    # assert exoected impact sum
-    assert (
-        middle_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
-    ).all()
-
-    # assert expected impact avg
-    assert (
-        middle_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
-    ).all()
-
-    # assert expected impact err
-    assert (
-        middle_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
-    ).all()
-
-    # assert expected point count
-    assert (
-        middle_df["point count"].round(4).to_numpy() == results_df_expected_point_count
-    ).all()
-
-    bottom_df = results_df[
-        results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")
-    ][:2]
-
-    results_df_expected_program_speedup = [0.0, 10.3991]
-    results_df_expected_speedup_err = [0.9115, 0.9072]
-    results_df_expected_impact_sum = np.full(2, 385.195)
-    results_df_expected_impact_avg = np.full(2, 128.3983)
-    results_df_expected_impact_err = np.full(2, 56.9176)
-    results_df_expected_point_count = np.full(2, 4.0)
-
-    # assert expected speedup err
-    assert (
-        bottom_df["program speedup"].round(4).to_numpy()
-        == results_df_expected_program_speedup
-    ).all()
-
-    # assert expected speedup err
-    assert (
-        bottom_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
-    ).all()
-
-    assert (
-        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
-            "impact sum"
-        ][:2]
-        .round(4)
-        .to_numpy()
-        == results_df_expected_impact_sum
-    ).all()
-
-    # assert expected impact avg
-    assert (
-        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
-            "impact avg"
-        ][:2]
-        .round(4)
-        .to_numpy()
-        == results_df_expected_impact_avg
-    ).all()
-
-    # assert expected impact err
-    assert (
-        results_df[results_df["idx"] == ("causal-cpu-omni", "cpu_slow_func(long, int)")][
-            "impact err"
-        ][:2]
-        .round(4)
-        .to_numpy()
-        == results_df_expected_impact_err
-    ).all()
-
-    # assert expected point count
-    assert (
-        bottom_df["point count"][:2].round(4).to_numpy()
-        == results_df_expected_point_count
-    ).all()
-
-
-def test_parse_files_invalid_validation():
-    # test given invalid validation len
-    with pytest.raises(Exception) as e_info:
-        parse_files(
-            input_files,
-            default_settings["experiments"],
-            default_settings["progress_points"],
-            [],
-            0,
-            ["fast", "fast", "12", "1024", "0", "10"],
-            default_settings["recursive"],
-            default_settings["cli"],
-        )
-
-
-def test_set_num_stddev():
-    assert True
-
-
 def test_process_data():
     # test with valid data
     with open(os.path.join(workload_dir, "experiments.json")) as file:
@@ -1619,8 +1259,6 @@ def test_process_data():
         data = process_data({}, _data, "impl", ".*")
         assert list(dict_data.keys()) == ["cpu_fast_func(long, int)"]
         assert list(data.keys()) == []
-
-    assert True
 
 
 def test_compute_speedups_verb_1():
@@ -2031,8 +1669,133 @@ def test_compute_speedups_empty_dict():
         assert results_df.empty
 
 
-def test_get_validations():
-    assert True
+def test_compute_speedups_validate_file():
+    experiment_regex = "fast"
+    progress_point_regex = "cpu"
+    virtual_speedup = "10"
+    expected_speedup = "0.8"
+    tolerance = "50"
+    validate = [
+        experiment_regex,
+        progress_point_regex,
+        virtual_speedup,
+        expected_speedup,
+        tolerance,
+    ]
+
+    with open(os.path.join(workload_dir, "experiments.json")) as file:
+        _data = json.loads(file.read())
+
+        dict_data = {}
+        dict_data[os.path.join(workload_dir, "experiments.json")] = process_data(
+            {}, _data, ".*", ".*"
+        )
+        # min points too high
+        results_df = compute_speedups(dict_data, [], 0, validate, 3)
+        top_df = results_df[
+            results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+        ][:2]
+
+        # sparse testing
+        results_df_expected_program_speedup = [0.0, -1.7623]
+        results_df_expected_speedup_err = [0.0264, 0.3931]
+        results_df_expected_impact_sum = np.full(2, -41.6965)
+        results_df_expected_impact_avg = np.full(2, -13.8988)
+        results_df_expected_impact_err = np.full(2, 3.6046)
+
+        # assert expected speedup err
+        assert (
+            top_df["program speedup"].round(4).to_numpy()
+            == results_df_expected_program_speedup
+        ).all()
+
+        # assert expected speedup err
+        assert (
+            top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+        ).all()
+
+        assert (
+            top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+        ).all()
+
+        # assert expected impact avg
+        assert (
+            top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+        ).all()
+
+        # assert expected impact err
+        assert (
+            top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+        ).all()
+
+
+def test_compute_speedups_validate_multi_file():
+    experiment_regex = "fast"
+    progress_point_regex = "cpu"
+    virtual_speedup = "10"
+    expected_speedup = "0.8"
+    tolerance = "50"
+    validate = [
+        experiment_regex,
+        progress_point_regex,
+        virtual_speedup,
+        expected_speedup,
+        tolerance,
+    ]
+
+    dict_data = {}
+    with open(os.path.join(workload_dir, "experiments.json")) as file:
+        _data = json.loads(file.read())
+        dict_data[os.path.join(workload_dir, "experiments.json")] = process_data(
+            {}, _data, ".*", ".*"
+        )
+    with open(os.path.join(workload_dir, "experiments3.json")) as file:
+        _data = json.loads(file.read())
+        dict_data[os.path.join(workload_dir, "experiments3.json")] = process_data(
+            {}, _data, ".*", ".*"
+        )
+    with open(os.path.join(workload_dir, "experiments4.json")) as file:
+        _data = json.loads(file.read())
+        dict_data[os.path.join(workload_dir, "experiments4.json")] = process_data(
+            {}, _data, ".*", ".*"
+        )
+        # min points too high
+    results_df = compute_speedups(dict_data, [], 0, validate, 3)
+    top_df = results_df[
+        results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
+    ][:2]
+
+    # sparse testing
+    results_df_expected_program_speedup = [0.0, -1.7623]
+    results_df_expected_speedup_err = [0.0264, 0.3931]
+    results_df_expected_impact_sum = np.full(2, -41.6965)
+    results_df_expected_impact_avg = np.full(2, -13.8988)
+    results_df_expected_impact_err = np.full(2, 3.6046)
+
+    # assert expected speedup err
+    assert (
+        top_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
 
 
 def test_compute_sorts():
@@ -2115,12 +1878,12 @@ def test_alphabetical_title_order():
     ]
 
     # expected_histogram_x = ['/home/jose/omnitrace/examples/causal/causal.cpp:153', '/home/jose/omnitrace/examples/causal/causal.cpp:155']
-    # expected_histogram_y = [3036, 14983] 
+    # expected_histogram_y = [3036, 14983]
 
     title_set = main_page.get_alphabetical_titles()
     # captured_histogram = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
-    
+
     # captured_histogram_x = captured_histogram["x"][0:2]
     # captured_histogram_y = captured_histogram["y"][-2:]
 
@@ -2131,12 +1894,22 @@ def test_alphabetical_title_order():
     # assert captured_histogram_x == expected_histogram_x
     # assert captured_histogram_y ==expected_histogram_y
 
-    assert((np.array(captured_plot_data[0]["error_y"]["array"]).round(4) == [0.9115, 0.9072, 0.9204, 0.3939]).all())
-    assert(captured_plot_data[0]["x"]== [0, 10, 20, 30])
-    assert((np.array(captured_plot_data[0]["y"]).round(4)== [ 0.,10.3991 ,18.533  ,19.1749]).all())
-    assert((np.array(captured_plot_data[2]["error_y"]["array"]).round(4)== [0.0264, 0.3931, 1.271 , 1.1804]).all())
-    assert(captured_plot_data[2]["x"]== [0, 10, 20, 30])
-    assert((np.array(captured_plot_data[2]["y"]).round(4)== [ 0.,-1.7623 ,-1.5829 ,-1.6489]).all())
+    assert (
+        np.array(captured_plot_data[0]["error_y"]["array"]).round(4)
+        == [0.9115, 0.9072, 0.9204, 0.3939]
+    ).all()
+    assert captured_plot_data[0]["x"] == [0, 10, 20, 30]
+    assert (
+        np.array(captured_plot_data[0]["y"]).round(4) == [0.0, 10.3991, 18.533, 19.1749]
+    ).all()
+    assert (
+        np.array(captured_plot_data[2]["error_y"]["array"]).round(4)
+        == [0.0264, 0.3931, 1.271, 1.1804]
+    ).all()
+    assert captured_plot_data[2]["x"] == [0, 10, 20, 30]
+    assert (
+        np.array(captured_plot_data[2]["y"]).round(4) == [0.0, -1.7623, -1.5829, -1.6489]
+    ).all()
 
     assert title_set == expected_title_set
 
@@ -2159,18 +1932,33 @@ def test_max_speedup_title_order():
     captured_output = main_page.get_max_speedup_titles()
     captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
-    expected_title_set = ['Selected Causal Profiles', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)', 'cpu_slow_func(long, int)']
+    expected_title_set = [
+        "Selected Causal Profiles",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+        "cpu_fast_func(long, int)",
+        "cpu_slow_func(long, int)",
+    ]
 
     t.terminate()
     t.join()
     driver.quit()
 
-    assert((np.array(captured_plot_data[0]["error_y"]["array"]).round(4) == [0.9115, 0.9072, 0.9204, 0.3939]).all())
-    assert(captured_plot_data[0]["x"]== [0, 10, 20, 30])
-    assert((np.array(captured_plot_data[0]["y"]).round(4)== [ 0.,10.3991 ,18.533  ,19.1749]).all())
-    assert((np.array(captured_plot_data[2]["error_y"]["array"]).round(4)== [0.0264, 0.3931, 1.271 , 1.1804]).all())
-    assert(captured_plot_data[2]["x"]== [0, 10, 20, 30])
-    assert((np.array(captured_plot_data[2]["y"]).round(4)== [ 0.,-1.7623 ,-1.5829 ,-1.6489]).all())
+    assert (
+        np.array(captured_plot_data[0]["error_y"]["array"]).round(4)
+        == [0.9115, 0.9072, 0.9204, 0.3939]
+    ).all()
+    assert captured_plot_data[0]["x"] == [0, 10, 20, 30]
+    assert (
+        np.array(captured_plot_data[0]["y"]).round(4) == [0.0, 10.3991, 18.533, 19.1749]
+    ).all()
+    assert (
+        np.array(captured_plot_data[2]["error_y"]["array"]).round(4)
+        == [0.0264, 0.3931, 1.271, 1.1804]
+    ).all()
+    assert captured_plot_data[2]["x"] == [0, 10, 20, 30]
+    assert (
+        np.array(captured_plot_data[2]["y"]).round(4) == [0.0, -1.7623, -1.5829, -1.6489]
+    ).all()
 
     assert captured_output == expected_title_set
 
@@ -2191,7 +1979,12 @@ def test_min_speedup_title_order():
 
     main_page = page.MainPage(driver)
 
-    expected_title_set = ['Selected Causal Profiles', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)', 'cpu_slow_func(long, int)']
+    expected_title_set = [
+        "Selected Causal Profiles",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+        "cpu_fast_func(long, int)",
+        "cpu_slow_func(long, int)",
+    ]
     captured_output = main_page.get_min_speedup_titles()
     captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
@@ -2200,12 +1993,22 @@ def test_min_speedup_title_order():
     t.join()
     driver.quit()
 
-    assert((np.array(captured_plot_data[0]["error_y"]["array"]).round(4) == [0.9115, 0.9072, 0.9204, 0.3939]).all())
-    assert(captured_plot_data[0]["x"]== [0, 10, 20, 30])
-    assert((np.array(captured_plot_data[0]["y"]).round(4)== [ 0.,10.3991 ,18.533  ,19.1749]).all())
-    assert((np.array(captured_plot_data[2]["error_y"]["array"]).round(4)== [0.0264, 0.3931, 1.271 , 1.1804]).all())
-    assert(captured_plot_data[2]["x"]== [0, 10, 20, 30])
-    assert((np.array(captured_plot_data[2]["y"]).round(4)== [ 0.,-1.7623 ,-1.5829 ,-1.6489]).all())
+    assert (
+        np.array(captured_plot_data[0]["error_y"]["array"]).round(4)
+        == [0.9115, 0.9072, 0.9204, 0.3939]
+    ).all()
+    assert captured_plot_data[0]["x"] == [0, 10, 20, 30]
+    assert (
+        np.array(captured_plot_data[0]["y"]).round(4) == [0.0, 10.3991, 18.533, 19.1749]
+    ).all()
+    assert (
+        np.array(captured_plot_data[2]["error_y"]["array"]).round(4)
+        == [0.0264, 0.3931, 1.271, 1.1804]
+    ).all()
+    assert captured_plot_data[2]["x"] == [0, 10, 20, 30]
+    assert (
+        np.array(captured_plot_data[2]["y"]).round(4) == [0.0, -1.7623, -1.5829, -1.6489]
+    ).all()
 
     assert captured_output == expected_title_set
 
@@ -2227,7 +2030,12 @@ def test_impact_title_order():
 
     main_page = page.MainPage(driver)
 
-    expected_title_set = ['Selected Causal Profiles', 'cpu_slow_func(long, int)', '/home/jose/omnitrace/examples/causal/causal.cpp:165', 'cpu_fast_func(long, int)']
+    expected_title_set = [
+        "Selected Causal Profiles",
+        "cpu_slow_func(long, int)",
+        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+        "cpu_fast_func(long, int)",
+    ]
     captured_output = main_page.get_impact_titles()
     captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
@@ -2236,12 +2044,22 @@ def test_impact_title_order():
     t.join()
     driver.quit()
 
-    assert((np.array(captured_plot_data[0]["error_y"]["array"]).round(4) == [0.9115, 0.9072, 0.9204, 0.3939]).all())
-    assert(captured_plot_data[0]["x"]== [0, 10, 20, 30])
-    assert((np.array(captured_plot_data[0]["y"]).round(4)== [ 0.,10.3991 ,18.533  ,19.1749]).all())
-    assert((np.array(captured_plot_data[2]["error_y"]["array"]).round(4)== [0.0264, 0.3931, 1.271 , 1.1804]).all())
-    assert(captured_plot_data[2]["x"]== [0, 10, 20, 30])
-    assert((np.array(captured_plot_data[2]["y"]).round(4)== [ 0.,-1.7623 ,-1.5829 ,-1.6489]).all())
+    assert (
+        np.array(captured_plot_data[0]["error_y"]["array"]).round(4)
+        == [0.9115, 0.9072, 0.9204, 0.3939]
+    ).all()
+    assert captured_plot_data[0]["x"] == [0, 10, 20, 30]
+    assert (
+        np.array(captured_plot_data[0]["y"]).round(4) == [0.0, 10.3991, 18.533, 19.1749]
+    ).all()
+    assert (
+        np.array(captured_plot_data[2]["error_y"]["array"]).round(4)
+        == [0.0264, 0.3931, 1.271, 1.1804]
+    ).all()
+    assert captured_plot_data[2]["x"] == [0, 10, 20, 30]
+    assert (
+        np.array(captured_plot_data[2]["y"]).round(4) == [0.0, -1.7623, -1.5829, -1.6489]
+    ).all()
 
     assert captured_output == expected_title_set
 
@@ -2261,7 +2079,50 @@ def test_min_points_slider():
 
     driver = set_up()
     main_page = page.MainPage(driver)
-    expected_title_set = []
+    expected_title_set = [
+        {"num points": 9, "titles": ["Selected Causal Profiles"]},
+        {"num points": 8, "titles": ["Selected Causal Profiles"]},
+        {"num points": 7, "titles": ["Selected Causal Profiles"]},
+        {"num points": 6, "titles": ["Selected Causal Profiles"]},
+        {"num points": 5, "titles": ["Selected Causal Profiles"]},
+        {"num points": 4, "titles": ["Selected Causal Profiles"]},
+        {
+            "num points": 3,
+            "titles": [
+                "Selected Causal Profiles",
+                "cpu_slow_func(long, int)",
+                "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+                "cpu_fast_func(long, int)",
+            ],
+        },
+        {
+            "num points": 2,
+            "titles": [
+                "Selected Causal Profiles",
+                "cpu_slow_func(long, int)",
+                "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+                "cpu_fast_func(long, int)",
+            ],
+        },
+        {
+            "num points": 1,
+            "titles": [
+                "Selected Causal Profiles",
+                "cpu_slow_func(long, int)",
+                "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+                "cpu_fast_func(long, int)",
+            ],
+        },
+        {
+            "num points": 0,
+            "titles": [
+                "Selected Causal Profiles",
+                "cpu_slow_func(long, int)",
+                "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+                "cpu_fast_func(long, int)",
+            ],
+        },
+    ]
     captured_output = main_page.get_min_points_titles()
     captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
@@ -2269,6 +2130,7 @@ def test_min_points_slider():
     t.terminate()
     t.join()
     driver.quit()
+    print(captured_output)
 
     assert captured_output == expected_title_set
 
@@ -2392,58 +2254,6 @@ def test_ip_port_flag():
     assert expected_output in captured_output
 
     return True
-    t = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "source",
-            "-w",
-            workload_dir,
-            "-n",
-            "0",
-            "--cli",
-            "-p",
-            ".*",
-        ],
-        stdout=subprocess.PIPE,
-    )
-    # t = subprocess.run(["omnitrace-causal-plot", "-w","/home/jose/omnitrace/source/python/gui/workloads/omnitrace-tests-output/causal-cpu-omni-fast-func-e2e/causal/","--verbose","2", "-n", "0", "--cli", "-p", ".*"], capture_output=True)
-    time.sleep(20)
-    driver = set_up()
-
-    ## driver.refresh()
-    # time.sleep(20)
-    main_page = page.MainPage(driver)
-
-    expected_title_set = [
-        "Selected Causal Profiles",
-        "cpu_slow_func(long, int)",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-        "cpu_fast_func(long, int)",
-    ]
-    # out, err = self.capfd.readouterr()
-    expected_output = ""
-
-    # expected_title_set_run = main_page.get_titles()
-    print("\nexpected_title_set: ", expected_title_set)
-    driver.close()
-    # output = subprocess.check_output( stdin=t.stdout)
-    captured_output, err = capfd.readouterr()
-
-    print(captured_output)
-    with open("capture_output.txt", "w") as text_file:
-        text_file.write(captured_output)
-    # assert(expected_title_set_run == expected_title_set)
-    assert expected_output in captured_output
-
-    # def test_num_points_flag():
-    #     self.assertTrue(True,True)
-
-    # def test_speedups_flag():
-    #     self.assertTrue(True,True)
 
     # def test_std_dev_flag():
-    #     self.assertTrue(True,True)
-
-    # def test_validate_flag():
     #     self.assertTrue(True,True)
