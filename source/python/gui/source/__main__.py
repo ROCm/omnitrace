@@ -88,20 +88,25 @@ def causal(args):
         sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
         input_filters = [
             {
-                "Name": "Sort by",
+                "name": "Sort by",
                 "values": list(map(str, sortOptions)),
                 "default": "Impact",
-                "type": "Name",
+                "type": "name",
                 "multi": False,
             },
             {
-                "Name": "Select Workload",
+                "name": "Select Workload",
                 "values": file_names,
                 "default": file_names,
-                "type": "Name",
+                "type": "name",
                 "multi": True,
             },
-            {"Name": "points", "filter": [], "values": max_points, "type": "int"},
+            {
+                "name": "points",
+                "num_points": args.min_points,
+                "values": max_points,
+                "type": "int",
+            },
         ]
 
         gui.build_causal_layout(

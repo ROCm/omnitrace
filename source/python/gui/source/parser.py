@@ -878,11 +878,3 @@ def find_causal_files(workload_path, verbose, recursive):
             else:
                 input_files += _input_files_tmp
     return input_files
-
-
-def metadata_diff(json1, json2):
-    res = jsondiff.diff(json1, json2)
-    if res:
-        print("Diff found")
-    else:
-        print("Same")
