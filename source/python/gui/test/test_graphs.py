@@ -28,6 +28,8 @@ from source.parser import (
     get_validations,
     process_data,
     compute_speedups,
+    process_samples,
+    compute_sorts,
 )
 
 import json
@@ -1374,7 +1376,6 @@ def test_compute_speedups_verb_1():
             dict_data, [], default_settings["min_points"], [], 1
         )
 
-        print(results_df)
         top_df = results_df[
             results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
         ][:2]
@@ -1799,11 +1800,169 @@ def test_compute_speedups_validate_multi_file():
 
 
 def test_compute_sorts():
-    assert True
+    file_name = os.path.join(workload_dir, "experiments.json")
+    with open(file_name) as file:
+        _data = json.loads(file.read())
+        dict_data = {}
+        dict_data = {file_name: process_data(dict_data, _data, ".*", ".*")}
+
+        data = compute_sorts(compute_speedups(dict_data))
+
+        expected_speedup = np.full(4, 0.0)
+        expected_point_count = np.full(4, 4.0)
+
+        assert (data["max speedup"].to_numpy() == expected_speedup).all()
+        assert (data["min speedup"].to_numpy() == expected_speedup).all()
+        assert (data["point count"].to_numpy() == expected_point_count).all()
+
+    results_df = pd.DataFrame()
+    files = find_causal_files([workload_dir], default_settings["verbose"], True)
+    json_files = [x for x in filter(lambda y: y.endswith(".json"), files)]
+    for file in json_files:
+        with open(file, "r") as j:
+            _data = json.load(j)
+            dict_data = {}
+            # make sure the JSON is an omnitrace causal JSON
+            if "omnitrace" not in _data or "causal" not in _data["omnitrace"]:
+                continue
+            dict_data[file] = process_data({}, _data, ".*", ".*")
+
+            results_df = pd.concat(
+                [
+                    results_df,
+                    compute_sorts(
+                        compute_speedups(
+                            dict_data,
+                            [],
+                            0,
+                            [],
+                            False,
+                        )
+                    ),
+                ]
+            )
+
+    expected_speedup = [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    ]
+    expected_point_count = [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        2.0,
+        2.0,
+        6.0,
+        6.0,
+        6.0,
+        6.0,
+        6.0,
+        6.0,
+        2.0,
+        2.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+    ]
+
+    assert (results_df["max speedup"].to_numpy() == expected_speedup).all()
+    assert (results_df["min speedup"].to_numpy() == expected_speedup).all()
+    assert (results_df["point count"].to_numpy() == expected_point_count).all()
 
 
 def test_parse_uploaded_file():
-    assert True
+    file_name = os.path.join(workload_dir, "experiments.json")
+    with open(file_name) as file:
+        _data = file.read()
+        data, samples_df = parse_uploaded_file(file_name, _data)
+
+        top_df = data[data["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")][:2]
+
+        samples_df_locations = pd.concat(
+            [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+        )["location"].to_numpy()
+        samples_df_counts = pd.concat(
+            [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
+        )["count"].to_numpy()
+
+        # sparse testing
+    results_df_expected_program_speedup = [0.0, -1.7623]
+    results_df_expected_speedup_err = [0.0264, 0.3931]
+    results_df_expected_impact_sum = np.full(2, -41.6965)
+    results_df_expected_impact_avg = np.full(2, -13.8988)
+    results_df_expected_impact_err = np.full(2, 3.6046)
+
+    # assert expected speedup err
+    assert (
+        top_df["program speedup"].round(4).to_numpy()
+        == results_df_expected_program_speedup
+    ).all()
+
+    # assert expected speedup err
+    assert (
+        top_df["speedup err"].round(4).to_numpy() == results_df_expected_speedup_err
+    ).all()
+
+    assert (
+        top_df["impact sum"].round(4).to_numpy() == results_df_expected_impact_sum
+    ).all()
+
+    # assert expected impact avg
+    assert (
+        top_df["impact avg"].round(4).to_numpy() == results_df_expected_impact_avg
+    ).all()
+
+    # assert expected impact err
+    assert (
+        top_df["impact err"].round(4).to_numpy() == results_df_expected_impact_err
+    ).all()
+
+    assert (samples_df_locations == samples_df_expected_locations).all()
+    assert (samples_df_counts == samples_df_expected_counts).all()
 
 
 def test_get_data_point():
@@ -2130,7 +2289,6 @@ def test_min_points_slider():
     t.terminate()
     t.join()
     driver.quit()
-    print(captured_output)
 
     assert captured_output == expected_title_set
 
