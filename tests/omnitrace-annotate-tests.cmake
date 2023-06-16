@@ -25,6 +25,7 @@ if(OMNITRACE_USE_PAPI
             2
             -R
             run
+            --allow-overlapping
             --print-available
             functions
             --print-overlapping
@@ -64,6 +65,7 @@ else()
             2
             -R
             run
+            --allow-overlapping
             --print-available
             functions
             --print-overlapping
