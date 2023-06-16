@@ -19,7 +19,21 @@ if(OMNITRACE_USE_PAPI
         NAME annotate
         TARGET parallel-overhead
         RUN_ARGS 30 2 200
-        REWRITE_ARGS -e -v 2 -R run
+        REWRITE_ARGS
+            -e
+            -v
+            2
+            -R
+            run
+            --print-available
+            functions
+            --print-overlapping
+            functions
+            --print-excluded
+            functions
+            --print-instrumented
+            functions
+            --print-instructions
         ENVIRONMENT "${_annotate_environment}"
         LABELS "annotate;papi")
 
@@ -44,7 +58,21 @@ else()
         NAME annotate
         TARGET parallel-overhead
         RUN_ARGS 30 2 200
-        REWRITE_ARGS -e -v 2 -R run
+        REWRITE_ARGS
+            -e
+            -v
+            2
+            -R
+            run
+            --print-available
+            functions
+            --print-overlapping
+            functions
+            --print-excluded
+            functions
+            --print-instrumented
+            functions
+            --print-instructions
         ENVIRONMENT "${_annotate_environment}"
         LABELS "annotate")
 
