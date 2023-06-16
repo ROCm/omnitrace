@@ -64,8 +64,15 @@ namespace omnitrace
 {
 namespace tracing
 {
-using interval_data_instances = thread_data<std::vector<bool>>;
-using hash_value_t            = tim::hash_value_t;
+using interval_data_instances           = thread_data<std::vector<bool>>;
+using hash_value_t                      = tim::hash_value_t;
+using perfetto_annotate_component_types = tim::mpl::available_t<type_list<
+    comp::cpu_clock, comp::cpu_util, comp::kernel_mode_time, comp::num_major_page_faults,
+    comp::num_minor_page_faults, comp::page_rss, comp::peak_rss, comp::papi_array_t,
+    comp::papi_vector, comp::priority_context_switch, comp::voluntary_context_switch,
+    comp::process_cpu_clock, comp::process_cpu_util, comp::system_clock,
+    comp::thread_cpu_clock, comp::thread_cpu_util, comp::user_clock, comp::user_mode_time,
+    comp::virtual_memory>>;
 
 //
 //  declarations
@@ -441,17 +448,7 @@ perfetto_annotate_timemory_data(CategoryT, const char* name, Arg&& arg)
                     _timemory_data.first->stop();
                     _timemory_data.first
                         ->template invoke_with<tim::operation::perfetto_annotate>(
-                            type_list<comp::cpu_clock, comp::cpu_util,
-                                      comp::kernel_mode_time, comp::num_major_page_faults,
-                                      comp::num_minor_page_faults, comp::page_rss,
-                                      comp::peak_rss, comp::papi_array_t,
-                                      comp::papi_vector, comp::priority_context_switch,
-                                      comp::voluntary_context_switch,
-                                      comp::process_cpu_clock, comp::process_cpu_util,
-                                      comp::system_clock, comp::thread_cpu_clock,
-                                      comp::thread_cpu_util, comp::user_clock,
-                                      comp::user_mode_time, comp::virtual_memory>{},
-                            _ctx);
+                            perfetto_annotate_component_types{}, _ctx);
                 }
             }
             std::forward<Arg>(arg)(std::move(_ctx));
