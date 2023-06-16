@@ -41,7 +41,7 @@ else()
 
     omnitrace_add_test(
         SKIP_BASELINE SKIP_RUNTIME
-        NAME papi
+        NAME annotate
         TARGET parallel-overhead
         RUN_ARGS 30 2 200
         REWRITE_ARGS -e -v 2
