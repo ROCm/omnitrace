@@ -4,9 +4,10 @@
 #
 # -------------------------------------------------------------------------------------- #
 
-if(omnitrace_perf_event_paranoid LESS_EQUAL 3
-   OR omnitrace_cap_sys_admin EQUAL 0
-   OR omnitrace_cap_perfmon EQUAL 0)
+if(OMNITRACE_USE_PAPI
+   AND (omnitrace_perf_event_paranoid LESS_EQUAL 3
+        OR omnitrace_cap_sys_admin EQUAL 0
+        OR omnitrace_cap_perfmon EQUAL 0))
     set(_annotate_environment
         "${_base_environment}"
         "OMNITRACE_TIMEMORY_COMPONENTS=thread_cpu_clock papi_array"
