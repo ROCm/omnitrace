@@ -173,7 +173,7 @@ do
                 4.1* | 4.0*)
                     ROCM_REPO_DIST="xenial"
                     ;;
-                5.3* | 5.4*)
+                5.3* | 5.4* | 5.5*)
                     case "${VERSION}" in
                         22.04)
                             ROCM_REPO_DIST="jammy"
@@ -204,14 +204,11 @@ do
 
             # set the sub-URL in https://repo.radeon.com/amdgpu-install/<sub-URL>
             case "${ROCM_VERSION}" in
-                5.4 | 5.4.*)
-                    ROCM_RPM=${ROCM_VERSION}/rhel/${RPM_PATH}/amdgpu-install-${ROCM_MAJOR}.${ROCM_MINOR}.${ROCM_VERSN}-1${RPM_TAG}.noarch.rpm
-                    ;;
-                5.3 | 5.3.*)
+                5.3 | 5.3.* | 5.4 | 5.4.* | 5.5 | 5.5.*)
                     ROCM_RPM=${ROCM_VERSION}/rhel/${RPM_PATH}/amdgpu-install-${ROCM_MAJOR}.${ROCM_MINOR}.${ROCM_VERSN}-1${RPM_TAG}.noarch.rpm
                     ;;
                 5.2 | 5.2.* | 5.1 | 5.1.* | 5.0 | 5.0.* | 4.*)
-                    send-error "Invalid ROCm version ${ROCM_VERSION}. Supported: >= 5.3.0, <= 5.4.x"
+                    send-error "Invalid ROCm version ${ROCM_VERSION}. Supported: >= 5.3.0, <= 5.5.x"
                     ;;
                 0.0)
                     ;;
@@ -235,10 +232,7 @@ do
                     ;;
             esac
             case "${ROCM_VERSION}" in
-                5.4 | 5.4.*)
-                    ROCM_RPM=${ROCM_VERSION}/sle/${VERSION}/amdgpu-install-${ROCM_MAJOR}.${ROCM_MINOR}.${ROCM_VERSN}-1.noarch.rpm
-                    ;;
-                5.3 | 5.3.*)
+                5.3 | 5.3.* | 5.4 | 5.4.* | 5.5 | 5.5.*)
                     ROCM_RPM=${ROCM_VERSION}/sle/${VERSION}/amdgpu-install-${ROCM_MAJOR}.${ROCM_MINOR}.${ROCM_VERSN}-1.noarch.rpm
                     ;;
                 5.2 | 5.2.*)
