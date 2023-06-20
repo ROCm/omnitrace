@@ -11,6 +11,7 @@ WORKDIR /tmp
 SHELL [ "/bin/bash", "-c" ]
 
 ENV PATH /usr/local/bin:${PATH}
+ENV LIBRARY_PATH ${LIBRARY_PATH}:/opt/amdgpu/lib64
 
 RUN yum groupinstall -y "Development Tools" && \
     yum install -y epel-release && \
