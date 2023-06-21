@@ -31,6 +31,7 @@
 #include "perfetto.hpp"
 #include "utility.hpp"
 
+#include <timemory/backends/capability.hpp>
 #include <timemory/backends/dmp.hpp>
 #include <timemory/backends/mpi.hpp>
 #include <timemory/backends/process.hpp>
@@ -40,6 +41,7 @@
 #include <timemory/log/color.hpp>
 #include <timemory/log/logger.hpp>
 #include <timemory/manager.hpp>
+#include <timemory/process/process.hpp>
 #include <timemory/sampling/allocator.hpp>
 #include <timemory/settings.hpp>
 #include <timemory/settings/types.hpp>
@@ -59,6 +61,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <limits>
+#include <linux/capability.h>
 #include <numeric>
 #include <ostream>
 #include <sstream>
@@ -343,6 +346,11 @@ configure_settings(bool _init)
     OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_KOKKOSP_PREFIX",
                              "Set to [kokkos] to maintain old naming convention", "",
                              "kokkos", "debugging", "advanced");
+
+    OMNITRACE_CONFIG_SETTING(
+        bool, "OMNITRACE_KOKKOSP_DEEP_COPY",
+        "Enable tracking deep copies (warning: may corrupt flamegraph in perfetto)",
+        false, "kokkos", "advanced");
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_OMPT",
                              "Enable support for OpenMP-Tools", false, "openmp", "ompt",
@@ -939,7 +947,13 @@ configure_settings(bool _init)
         if(_fparanoid) _fparanoid >> _paranoid;
     }
 
-    if(_paranoid > 2)
+    auto  _cap_status        = timemory::linux::capability::cap_read(process::get_id());
+    auto* _cap_data          = &_cap_status.effective;
+    bool  _has_cap_sys_admin = false;
+    for(auto itr : timemory::linux::capability::cap_decode(*_cap_data))
+        if(itr == CAP_SYS_ADMIN) _has_cap_sys_admin = true;
+
+    if(_paranoid > 2 && !_has_cap_sys_admin)
     {
         OMNITRACE_BASIC_VERBOSE(0,
                                 "/proc/sys/kernel/perf_event_paranoid has a value of %i. "
@@ -1215,7 +1229,7 @@ omnitrace_exit_action(int nsig)
 {
     tim::signals::block_signals(get_sampling_signals(),
                                 tim::signals::sigmask_scope::process);
-    OMNITRACE_BASIC_PRINT("Finalizing afer signal %i :: %s\n", nsig,
+    OMNITRACE_BASIC_PRINT("Finalizing after signal %i :: %s\n", nsig,
                           signal_settings::str(static_cast<sys_signal>(nsig)).c_str());
     auto _handler = get_signal_handler().load();
     if(_handler) (*_handler)();
