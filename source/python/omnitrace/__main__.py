@@ -401,8 +401,6 @@ if __name__ == "__main__":
         args = [args[0]] + ["--", _OMNITRACE_PYTHON_SCRIPT_FILE] + args[1:]
         os.environ["OMNITRACE_USE_PID"] = "ON"
 
-    print("argv: {} ({})".format(" ".join(args), " ".join(sys.argv)))
-
     main(args)
     from .libpyomnitrace import finalize
 
