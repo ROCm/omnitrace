@@ -1,6 +1,7 @@
 # import unittest
 from seleniumwire import webdriver
 import page
+
 # from pyvirtualdisplay import Display
 
 # from selenium.webdriver.firefox.options import Options
@@ -10,25 +11,27 @@ import page
 
 # from selenium.webdriver.chrome.options import Options
 import subprocess
-import sys, os
+import sys
+import os
 import time
 import multiprocessing
 import pandas as pd
 import numpy as np
+import pytest
 
 que = os.path.realpath(os.path.dirname(__file__) + "/..")
 sys.path.append(que)
-import pytest
-from source.gui import build_causal_layout
+
+# from source.gui import build_causal_layout
 from source.__main__ import causal, create_parser, default_settings
 from source.parser import (
     parse_files,
     find_causal_files,
     parse_uploaded_file,
-    get_validations,
+    # get_validations,
     process_data,
     compute_speedups,
-    process_samples,
+    # process_samples,
     compute_sorts,
 )
 

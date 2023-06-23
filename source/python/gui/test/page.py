@@ -1,4 +1,4 @@
-from seleniumwire import webdriver
+# from seleniumwire import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -28,7 +28,7 @@ class MainPage(BasePage):
         return h4_tags
 
     def get_histogram_data(self):
-        graph_all_elements = WebDriverWait(self.driver, 10).until(
+        WebDriverWait(self.driver, 10).until(
             EC.visibility_of_element_located((By.ID, "graph_all"))
         )
 
@@ -165,7 +165,7 @@ class MainPage(BasePage):
                 (By.XPATH, ("//*[contains(@id,'points-filt')]"))
             )
         )
-        target = WebDriverWait(self.driver, 10).until(
+        WebDriverWait(self.driver, 10).until(
             EC.visibility_of_element_located(
                 (By.XPATH, ("//*[contains(@id,'experiment_regex')]"))
             )
@@ -255,9 +255,9 @@ class MainPage(BasePage):
                             ).decode("utf-8")
                         )
                     )
-        histogram = responses[0]["response"]["graph_select"]["children"][1]["props"][
-            "figure"
-        ]["data"][0]
+        # histogram = responses[0]["response"]["graph_select"]["children"][1]["props"][
+        #     "figure"
+        # ]["data"][0]
         plots = responses[0]["response"]["graph_all"]["children"]
         for plot in plots:
             if "Graph" == plot["type"]:
