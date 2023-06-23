@@ -284,8 +284,6 @@ def test_parse_files_valid_directory():
     top_df = results_df[
         results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
     ][:2]
-    
-    
 
     assert file_names_run == file_names
 
@@ -656,8 +654,7 @@ def test_parse_files_valid_speedup():
 
     # assert expected speedup err
     assert (
-        top_df["program speedup"].round(4).to_numpy()
-        == top_df_expected_program_speedup
+        top_df["program speedup"].round(4).to_numpy() == top_df_expected_program_speedup
     ).all()
 
     # assert expected speedup err
@@ -1314,7 +1311,6 @@ def test_compute_speedups_high_min_points():
             results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
         ][:2]
 
-
         # assert expected speedup err
         assert (
             top_df["program speedup"].round(4).to_numpy()
@@ -1461,7 +1457,6 @@ def test_compute_speedups_validate_file():
         top_df = results_df[
             results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
         ][:2]
-
 
         # assert expected speedup err
         assert (
