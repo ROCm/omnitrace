@@ -29,7 +29,6 @@ __license__ = "MIT"
 __maintainer__ = "AMD Research"
 __status__ = "Development"
 
-import glob
 import re
 import base64
 import os

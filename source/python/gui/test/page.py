@@ -2,11 +2,7 @@ from seleniumwire import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from bs4 import BeautifulSoup
-import pickle
 import time
-import pandas as pd
-import requests as r
 import json
 from seleniumwire.utils import decode
 from selenium.webdriver.common.action_chains import ActionChains

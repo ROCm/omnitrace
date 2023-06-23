@@ -1,12 +1,12 @@
 # import unittest
 from seleniumwire import webdriver
 import page
-from pyvirtualdisplay import Display
+# from pyvirtualdisplay import Display
 
 # from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+# from selenium.webdriver.chrome.service import Service
+# from webdriver_manager.chrome import ChromeDriverManager
+# from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 # from selenium.webdriver.chrome.options import Options
 import subprocess
@@ -1815,7 +1815,7 @@ def test_max_speedup_title_order():
 
     main_page = page.MainPage(driver)
     captured_output = main_page.get_max_speedup_titles()
-    captured_histogram_data = main_page.get_histogram_data()
+    # captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
     expected_title_set = [
         "Selected Causal Profiles",
@@ -1871,7 +1871,7 @@ def test_min_speedup_title_order():
         "cpu_slow_func(long, int)",
     ]
     captured_output = main_page.get_min_speedup_titles()
-    captured_histogram_data = main_page.get_histogram_data()
+    # captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
 
     t.terminate()
@@ -1922,7 +1922,7 @@ def test_impact_title_order():
         "cpu_fast_func(long, int)",
     ]
     captured_output = main_page.get_impact_titles()
-    captured_histogram_data = main_page.get_histogram_data()
+    # captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
 
     t.terminate()
@@ -2009,8 +2009,8 @@ def test_min_points_slider():
         },
     ]
     captured_output = main_page.get_min_points_titles()
-    captured_histogram_data = main_page.get_histogram_data()
-    captured_plot_data = main_page.get_plot_data()
+    # captured_histogram_data = main_page.get_histogram_data()
+    # captured_plot_data = main_page.get_plot_data()
 
     t.terminate()
     t.join()

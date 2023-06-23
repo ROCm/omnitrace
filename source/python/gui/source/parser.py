@@ -31,7 +31,6 @@ __status__ = "Development"
 
 import sys
 import json
-import jsondiff
 import re
 import pandas as pd
 import numpy as np
