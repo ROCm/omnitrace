@@ -30,15 +30,15 @@ import multiprocessing
 import pandas as pd
 import numpy as np
 import pytest
+import json
+from pathlib import Path
 
 que = os.path.realpath(os.path.dirname(__file__) + "/..")
 sys.path.append(que)
 
 # from source.gui import build_causal_layout
 
-import json
 
-from pathlib import Path
 
 path = Path(__file__).parent.absolute()
 
