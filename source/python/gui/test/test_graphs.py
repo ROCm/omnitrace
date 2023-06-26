@@ -78,6 +78,49 @@ input_files = find_causal_files(
     [workload_dir], default_settings["verbose"], default_settings["recursive"]
 )
 
+expected_histogram = {
+    "/home/jose/omnitrace/examples/causal/causal.cpp:153": 22764,
+    "/home/jose/omnitrace/examples/causal/causal.cpp:155": 91056,
+    "/home/jose/omnitrace/examples/causal/causal.cpp:157": 68292,
+    "/home/jose/omnitrace/examples/causal/causal.cpp:82": 4060,
+    "/home/jose/omnitrace/examples/causal/causal.cpp:83": 912,
+    "/home/jose/omnitrace/examples/causal/causal.cpp:91": 2030,
+    "/home/jose/omnitrace/examples/causal/causal.cpp:93": 912,
+    "/usr/include/c++/9/bits/alloc_traits.h:468": 2320,
+    "/usr/include/c++/9/bits/allocator.h:137": 2030,
+    "/usr/include/c++/9/bits/allocator.h:152": 2030,
+    "/usr/include/c++/9/bits/basic_string.h:154": 912,
+    "/usr/include/c++/9/bits/basic_string.h:161": 912,
+    "/usr/include/c++/9/bits/basic_string.h:204": 912,
+    "/usr/include/c++/9/bits/basic_string.h:225": 912,
+    "/usr/include/c++/9/bits/basic_string.h:226": 912,
+    "/usr/include/c++/9/bits/basic_string.h:2305": 912,
+    "/usr/include/c++/9/bits/basic_string.h:233": 912,
+    "/usr/include/c++/9/bits/basic_string.h:235": 912,
+    "/usr/include/c++/9/bits/basic_string.h:240": 912,
+    "/usr/include/c++/9/bits/basic_string.h:6512": 912,
+    "/usr/include/c++/9/bits/basic_string.h:661": 912,
+    "/usr/include/c++/9/bits/move.h:74": 912,
+    "/usr/include/c++/9/bits/random.h:1606": 912,
+    "/usr/include/c++/9/bits/unique_ptr.h:147": 912,
+    "/usr/include/c++/9/ext/new_allocator.h:114": 2030,
+    "/usr/include/c++/9/ext/new_allocator.h:119": 2320,
+    "/usr/include/c++/9/ext/new_allocator.h:128": 5220,
+    "/usr/include/c++/9/ext/new_allocator.h:80": 2030,
+    "/usr/include/c++/9/ext/new_allocator.h:89": 2030,
+    "/usr/include/c++/9/ext/string_conversions.h:63": 4930,
+    "/usr/include/c++/9/ext/string_conversions.h:64": 3770,
+    "/usr/include/c++/9/ext/string_conversions.h:80": 3190,
+    "/usr/include/c++/9/ext/string_conversions.h:83": 6960,
+    "/usr/include/c++/9/thread:130": 2900,
+    "/usr/include/c++/9/thread:82": 2320,
+    "/usr/include/c++/9/tuple:132": 912,
+    "/usr/include/c++/9/tuple:133": 2900,
+    "/usr/include/x86_64-linux-gnu/bits/stdio2.h:105": 2030,
+    "/usr/include/x86_64-linux-gnu/bits/stdio2.h:107": 6380,
+    "cpu_slow_func(long, int)": 22764,
+}
+
 # sparse testing
 top_df_expected_program_speedup = [0.0, -1.7623]
 top_df_expected_speedup_err = [0.0264, 0.3931]
@@ -1435,14 +1478,6 @@ def test_parse_uploaded_file():
     assert (samples_df_counts == samples_df_expected_counts).all()
 
 
-def test_get_data_point():
-    assert True
-
-
-def get_speedup_data():
-    assert True
-
-
 def set_up(ip_addr="localhost", ip_port="8051"):
     # works for linux, no browser pops up
     fireFoxOptions = webdriver.FirefoxOptions()
@@ -1496,22 +1531,13 @@ def test_alphabetical_title_order():
         "cpu_slow_func(long, int)",
     ]
 
-    # expected_histogram_x = ['/home/jose/omnitrace/examples/causal/causal.cpp:153', '/home/jose/omnitrace/examples/causal/causal.cpp:155']
-    # expected_histogram_y = [3036, 14983]
-
     title_set = main_page.get_alphabetical_titles()
-    # captured_histogram = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
-
-    # captured_histogram_x = captured_histogram["x"][0:2]
-    # captured_histogram_y = captured_histogram["y"][-2:]
+    captured_histogram_data = main_page.get_histogram_data()
 
     t.terminate()
     t.join()
     driver.quit()
-
-    # assert captured_histogram_x == expected_histogram_x
-    # assert captured_histogram_y ==expected_histogram_y
 
     assert (
         np.array(captured_plot_data[0]["error_y"]["array"]).round(4)
@@ -1531,6 +1557,7 @@ def test_alphabetical_title_order():
     ).all()
 
     assert title_set == expected_title_set
+    assert captured_histogram_data == expected_histogram
 
 
 def test_max_speedup_title_order():
@@ -1544,7 +1571,7 @@ def test_max_speedup_title_order():
 
     main_page = page.MainPage(driver)
     captured_output = main_page.get_max_speedup_titles()
-    # captured_histogram_data = main_page.get_histogram_data()
+    captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
     expected_title_set = [
         "Selected Causal Profiles",
@@ -1575,6 +1602,7 @@ def test_max_speedup_title_order():
     ).all()
 
     assert captured_output == expected_title_set
+    assert captured_histogram_data == expected_histogram
 
 
 def test_min_speedup_title_order():
@@ -1595,7 +1623,7 @@ def test_min_speedup_title_order():
         "cpu_slow_func(long, int)",
     ]
     captured_output = main_page.get_min_speedup_titles()
-    # captured_histogram_data = main_page.get_histogram_data()
+    captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
 
     t.terminate()
@@ -1620,6 +1648,7 @@ def test_min_speedup_title_order():
     ).all()
 
     assert captured_output == expected_title_set
+    assert captured_histogram_data == expected_histogram
 
 
 def test_impact_title_order():
@@ -1641,7 +1670,7 @@ def test_impact_title_order():
         "cpu_fast_func(long, int)",
     ]
     captured_output = main_page.get_impact_titles()
-    # captured_histogram_data = main_page.get_histogram_data()
+    captured_histogram_data = main_page.get_histogram_data()
     captured_plot_data = main_page.get_plot_data()
 
     t.terminate()
@@ -1664,6 +1693,7 @@ def test_impact_title_order():
     assert (
         np.array(captured_plot_data[2]["y"]).round(4) == [0.0, -1.7623, -1.5829, -1.6489]
     ).all()
+    assert captured_histogram_data == expected_histogram
 
     assert captured_output == expected_title_set
 
@@ -1736,7 +1766,8 @@ def test_min_points_slider():
         },
     ]
     captured_output = main_page.get_min_points_titles()
-    # captured_histogram_data = main_page.get_histogram_data()
+    captured_histogram_data = main_page.get_histogram_data()
+
     # captured_plot_data = main_page.get_plot_data()
 
     t.terminate()
@@ -1744,6 +1775,7 @@ def test_min_points_slider():
     driver.quit()
 
     assert captured_output == expected_title_set
+    assert captured_histogram_data == expected_histogram
 
 
 def test_verbose_gui_flag_1():

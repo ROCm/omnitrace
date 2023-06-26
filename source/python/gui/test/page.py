@@ -51,8 +51,14 @@ class MainPage(BasePage):
         ]["data"][0]
         histogram_x = histogram["x"]
         histogram_y = histogram["y"]
-        out = {"x": histogram_x, "y": histogram_y}
-        return out
+
+        consolidated_hist = dict(zip(sorted(set(histogram_x)), [0] * len(histogram_x)))
+        for idx in range(0, len(histogram_x)):
+            consolidated_hist[histogram_x[idx]] = (
+                consolidated_hist[histogram_x[idx]] + histogram_y[idx]
+            )
+
+        return consolidated_hist
 
     def get_alphabetical_titles(self):
         """Change to alphabetical ordering"""
