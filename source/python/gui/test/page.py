@@ -236,7 +236,7 @@ class MainPage(BasePage):
         return points
 
     def get_plot_data(self):
-        graph_all_elements = WebDriverWait(self.driver, 10).until(
+        WebDriverWait(self.driver, 10).until(
             EC.visibility_of_element_located((By.ID, "graph_all"))
         )
 

@@ -1,6 +1,18 @@
 # import unittest
 from seleniumwire import webdriver
 from test import page
+from source.__main__ import causal, create_parser, default_settings
+from source.parser import (
+    parse_files,
+    find_causal_files,
+    parse_uploaded_file,
+    # get_validations,
+    process_data,
+    compute_speedups,
+    # process_samples,
+    compute_sorts,
+)
+
 
 # from pyvirtualdisplay import Display
 
@@ -23,17 +35,6 @@ que = os.path.realpath(os.path.dirname(__file__) + "/..")
 sys.path.append(que)
 
 # from source.gui import build_causal_layout
-from source.__main__ import causal, create_parser, default_settings
-from source.parser import (
-    parse_files,
-    find_causal_files,
-    parse_uploaded_file,
-    # get_validations,
-    process_data,
-    compute_speedups,
-    # process_samples,
-    compute_sorts,
-)
 
 import json
 
@@ -129,7 +130,7 @@ def test_find_causal_files_valid_directory():
     assert files_found == file_names
 
     # given invalid directory
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception):
         find_causal_files(["nonsense"], default_settings["verbose"], False)
 
     # given valid directory with recursive
@@ -138,7 +139,7 @@ def test_find_causal_files_valid_directory():
     assert files_found == file_names_recursive
 
     # given invalid directory with recursive
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception):
         find_causal_files(["nonsense"], default_settings["verbose"], True)
 
 
@@ -917,7 +918,7 @@ def test_process_data():
         assert list(data.keys()) == []
 
 
-def test_compute_speedups_verb_1():
+def test_compute_speedups_verb_3():
     with open(os.path.join(workload_dir, "experiments.json")) as file:
         _data = json.loads(file.read())
 
