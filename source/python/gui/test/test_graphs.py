@@ -12,6 +12,7 @@ from source.parser import (
     # process_samples,
     compute_sorts,
 )
+
 # from pyvirtualdisplay import Display
 # from selenium.webdriver.firefox.options import Options
 # from selenium.webdriver.chrome.service import Service
