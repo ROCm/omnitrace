@@ -12,15 +12,11 @@ from source.parser import (
     # process_samples,
     compute_sorts,
 )
-
-
 # from pyvirtualdisplay import Display
-
 # from selenium.webdriver.firefox.options import Options
 # from selenium.webdriver.chrome.service import Service
 # from webdriver_manager.chrome import ChromeDriverManager
 # from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-
 # from selenium.webdriver.chrome.options import Options
 import subprocess
 import sys
@@ -37,11 +33,7 @@ que = os.path.realpath(os.path.dirname(__file__) + "/..")
 sys.path.append(que)
 
 # from source.gui import build_causal_layout
-
-
-
 path = Path(__file__).parent.absolute()
-
 
 workload_dir = os.path.realpath(
     os.path.join(
