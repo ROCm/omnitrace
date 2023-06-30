@@ -72,6 +72,12 @@ get_perfetto_track_uuids()
 void
 copy_timemory_hash_ids()
 {
+    auto_lock_t _ilk{ type_mutex<tim::hash_map_t>(), std::defer_lock };
+    auto_lock_t _alk{ type_mutex<tim::hash_alias_map_t>(), std::defer_lock };
+
+    if(!_ilk.owns_lock()) _ilk.lock();
+    if(!_alk.owns_lock()) _alk.lock();
+
     // copy these over so that all hashes are known
     auto& _hmain = tim::hash::get_main_hash_ids();
     auto& _amain = tim::hash::get_main_hash_aliases();
@@ -97,14 +103,17 @@ copy_timemory_hash_ids()
     }
 
     // distribute the contents of that combined container to each thread-specific
-    // container
-    for(size_t i = 0; i < thread_info::get_peak_num_threads(); ++i)
+    // container before finalizing
+    if(get_state() == State::Finalized)
     {
-        auto& _hitr = get_timemory_hash_ids(i);
-        auto& _aitr = get_timemory_hash_aliases(i);
+        for(size_t i = 0; i < thread_info::get_peak_num_threads(); ++i)
+        {
+            auto& _hitr = get_timemory_hash_ids(i);
+            auto& _aitr = get_timemory_hash_aliases(i);
 
-        if(_hitr) *_hitr = *_hmain;
-        if(_aitr) *_aitr = *_amain;
+            if(_hitr) *_hitr = *_hmain;
+            if(_aitr) *_aitr = *_amain;
+        }
     }
 }
 
