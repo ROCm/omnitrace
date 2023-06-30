@@ -30,6 +30,7 @@
 #include <array>
 #include <atomic>
 #include <cstdlib>
+#include <new>
 
 namespace omnitrace
 {
@@ -44,7 +45,8 @@ namespace container
 #    endif
 #endif
 
-constexpr std::size_t cacheline_align_v = OMNITRACE_CACHELINE_SIZE;
+constexpr std::size_t cacheline_align_v =
+    std::max<size_t>(OMNITRACE_CACHELINE_SIZE, OMNITRACE_CACHELINE_SIZE_MIN);
 
 template <typename Tp, size_t N, size_t AlignN = cacheline_align_v,
           bool AtomicSizeV = false>
