@@ -33,6 +33,7 @@
 #include "library/sampling.hpp"
 #include "library/thread_data.hpp"
 #include "library/thread_info.hpp"
+#include "library/tracing.hpp"
 
 #include <timemory/backends/threading.hpp>
 #include <timemory/components/macros.hpp>
@@ -367,6 +368,8 @@ pthread_create_gotcha::configure()
             0, int, pthread_t*, const pthread_attr_t*, void* (*) (void*), void*>(
             "pthread_create");
     };
+
+    tim::hash::add_hash_id("start_thread");
 }
 
 void
@@ -386,6 +389,8 @@ pthread_create_gotcha::shutdown()
     {
         if(itr.second) ++_ndangling;
     }
+
+    tracing::copy_timemory_hash_ids();
 
     // enable the signal handler for when the timeout is reached
     struct sigaction _action = {};
