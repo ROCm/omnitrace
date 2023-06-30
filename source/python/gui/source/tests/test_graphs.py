@@ -1,8 +1,31 @@
-# import unittest
+#!/usr/bin/env python3
+# MIT License
+#
+# Copyright (c) 2023 Advanced Micro Devices, Inc. All Rights Reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 from seleniumwire import webdriver
-from test import page
-from source.__main__ import causal, create_parser, default_settings
-from source.parser import (
+
+from omnitrace_causal_viewer.tests import page
+from omnitrace_causal_viewer.__main__ import causal, create_parser, default_settings
+from omnitrace_causal_viewer.parser import (
     parse_files,
     find_causal_files,
     parse_uploaded_file,
@@ -13,12 +36,6 @@ from source.parser import (
     compute_sorts,
 )
 
-# from pyvirtualdisplay import Display
-# from selenium.webdriver.firefox.options import Options
-# from selenium.webdriver.chrome.service import Service
-# from webdriver_manager.chrome import ChromeDriverManager
-# from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-# from selenium.webdriver.chrome.options import Options
 import subprocess
 import sys
 import os
@@ -160,9 +177,15 @@ def test_find_causal_files_valid_directory():
         os.path.join(workload_dir, "experiments4.json"),
     ]
 
+    file_names = sorted(file_names)
+    file_names_recursive = sorted(file_names_recursive)
+
     # given a valid directory
-    files_found = find_causal_files([workload_dir], default_settings["verbose"], False)
-    assert len(files_found) == 4
+    files_found = sorted(
+        find_causal_files([workload_dir], default_settings["verbose"], False)
+    )
+
+    assert len(files_found) == len(file_names)
     assert files_found == file_names
 
     # given invalid directory
@@ -170,8 +193,11 @@ def test_find_causal_files_valid_directory():
         find_causal_files(["nonsense"], default_settings["verbose"], False)
 
     # given valid directory with recursive
-    files_found = find_causal_files([workload_dir], default_settings["verbose"], True)
-    assert len(files_found) == 6
+    files_found = sorted(
+        find_causal_files([workload_dir], default_settings["verbose"], True)
+    )
+
+    assert len(files_found) == len(file_names_recursive)
     assert files_found == file_names_recursive
 
     # given invalid directory with recursive
@@ -201,7 +227,7 @@ def test_parse_files_default():
         results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
     ][:2].round(4)
 
-    assert file_names_run == file_names
+    assert sorted(file_names_run) == sorted(file_names)
 
     samples_df_locations = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
