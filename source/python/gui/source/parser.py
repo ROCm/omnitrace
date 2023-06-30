@@ -461,9 +461,9 @@ def compute_speedups(runs, speedups=[], num_points=0, validate=[], debug=False):
             #     sys.exit(-1)
             if expected_validations > 0:
                 print(f"Causal profiling predictions validated: {validations_performed}")
-        else:
+        elif debug:
             print(
-                f"No matching Causal data for expected validations: {expected_validations}"
+                f"No matching causal data for expected validations: {expected_validations}"
             )
 
     return out
