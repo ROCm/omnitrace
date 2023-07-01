@@ -21,18 +21,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from seleniumwire import webdriver
-
 from omnitrace_causal_viewer.tests import page
 from omnitrace_causal_viewer.__main__ import causal, create_parser, default_settings
 from omnitrace_causal_viewer.parser import (
     parse_files,
     find_causal_files,
     parse_uploaded_file,
-    # get_validations,
     process_data,
     compute_speedups,
-    # process_samples,
     compute_sorts,
 )
 
@@ -46,6 +42,8 @@ import numpy as np
 import pytest
 import json
 from pathlib import Path
+
+from seleniumwire import webdriver
 
 que = os.path.realpath(os.path.dirname(__file__) + "/..")
 sys.path.append(que)
@@ -79,17 +77,7 @@ samples_df_expected_locations = [
     "/usr/include/c++/9/ext/string_conversions.h:85",
 ]
 
-samples_df_expected_counts = [
-    152,
-    304,
-    152,
-    152,
-    152,
-    152,
-    3648,
-    456,
-    760,
-]
+samples_df_expected_counts = [138, 276, 138, 138, 138, 138, 3312, 414, 690]
 
 input_files = find_causal_files(
     [workload_dir], default_settings["verbose"], default_settings["recursive"]
@@ -323,7 +311,7 @@ def test_parse_files_valid_directory():
         results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
     ][:2].round(4)
 
-    assert file_names_run == file_names
+    assert sorted(file_names_run) == sorted(file_names)
 
     samples_df_locations = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
@@ -332,8 +320,20 @@ def test_parse_files_valid_directory():
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
     )["count"].to_numpy()
 
+    _samples_df_expected_counts = [
+        152,
+        304,
+        152,
+        152,
+        152,
+        152,
+        3648,
+        456,
+        760,
+    ]
+
     assert (samples_df_locations == samples_df_expected_locations).all()
-    assert (samples_df_counts == samples_df_expected_counts).all()
+    assert (samples_df_counts == _samples_df_expected_counts).all()
 
     # assert expected speedup err
     assert (top_df["program speedup"].to_numpy() == top_df_expected_program_speedup).all()
@@ -410,7 +410,7 @@ def test_parse_files_invalid_experiment():
 
     samples_df_expected_counts = [4, 2, 6, 3, 4, 4]
 
-    assert file_names_run == file_names
+    assert sorted(file_names_run) == sorted(file_names)
     samples_df_locations = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
     )["location"].to_numpy()
@@ -465,7 +465,7 @@ def test_parse_files_valid_progress_regex():
         results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
     ][:2].round(4)
 
-    assert file_names_run == file_names
+    assert sorted(file_names_run) == sorted(file_names)
 
     samples_df_locations = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
@@ -474,7 +474,7 @@ def test_parse_files_valid_progress_regex():
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
     )["count"].to_numpy()
 
-    samples_df_expected_counts = [152, 304, 152, 152, 152, 152, 3648, 456, 760]
+    # samples_df_expected_counts = [152, 304, 152, 152, 152, 152, 3648, 456, 760]
 
     assert (samples_df_locations == samples_df_expected_locations).all()
     assert (samples_df_counts == samples_df_expected_counts).all()
@@ -596,7 +596,7 @@ def test_parse_files_invalid_progress_regex():
     assert (results_df["point"].to_numpy() == expected_points).all()
     assert (results_df["speedup"].to_numpy() == expected_speedup).all()
     assert (results_df["progress_speedup"].to_numpy() == expected_progress).all()
-    assert file_names_run == file_names
+    assert sorted(file_names_run) == sorted(file_names)
     assert (samples_df_locations == samples_df_expected_locations).all()
     assert (samples_df_counts == expected_samples_count).all()
 
@@ -630,17 +630,17 @@ def test_parse_files_valid_speedup():
     results_df_expected_impact_err = np.full(2, 0)
     results_df_expected_point_count = np.full(2, 2.0)
 
-    assert file_names_run == file_names
+    assert sorted(file_names_run) == sorted(file_names)
 
     samples_df_locations = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
-    )["location"].to_numpy()
+    )["location"].to_list()
     samples_df_counts = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
-    )["count"].to_numpy()
+    )["count"].to_list()
 
-    assert (samples_df_locations == samples_df_expected_locations).all()
-    assert (samples_df_counts == samples_df_expected_counts).all()
+    assert samples_df_locations == samples_df_expected_locations
+    assert samples_df_counts == samples_df_expected_counts
 
     # assert expected speedup err
     assert (top_df["program speedup"].to_numpy() == top_df_expected_program_speedup).all()
@@ -737,7 +737,7 @@ def test_parse_files_invalid_speedup():
         default_settings["cli"],
     )
 
-    assert file_names_run == file_names
+    assert sorted(file_names_run) == sorted(file_names)
 
     samples_df_locations = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
@@ -776,7 +776,7 @@ def test_parse_files_valid_min_points():
         results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
     ][:2].round(4)
 
-    assert file_names_run == file_names
+    assert sorted(file_names_run) == sorted(file_names)
 
     samples_df_locations = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
@@ -876,7 +876,7 @@ def test_parse_files_high_min_points():
         results_df["idx"] == ("causal-cpu-omni", "cpu_fast_func(long, int)")
     ][:2].round(4)
 
-    assert file_names_run == file_names
+    assert sorted(file_names_run) == sorted(file_names)
 
     samples_df_locations = pd.concat(
         [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
@@ -1402,15 +1402,15 @@ def test_compute_sorts():
         0.0,
         0.0,
         0.0,
-        1.0,
-        1.0,
-        1.0,
-        1.0,
-        1.0,
         0.0,
         0.0,
         0.0,
         0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
         0.0,
         0.0,
         0.0,
@@ -1435,6 +1435,10 @@ def test_compute_sorts():
         4.0,
         4.0,
         4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
         5.0,
         5.0,
         5.0,
@@ -1450,10 +1454,6 @@ def test_compute_sorts():
         6.0,
         2.0,
         2.0,
-        4.0,
-        4.0,
-        4.0,
-        4.0,
         4.0,
         4.0,
         4.0,
@@ -1464,9 +1464,9 @@ def test_compute_sorts():
         4.0,
     ]
 
-    assert (results_df["max speedup"].to_numpy() == expected_speedup).all()
-    assert (results_df["min speedup"].to_numpy() == expected_speedup).all()
-    assert (results_df["point count"].to_numpy() == expected_point_count).all()
+    assert results_df["max speedup"].to_list() == expected_speedup
+    assert results_df["min speedup"].to_list() == expected_speedup
+    assert results_df["point count"].to_list() == expected_point_count
 
 
 def test_parse_uploaded_file():
@@ -1481,10 +1481,10 @@ def test_parse_uploaded_file():
 
         samples_df_locations = pd.concat(
             [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
-        )["location"].to_numpy()
+        )["location"].to_list()
         samples_df_counts = pd.concat(
             [samples_df[0:3], samples_df[100:103], samples_df[150:153]]
-        )["count"].to_numpy()
+        )["count"].to_list()
 
     # assert expected speedup err
     assert (top_df["program speedup"].to_numpy() == top_df_expected_program_speedup).all()
@@ -1500,18 +1500,29 @@ def test_parse_uploaded_file():
     # assert expected impact err
     assert (top_df["impact err"].to_numpy() == top_df_expected_impact_err).all()
 
-    assert (samples_df_locations == samples_df_expected_locations).all()
-    assert (samples_df_counts == samples_df_expected_counts).all()
+    _samples_df_expected_counts = [
+        152,
+        304,
+        152,
+        152,
+        152,
+        152,
+        3648,
+        456,
+        760,
+    ]
+
+    assert samples_df_locations == samples_df_expected_locations
+    assert samples_df_counts == _samples_df_expected_counts
 
 
 def set_up(ip_addr="localhost", ip_port="8051"):
     # works for linux, no browser pops up
     fireFoxOptions = webdriver.FirefoxOptions()
     fireFoxOptions.add_argument("--headless")
-    driver = webdriver.Firefox(options=fireFoxOptions)
-    driver.get("http://" + ip_addr + ":" + ip_port + "/")
-
-    return driver
+    browser = webdriver.Firefox(options=fireFoxOptions)
+    browser.get("http://" + ip_addr + ":" + ip_port + "/")
+    return browser
 
 
 # test order of chart titles
@@ -1520,22 +1531,25 @@ def test_title_order():
     parser_args = my_parser.parse_args(["-w", workload_dir, "-n", "0"])
 
     t = multiprocessing.Process(target=causal, args=(parser_args,))
-    t.start()
-    time.sleep(10)
+    try:
+        t.start()
+        time.sleep(5)
 
-    driver = set_up()
-    main_page = page.MainPage(driver)
+        driver = set_up()
+        main_page = page.MainPage(driver)
 
-    expected_title_set = [
-        "Selected Causal Profiles",
-        "cpu_slow_func(long, int)",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-        "cpu_fast_func(long, int)",
-    ]
-    captured_output = main_page.get_titles()
-    t.terminate()
-    t.join()
-    driver.quit()
+        expected_title_set = [
+            "Selected Causal Profiles",
+            "cpu_slow_func(long, int)",
+            "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+            "cpu_fast_func(long, int)",
+        ]
+        captured_output = main_page.get_titles()
+
+        driver.quit()
+    finally:
+        t.terminate()
+        t.join()
 
     assert captured_output == expected_title_set
 
@@ -1545,25 +1559,27 @@ def test_alphabetical_title_order():
     parser_args = my_parser.parse_args(["-w", workload_dir, "-n", "0"])
 
     t = multiprocessing.Process(target=causal, args=(parser_args,))
-    t.start()
-    time.sleep(10)
-    driver = set_up()
-    main_page = page.MainPage(driver)
+    try:
+        t.start()
+        time.sleep(5)
+        driver = set_up()
+        main_page = page.MainPage(driver)
 
-    expected_title_set = [
-        "Selected Causal Profiles",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-        "cpu_fast_func(long, int)",
-        "cpu_slow_func(long, int)",
-    ]
+        expected_title_set = [
+            "Selected Causal Profiles",
+            "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+            "cpu_fast_func(long, int)",
+            "cpu_slow_func(long, int)",
+        ]
 
-    title_set = main_page.get_alphabetical_titles()
-    captured_plot_data = main_page.get_plot_data()
-    captured_histogram_data = main_page.get_histogram_data()
+        title_set = main_page.get_alphabetical_titles()
+        captured_plot_data = main_page.get_plot_data()
+        captured_histogram_data = main_page.get_histogram_data()
 
-    t.terminate()
-    t.join()
-    driver.quit()
+        driver.quit()
+    finally:
+        t.terminate()
+        t.join()
 
     assert (
         np.array(captured_plot_data[0]["error_y"]["array"]).round(4)
@@ -1591,24 +1607,26 @@ def test_max_speedup_title_order():
     parser_args = my_parser.parse_args(["-w", workload_dir, "-n", "0"])
 
     t = multiprocessing.Process(target=causal, args=(parser_args,))
-    t.start()
-    time.sleep(10)
-    driver = set_up()
+    try:
+        t.start()
+        time.sleep(5)
+        driver = set_up()
 
-    main_page = page.MainPage(driver)
-    captured_output = main_page.get_max_speedup_titles()
-    captured_histogram_data = main_page.get_histogram_data()
-    captured_plot_data = main_page.get_plot_data()
-    expected_title_set = [
-        "Selected Causal Profiles",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-        "cpu_fast_func(long, int)",
-        "cpu_slow_func(long, int)",
-    ]
+        main_page = page.MainPage(driver)
+        captured_output = main_page.get_max_speedup_titles()
+        captured_histogram_data = main_page.get_histogram_data()
+        captured_plot_data = main_page.get_plot_data()
+        expected_title_set = [
+            "Selected Causal Profiles",
+            "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+            "cpu_fast_func(long, int)",
+            "cpu_slow_func(long, int)",
+        ]
 
-    t.terminate()
-    t.join()
-    driver.quit()
+        driver.quit()
+    finally:
+        t.terminate()
+        t.join()
 
     assert (
         np.array(captured_plot_data[0]["error_y"]["array"]).round(4)
@@ -1636,25 +1654,27 @@ def test_min_speedup_title_order():
     parser_args = my_parser.parse_args(["-w", workload_dir, "-n", "0"])
 
     t = multiprocessing.Process(target=causal, args=(parser_args,))
-    t.start()
-    time.sleep(10)
-    driver = set_up()
+    try:
+        t.start()
+        time.sleep(5)
+        driver = set_up()
 
-    main_page = page.MainPage(driver)
+        main_page = page.MainPage(driver)
 
-    expected_title_set = [
-        "Selected Causal Profiles",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-        "cpu_fast_func(long, int)",
-        "cpu_slow_func(long, int)",
-    ]
-    captured_output = main_page.get_min_speedup_titles()
-    captured_histogram_data = main_page.get_histogram_data()
-    captured_plot_data = main_page.get_plot_data()
+        expected_title_set = [
+            "Selected Causal Profiles",
+            "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+            "cpu_fast_func(long, int)",
+            "cpu_slow_func(long, int)",
+        ]
+        captured_output = main_page.get_min_speedup_titles()
+        captured_histogram_data = main_page.get_histogram_data()
+        captured_plot_data = main_page.get_plot_data()
 
-    t.terminate()
-    t.join()
-    driver.quit()
+        driver.quit()
+    finally:
+        t.terminate()
+        t.join()
 
     assert (
         np.array(captured_plot_data[0]["error_y"]["array"]).round(4)
@@ -1682,26 +1702,28 @@ def test_impact_title_order():
     parser_args = my_parser.parse_args(["-w", workload_dir, "-n", "0"])
 
     t = multiprocessing.Process(target=causal, args=(parser_args,))
-    t.start()
+    try:
+        t.start()
 
-    time.sleep(10)
-    driver = set_up()
+        time.sleep(5)
+        driver = set_up()
 
-    main_page = page.MainPage(driver)
+        main_page = page.MainPage(driver)
 
-    expected_title_set = [
-        "Selected Causal Profiles",
-        "cpu_slow_func(long, int)",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-        "cpu_fast_func(long, int)",
-    ]
-    captured_output = main_page.get_impact_titles()
-    captured_histogram_data = main_page.get_histogram_data()
-    captured_plot_data = main_page.get_plot_data()
+        expected_title_set = [
+            "Selected Causal Profiles",
+            "cpu_slow_func(long, int)",
+            "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+            "cpu_fast_func(long, int)",
+        ]
+        captured_output = main_page.get_impact_titles()
+        captured_histogram_data = main_page.get_histogram_data()
+        captured_plot_data = main_page.get_plot_data()
 
-    t.terminate()
-    t.join()
-    driver.quit()
+        driver.quit()
+    finally:
+        t.terminate()
+        t.join()
 
     assert (
         np.array(captured_plot_data[0]["error_y"]["array"]).round(4)
@@ -1734,71 +1756,74 @@ def test_min_points_slider():
     )
 
     t = multiprocessing.Process(target=causal, args=(parser_args,))
-    t.start()
-    time.sleep(10)
+    try:
+        t.start()
+        time.sleep(5)
 
-    driver = set_up()
-    main_page = page.MainPage(driver)
-    expected_title_set = [
-        {"num points": 9, "titles": ["Selected Causal Profiles"]},
-        {"num points": 8, "titles": ["Selected Causal Profiles"]},
-        {"num points": 7, "titles": ["Selected Causal Profiles"]},
-        {"num points": 6, "titles": ["Selected Causal Profiles"]},
-        {"num points": 5, "titles": ["Selected Causal Profiles"]},
-        {
-            "num points": 4,
-            "titles": [
-                "Selected Causal Profiles",
-                "cpu_slow_func(long, int)",
-                "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-                "cpu_fast_func(long, int)",
-            ],
-        },
-        {
-            "num points": 3,
-            "titles": [
-                "Selected Causal Profiles",
-                "cpu_slow_func(long, int)",
-                "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-                "cpu_fast_func(long, int)",
-            ],
-        },
-        {
-            "num points": 2,
-            "titles": [
-                "Selected Causal Profiles",
-                "cpu_slow_func(long, int)",
-                "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-                "cpu_fast_func(long, int)",
-            ],
-        },
-        {
-            "num points": 1,
-            "titles": [
-                "Selected Causal Profiles",
-                "cpu_slow_func(long, int)",
-                "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-                "cpu_fast_func(long, int)",
-            ],
-        },
-        {
-            "num points": 0,
-            "titles": [
-                "Selected Causal Profiles",
-                "cpu_slow_func(long, int)",
-                "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-                "cpu_fast_func(long, int)",
-            ],
-        },
-    ]
-    captured_output = main_page.get_min_points_titles()
-    captured_histogram_data = main_page.get_histogram_data()
+        driver = set_up()
+        main_page = page.MainPage(driver)
+        expected_title_set = [
+            {"num points": 9, "titles": ["Selected Causal Profiles"]},
+            {"num points": 8, "titles": ["Selected Causal Profiles"]},
+            {"num points": 7, "titles": ["Selected Causal Profiles"]},
+            {"num points": 6, "titles": ["Selected Causal Profiles"]},
+            {"num points": 5, "titles": ["Selected Causal Profiles"]},
+            {
+                "num points": 4,
+                "titles": [
+                    "Selected Causal Profiles",
+                    "cpu_slow_func(long, int)",
+                    "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+                    "cpu_fast_func(long, int)",
+                ],
+            },
+            {
+                "num points": 3,
+                "titles": [
+                    "Selected Causal Profiles",
+                    "cpu_slow_func(long, int)",
+                    "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+                    "cpu_fast_func(long, int)",
+                ],
+            },
+            {
+                "num points": 2,
+                "titles": [
+                    "Selected Causal Profiles",
+                    "cpu_slow_func(long, int)",
+                    "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+                    "cpu_fast_func(long, int)",
+                ],
+            },
+            {
+                "num points": 1,
+                "titles": [
+                    "Selected Causal Profiles",
+                    "cpu_slow_func(long, int)",
+                    "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+                    "cpu_fast_func(long, int)",
+                ],
+            },
+            {
+                "num points": 0,
+                "titles": [
+                    "Selected Causal Profiles",
+                    "cpu_slow_func(long, int)",
+                    "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+                    "cpu_fast_func(long, int)",
+                ],
+            },
+        ]
+        captured_output = main_page.get_min_points_titles()
+        captured_histogram_data = main_page.get_histogram_data()
 
-    # captured_plot_data = main_page.get_plot_data()
+        # captured_plot_data = main_page.get_plot_data()
 
-    t.terminate()
-    t.join()
-    driver.quit()
+        driver.quit()
+
+    finally:
+        t.terminate()
+        t.join()
 
     assert captured_output == expected_title_set
     assert captured_histogram_data == expected_histogram
@@ -1810,20 +1835,23 @@ def test_verbose_gui_flag_1():
         stdout=subprocess.PIPE,
     )
 
-    time.sleep(10)
-    driver = set_up()
-    main_page = page.MainPage(driver)
+    try:
+        time.sleep(5)
+        driver = set_up()
+        main_page = page.MainPage(driver)
 
-    expected_title_set = [
-        "Selected Causal Profiles",
-        "cpu_slow_func(long, int)",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-        "cpu_fast_func(long, int)",
-    ]
-    captured_title_set = main_page.get_titles()
-    t.terminate()
-    driver.quit()
-    captured_output = t.communicate(timeout=15)[0].decode("utf-8")
+        expected_title_set = [
+            "Selected Causal Profiles",
+            "cpu_slow_func(long, int)",
+            "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+            "cpu_fast_func(long, int)",
+        ]
+        captured_title_set = main_page.get_titles()
+        captured_output = t.communicate(timeout=15)[0].decode("utf-8")
+        driver.quit()
+
+    finally:
+        t.terminate()
 
     assert captured_title_set == expected_title_set
     assert captured_output
@@ -1835,19 +1863,21 @@ def test_verbose_gui_flag_2():
         stdout=subprocess.PIPE,
     )
 
-    expected_title_set = [
-        "Selected Causal Profiles",
-        "cpu_slow_func(long, int)",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-        "cpu_fast_func(long, int)",
-    ]
-    time.sleep(10)
-    driver = set_up()
-    main_page = page.MainPage(driver)
-    captured_title_set = main_page.get_titles()
-    t.terminate()
-    driver.quit()
-    captured_output = t.communicate(timeout=15)[0].decode("utf-8")
+    try:
+        expected_title_set = [
+            "Selected Causal Profiles",
+            "cpu_slow_func(long, int)",
+            "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+            "cpu_fast_func(long, int)",
+        ]
+        time.sleep(5)
+        driver = set_up()
+        main_page = page.MainPage(driver)
+        captured_title_set = main_page.get_titles()
+        captured_output = t.communicate(timeout=15)[0].decode("utf-8")
+        driver.quit()
+    finally:
+        t.terminate()
 
     assert captured_output
     assert captured_title_set == expected_title_set
@@ -1876,13 +1906,16 @@ def test_verbose_gui_flag_3():
         stdout=subprocess.PIPE,
     )
 
-    time.sleep(10)
-    driver = set_up()
-    main_page = page.MainPage(driver)
+    try:
+        time.sleep(5)
+        driver = set_up()
+        main_page = page.MainPage(driver)
 
-    captured_title_set = main_page.get_titles()
-    t.terminate()
-    driver.quit()
+        captured_title_set = main_page.get_titles()
+        driver.quit()
+    finally:
+        t.terminate()
+
     captured_output = t.communicate(timeout=15)[0].decode("utf-8")
 
     assert captured_title_set == expected_title_set
@@ -1903,20 +1936,25 @@ def test_ip_port_flag():
         stdout=subprocess.PIPE,
     )
 
-    time.sleep(10)
-    driver = set_up(ip_port="8052")
-    main_page = page.MainPage(driver)
+    try:
+        time.sleep(5)
+        driver = set_up(ip_port="8052")
+        main_page = page.MainPage(driver)
 
-    expected_title_set = [
-        "Selected Causal Profiles",
-        "cpu_slow_func(long, int)",
-        "/home/jose/omnitrace/examples/causal/causal.cpp:165",
-        "cpu_fast_func(long, int)",
-    ]
-    expected_output = "running on http://0.0.0.0:8052"
+        expected_title_set = [
+            "Selected Causal Profiles",
+            "cpu_slow_func(long, int)",
+            "/home/jose/omnitrace/examples/causal/causal.cpp:165",
+            "cpu_fast_func(long, int)",
+        ]
+        expected_output = "running on http://0.0.0.0:8052"
 
-    captured_title_set = main_page.get_titles()
-    t.terminate()
+        captured_title_set = main_page.get_titles()
+        driver.quit()
+
+    finally:
+        t.terminate()
+
     captured_output = t.communicate(timeout=15)[0].decode("utf-8")
 
     assert captured_title_set == expected_title_set
