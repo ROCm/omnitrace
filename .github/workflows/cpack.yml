@@ -146,9 +146,6 @@ jobs:
           - os-distro: "rhel"
             os-version: "9.0"
             rocm-version: "5.5"
-          - os-distro: "rhel"
-            os-version: "9.0"
-            rocm-version: "5.6"
           # RHEL 9.1
           - os-distro: "rhel"
             os-version: "9.1"
