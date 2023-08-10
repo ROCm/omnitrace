@@ -35,6 +35,15 @@ jobs:
         os-release: [ '8.7', '9.0', '9.1' ]
         rocm-version: [ '0.0', '5.3', '5.4' ]
         build-type: ['Release']
+        include:
+            - compiler: 'g++'
+              os-release: '9.1'
+              rocm-version: '5.5'
+              build-type: 'Release'
+            - compiler: 'g++'
+              os-release: '9.1'
+              rocm-version: '5.6'
+              build-type: 'Release'
 
     steps:
     - uses: actions/checkout@v3
