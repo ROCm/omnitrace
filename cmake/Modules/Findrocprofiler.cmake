@@ -51,7 +51,8 @@ mark_as_advanced(rocprofiler_hsa_INCLUDE_DIR)
 
 find_library(
     rocprofiler_LIBRARY
-    NAMES rocprofiler64 rocprofiler
+    NAMES ${CMAKE_SHARED_LIBRARY_PREFIX}rocprofiler64${CMAKE_SHARED_LIBRARY_SUFFIX}.1
+          rocprofiler64 rocprofiler
     HINTS ${rocprofiler_ROOT_DIR}/rocprofiler ${rocprofiler_ROOT_DIR}
           ${_ROCM_ROCPROFILER_PATHS}
     PATHS ${rocprofiler_ROOT_DIR}/rocprofiler ${rocprofiler_ROOT_DIR}
