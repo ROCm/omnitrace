@@ -436,8 +436,8 @@ jobs:
           python3 -m pip install numpy &&
           python3 -m pip install perfetto &&
           python3 -m pip install 'cmake==3.16.3' &&
-          apt-get -y --purge autoremove &&
-          apt-get -y clean
+          sudo apt-get -y --purge autoremove &&
+          sudo apt-get -y clean
 
 
     - name: Test Environment Modules
