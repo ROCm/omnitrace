@@ -115,6 +115,16 @@ jobs:
             rocm-version: "5.6"
 
     steps:
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@v1.2.0
+        with:
+            tool-cache: false
+            android: true
+            dotnet: true
+            haskell: true
+            large-packages: true
+            swap-storage: true
+
       - uses: actions/checkout@v3
         with:
           submodules: recursive
@@ -149,6 +159,7 @@ jobs:
         run: |
           pushd docker
           ./build-docker.sh --distro ${{ matrix.os-distro }} --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }}
+          docker system prune -a -f
           popd
 
       - name: Build Release
@@ -156,6 +167,7 @@ jobs:
         run: |
           pushd docker
           ./build-docker-release.sh --distro ${{ matrix.os-distro }} --versions ${{ matrix.os-version }} --rocm-versions ${{ matrix.rocm-version }} -- ${CI_SCRIPT_ARGS} ${CI_GENERATOR_ARGS}
+          docker system prune -a -f
           popd
 
       - name: List Files
