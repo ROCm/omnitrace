@@ -24,7 +24,7 @@ and tweak some sampling default values:
 
 ```console
 # ...
-OMNITRACE_USE_PERFETTO         = true
+OMNITRACE_TRACE                = true
 OMNITRACE_USE_TIMEMORY         = true
 OMNITRACE_USE_SAMPLING         = true
 OMNITRACE_USE_PROCESS_SAMPLING = true
@@ -179,7 +179,7 @@ $ cat ~/.omnitrace.cfg
 
 OMNITRACE_CONFIG_FILE                              =
 OMNITRACE_MODE                                     = trace
-OMNITRACE_USE_PERFETTO                             = true
+OMNITRACE_TRACE                                    = true
 OMNITRACE_USE_TIMEMORY                             = false
 OMNITRACE_USE_SAMPLING                             = false
 OMNITRACE_USE_PROCESS_SAMPLING                     = true
@@ -352,7 +352,7 @@ $ omnitrace-avail -S -bd
 | OMNITRACE_USE_CODE_COVERAGE             | Enable support for code coverage        |
 | OMNITRACE_USE_KOKKOSP                   | Enable support for Kokkos Tools         |
 | OMNITRACE_USE_OMPT                      | Enable support for OpenMP-Tools         |
-| OMNITRACE_USE_PERFETTO                  | Enable perfetto backend                 |
+| OMNITRACE_TRACE                         | Enable perfetto backend                 |
 | OMNITRACE_USE_PID                       | Enable tagging filenames with proces... |
 | OMNITRACE_USE_ROCM_SMI                  | Enable sampling GPU power, temp, uti... |
 | OMNITRACE_USE_ROCTRACER                 | Enable ROCM tracing                     |
@@ -1192,7 +1192,7 @@ $ENABLE                         = ON
 $SAMPLE                         = OFF
 
 # use fields
-OMNITRACE_USE_PERFETTO          = $ENABLE
+OMNITRACE_TRACE                 = $ENABLE
 OMNITRACE_USE_TIMEMORY          = $ENABLE
 OMNITRACE_USE_SAMPLING          = $SAMPLE
 OMNITRACE_USE_PROCESS_SAMPLING  = $SAMPLE

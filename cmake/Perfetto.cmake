@@ -228,7 +228,7 @@ mark_as_advanced(PERFETTO_LIBRARY)
 #
 # ---------------------------------------------------------------------------------------#
 
-omnitrace_target_compile_definitions(omnitrace-perfetto INTERFACE OMNITRACE_USE_PERFETTO)
+omnitrace_target_compile_definitions(omnitrace-perfetto INTERFACE OMNITRACE_TRACE)
 target_include_directories(omnitrace-perfetto SYSTEM
                            INTERFACE $<BUILD_INTERFACE:${PERFETTO_INCLUDE_DIR}>)
 target_link_libraries(

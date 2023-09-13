@@ -396,7 +396,7 @@ add_core_arguments(parser_t& _parser, parser_data& _data)
                           "Generate a detailed trace (perfetto output)")
             .max_count(1)
             .action([&](parser_t& p) {
-                update_env(_data, "OMNITRACE_USE_PERFETTO", p.get<bool>("trace"));
+                update_env(_data, "OMNITRACE_TRACE", p.get<bool>("trace"));
             });
 
         _data.processed_environs.emplace("trace");

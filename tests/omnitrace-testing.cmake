@@ -58,12 +58,12 @@ set(_test_library_path
 set(_test_openmp_env "OMP_PROC_BIND=spread" "OMP_PLACES=threads" "OMP_NUM_THREADS=2")
 
 set(_base_environment
-    "OMNITRACE_USE_PERFETTO=ON" "OMNITRACE_USE_TIMEMORY=ON" "OMNITRACE_USE_SAMPLING=ON"
+    "OMNITRACE_TRACE=ON" "OMNITRACE_USE_TIMEMORY=ON" "OMNITRACE_USE_SAMPLING=ON"
     "OMNITRACE_USE_PROCESS_SAMPLING=ON" "OMNITRACE_TIME_OUTPUT=OFF"
     "OMNITRACE_FILE_OUTPUT=ON" "${_test_openmp_env}" "${_test_library_path}")
 
 set(_flat_environment
-    "OMNITRACE_USE_PERFETTO=ON"
+    "OMNITRACE_TRACE=ON"
     "OMNITRACE_USE_TIMEMORY=ON"
     "OMNITRACE_TIME_OUTPUT=OFF"
     "OMNITRACE_COUT_OUTPUT=ON"
@@ -106,7 +106,7 @@ set(_critical_trace_environment
     "${_test_library_path}")
 
 set(_ompt_environment
-    "OMNITRACE_USE_PERFETTO=ON"
+    "OMNITRACE_TRACE=ON"
     "OMNITRACE_USE_TIMEMORY=ON"
     "OMNITRACE_TIME_OUTPUT=OFF"
     "OMNITRACE_USE_OMPT=ON"
@@ -116,7 +116,7 @@ set(_ompt_environment
     "${_test_library_path}")
 
 set(_perfetto_environment
-    "OMNITRACE_USE_PERFETTO=ON"
+    "OMNITRACE_TRACE=ON"
     "OMNITRACE_USE_TIMEMORY=OFF"
     "OMNITRACE_USE_SAMPLING=ON"
     "OMNITRACE_USE_PROCESS_SAMPLING=ON"
@@ -127,7 +127,7 @@ set(_perfetto_environment
     "${_test_library_path}")
 
 set(_timemory_environment
-    "OMNITRACE_USE_PERFETTO=OFF"
+    "OMNITRACE_TRACE=OFF"
     "OMNITRACE_USE_TIMEMORY=ON"
     "OMNITRACE_USE_SAMPLING=ON"
     "OMNITRACE_USE_PROCESS_SAMPLING=ON"
@@ -143,7 +143,7 @@ set(_causal_environment
     "OMNITRACE_FILE_OUTPUT=ON" "OMNITRACE_CAUSAL_RANDOM_SEED=1342342")
 
 set(_python_environment
-    "OMNITRACE_USE_PERFETTO=ON"
+    "OMNITRACE_TRACE=ON"
     "OMNITRACE_USE_TIMEMORY=ON"
     "OMNITRACE_USE_SAMPLING=OFF"
     "OMNITRACE_USE_PROCESS_SAMPLING=ON"
@@ -155,7 +155,7 @@ set(_python_environment
     "PYTHONPATH=${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}")
 
 set(_attach_environment
-    "OMNITRACE_USE_PERFETTO=ON"
+    "OMNITRACE_TRACE=ON"
     "OMNITRACE_USE_TIMEMORY=ON"
     "OMNITRACE_USE_SAMPLING=OFF"
     "OMNITRACE_USE_PROCESS_SAMPLING=ON"
@@ -169,7 +169,7 @@ set(_attach_environment
     "${_test_library_path}")
 
 set(_rccl_environment
-    "OMNITRACE_USE_PERFETTO=ON"
+    "OMNITRACE_TRACE=ON"
     "OMNITRACE_USE_TIMEMORY=ON"
     "OMNITRACE_USE_SAMPLING=OFF"
     "OMNITRACE_USE_PROCESS_SAMPLING=ON"
@@ -180,7 +180,7 @@ set(_rccl_environment
     "${_test_library_path}")
 
 set(_window_environment
-    "OMNITRACE_USE_PERFETTO=ON"
+    "OMNITRACE_TRACE=ON"
     "OMNITRACE_USE_TIMEMORY=ON"
     "OMNITRACE_USE_SAMPLING=OFF"
     "OMNITRACE_USE_PROCESS_SAMPLING=OFF"

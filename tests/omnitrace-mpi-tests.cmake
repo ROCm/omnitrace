@@ -78,7 +78,7 @@ omnitrace_add_test(
     )
 
 set(_mpip_environment
-    "OMNITRACE_USE_PERFETTO=ON"
+    "OMNITRACE_TRACE=ON"
     "OMNITRACE_USE_TIMEMORY=ON"
     "OMNITRACE_USE_SAMPLING=OFF"
     "OMNITRACE_USE_PROCESS_SAMPLING=OFF"
@@ -92,7 +92,7 @@ set(_mpip_environment
     "${_test_library_path}")
 
 set(_mpip_all2all_environment
-    "OMNITRACE_USE_PERFETTO=ON"
+    "OMNITRACE_TRACE=ON"
     "OMNITRACE_USE_TIMEMORY=ON"
     "OMNITRACE_USE_SAMPLING=OFF"
     "OMNITRACE_USE_PROCESS_SAMPLING=OFF"

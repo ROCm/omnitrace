@@ -337,7 +337,7 @@ generate_config(std::string _config_file, const std::set<std::string>& _config_f
                 if(_lomni && !_romni) return true;
                 if(_romni && !_lomni) return false;
                 for(const auto* itr :
-                    { "OMNITRACE_CONFIG", "OMNITRACE_MODE", "OMNITRACE_USE_PERFETTO",
+                    { "OMNITRACE_CONFIG", "OMNITRACE_MODE", "OMNITRACE_TRACE",
                       "OMNITRACE_USE_TIMEMORY", "OMNITRACE_USE_SAMPLING",
                       "OMNITRACE_USE_PROCESS_SAMPLING", "OMNITRACE_USE_ROCTRACER",
                       "OMNITRACE_USE_ROCM_SMI", "OMNITRACE_USE_KOKKOSP",

@@ -419,7 +419,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
         .add_argument({ "-T", "--trace" }, "Generate a detailed trace (perfetto output)")
         .max_count(1)
         .action([&](parser_t& p) {
-            update_env(_env, "OMNITRACE_USE_PERFETTO", p.get<bool>("trace"));
+            update_env(_env, "OMNITRACE_TRACE", p.get<bool>("trace"));
         });
     parser
         .add_argument(
