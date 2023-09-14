@@ -30,7 +30,7 @@ function(OMNITRACE_ADD_BIN_TEST)
     if(NOT TEST_ENVIRONMENT)
         set(TEST_ENVIRONMENT
             "OMNITRACE_TRACE=ON"
-            "OMNITRACE_USE_TIMEMORY=ON"
+            "OMNITRACE_PROFILE=ON"
             "OMNITRACE_USE_SAMPLING=ON"
             "OMNITRACE_TIME_OUTPUT=OFF"
             "LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}:${OMNITRACE_DYNINST_API_RT_DIR}:$ENV{LD_LIBRARY_PATH}"
@@ -345,7 +345,7 @@ omnitrace_add_bin_test(
          json xml --force
     TIMEOUT 45
     LABELS "omnitrace-avail"
-    ENVIRONMENT "OMNITRACE_TRACE=OFF;OMNITRACE_USE_TIMEMORY=ON"
+    ENVIRONMENT "OMNITRACE_TRACE=OFF;OMNITRACE_PROFILE=ON"
     PASS_REGEX
         "Outputting JSON configuration file '${_AVAIL_CFG_PATH}tweak\\\.json'(.*)Outputting XML configuration file '${_AVAIL_CFG_PATH}tweak\\\.xml'(.*)Outputting text configuration file '${_AVAIL_CFG_PATH}tweak\\\.cfg'(.*)"
     )

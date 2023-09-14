@@ -25,7 +25,7 @@ and tweak some sampling default values:
 ```console
 # ...
 OMNITRACE_TRACE                = true
-OMNITRACE_USE_TIMEMORY         = true
+OMNITRACE_PROFILE              = true
 OMNITRACE_USE_SAMPLING         = true
 OMNITRACE_USE_PROCESS_SAMPLING = true
 # ...
@@ -50,7 +50,7 @@ match to nearly all common expressions for boolean logic: ON, OFF, YES, NO, TRUE
 ### Exploring Components
 
 [OmniTrace](https://github.com/AMDResearch/omnitrace) uses [timemory](https://github.com/NERSC/timemory) extensively to provide various capabilities and manage
-data and resources. By default, when `OMNITRACE_USE_TIMEMORY=ON`, omnitrace will only collect wall-clock
+data and resources. By default, when `OMNITRACE_PROFILE=ON`, omnitrace will only collect wall-clock
 timing values; however, by modifying the `OMNITRACE_TIMEMORY_COMPONENTS` setting, omnitrace can be configured to
 collect hardware counters, CPU-clock timers, memory usage, context-switches, page-faults, network statistics,
 and many more. In fact, omnitrace can actually be used as a dynamic instrumentation vehicle for other 3rd-party profiling
@@ -180,7 +180,7 @@ $ cat ~/.omnitrace.cfg
 OMNITRACE_CONFIG_FILE                              =
 OMNITRACE_MODE                                     = trace
 OMNITRACE_TRACE                                    = true
-OMNITRACE_USE_TIMEMORY                             = false
+OMNITRACE_PROFILE                                  = false
 OMNITRACE_USE_SAMPLING                             = false
 OMNITRACE_USE_PROCESS_SAMPLING                     = true
 OMNITRACE_USE_ROCTRACER                            = true
@@ -358,7 +358,7 @@ $ omnitrace-avail -S -bd
 | OMNITRACE_USE_ROCTRACER                 | Enable ROCM tracing                     |
 | OMNITRACE_USE_SAMPLING                  | Enable statistical sampling of call-... |
 | OMNITRACE_USE_PROCESS_SAMPLING          | Enable a background thread which sam... |
-| OMNITRACE_USE_TIMEMORY                  | Enable timemory backend                 |
+| OMNITRACE_PROFILE                       | Enable timemory backend                 |
 | OMNITRACE_VERBOSE                       | Verbosity level                         |
 | OMNITRACE_WIDTH                         | Set the global output width for comp... |
 |-----------------------------------------|-----------------------------------------|
@@ -1193,7 +1193,7 @@ $SAMPLE                         = OFF
 
 # use fields
 OMNITRACE_TRACE                 = $ENABLE
-OMNITRACE_USE_TIMEMORY          = $ENABLE
+OMNITRACE_PROFILE               = $ENABLE
 OMNITRACE_USE_SAMPLING          = $SAMPLE
 OMNITRACE_USE_PROCESS_SAMPLING  = $SAMPLE
 

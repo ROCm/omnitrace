@@ -60,7 +60,7 @@ usage()
 
 cat << EOF > ${CONFIG_DIR}/omnitrace.cfg
 OMNITRACE_VERBOSE               = 2
-OMNITRACE_USE_TIMEMORY          = ON
+OMNITRACE_PROFILE               = ON
 OMNITRACE_TRACE                 = ON
 OMNITRACE_USE_SAMPLING          = ON
 OMNITRACE_USE_PROCESS_SAMPLING  = ON
