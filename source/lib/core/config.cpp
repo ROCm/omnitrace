@@ -230,8 +230,7 @@ configure_settings(bool _init)
     auto _config = settings::shared_instance();
 
     // if using timemory, default to perfetto being off
-    auto _default_perfetto_v =
-        !tim::get_env<bool>("OMNITRACE_PROFILE", false, false);
+    auto _default_perfetto_v = !tim::get_env<bool>("OMNITRACE_PROFILE", false, false);
 
     auto _system_backend =
         tim::get_env("OMNITRACE_PERFETTO_BACKEND_SYSTEM", false, false);
@@ -274,18 +273,18 @@ configure_settings(bool _init)
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_TRACE", "Enable perfetto backend",
                              _default_perfetto_v, "backend", "perfetto");
-    
+
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_PERFETTO",
-                            "[DEPRECATED] Renamed to OMNITRACE_TRACE",
+                             "[DEPRECATED] Renamed to OMNITRACE_TRACE",
                              _default_perfetto_v, "backend", "perfetto", "deprecated");
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_PROFILE", "Enable timemory backend",
                              !_config->get<bool>("OMNITRACE_TRACE"), "backend",
                              "timemory");
-    
-    OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_TIMEMORY", "[DEPRECATED] Renamed to OMNITRACE_PROFILE",
-                             !_config->get<bool>("OMNITRACE_TRACE"), "backend",
-                             "timemory", "deprecated");
+
+    OMNITRACE_CONFIG_SETTING(
+        bool, "OMNITRACE_USE_TIMEMORY", "[DEPRECATED] Renamed to OMNITRACE_PROFILE",
+        !_config->get<bool>("OMNITRACE_TRACE"), "backend", "timemory", "deprecated");
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_USE_CAUSAL",
                              "Enable causal profiling analysis", false, "backend",
