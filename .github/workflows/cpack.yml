@@ -212,23 +212,23 @@ jobs:
           path: |
             build-release/stgz/*.sh
 
-      - name: DEB Artifacts
-        timeout-minutes: 10
-        if: ${{ matrix.os-distro == 'ubuntu' }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: omnitrace-deb-${{ matrix.os-distro }}-${{ matrix.os-version }}-rocm-${{ matrix.rocm-version }}-installer
-          path: |
-            build-release/deb/*.deb
+    #   - name: DEB Artifacts
+    #     timeout-minutes: 10
+    #     if: ${{ matrix.os-distro == 'ubuntu' }}
+    #     uses: actions/upload-artifact@v3
+    #     with:
+    #       name: omnitrace-deb-${{ matrix.os-distro }}-${{ matrix.os-version }}-rocm-${{ matrix.rocm-version }}-installer
+    #       path: |
+    #         build-release/deb/*.deb
 
-      - name: RPM Artifacts
-        timeout-minutes: 10
-        if: ${{ matrix.os-distro == 'opensuse' }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: omnitrace-rpm-${{ matrix.os-distro }}-${{ matrix.os-version }}-rocm-${{ matrix.rocm-version }}-installer
-          path: |
-            build-release/rpm/*.rpm
+    #   - name: RPM Artifacts
+    #     timeout-minutes: 10
+    #     if: ${{ matrix.os-distro == 'opensuse' }}
+    #     uses: actions/upload-artifact@v3
+    #     with:
+    #       name: omnitrace-rpm-${{ matrix.os-distro }}-${{ matrix.os-version }}-rocm-${{ matrix.rocm-version }}-installer
+    #       path: |
+    #         build-release/rpm/*.rpm
 
       # before testing remove any artifacts of the build
       - name: Remove Build
