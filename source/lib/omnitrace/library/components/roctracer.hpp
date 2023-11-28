@@ -79,6 +79,10 @@ roctracer::setup(void*, bool)
 {}
 
 inline void
+roctracer::flush()
+{}
+
+inline void
 roctracer::shutdown()
 {}
 
