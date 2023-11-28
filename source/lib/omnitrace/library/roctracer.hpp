@@ -22,6 +22,18 @@
 
 #pragma once
 
+#define HIP_PROF_HIP_API_STRING 1
+
+// following must be included before <roctracer_hip.h> for ROCm 6.0+
+#if OMNITRACE_HIP_VERSION >= 60000
+#    if defined(USE_PROF_API)
+#        undef USE_PROF_API
+#    endif
+#    include <hip/hip_runtime.h>
+//
+#    include <hip_ostream_ops.h>
+#endif
+
 #include "core/config.hpp"
 #include "core/debug.hpp"
 #include "core/perfetto.hpp"
