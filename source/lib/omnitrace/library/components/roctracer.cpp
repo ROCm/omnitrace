@@ -32,6 +32,7 @@
 #include "library/thread_data.hpp"
 #include "library/thread_info.hpp"
 
+#include <chrono>
 #include <roctracer.h>
 
 #define HIP_PROF_HIP_API_STRING 1
@@ -282,6 +283,22 @@ roctracer::shutdown()
             tim::storage<comp::roctracer_data>::instance()->reset();
         return;
     }
+
+    if(roctracer_activity_count() == 0)
+    {
+        OMNITRACE_VERBOSE_F(2, "executing roctracer_flush_activity()...\n");
+        OMNITRACE_ROCTRACER_CALL(roctracer_flush_activity());
+        // wait to make sure flush completes
+        std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
+    }
+    else
+    {
+        OMNITRACE_CI_FAIL(true,
+                          "roctracer_activity_count() != 0 (== %li). "
+                          "roctracer::shutdown() most likely called during abort",
+                          roctracer_activity_count().load());
+    }
+
     roctracer_is_setup() = false;
 
     OMNITRACE_VERBOSE_F(1, "shutting down roctracer...\n");
@@ -350,19 +367,6 @@ roctracer::shutdown()
                "HSA_OP_ID_COPY)...\n");
         OMNITRACE_ROCTRACER_CALL(
             roctracer_disable_op_activity(ACTIVITY_DOMAIN_HSA_OPS, HSA_OP_ID_COPY));
-    }
-
-    if(roctracer_activity_count() == 0)
-    {
-        OMNITRACE_VERBOSE_F(2, "executing roctracer_flush_activity()...\n");
-        OMNITRACE_ROCTRACER_CALL(roctracer_flush_activity());
-    }
-    else
-    {
-        OMNITRACE_CI_FAIL(true,
-                          "roctracer_activity_count() != 0 (== %li). "
-                          "roctracer::shutdown() most likely called during abort",
-                          roctracer_activity_count().load());
     }
 
     OMNITRACE_VERBOSE_F(1, "roctracer is shutdown\n");
