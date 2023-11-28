@@ -274,6 +274,41 @@ roctracer::setup(void* table, bool on_load_trace)
 }
 
 void
+roctracer::flush()
+{
+    auto wait_for_activity_flush_completion = []() {
+        uint16_t nitr = 0;
+        while(roctracer_activity_count() > 0 && nitr++ < 10)
+            std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
+    };
+
+    // a flush may already be happening
+    wait_for_activity_flush_completion();
+
+    if(roctracer_activity_count() == 0)
+    {
+        OMNITRACE_VERBOSE_F(2, "executing roctracer_flush_activity()...\n");
+        OMNITRACE_ROCTRACER_CALL(roctracer_flush_activity());
+        // wait to make sure flush completes
+        std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
+        wait_for_activity_flush_completion();
+    }
+    else
+    {
+        OMNITRACE_CI_FAIL(true,
+                          "roctracer_activity_count() != 0 (== %li). "
+                          "roctracer::shutdown() most likely called during abort",
+                          roctracer_activity_count().load());
+    }
+
+    OMNITRACE_VERBOSE_F(2, "executing hip_exec_activity_callbacks(0..%zu)\n",
+                        thread_info::get_peak_num_threads());
+    // make sure all async operations are executed
+    for(size_t i = 0; i < thread_info::get_peak_num_threads(); ++i)
+        hip_exec_activity_callbacks(i);
+}
+
+void
 roctracer::shutdown()
 {
     auto_lock_t _lk{ type_mutex<roctracer>() };
@@ -284,30 +319,9 @@ roctracer::shutdown()
         return;
     }
 
-    if(roctracer_activity_count() == 0)
-    {
-        OMNITRACE_VERBOSE_F(2, "executing roctracer_flush_activity()...\n");
-        OMNITRACE_ROCTRACER_CALL(roctracer_flush_activity());
-        // wait to make sure flush completes
-        std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
-    }
-    else
-    {
-        OMNITRACE_CI_FAIL(true,
-                          "roctracer_activity_count() != 0 (== %li). "
-                          "roctracer::shutdown() most likely called during abort",
-                          roctracer_activity_count().load());
-    }
-
     roctracer_is_setup() = false;
 
     OMNITRACE_VERBOSE_F(1, "shutting down roctracer...\n");
-
-    OMNITRACE_VERBOSE_F(2, "executing hip_exec_activity_callbacks(0..%zu)\n",
-                        thread_info::get_peak_num_threads());
-    // make sure all async operations are executed
-    for(size_t i = 0; i < thread_info::get_peak_num_threads(); ++i)
-        hip_exec_activity_callbacks(i);
 
     // callback for hsa
     OMNITRACE_VERBOSE_F(2, "executing %zu roctracer_shutdown_routines...\n",
