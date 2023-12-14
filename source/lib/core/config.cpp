@@ -626,7 +626,7 @@ configure_settings(bool _init)
 
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_ROCTRACER_DISCARD_BARRIERS",
                              "Skip barrier marker events in traces", false,
-                             "roctracer", "rocm", "perfetto", "advanced");
+                             "roctracer", "rocm", "advanced");
 
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_ROCM_EVENTS",
