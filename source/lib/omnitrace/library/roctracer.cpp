@@ -900,7 +900,7 @@ hip_activity_callback(const char* begin, const char* end, void* arg)
         }
         if(record->domain != ACTIVITY_DOMAIN_HIP_OPS) continue;
         if(record->op > HIP_OP_ID_BARRIER) continue;
-        if (_skip_barrier_packets && record->op == HIP_OP_ID_BARRIER) continue;
+        if(_skip_barrier_packets && record->op == HIP_OP_ID_BARRIER) continue;
 
         const char* op_name =
             roctracer_op_string(record->domain, record->op, record->kind);
