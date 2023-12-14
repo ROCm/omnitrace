@@ -870,6 +870,10 @@ hip_activity_callback(const char* begin, const char* end, void* arg)
     if(!trait::runtime_enabled<comp::roctracer>::get()) return;
     static auto _kernel_names        = std::unordered_map<const char*, std::string>{};
     static auto _indexes             = std::unordered_map<uint64_t, int>{};
+    static auto _skip_barrier_packets =
+        config::get_setting_value<bool>(
+            "OMNITRACE_ROCTRACER_DISCARD_BARRIERS")
+            .value_or(false);
     const roctracer_record_t* record = reinterpret_cast<const roctracer_record_t*>(begin);
     const roctracer_record_t* end_record =
         reinterpret_cast<const roctracer_record_t*>(end);
@@ -896,6 +900,7 @@ hip_activity_callback(const char* begin, const char* end, void* arg)
         }
         if(record->domain != ACTIVITY_DOMAIN_HIP_OPS) continue;
         if(record->op > HIP_OP_ID_BARRIER) continue;
+        if (_skip_barrier_packets && record->op == HIP_OP_ID_BARRIER) continue;
 
         const char* op_name =
             roctracer_op_string(record->domain, record->op, record->kind);
