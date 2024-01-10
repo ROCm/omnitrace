@@ -71,6 +71,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE
     ON
     CACHE BOOL "Build position independent code")
 
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE
         Release
