@@ -121,7 +121,7 @@ rsmi_init()
 }
 #endif
 
-#if OMNITRACE_HIP_VERSION >= 6000
+#if OMNITRACE_HIP_VERSION >= 60000
 template <typename ArchiveT, typename ArgT,
           std::enable_if_t<!std::is_pointer<ArgT>::value, int> = 0>
 void
