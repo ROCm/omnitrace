@@ -757,7 +757,7 @@ hip_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void*
                 {
                     if(itr)
                     {
-                        if(auto _val = binary::lookup_ipaddr_entry<true>(itr->address());
+                        if(auto _val = binary::lookup_ipaddr_entry<false>(itr->address());
                            _val)
                         {
                             _bt_data->emplace_back(std::move(*_val));
@@ -816,12 +816,23 @@ hip_api_callback(uint32_t domain, uint32_t cid, const void* callback_data, void*
                                     (itr.name.empty()) ? &_unk : &itr.name;
                                 const auto* _loc =
                                     (itr.location.empty()) ? &_unk : &itr.location;
-                                auto _line = (itr.lineno == 0) ? std::string{ "?" }
-                                                               : join("", itr.lineno);
-                                tracing::add_perfetto_annotation(
-                                    ctx, join("", "frame#", _bt_cnt++),
-                                    join("", demangle(*_func), " @ ",
-                                         join(':', *_loc, _line)));
+                                auto _line  = (itr.lineno == 0) ? std::string{ "?" }
+                                                                : join("", itr.lineno);
+                                auto _entry = join("", demangle(*_func), " @ ",
+                                                   join(':', *_loc, _line));
+                                if(_bt_cnt < 10)
+                                {
+                                    // Prepend zero for better ordering in UI.
+                                    // Only one zero is ever necessary since stack depth
+                                    // is limited to 16.
+                                    tracing::add_perfetto_annotation(
+                                        ctx, join("", "frame#0", _bt_cnt++), _entry);
+                                }
+                                else
+                                {
+                                    tracing::add_perfetto_annotation(
+                                        ctx, join("", "frame#", _bt_cnt++), _entry);
+                                }
                             }
                         }
                     }
