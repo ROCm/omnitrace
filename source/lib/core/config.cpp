@@ -1332,8 +1332,7 @@ get_use_sampling_cputime()
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
-std::set<int>
-get_sampling_signals(int64_t)
+std::set<int> get_sampling_signals(int64_t)
 {
     auto _v = std::set<int>{};
     if(get_use_causal())
