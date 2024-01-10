@@ -1518,10 +1518,37 @@ def test_parse_uploaded_file():
 
 def set_up(ip_addr="localhost", ip_port="8051"):
     # works for linux, no browser pops up
-    fireFoxOptions = webdriver.FirefoxOptions()
-    fireFoxOptions.add_argument("--headless")
-    browser = webdriver.Firefox(options=fireFoxOptions)
-    browser.get("http://" + ip_addr + ":" + ip_port + "/")
+    webdriver_keys = webdriver.__dict__.keys()
+    browser = None
+    exception_vals = []
+
+    if "Chrome" in webdriver_keys and "ChromeOptions" in webdriver_keys:
+        try:
+            chromiumOptions = webdriver.ChromeOptions()
+            chromiumOptions.add_argument("--headless")
+            browser = webdriver.Chrome(options=chromiumOptions)
+        except Exception as e:
+            exception_vals.append(e)
+
+    if (
+        browser is None
+        and "Firefox" in webdriver_keys
+        and "FirefoxOptions" in webdriver_keys
+    ):
+        try:
+            fireFoxOptions = webdriver.FirefoxOptions()
+            fireFoxOptions.add_argument("--headless")
+            browser = webdriver.Firefox(options=fireFoxOptions)
+        except Exception as e:
+            exception_vals.append(e)
+
+    if browser:
+        browser.get("http://" + ip_addr + ":" + ip_port + "/")
+    elif exception_vals:
+        for itr in exception_vals:
+            print(f"Exception: {itr}")
+        raise exception_vals[0]
+
     return browser
 
 
