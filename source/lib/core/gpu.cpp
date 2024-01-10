@@ -290,7 +290,7 @@ add_hip_device_metadata(ArchiveT& ar)
 
         ar.startNode();
 
-#    if OMNITRACE_HIP_VERSION < 6000
+#    if OMNITRACE_HIP_VERSION < 60000
         using intvec_t   = std::vector<int>;
         namespace cereal = tim::cereal;
         using cereal::make_nvp;
@@ -311,7 +311,7 @@ add_hip_device_metadata(ArchiveT& ar)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(totalConstMem)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(clockRate)
 
-#        if OMNITRACE_HIP_VERSION >= 5000
+#        if OMNITRACE_HIP_VERSION >= 50000
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(memoryClockRate)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(memoryBusWidth)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(l2CacheSize)
