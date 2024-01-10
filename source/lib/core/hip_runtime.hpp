@@ -24,10 +24,6 @@
 
 #include "core/defines.hpp"
 
-#if !defined(OMNITRACE_USE_HIP)
-#    define OMNITRACE_USE_HIP 0
-#endif
-
 #if defined(OMNITRACE_USE_HIP) && OMNITRACE_USE_HIP > 0
 
 #    if defined(HIP_INCLUDE_HIP_HIP_RUNTIME_H) ||                                        \

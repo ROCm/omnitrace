@@ -22,22 +22,6 @@
 
 #pragma once
 
-#if !defined(OMNITRACE_USE_HIP)
-#    define OMNITRACE_USE_HIP 0
-#endif
-
-#if !defined(OMNITRACE_USE_ROCTRACER)
-#    define OMNITRACE_USE_ROCTRACER 0
-#endif
-
-#if !defined(OMNITRACE_USE_ROCPROFILER)
-#    define OMNITRACE_USE_ROCPROFILER 0
-#endif
-
-#if !defined(OMNITRACE_USE_ROCM_SMI)
-#    define OMNITRACE_USE_ROCM_SMI 0
-#endif
-
 namespace omnitrace
 {
 namespace gpu
