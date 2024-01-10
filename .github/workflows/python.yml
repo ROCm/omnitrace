@@ -60,16 +60,14 @@ jobs:
       working-directory: ${{ github.workspace }}/source/python/gui
       run: |
         sudo apt-get update
-        sudo apt-get install -y firefox
+        sudo apt-get install -y chromium-browser
         sudo apt-get upgrade -y
         python -m pip install --upgrade pip
         python -m pip install -r requirements.txt
-        python -m pip install pytest selenium selenium-wire webdriver-manager gecko
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        python -m pip install pytest selenium selenium-wire webdriver-manager
     - name: Test
       working-directory: ${{ github.workspace }}/source/python/gui
       run: |
-        sudo snap refresh
         pip install -e .
         export PATH=${HOME}/.local/bin:${PATH}
         pytest -s -vv
