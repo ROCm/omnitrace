@@ -25,8 +25,11 @@
 #include "core/defines.hpp"
 #include "core/hip_runtime.hpp"
 
-#if OMNITRACE_HIP_VERSION == 0 || OMNITRACE_HIP_VERSION >= 50200
-#    include <rccl/rccl.h>
-#else
-#    include <rccl.h>
+#if defined(OMNITRACE_USE_HIP) && OMNITRACE_USE_HIP > 0 &&                               \
+    defined(OMNITRACE_USE_RCCL) && OMNITRACE_USE_RCCL > 0
+#    if OMNITRACE_HIP_VERSION == 0 || OMNITRACE_HIP_VERSION >= 50200
+#        include <rccl/rccl.h>
+#    else
+#        include <rccl.h>
+#    endif
 #endif
