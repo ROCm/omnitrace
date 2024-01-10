@@ -31,6 +31,7 @@
 #include "perfetto.hpp"
 #include "utility.hpp"
 
+#include <asm-generic/errno-base.h>
 #include <timemory/backends/capability.hpp>
 #include <timemory/backends/dmp.hpp>
 #include <timemory/backends/mpi.hpp>
@@ -2527,8 +2528,33 @@ tmp_file::fopen(const char* _mode)
 }
 
 bool
+tmp_file::flush()
+{
+    if(stream.is_open())
+    {
+        stream.flush();
+    }
+    else if(file != nullptr)
+    {
+        int _ret = fflush(file);
+        int _cnt = 0;
+        while(_ret == EAGAIN || _ret == EINTR)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
+            _ret = fflush(file);
+            if(++_cnt > 10) break;
+        }
+        return (_ret == 0);
+    }
+
+    return true;
+}
+
+bool
 tmp_file::close()
 {
+    flush();
+
     if(stream.is_open())
     {
         stream.close();
