@@ -22,8 +22,15 @@
 
 #include "common/defines.h"
 
+#if !defined(OMNITRACE_USE_ROCM_SMI)
+#    define OMNITRACE_USE_ROCM_SMI 0
+#endif
+
+#if !defined(OMNITRACE_USE_HIP)
+#    define OMNITRACE_USE_HIP 0
+#endif
+
 #include "core/hip_runtime.hpp"
-#include <hip/hip_runtime_api.h>
 
 #if OMNITRACE_USE_HIP > 0
 #    if !defined(TIMEMORY_USE_HIP)
