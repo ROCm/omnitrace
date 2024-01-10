@@ -60,7 +60,7 @@ jobs:
       working-directory: ${{ github.workspace }}/source/python/gui
       run: |
         sudo apt-get update
-        sudo apt-get install -y firefox firefox-geckodriver firefoxdriver
+        sudo apt-get install -y firefox
         sudo apt-get upgrade -y
         python -m pip install --upgrade pip
         python -m pip install -r requirements.txt
@@ -69,6 +69,7 @@ jobs:
     - name: Test
       working-directory: ${{ github.workspace }}/source/python/gui
       run: |
+        sudo snap refresh
         pip install -e .
         export PATH=${HOME}/.local/bin:${PATH}
         pytest -s -vv
