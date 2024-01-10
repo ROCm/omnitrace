@@ -26,7 +26,7 @@ omnitrace_add_test(
     LABELS "kokkos;kokkos-profile-library"
     RUN_ARGS -i 25 -s 20 -p
     ENVIRONMENT
-        "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;OMNITRACE_SAMPLING_FREQ=50;OMNITRACE_KOKKOSP_PREFIX=[kokkos];KOKKOS_PROFILE_LIBRARY=libomnitrace-dl.so"
+        "${_base_environment};OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;OMNITRACE_SAMPLING_FREQ=50;OMNITRACE_KOKKOSP_PREFIX=[kokkos];KOKKOS_PROFILE_LIBRARY=libomnitrace-dl.so"
     REWRITE_RUN_PASS_REGEX "\\|_\\[kokkos\\] [a-zA-Z]"
     RUNTIME_PASS_REGEX "\\|_\\[kokkos\\] [a-zA-Z]")
 
@@ -40,7 +40,7 @@ omnitrace_add_test(
     LABELS "kokkos;kokkos-profile-library"
     RUN_ARGS -i 10 -s 20 -p
     ENVIRONMENT
-        "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;OMNITRACE_SAMPLING_FREQ=50;OMNITRACE_KOKKOSP_PREFIX=[kokkos];KOKKOS_PROFILE_LIBRARY=libomnitrace.so"
+        "${_base_environment};OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;OMNITRACE_SAMPLING_FREQ=50;OMNITRACE_KOKKOSP_PREFIX=[kokkos];KOKKOS_PROFILE_LIBRARY=libomnitrace.so"
     BASELINE_PASS_REGEX "\\|_\\[kokkos\\] [a-zA-Z]")
 
 omnitrace_add_test(
@@ -53,7 +53,7 @@ omnitrace_add_test(
     LABELS "kokkos;kokkos-profile-library"
     RUN_ARGS -i 10 -s 20 -p
     ENVIRONMENT
-        "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;OMNITRACE_SAMPLING_FREQ=50;OMNITRACE_KOKKOSP_PREFIX=[kokkos];KOKKOS_PROFILE_LIBRARY=libomnitrace-dl.so"
+        "${_base_environment};OMNITRACE_USE_KOKKOSP=ON;OMNITRACE_COUT_OUTPUT=ON;OMNITRACE_SAMPLING_FREQ=50;OMNITRACE_KOKKOSP_PREFIX=[kokkos];KOKKOS_PROFILE_LIBRARY=libomnitrace-dl.so"
     BASELINE_PASS_REGEX "\\|_\\[kokkos\\] [a-zA-Z]")
 
 omnitrace_add_test(
@@ -78,7 +78,7 @@ omnitrace_add_test(
         [==[lib(gomp|m-)]==]
     RUN_ARGS -i 10 -s 20 -p
     ENVIRONMENT
-        "${_base_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=ON")
+        "${_base_environment};OMNITRACE_USE_KOKKOSP=ON")
 
 omnitrace_add_test(
     SKIP_BASELINE
@@ -101,7 +101,7 @@ omnitrace_add_test(
         [==[libgomp]==]
     RUN_ARGS -i 10 -s 20 -p
     ENVIRONMENT
-        "${_perfetto_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=OFF")
+        "${_perfetto_environment};OMNITRACE_USE_KOKKOSP=OFF")
 
 omnitrace_add_test(
     NAME lulesh-timemory
@@ -123,5 +123,5 @@ omnitrace_add_test(
         OMNITRACE_TIMEMORY_COMPONENTS="wall_clock peak_rss"
     RUN_ARGS -i 10 -s 20 -p
     ENVIRONMENT
-        "${_timemory_environment};OMNITRACE_CRITICAL_TRACE=OFF;OMNITRACE_USE_KOKKOSP=OFF"
+        "${_timemory_environment};OMNITRACE_USE_KOKKOSP=OFF"
     REWRITE_FAIL_REGEX "0 instrumented loops in procedure")
