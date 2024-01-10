@@ -22,36 +22,39 @@
 
 #pragma once
 
+#include "core/defines.hpp"
+
 #if !defined(OMNITRACE_USE_HIP)
 #    define OMNITRACE_USE_HIP 0
 #endif
 
-#if !defined(OMNITRACE_USE_ROCTRACER)
-#    define OMNITRACE_USE_ROCTRACER 0
+#if defined(OMNITRACE_USE_HIP) && OMNITRACE_USE_HIP > 0
+
+#    if defined(HIP_INCLUDE_HIP_HIP_RUNTIME_H) ||                                        \
+        defined(HIP_INCLUDE_HIP_HIP_RUNTIME_API_H)
+#        error                                                                           \
+            "include core/hip_runtime.hpp before <hip/hip_runtime.h> or <hip/hip_runtime_api.h>"
+#    endif
+
+#    define HIP_PROF_HIP_API_STRING 1
+
+// following must be included before <roctracer_hip.h> for ROCm 6.0+
+#    if OMNITRACE_HIP_VERSION >= 60000
+#        if defined(USE_PROF_API)
+#            undef USE_PROF_API
+#        endif
+#        include <hip/hip_runtime.h>
+#        include <hip/hip_runtime_api.h>
+// must be included after hip_runtime_api.h
+#        include <hip/hip_deprecated.h>
+// must be included after hip_runtime_api.h
+#        include <hip_ostream_ops.h>
+// must be included after hip_runtime_api.h
+#        include <hip/amd_detail/hip_prof_str.h>
+#    else
+#        include <hip/hip_runtime.h>
+#        include <hip/hip_runtime_api.h>
+#    endif
+
+#    include <hip/hip_version.h>
 #endif
-
-#if !defined(OMNITRACE_USE_ROCPROFILER)
-#    define OMNITRACE_USE_ROCPROFILER 0
-#endif
-
-#if !defined(OMNITRACE_USE_ROCM_SMI)
-#    define OMNITRACE_USE_ROCM_SMI 0
-#endif
-
-namespace omnitrace
-{
-namespace gpu
-{
-int
-device_count();
-
-int
-hip_device_count();
-
-int
-rsmi_device_count();
-
-void
-add_hip_device_metadata();
-}  // namespace gpu
-}  // namespace omnitrace

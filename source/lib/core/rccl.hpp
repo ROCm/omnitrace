@@ -22,36 +22,11 @@
 
 #pragma once
 
-#if !defined(OMNITRACE_USE_HIP)
-#    define OMNITRACE_USE_HIP 0
+#include "core/defines.hpp"
+#include "core/hip_runtime.hpp"
+
+#if OMNITRACE_HIP_VERSION == 0 || OMNITRACE_HIP_VERSION >= 50200
+#    include <rccl/rccl.h>
+#else
+#    include <rccl.h>
 #endif
-
-#if !defined(OMNITRACE_USE_ROCTRACER)
-#    define OMNITRACE_USE_ROCTRACER 0
-#endif
-
-#if !defined(OMNITRACE_USE_ROCPROFILER)
-#    define OMNITRACE_USE_ROCPROFILER 0
-#endif
-
-#if !defined(OMNITRACE_USE_ROCM_SMI)
-#    define OMNITRACE_USE_ROCM_SMI 0
-#endif
-
-namespace omnitrace
-{
-namespace gpu
-{
-int
-device_count();
-
-int
-hip_device_count();
-
-int
-rsmi_device_count();
-
-void
-add_hip_device_metadata();
-}  // namespace gpu
-}  // namespace omnitrace
