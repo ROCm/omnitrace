@@ -177,10 +177,10 @@ do
                 4.1* | 4.0*)
                     ROCM_REPO_DIST="xenial"
                     ;;
-                5.3 | 5.3.* | 5.4 | 5.4.* | 5.5 | 5.5.* | 5.6 | 5.6.* | 5.7 | 5.7.*)
+                5.3 | 5.3.* | 5.4 | 5.4.* | 5.5 | 5.5.* | 5.6 | 5.6.* | 5.7 | 5.7.* | 6.0 | 6.0.*)
                     case "${VERSION}" in
                         22.04)
-                            ROCM_REPO_DIST="jammy"
+                            ROCM_REPO_DIST="ubuntu"
                             ;;
                         20.04)
                             ROCM_REPO_DIST="focal"
@@ -198,7 +198,7 @@ do
             verbose-build docker build . ${PULL} --progress plain -f ${DOCKER_FILE} --tag ${CONTAINER} --build-arg DISTRO=${DISTRO} --build-arg VERSION=${VERSION} --build-arg ROCM_VERSION=${ROCM_VERSION} --build-arg ROCM_REPO_VERSION=${ROCM_REPO_VERSION} --build-arg ROCM_REPO_DIST=${ROCM_REPO_DIST} --build-arg PYTHON_VERSIONS=\"${PYTHON_VERSIONS}\"
         elif [ "${DISTRO}" = "rhel" ]; then
             if [ -z "${VERSION_MINOR}" ]; then
-                send-error "Please provide a major and minor version of the OS. Supported: >= 8.7, <= 9.1"
+                send-error "Please provide a major and minor version of the OS. Supported: >= 8.7, <= 9.3"
             fi
 
             # Components used to create the sub-URL below
@@ -208,7 +208,7 @@ do
 
             # set the sub-URL in https://repo.radeon.com/amdgpu-install/<sub-URL>
             case "${ROCM_VERSION}" in
-                5.3 | 5.3.* | 5.4 | 5.4.* | 5.5 | 5.5.* | 5.6 | 5.6.* | 5.7 | 5.7.*)
+                5.3 | 5.3.* | 5.4 | 5.4.* | 5.5 | 5.5.* | 5.6 | 5.6.* | 5.7 | 5.7.* | 6.0 | 6.0.*)
                     ROCM_RPM=${ROCM_VERSION}/rhel/${RPM_PATH}/amdgpu-install-${ROCM_MAJOR}.${ROCM_MINOR}.${ROCM_VERSN}-1${RPM_TAG}.noarch.rpm
                     ;;
                 5.2 | 5.2.* | 5.1 | 5.1.* | 5.0 | 5.0.* | 4.*)
@@ -236,7 +236,7 @@ do
                     ;;
             esac
             case "${ROCM_VERSION}" in
-                5.3 | 5.3.* | 5.4 | 5.4.* | 5.5 | 5.5.* | 5.6 | 5.6.* | 5.7 | 5.7.*)
+                5.3 | 5.3.* | 5.4 | 5.4.* | 5.5 | 5.5.* | 5.6 | 5.6.* | 5.7 | 5.7.* | 6.0 | 6.0.*)
                     ROCM_RPM=${ROCM_VERSION}/sle/${VERSION}/amdgpu-install-${ROCM_MAJOR}.${ROCM_MINOR}.${ROCM_VERSN}-1.noarch.rpm
                     ;;
                 5.2 | 5.2.*)
