@@ -650,8 +650,7 @@ configure_settings(bool _init)
     OMNITRACE_CONFIG_SETTING(bool, "OMNITRACE_PERFETTO_COMBINE_TRACES",
                              "Combine Perfetto traces. If not explicitly set, it will "
                              "default to the value of OMNITRACE_COLLAPSE_PROCESSES",
-                             _config->get<bool>("collapse_processes"), "perfetto", "data",
-                             "advanced");
+                             false, "perfetto", "data", "advanced");
 
     OMNITRACE_CONFIG_SETTING(
         bool, "OMNITRACE_PERFETTO_ROCTRACER_PER_STREAM",
