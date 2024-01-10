@@ -54,9 +54,13 @@
 static_assert(OMNITRACE_HIP_VERSION_MAJOR == HIP_VERSION_MAJOR,
               "OMNITRACE_HIP_VERSION_MAJOR (detected by cmake) != HIP_VERSION_MAJOR "
               "(from <hip/hip_version.h>)");
+
+#    if OMNITRACE_HIP_VERSION_MAJOR >= 5
+// HIP versions 4.x and older have unreliable values for HIP_VERSION_MINOR
 static_assert(OMNITRACE_HIP_VERSION_MINOR == HIP_VERSION_MINOR,
               "OMNITRACE_HIP_VERSION_MINOR (detected by cmake) != HIP_VERSION_MINOR "
               "(from <hip/hip_version.h>)");
+#    endif
 
 #    if !defined(OMNITRACE_HIP_RUNTIME_CALL)
 #        define OMNITRACE_HIP_RUNTIME_CALL(err)                                          \
@@ -255,6 +259,9 @@ template <typename ArchiveT>
 void
 add_hip_device_metadata(ArchiveT& ar)
 {
+    namespace cereal = tim::cereal;
+    using cereal::make_nvp;
+
 #if OMNITRACE_USE_HIP > 0
     int        _device_count     = 0;
     int        _current_device   = 0;
@@ -291,9 +298,7 @@ add_hip_device_metadata(ArchiveT& ar)
         ar.startNode();
 
 #    if OMNITRACE_HIP_VERSION < 60000
-        using intvec_t   = std::vector<int>;
-        namespace cereal = tim::cereal;
-        using cereal::make_nvp;
+        using intvec_t = std::vector<int>;
 
 #        define OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(NAME)                                \
             ar(make_nvp(#NAME, _device_prop.NAME));
@@ -343,7 +348,6 @@ add_hip_device_metadata(ArchiveT& ar)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(pciBusID)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(pciDeviceID)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(computeMode)
-        OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(computeMode)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(gcnArch)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(gcnArchName)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(isMultiGpuBoard)
@@ -355,20 +359,6 @@ add_hip_device_metadata(ArchiveT& ar)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(concurrentKernels)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(maxSharedMemoryPerMultiProcessor)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(asicRevision)
-
-        const char* _compute_mode_descr[] = {
-            "Default (multiple host threads can use ::hipSetDevice() with device "
-            "simultaneously)",
-            "Exclusive (only one host thread in one process is able to use "
-            "::hipSetDevice() with this device)",
-            "Prohibited (no host thread can use ::hipSetDevice() with this device)",
-            "Exclusive Process (many threads in one process is able to use "
-            "::hipSetDevice() with this device)",
-            "Unknown",
-            nullptr
-        };
-        ar(make_nvp("computeModeDescription",
-                    std::string{ _compute_mode_descr[_device_prop.computeMode] }));
 #    else
 #        define OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(NAME)                                \
             device_prop_serialize(ar, #NAME, _device_prop.NAME);
@@ -479,6 +469,23 @@ add_hip_device_metadata(ArchiveT& ar)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(isLargeBar)
         OMNITRACE_SERIALIZE_HIP_DEVICE_PROP(asicRevision)
 #    endif
+
+        constexpr auto _compute_mode_descr = std::array<const char*, 6>{
+            "Default (multiple host threads can use ::hipSetDevice() with device "
+            "simultaneously)",
+            "Exclusive (only one host thread in one process is able to use "
+            "::hipSetDevice() with this device)",
+            "Prohibited (no host thread can use ::hipSetDevice() with this device)",
+            "Exclusive Process (many threads in one process is able to use "
+            "::hipSetDevice() with this device)",
+            "Unknown",
+            nullptr
+        };
+
+        auto _compute_mode = std::min<int>(_device_prop.computeMode, 5);
+        ar(make_nvp("computeModeDescription",
+                    std::string{ _compute_mode_descr.at(_compute_mode) }));
+
         ar.finishNode();
     }
 #else
