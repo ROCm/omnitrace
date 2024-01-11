@@ -77,8 +77,7 @@ omnitrace_add_test(
         -ME
         [==[lib(gomp|m-)]==]
     RUN_ARGS -i 10 -s 20 -p
-    ENVIRONMENT
-        "${_base_environment};OMNITRACE_USE_KOKKOSP=ON")
+    ENVIRONMENT "${_base_environment};OMNITRACE_USE_KOKKOSP=ON")
 
 omnitrace_add_test(
     SKIP_BASELINE
@@ -100,8 +99,7 @@ omnitrace_add_test(
         -ME
         [==[libgomp]==]
     RUN_ARGS -i 10 -s 20 -p
-    ENVIRONMENT
-        "${_perfetto_environment};OMNITRACE_USE_KOKKOSP=OFF")
+    ENVIRONMENT "${_perfetto_environment};OMNITRACE_USE_KOKKOSP=OFF")
 
 omnitrace_add_test(
     NAME lulesh-timemory
@@ -122,6 +120,5 @@ omnitrace_add_test(
         --env
         OMNITRACE_TIMEMORY_COMPONENTS="wall_clock peak_rss"
     RUN_ARGS -i 10 -s 20 -p
-    ENVIRONMENT
-        "${_timemory_environment};OMNITRACE_USE_KOKKOSP=OFF"
+    ENVIRONMENT "${_timemory_environment};OMNITRACE_USE_KOKKOSP=OFF"
     REWRITE_FAIL_REGEX "0 instrumented loops in procedure")
