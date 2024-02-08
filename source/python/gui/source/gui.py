@@ -191,7 +191,7 @@ def update_line_graph(
 
 def reset_input_filters(workloads, max_points, verbosity):
     sortOptions = ["Alphabetical", "Max Speedup", "Min Speedup", "Impact"]
-    if type(workloads) == str:
+    if isinstance(workloads, str):
         workloads = [workloads]
 
     input_filters = [
