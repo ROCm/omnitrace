@@ -16,6 +16,11 @@ ARG EXTRA_PACKAGES=""
 ARG ELFUTILS_DOWNLOAD_VERSION="0.186"
 ARG NJOBS="12"
 
+RUN set +e; \
+    zypper --non-interactive patch; \
+    zypper --non-interactive patch; \
+    zypper --non-interactive --gpg-auto-import-keys refresh
+
 RUN zypper --non-interactive update -y && \
     zypper --non-interactive dist-upgrade -y && \
     zypper --non-interactive install -y -t pattern devel_basis && \
