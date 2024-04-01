@@ -57,13 +57,13 @@ jobs:
         apt-get upgrade -y
         apt-get install -y git
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
 
     - name: Install Packages
       timeout-minutes: 25
-      uses: nick-fields/retry@v2
+      uses: nick-fields/retry@v3
       with:
         retry_wait_seconds: 30
         timeout_minutes: 25
@@ -160,7 +160,7 @@ jobs:
     - name: CTest Artifacts
       if: failure()
       continue-on-error: True
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ctest-${{ github.job }}-${{ strategy.job-index }}-log
         path: |
@@ -169,7 +169,7 @@ jobs:
     - name: Data Artifacts
       if: failure()
       continue-on-error: True
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: data-${{ github.job }}-${{ strategy.job-index }}-files
         path: |
