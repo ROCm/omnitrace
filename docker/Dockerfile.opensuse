@@ -14,9 +14,9 @@ ENV PATH /usr/local/bin:${PATH}
 ENV LIBRARY_PATH ${LIBRARY_PATH}:/opt/amdgpu/lib64
 
 RUN set +e; \
-    zypper --non-interactive patch; \
-    zypper --non-interactive patch; \
-    zypper --non-interactive --gpg-auto-import-keys refresh
+    zypper --non-interactive -i patch; \
+    zypper --non-interactive -i patch; \
+    zypper --non-interactive -i --gpg-auto-import-keys refresh
 
 RUN zypper --non-interactive update -y && \
     zypper --non-interactive dist-upgrade -y && \
