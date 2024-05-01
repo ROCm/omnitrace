@@ -180,7 +180,6 @@ string(REPLACE ";" ", " _DEBIAN_PACKAGE_DEPENDS "${_DEBIAN_PACKAGE_DEPENDS}")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS
     "${_DEBIAN_PACKAGE_DEPENDS}"
     CACHE STRING "Debian package dependencies" FORCE)
-omnitrace_add_feature(CPACK_DEBIAN_PACKAGE_DEPENDS "Debian package dependencies")
 set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
 
 # -------------------------------------------------------------------------------------- #
@@ -214,8 +213,6 @@ set(CPACK_PACKAGE_VERSION
 
 if(DEFINED ENV{ROCM_LIBPATCH_VERSION})
     set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION}.$ENV{ROCM_LIBPATCH_VERSION}")
-else()
-    set(CPACK_PACKAGE_VERSION "${CPACK_PROJECT_VERSION}")
 endif()
 
 if(DEFINED ENV{CPACK_DEBIAN_PACKAGE_RELEASE})
@@ -226,17 +223,16 @@ if(DEFINED ENV{CPACK_RPM_PACKAGE_RELEASE})
     set(CPACK_RPM_PACKAGE_RELEASE $ENV{CPACK_RPM_PACKAGE_RELEASE})
 endif()
 
-message(STATUS "Packaging Information ... ")
-message(STATUS "  CPack package name: ${CPACK_PACKAGE_NAME}")
-message(STATUS "  CPack package file name: ${CPACK_PACKAGE_FILE_NAME}")
-message(STATUS "  CPack install prefix: ${CPACK_PACKAGING_INSTALL_PREFIX}")
-message(STATUS "  CPack package version: ${CPACK_PACKAGE_VERSION}")
-message(STATUS "  CPack Packaging generators: ${CPACK_GENERATOR}")
+omnitrace_add_feature(CPACK_PACKAGE_NAME "Package name")
+omnitrace_add_feature(CPACK_PACKAGE_VERSION "Package version")
+omnitrace_add_feature(CPACK_PACKAGING_INSTALL_PREFIX "Package installation prefix")
 
-message(STATUS "  CPack Debian package name: ${CPACK_DEBIAN_PACKAGE_RELEASE}")
-message(STATUS "  CPack Debian package dependencies: ${CPACK_DEBIAN_PACKAGE_DEPENDS}")
+omnitrace_add_feature(CPACK_DEBIAN_FILE_NAME "Debian file name")
+omnitrace_add_feature(CPACK_DEBIAN_PACKAGE_RELEASE "Debian package release version")
+omnitrace_add_feature(CPACK_DEBIAN_PACKAGE_DEPENDS "Debian package dependencies")
 
-message(STATUS "  CPack RPM package name: ${CPACK_RPM_PACKAGE_RELEASE}")
-message(STATUS "  CPack RPM package dependencies: ${CPACK_RPM_PACKAGE_REQUIRES}")
+omnitrace_add_feature(CPACK_RPM_FILE_NAME "RPM file name")
+omnitrace_add_feature(CPACK_RPM_PACKAGE_RELEASE "RPM package release version")
+omnitrace_add_feature(CPACK_RPM_PACKAGE_REQUIRES "RPM package dependencies")
 
 include(CPack)
