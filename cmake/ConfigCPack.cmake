@@ -180,7 +180,9 @@ string(REPLACE ";" ", " _DEBIAN_PACKAGE_DEPENDS "${_DEBIAN_PACKAGE_DEPENDS}")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS
     "${_DEBIAN_PACKAGE_DEPENDS}"
     CACHE STRING "Debian package dependencies" FORCE)
+
 set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 
 # -------------------------------------------------------------------------------------- #
 #
@@ -200,6 +202,7 @@ string(REPLACE "-" "~" CPACK_RPM_PACKAGE_RELEASE "${CPACK_RPM_PACKAGE_RELEASE}")
 
 set(CPACK_RPM_FILE_NAME "RPM-DEFAULT")
 set(CPACK_RPM_PACKAGE_RELEASE_DIST ON)
+set(CPACK_RPM_PACKAGE_AUTOREQPROV ON)
 
 # -------------------------------------------------------------------------------------- #
 #
@@ -230,9 +233,13 @@ omnitrace_add_feature(CPACK_PACKAGING_INSTALL_PREFIX "Package installation prefi
 omnitrace_add_feature(CPACK_DEBIAN_FILE_NAME "Debian file name")
 omnitrace_add_feature(CPACK_DEBIAN_PACKAGE_RELEASE "Debian package release version")
 omnitrace_add_feature(CPACK_DEBIAN_PACKAGE_DEPENDS "Debian package dependencies")
+omnitrace_add_feature(CPACK_DEBIAN_PACKAGE_SHLIBDEPS "Debian package shared library dependencies")
 
 omnitrace_add_feature(CPACK_RPM_FILE_NAME "RPM file name")
 omnitrace_add_feature(CPACK_RPM_PACKAGE_RELEASE "RPM package release version")
 omnitrace_add_feature(CPACK_RPM_PACKAGE_REQUIRES "RPM package dependencies")
+omnitrace_add_feature(CPACK_RPM_PACKAGE_AUTOREQPROV "RPM package auto generate requires and provides")
+omnitrace_add_feature(CPACK_RPM_PACKAGE_REQUIRES "RPM package requires")
+omnitrace_add_feature(CPACK_RPM_PACKAGE_PROVIDES "RPM package provides")
 
 include(CPack)
