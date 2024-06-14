@@ -181,18 +181,18 @@ file_exists(const std::string&);
     {                                                                                    \
         if(debug_msg || verbose_level >= LEVEL)                                          \
         {                                                                                \
-            fprintf(stdout, "%s", tim::log::color::info());                              \
-            fprintf(stdout, "[omnitrace][avail] " __VA_ARGS__);                          \
-            fprintf(stdout, "%s", tim::log::color::end());                               \
+            fprintf(stderr, "%s", tim::log::color::info());                              \
+            fprintf(stderr, "[omnitrace][avail] " __VA_ARGS__);                          \
+            fprintf(stderr, "%s", tim::log::color::end());                               \
         }                                                                                \
-        fflush(stdout);                                                                  \
+        fflush(stderr);                                                                  \
     }
 
 #define verbprintf_bare(LEVEL, ...)                                                      \
     {                                                                                    \
         if(debug_msg || verbose_level >= LEVEL)                                          \
         {                                                                                \
-            fprintf(stdout, __VA_ARGS__);                                                \
+            fprintf(stderr, __VA_ARGS__);                                                \
         }                                                                                \
-        fflush(stdout);                                                                  \
+        fflush(stderr);                                                                  \
     }
