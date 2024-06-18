@@ -35,21 +35,19 @@ with open("../VERSION", encoding="utf-8") as f:
     if not match:
         raise ValueError("VERSION not found!")
     version_number = match[1]
-left_nav_title = f"Omnitrace {version_number} documentation"
 
-# Project information
-project = "Omnitrace documentation"
+project = "omnitrace"
 author = "Advanced Micro Devices, Inc."
 copyright = "Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved."
 version = version_number
 release = version_number
+html_title = f"Omnitrace {version} documentation"
 
 external_toc_path = "./sphinx/_toc.yml"
 
 docs_core = ROCmDocs(left_nav_title)
 docs_core.setup()
 
-external_projects_current_project = "omnitrace"
 
 for sphinx_var in ROCmDocs.SPHINX_VARS:
     globals()[sphinx_var] = getattr(docs_core, sphinx_var)
