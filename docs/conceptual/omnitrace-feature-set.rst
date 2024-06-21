@@ -11,7 +11,7 @@ Internally, it leverages the `timemory performance analysis toolkit <https://git
 to manage extensions, resources, data, and other items. It supports the following features, 
 modes, metrics, and APIs.
 
-Data Collection Modes
+Data collection modes
 ========================================
 
 * Dynamic instrumentation
@@ -23,10 +23,10 @@ Data Collection Modes
 * Process-level sampling: Background thread records process-, system- and device-level metrics while the application executes
 * Causal profiling: Quantifies the potential impact of optimizations in parallel codes
 
-Data Analysis
+Data analysis
 ========================================
 
-* High-level summary profiles with mean/min/max/stddev statistics
+* High-level summary profiles with mean/min/max/standard deviation statistics
 
   * Low overhead, memory efficient
   * Ideal for running at scale
@@ -34,7 +34,7 @@ Data Analysis
 * Comprehensive traces for every individual event/measurement
 * Application speedup predictions resulting from potential optimizations in functions and lines of code (causal profiling)
 
-Parallelism API Support
+Parallelism API support
 ========================================
 
 * HIP
@@ -44,7 +44,7 @@ Parallelism API Support
 * Kokkos-Tools (KokkosP)
 * OpenMP-Tools (OMPT)
 
-GPU Metrics
+GPU metrics
 ========================================
 
 * GPU hardware counters
@@ -59,7 +59,7 @@ GPU Metrics
   * Temperature
   * Utilization
 
-CPU Metrics
+CPU metrics
 ========================================
 
 * CPU hardware counters sampling and profiles
@@ -98,7 +98,7 @@ Omnitrace use cases
 
 When analyzing the performance of an application, it is always best to NOT 
 assume you know where the performance bottlenecks are
-and why they are happening. OmniTrace is a tool for the entire execution 
+and why they are happening. Omnitrace is a tool for the entire execution 
 of application. It is the sort of tool which is
 ideal for characterizing where optimization would have the greatest impact 
 on the end-to-end execution of the application and/or
@@ -112,8 +112,8 @@ to 1 microsecond (1000x speed-up) but the original application never
 spent time waiting for kernel(s) to complete,
 you will see zero statistically significant speed-up in end-to-end 
 runtime of your application. In other words, it does not matter
-how fast or slow the code on GPU is if the application is not 
-bottlenecked waiting on the GPU.
+how fast or slow the code on GPU is if the application has a  
+bottleneck on waiting on the GPU.
 
 Use OmniTrace to obtain a high-level view of the entire application. Use it 
 to determine where the performance bottlenecks are and
