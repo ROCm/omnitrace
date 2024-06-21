@@ -45,7 +45,7 @@ html_title = f"Omnitrace {version} documentation"
 
 external_toc_path = "./sphinx/_toc.yml"
 
-docs_core = ROCmDocs(left_nav_title)
+docs_core = ROCmDocs(html_title)
 docs_core.setup()
 
 
