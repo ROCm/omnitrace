@@ -7,3 +7,10 @@ root: index
 subtrees:
   - entries:
     - file: what-is-omnitrace.rst
+
+  - caption: Conceptual
+    entries:
+    - file: conceptual/how-omnitrace-works.rst
+      title: How Omnitrace works
+    - file: conceptual/omnitrace-feature-set.rst
+      title: The Omnitrace feature set and use cases
