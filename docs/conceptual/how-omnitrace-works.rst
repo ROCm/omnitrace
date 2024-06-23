@@ -188,7 +188,7 @@ collect the required information and, thus, has the potential to cause performan
 changes which may, in some cases, lead to inaccurate results. The effect depends on 
 what information being collected and which features are activated in Omnitrace. 
 For example, collecting only the wall-clock timing data
-will have less effect than collected the wall-clock timing, cpu-clock timing, 
+will have less effect than collected the wall-clock timing, CPU-clock timing, 
 memory usage, cache-misses, and number of instructions executed. Similarly, 
 collecting a flat profile will have less overhead than a hierarchical profile 
 and collecting a trace OR a profile will have less overhead than collecting a 
@@ -223,7 +223,7 @@ Binary instrumentation vs. statistical sampling example
 
 Consider the following code:
 
-.. code:: cpp
+.. code:: c++
 
    long fib(long n)
    {

@@ -115,15 +115,15 @@ runtime of your application. In other words, it does not matter
 how fast or slow the code on GPU is if the application has a  
 bottleneck on waiting on the GPU.
 
-Use OmniTrace to obtain a high-level view of the entire application. Use it 
+Use Omnitrace to obtain a high-level view of the entire application. Use it 
 to determine where the performance bottlenecks are and
 obtain clues to why these bottlenecks are happening. If you want extensive 
 insight into the execution of individual kernels
 on the GPU, AMD Research is working on another tool for this but you should 
 start with the tool which characterizes the
-broad picture: OmniTrace.
+broad picture: Omnitrace.
 
-With regard to the CPU, OmniTrace does not target any specific vendor, 
+With regard to the CPU, Omnitrace does not target any specific vendor, 
 it works just as well with non-AMD CPUs as with AMD CPUs.
-With regard to the GPU, OmniTrace is currently restricted to the HIP and HSA APIs 
+With regard to the GPU, Omnitrace is currently restricted to the HIP and HSA APIs 
 and kernels executing on AMD GPUs.
