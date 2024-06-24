@@ -8,6 +8,13 @@ subtrees:
   - entries:
     - file: what-is-omnitrace.rst
 
+  - caption: Install
+    entries:
+    - file: install/quick-start.rst
+      title: Omnitrace quick start
+    - file: install/install.rst
+      title: Omnitrace Installation guide
+
   - caption: Conceptual
     entries:
     - file: conceptual/how-omnitrace-works.rst

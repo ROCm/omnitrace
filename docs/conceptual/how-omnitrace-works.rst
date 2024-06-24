@@ -223,7 +223,7 @@ Binary instrumentation vs. statistical sampling example
 
 Consider the following code:
 
-.. code:: c++
+.. code-block:: c++
 
    long fib(long n)
    {
