@@ -21,6 +21,10 @@ subtrees:
       title: Configuring and validating the environment 
     - file: how-to/configuring-runtime-options.rst
       title: Configuring runtime options 
+    - file: how-to/sampling-call-stack.rst
+      title: Sampling the call stack 
+    - file: how-to/instrumenting-rewriting-binary-application.rst
+      title: Instrumenting and rewriting a binary application 
 
   - caption: Conceptual
     entries:

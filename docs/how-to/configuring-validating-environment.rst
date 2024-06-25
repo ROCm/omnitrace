@@ -64,3 +64,4 @@ If Omnitrace was built with Python support, validate these additional commands:
 
    which omnitrace-python
    omnitrace-python --help
+   

@@ -54,8 +54,8 @@ for each setting:
 
    Use ``--brief`` to suppress printing current value and/or ``-c 0`` to suppress truncation of the descriptions.
 
-Any setting which is boolean (``omnitrace-avail --settings --value --brief --filter bool``) 
-accepts a case insensitive match to nearly all common expressions for boolean logic: 
+Any setting which is a Boolean (``omnitrace-avail --settings --value --brief --filter bool``) 
+accepts a case insensitive match to nearly all common expressions for Boolean logic: 
 ``ON``, ``OFF``, ``YES``, ``NO``, ``TRUE``, ``FALSE``, ``0``, ``1``, etc.
 
 Exploring components
@@ -1191,7 +1191,7 @@ Use ``omnitrace-avail -G <filename> -F txt json xml`` to generate default
 configuration files of each format and, optionally,
 include the ``--all`` flag for descriptions, etc.
 Configuration files are specified via the ``OMNITRACE_CONFIG_FILE`` environment variable
-and by default will look for ```${HOME}/.omnitrace.cfg``` and ``${HOME}/.omnitrace.json``.
+and by default will look for ``${HOME}/.omnitrace.cfg`` and ``${HOME}/.omnitrace.json``.
 Multiple configuration files can be concatenated using the ``:`` symbol, for example:
 
 .. code-block:: shell
@@ -1205,8 +1205,8 @@ Sample text configuration file
 -----------------------------------
 
 Text files support very basic variables and are case-insensitive.
-Variables are created when an lvalue starts with a ``$`` and are
-dereferenced when they appear as rvalues.
+Variables are created when an left value starts with a ``$`` and are
+de-referenced when they appear as right values.
 
 Entries in the text configuration file which do not match to a known setting
 in ``omnitrace-avail`` but are prefixed with ``OMNITRACE_`` are interpreted as
@@ -1350,3 +1350,4 @@ to set ``OMNITRACE_ADD_SECONDARY=false``:
          </settings>
       </omnitrace>
    </timemory_xml>
+   
