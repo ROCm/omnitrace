@@ -1350,4 +1350,3 @@ to set ``OMNITRACE_ADD_SECONDARY=false``:
          </settings>
       </omnitrace>
    </timemory_xml>
-   

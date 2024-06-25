@@ -9,9 +9,9 @@ Instrumenting and rewriting a binary application
 There are three ways to perform instrumentation with `Omnitrace <https://github.com/ROCm/omnitrace>`_:
 
 * Running the application via the ``omnitrace-instrument`` executable 
-  (analagous to ``gdb --args <program> <args>``)
+  (analogous to ``gdb --args <program> <args>``)
 
-  * This mode is the default if neither the ``-p`` nor ``-o`` comand-line options are used
+  * This mode is the default if neither the ``-p`` nor ``-o`` command-line options are used
   * Runtime instrumentation supports instrumenting not only the target executable but also the
     the shared libraries loaded by the target executable. Consequently, this mode consumes more memory,
     takes longer to perform the instrumentation, and tends to have a more significant overhead on the
@@ -30,14 +30,14 @@ There are three ways to perform instrumentation with `Omnitrace <https://github.
   * Binary rewriting is limited to the text section of the target executable or library: it will not instrument
     the dynamically-linked libraries. Consequently, this mode performs the 
     instrumentation significantly faster
-    and has a much lower overhead when running the instrumentated executable and/or libraries
+    and has a much lower overhead when running the instrumented executable and/or libraries
   * Binary rewriting is the recommended mode when the target executable uses 
     process-level parallelism (e.g. MPI)
   * If your target executable has a minimal main which and the bulk of your 
     application is in one specific dynamic library,
     see :ref:`binary-rewriting-library-label` for help
 
-The omnitrace-instrument executable
+The ``omnitrace-instrument`` executable
 ========================================
 
 Instrumentation is performed with the ``omnitrace`` executable. View the help menu with the ``-h`` / ``--help`` option:
@@ -513,7 +513,7 @@ it generates files that detail which functions (and which module they were defin
 were available for instrumentation, which functions were instrumented, 
 which functions were excluded, and which functions contained overlapping function bodies.
 The default output path of these files will be in a ``omnitrace-<NAME>-output`` folder 
-where ``<NAME>`` is the basename of the targeted binary or
+where ``<NAME>`` is the base name of the targeted binary or
 (in the case of binary rewrite, the basename of the resulting executable), e.g.
 ``omnitrace-instrument -- ls`` will output its files to ``omnitrace-ls-output`` 
 whereas ``omnitrace-instrument -o ls.inst -- ls`` will output to ``omnitrace-ls.inst-output``.
@@ -531,7 +531,7 @@ Excluding and including modules and functions
 
 Omnitrace has a set of 6 command-line options which each accept one or more 
 regular expressions for customizing the scope of which module and/or functions are
-instrumented. Multiple regexes per option are treated as an OR operation, 
+instrumented. Multiple regex patterns per option are treated as an OR operation, 
 e.g. ``--module-include libfoo libbar`` is effectively that same as ``--module-include 'libfoo|libbar'``.
 
 If you would like to force the inclusion of certain modules and/or function 
@@ -923,7 +923,7 @@ If this produces output, e.g.:
 You will have to remove or modify the rpath in order to get ``foo.inst`` to resolve 
 to the instrumented ``libfoo.so.2``.
 
-Modifying RPATH
+Modifying an RPATH
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
