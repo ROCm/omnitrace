@@ -143,7 +143,7 @@ General tips for using Omnitrace
 
 * When using binary instrumentation with MPI, avoid runtime instrumentation
 
-  * Runtime instrumentation requires a fork + ptrace: which is generally incompatible with how MPI applications spawn their processes
+  * Runtime instrumentation requires a fork + `ptrace`: which is generally incompatible with how MPI applications spawn their processes
   * Binary rewrite the executable using MPI (and, optionally, libraries used by the executable) and execute the generated instrumented executable via ``omnitrace-run`` instead of the original, e.g. ``mpirun -n 2 ./myexe`` should be ``mpirun -n 2 omnitrace-run -- ./myexe.inst`` where ``myexe.inst`` is the generated instrumented ``myexe`` executable.
 
 Data collection modes
@@ -166,7 +166,7 @@ Omnitrace supports several modes of recording trace and profiling data for your 
 +-----------------------------+---------------------------------------------------------+
 | Dynamic Symbol Interception | Wrap function symbols defined in position independent   |
 |                             | dynamic library/executable, e.g. ``pthread_mutex_lock`` |
-|                             | in libpthread.so or ``MPI_Init`` in the MPI library     |
+|                             | in ``libpthread.so`` or ``MPI_Init`` in the MPI library |
 +-----------------------------+---------------------------------------------------------+
 | User API                    | User-defined regions and controls for Omnitrace         |
 +-----------------------------+---------------------------------------------------------+

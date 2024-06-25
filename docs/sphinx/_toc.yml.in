@@ -13,7 +13,14 @@ subtrees:
     - file: install/quick-start.rst
       title: Omnitrace quick start
     - file: install/install.rst
-      title: Omnitrace Installation guide
+      title: Omnitrace installation guide
+
+  - caption: How to
+    entries:
+    - file: how-to/configuring-validating-environment.rst
+      title: Configuring and validating the environment 
+    - file: how-to/configuring-runtime-options.rst
+      title: Configuring runtime options 
 
   - caption: Conceptual
     entries:

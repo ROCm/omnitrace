@@ -46,12 +46,12 @@ If you are unsure of the operating system and version, the ``/etc/os-release`` a
    VERSION_ID="20.04"
    ...
 
-The relevent fields are ``ID`` and the ``VERSION_ID``.
+The relevant fields are ``ID`` and the ``VERSION_ID``.
 
 Architecture
 ========================================
 
-With regards to instrumentation, at present only amd64 (x86_64) architectures are tested; however,
+With regards to instrumentation, at present only AMD64 (x86_64) architectures are tested; however,
 Dyninst supports several more architectures and thus, Omnitrace instrumentation may support other
 CPU architectures such as aarch64 and ppc64.
 Other modes of use, such as sampling and causal profiling, are not dependent on Dyninst and therefore
@@ -196,7 +196,7 @@ Building Dyninst alongside Omnitrace
 
 The easiest way to install Dyninst is to configure Omnitrace with ``OMNITRACE_BUILD_DYNINST=ON``. 
 Depending on the version of Ubuntu, the ``apt`` package manager may have current enough
-versions of Dyninst's Boost, TBB, and LibIberty dependencies 
+versions of the Dyninst Boost, TBB, and LibIberty dependencies 
 (i.e. ``apt-get install libtbb-dev libiberty-dev libboost-dev``). 
 However, it is possible to request Dyninst to install
 its dependencies via ``DYNINST_BUILD_<DEP>=ON``, e.g.:
@@ -235,7 +235,7 @@ Various additional features can be enabled via the
 ``TIMEMORY_USE_*`` `CMake options <https://timemory.readthedocs.io/en/develop/installation.html#cmake-options>`_.
 Any ``OMNITRACE_USE_<VAL>`` option which has a corresponding ``TIMEMORY_USE_<VAL>`` 
 option means that the support within timemory for this feature has been integrated
-into Omnitrace's Perfetto support, e.g. ``OMNITRACE_USE_PAPI=<VAL>`` forces 
+into Perfetto support for Omnitrace, e.g. ``OMNITRACE_USE_PAPI=<VAL>`` forces 
 ``TIMEMORY_USE_PAPI=<VAL>``. This means the data that timemory is able to collect via this package
 is passed along to Perfetto and will be displayed when the `.proto` file is visualized in `the Perfetto UI <https://ui.perfetto.dev>`_.
 
@@ -276,7 +276,7 @@ results is configurable via the ``OMNITRACE_PERFETTO_COMBINE_TRACES`` setting.
 The primary benefits of partial or full MPI support are the automatic wrapping 
 of MPI functions and the ability
 to label output with suffixes which correspond to the ``MPI_COMM_WORLD`` rank ID 
-instead of using the system process identifier (i.e. PID).
+instead of using the system process identifier (i.e. `PID`).
 In general, it is recommended to use partial MPI support with the OpenMPI 
 headers as this is the most portable configuration.
 If full MPI support is selected, make sure your target application is built 
