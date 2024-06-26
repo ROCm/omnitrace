@@ -24,7 +24,9 @@ subtrees:
     - file: how-to/sampling-call-stack.rst
       title: Sampling the call stack 
     - file: how-to/instrumenting-rewriting-binary-application.rst
-      title: Instrumenting and rewriting a binary application 
+      title: Instrumenting and rewriting a binary application
+    - file: how-to/performing-causal-profiling.rst
+      title: Performing causal profiling 
 
   - caption: Conceptual
     entries:

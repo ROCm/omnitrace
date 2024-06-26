@@ -19,7 +19,7 @@ There are three ways to perform instrumentation with `Omnitrace <https://github.
   * This mode is recommended if you want to analyze not only the performance of your executable and/or
     libraries but also the performance of the library dependencies
 
-* Attaching to a process that is currently running (analagous to ``gdb -p <PID>``)
+* Attaching to a process that is currently running (analogous to ``gdb -p <PID>``)
  
   * This mode is activated via ``-p <PID>``
   * Same caveats as ``omnitrace-instrument`` with respect to memory and overhead
@@ -514,7 +514,7 @@ were available for instrumentation, which functions were instrumented,
 which functions were excluded, and which functions contained overlapping function bodies.
 The default output path of these files will be in a ``omnitrace-<NAME>-output`` folder 
 where ``<NAME>`` is the base name of the targeted binary or
-(in the case of binary rewrite, the basename of the resulting executable), e.g.
+(in the case of binary rewrite, the base name of the resulting executable), e.g.
 ``omnitrace-instrument -- ls`` will output its files to ``omnitrace-ls-output`` 
 whereas ``omnitrace-instrument -o ls.inst -- ls`` will output to ``omnitrace-ls.inst-output``.
 
