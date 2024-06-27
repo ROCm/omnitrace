@@ -27,6 +27,8 @@ subtrees:
       title: Instrumenting and rewriting a binary application
     - file: how-to/performing-causal-profiling.rst
       title: Performing causal profiling 
+    - file: how-to/understanding-omnitrace-output.rst
+      title: Understanding the Omnitrace output 
 
   - caption: Conceptual
     entries:

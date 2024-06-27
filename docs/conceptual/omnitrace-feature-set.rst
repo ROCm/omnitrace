@@ -22,6 +22,11 @@ Data collection modes
 * Statistical sampling: Periodic software interrupts per-thread
 * Process-level sampling: Background thread records process-, system- and device-level metrics while the application executes
 * Causal profiling: Quantifies the potential impact of optimizations in parallel codes
+  
+  .. note::
+
+   Critical trace support was removed in Omnitrace v1.11.0. 
+   It was replaced by the causal profiling feature.
 
 Data analysis
 ========================================

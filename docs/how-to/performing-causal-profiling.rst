@@ -18,6 +18,10 @@ Thus, causal profiling works by performing experiments on blocks of code during 
 insert pauses to slow down all other concurrently running code. During post-processing, these experiments
 are translated into calculations for the potential impact of speeding up this block of code.
 
+  .. note::
+
+   Causal profiling supersedes the original critical trace feature, which was removed in Omnitrace v1.11.0.
+
 Consider the following C++ code executing ``foo`` and ``bar`` concurrently in two different threads
 where ``foo`` is 30% faster than ```bar``` (ideally):
 
@@ -76,7 +80,7 @@ Progress points
 -----------------------------------
 
 Causal profiling requires "progress points" to track progress through the code 
-in between samples. Progress points must be triggered deterministically via instrumentation.
+in between samples. Progress points must be triggered in a deterministic manner via instrumentation.
 This can happen in three different ways:
 
 * `Omnitrace <https://github.com/ROCm/omnitrace>`_ can leverage the callbacks from 
@@ -106,7 +110,7 @@ Key concepts
 | Mode             | ``OMNITRACE_CAUSAL_MODE``           | ``function``, ``line``           | Select entire function or individual       |
 |                  |                                     |                                  | line of code for causal experiments        |
 +------------------+-------------------------------------+----------------------------------+--------------------------------------------+
-| End-to-end       | ``OMNITRACE_CAUSAL_END_TO_END``     | boolean                          | Perform a single experiment during the     |
+| End-to-end       | ``OMNITRACE_CAUSAL_END_TO_END``     | Boolean                          | Perform a single experiment during the     |
 |                  |                                     |                                  | entire run (does not require               |
 |                  |                                     |                                  | progress-points)                           |
 +------------------+-------------------------------------+----------------------------------+--------------------------------------------+
@@ -204,7 +208,7 @@ speed-ups, etc. and resolve statistical fluctuations.
 The ``omnitrace-causal`` executable is designed to simplify running this procedure:
 
 .. code-block:: shell
-   
+
    $ omnitrace-causal --help
    [omnitrace-causal] Usage: ./bin/omnitrace-causal [ --help (count: 0, dtype: bool)
                                                       --version (count: 0, dtype: bool)
@@ -592,7 +596,7 @@ Omnitrace provides several additional features and utilities for causal profilin
    "Scope options", "Supports binary and source scopes", "Supports binary, source, and function scopes", "See Note #4, #5, and #6 below"
    "Scope inclusion", "Uses ``%`` as wildcard for binary and source scopes", "Full regex support for binary, source, and function scopes", ""
    "Scope exclusion", "Not supported", "Supports regexes for excluding binary/source/function", "See Note #7 below"
-   "Call-stack sampling", "Linux perf", "Linux perf, libunwind", "See Note #8 below"
+   "Call-stack sampling", "Linux Perf", "Linux Perf, libunwind", "See Note #8 below"
 
 .. note::
 
@@ -612,7 +616,7 @@ Omnitrace provides several additional features and utilities for causal profilin
   #. Omnitrace supports a second filter on scopes for removing binary/source/function 
      caught by inclusive match, e.g. ``BINARY_SCOPE=.*`` + ``BINARY_EXCLUDE=libmpi.*``
      initially includes all binaries but exclude regex removes MPI libraries
-  #. In Omnitrace, the Linux perf backend is preferred over use libunwind. However, 
-     Linux perf usage can be restricted for security reasons.
+  #. In Omnitrace, the Linux Perf backend is preferred over use libunwind. However, 
+     Linux Perf usage can be restricted for security reasons.
      Omnitrace will fallback to using a second POSIX timer and libunwind if 
-     Linux perf is not available.
+     Linux Perf is not available.
