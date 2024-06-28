@@ -57,3 +57,7 @@ subtrees:
 
     - file: reference/development-guide.rst
       title: Development guide
+
+  - caption: About
+    entries:
+    - file: license.md

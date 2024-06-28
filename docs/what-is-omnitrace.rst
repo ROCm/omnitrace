@@ -23,6 +23,6 @@ and visualization in Jupyter notebooks.
 
 To use Omnitrace for instrumentation, follow these two configuration steps:
 
-#. Indicate the functions and modules to instrument in the target binaries, including the executable and any libraries
-#. Specify the type of instrumentation to perform when the instrumented binaries are executed
+#. Indicate the functions and modules to :doc:`instrument <./how-to/instrumenting-rewriting-binary-application>` in the target binaries, including the executable and any libraries
+#. Specify the :doc:`type of instrumentation <./how-to/configuring-runtime-options>` to perform when the instrumented binaries are executed
 
