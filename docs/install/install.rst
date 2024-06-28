@@ -51,11 +51,11 @@ The relevant fields are ``ID`` and the ``VERSION_ID``.
 Architecture
 ========================================
 
-With regards to instrumentation, at present only AMD64 (x86_64) architectures are tested; however,
-Dyninst supports several more architectures and thus, Omnitrace instrumentation may support other
+With regards to instrumentation, at present only AMD64 (x86_64) architectures are tested. However,
+Dyninst supports several more architectures and Omnitrace instrumentation may support other
 CPU architectures such as aarch64 and ppc64.
 Other modes of use, such as sampling and causal profiling, are not dependent on Dyninst and therefore
-may be more portable.
+might be more portable.
 
 Installing Omnitrace from binary distributions
 ================================================
@@ -75,8 +75,9 @@ For example,
    ...
    omnitrace-1.0.0-ubuntu-20.04-ROCm-50000-OMPT-PAPI-Python3.sh
 
-Any of the ``EXTRA`` fields with a CMake build option (e.g. PAPI, see below) or 
-no link requirements (e.g. OMPT) have
+Any of the ``EXTRA`` fields with a CMake build option 
+(for example, PAPI, as referenced in a following section) or 
+with no link requirements (such as OMPT) have
 self-contained support for these packages.
 
 To install Omnitrace using a binary installer script, follow these steps:
@@ -140,9 +141,9 @@ Required third-party packages
 
 * `libunwind <https://www.nongnu.org/libunwind/>`_ for call-stack sampling
 
-All of the third-party packages required by Dyninst, along with Dyninst itself, can be built and installed
+Any of the third-party packages required by Dyninst, along with Dyninst itself, can be built and installed
 during the Omnitrace build. The following list indicates the package, the version,
-which application requires the package (for example, Omnitrace requires Dyninst
+the application that requires the package (for example, Omnitrace requires Dyninst
 while Dyninst requires TBB), and the CMake option to build the package alongside Omnitrace:
 
 .. csv-table:: 
@@ -170,9 +171,9 @@ Optional third-party packages
 * `PAPI <https://icl.utk.edu/papi/>`_
 * MPI
 
-  * ``OMNITRACE_USE_MPI`` will enable full MPI support
-  * ``OMNITRACE_USE_MPI_HEADERS`` will enable wrapping of the dynamically-linked MPI C function calls.
-    (By default, if an OpenMPI MPI distribution cannot be found, Omnitrace will use a local copy 
+  * ``OMNITRACE_USE_MPI`` enables full MPI support
+  * ``OMNITRACE_USE_MPI_HEADERS`` enables wrapping of the dynamically-linked MPI C function calls.
+    (By default, if Omnitrace cannot find an OpenMPI MPI distribution, it uses a local copy 
     of the OpenMPI ``mpi.h``.)
 
 * Several optional third-party profiling tools supported by timemory 
