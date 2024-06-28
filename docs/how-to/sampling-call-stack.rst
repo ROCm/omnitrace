@@ -38,7 +38,7 @@ All ``omnitrace-instrument -M sampling`` (referred to as "instrumented-sampling"
 does is wrap the ``main`` of the executable with initialization
 before ``main`` starts and finalization after ``main`` ends.
 This can be easily accomplished without instrumentation via a ``LD_PRELOAD`` 
-of a library with containing a dynamic symbol wrapper around ```__libc_start_main``.
+of a library with containing a dynamic symbol wrapper around ``__libc_start_main``.
 Thus, whenever binary instrumentation is unnecessary, using ``omnitrace-sample`` 
 is recommended over ``omnitrace-instrument -M sampling`` for several reasons:
 

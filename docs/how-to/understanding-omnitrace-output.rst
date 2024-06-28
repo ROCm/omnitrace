@@ -56,7 +56,7 @@ If we enable ``OMNITRACE_TIME_OUTPUT``, then a job started on January 31, 2022 a
 Metadata
 ========================================
 
-Omnitrace outputs a metadata.json file. This metadata file contains
+Omnitrace outputs a ``metadata.json`` file. This metadata file contains
 information about the settings, environment variables, output files, and info 
 about the system and the run:
 
@@ -239,7 +239,7 @@ Metadata JSON Sample
 Configuring the Omnitrace output
 ========================================
 
-Omnitrace includes a core set of settings for controllilng the look 
+Omnitrace includes a core set of settings for controlling the look 
 and contents of the output files. For additional information, see the guide on
 :doc:`configuring runtime options <./configuring-runtime-options>`.
 
@@ -354,15 +354,15 @@ Setting ``OMNITRACE_COLLAPSE_THREADS=ON`` and/or ``OMNITRACE_COLLAPSE_PROCESSES=
 with full MPI support) the timemory output
 will combine the per-thread and/or per-rank data which have identical call-stacks.
 
-The ``OMNITRACE_FLAT_PROFILE`` setting will remove all call stack heirarchy. 
+The ``OMNITRACE_FLAT_PROFILE`` setting will remove all call stack hierarchy. 
 Using ``OMNITRACE_FLAT_PROFILE=ON`` in combination
 with ``OMNITRACE_COLLAPSE_THREADS=ON`` is a useful configuration for identifying 
 min/max measurements regardless of calling context.
 The ``OMNITRACE_TIMELINE_PROFILE`` setting (with ``OMNITRACE_FLAT_PROFILE=OFF``) will effectively 
 generate similar data that can be found
-in perfetto. Enabling timeline and flat profiling will effectively generate 
+in Perfetto. Enabling timeline and flat profiling will effectively generate 
 similar data to ``strace``. However, while timemory in general
-requires significantly less memory than perfetto, this is not the case in timeline 
+requires significantly less memory than Perfetto, this is not the case in timeline 
 mode so activate this setting with caution.
 
 Timemory text output

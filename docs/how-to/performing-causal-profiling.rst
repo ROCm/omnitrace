@@ -88,7 +88,7 @@ This can happen in three different ways:
   MPI, NUMA, RCCL, etc. to act as progress points
 * Users can leverage the :doc:`runtime instrumentation capabilities <./instrumenting-rewriting-binary-application>` 
   to insert progress points
-* Users can leverage the :doc:`User API <../reference/using-omnitrace-display-api>`, 
+* Users can leverage the :doc:`User API <../how-to/using-omnitrace-api>`, 
   for example ``OMNITRACE_CAUSAL_PROGRESS``
 
 .. note::

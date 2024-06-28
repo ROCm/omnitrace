@@ -43,6 +43,7 @@ The documentation is structured as follows:
     * :doc:`Understanding the Omnitrace output <./how-to/understanding-omnitrace-output>`
     * :doc:`Profiling Python scripts <./how-to/profiling-python-scripts>`
     * :doc:`Troubleshooting Omnitrace on Linux <./how-to/troubleshooting-omnitrace-linux>`
+    * :doc:`Using the Omnitrace API <./how-to/using-omnitrace-api>`
 
   .. grid-item-card:: Conceptual
 
@@ -54,11 +55,10 @@ The documentation is structured as follows:
     * :doc:`API library <../doxygen/html/files>`
     * :doc:`Functions <../doxygen/html/globals>`
     * :doc:`Data structures <../doxygen/html/annotated>`
-    * :doc:`Compiling with CMake <./reference/compiling-cmake>`
-    * :doc:`Using Omnitrace to Display the API <./reference/using-omnitrace-display-api>`
-    * :doc:`Development Guide <./reference/development-guide>`
+    * :doc:`Compiling Omnitrace with CMake <./reference/compiling-cmake>`
+    * :doc:`Development guide <./reference/development-guide>`
 
-  
+
 To contribute to the documentation, refer to
 `Contributing to ROCm <https://rocm.docs.amd.com/en/latest/contribute/contributing.html>`_.
 

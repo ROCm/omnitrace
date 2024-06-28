@@ -29,6 +29,12 @@ subtrees:
       title: Performing causal profiling 
     - file: how-to/understanding-omnitrace-output.rst
       title: Understanding the Omnitrace output 
+    - file: how-to/profiling-python-scripts.rst
+      title: Profiling Python scripts  
+    - file: how-to/troubleshooting-omnitrace-linux.rst
+      title: Troubleshooting Omnitrace on Linux
+    - file: how-to/using-omnitrace-api.rst
+      title: Using the Omnitrace API
 
   - caption: Conceptual
     entries:
@@ -36,3 +42,11 @@ subtrees:
       title: How Omnitrace works
     - file: conceptual/omnitrace-feature-set.rst
       title: The Omnitrace feature set and use cases
+
+  - caption: Reference
+    entries:
+    - file: reference/compiling-cmake.rst
+      title: Compiling Omnitrace with CMake 
+
+    - file: reference/development-guide.rst
+      title: Development guide

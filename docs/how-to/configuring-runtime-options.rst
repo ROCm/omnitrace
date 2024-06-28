@@ -1205,8 +1205,8 @@ Sample text configuration file
 -----------------------------------
 
 Text files support very basic variables and are case-insensitive.
-Variables are created when an left value starts with a ``$`` and are
-de-referenced when they appear as right values.
+Variables are created when an lvalue starts with a ``$`` and are
+de-referenced when they appear as rvalues.
 
 Entries in the text configuration file which do not match to a known setting
 in ``omnitrace-avail`` but are prefixed with ``OMNITRACE_`` are interpreted as
