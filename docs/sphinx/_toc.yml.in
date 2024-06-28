@@ -8,6 +8,11 @@ subtrees:
   - entries:
     - file: what-is-omnitrace.rst
 
+  - caption: API
+    entries:
+    - file: doxygen/html/index
+    title: API
+
   - caption: Install
     entries:
     - file: install/quick-start.rst
