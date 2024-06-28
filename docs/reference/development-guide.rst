@@ -100,11 +100,11 @@ This is the main library encapsulating all the capabilities.
 
 Lightweight, front-end library for ``libomnitrace`` which serves three primary purposes:
 
-#. Dramatically speeds up instrumentation time vs. using ``libomnitrace`` directly since 
-   Dyninst must parse the entire library in order to find instrumentation functions 
-   (a ``dlopen`` call is made on ``libomnitrace`` when the instrumentation functions get called)
-#. Prevents re-entry if ``libomnitrace`` calls an instrumentated function internally
-#. Coordinates communication between ``libomnitrace-user`` and ``libomnitrace``
+* Dramatically speeds up instrumentation time vs. using ``libomnitrace`` directly since 
+  Dyninst must parse the entire library in order to find instrumentation functions 
+  (a ``dlopen`` call is made on ``libomnitrace`` when the instrumentation functions get called)
+* Prevents re-entry if ``libomnitrace`` calls an instrumented function internally
+* Coordinates communication between ``libomnitrace-user`` and ``libomnitrace``
 
 ``libomnitrace-user``: `source/lib/omnitrace-user <https://github.com/ROCm/omnitrace/tree/main/source/lib/omnitrace-user>`_
 --------------------------------------------------------------------------------------------------------------------------------
@@ -133,7 +133,7 @@ Capability
    to collect measurements, e.g. a component which handles setting up function wrappers 
    around various functions such as ``pthread_create``, ``MPI_Init``, etc.
 
-Components are designed to hold no data at all or only the data for both an instantaeous 
+Components are designed to hold no data at all or only the data for both an instantaneous 
 measurement and a phase measurement.
 
 Components which store data typically implement a static ``record()`` function 
@@ -147,8 +147,8 @@ Components which do not store data may also have ``start()``, ``stop()``, and ``
 functions but for components which
 implement function wrappers, they typically provide a call operator or ``audit(...)`` 
 functions which are invoked with the
-wrappee function's arguments before the wrappee gets called and with the return value 
-after the wrappee gets called.
+wrapped function's arguments before the wrapped function gets called and with the return value 
+after the wrapped function gets called.
 
 .. note::
 
@@ -230,7 +230,7 @@ Component member functions
 --------------------------------------
 
 There are no real restrictions or requirements on the member functions a component needs to provide.
-Unless the component is being directly used, invocation of component member functions via "component bundlers"
+Unless the component is being directly used, invocation of component member functions via a "component bundler"
 (provided via timemory) makes extensive use of template metaprogramming concept to find the best match (if any)
 for calling a components member function. This is a bit easier to demonstrate via example:
 
@@ -296,7 +296,7 @@ Memory model
 Collected data is generally stored in one of following three places:
 
 * Perfetto (i.e. data is handed directly to Perfetto)
-* Managed implictly by timemory and accessed as needed
+* Managed implicitly by timemory and accessed as needed
 * Thread-local data
 
 In general, only instrumentation for relatively simple data is directly passed to 
@@ -313,7 +313,7 @@ Thread identification
 --------------------------------------
 
 Each CPU thread is assigned two integral identifiers. One identifier is simply an 
-atomic increment everytime a new thread is created
+atomic increment every time a new thread is created
 (called ``internal_value``).
 The other identifier tries to account for the fact that Omnitrace, Perfetto, ROCm, etc. 
 start background threads and for these threads
@@ -344,7 +344,7 @@ Sampling model
 
 The general structure for the sampling is within timemory (``source/timemory/sampling``). 
 Currently, all sampling is done per-thread
-via POSIX timers. Omnitrace supports using a realtime timer and a CPU-time timer. 
+via POSIX timers. Omnitrace supports using a real-time timer and a CPU-time timer. 
 Both have adjustable frequencies, delays, and durations.
 By default, only CPU-time sampling is enabled. Initial settings are inherited from 
 the settings starting with ``OMNITRACE_SAMPLING_``.
@@ -352,11 +352,11 @@ For each type of timer, there exists timer-specific settings that can be used to
 override the common/inherited settings for that timer
 specifically. For the CPU-time sampler, these settings start with ``OMNITRACE_SAMPLING_CPUTIME`` 
 and ``OMNITRACE_SAMPLING_REALTIME`` for
-the realtime sampler. For example, ``OMNITRACE_SAMPLING_FREQ=500`` initially sets the 
+the real-time sampler. For example, ``OMNITRACE_SAMPLING_FREQ=500`` initially sets the 
 sampling frequency to 500 interrupts per second
 (based on their clock). Settings ``OMNITRACE_SAMPLING_REALTIME_FREQ=10`` will lower 
-the sampling frequency for the realtime sampler
-to 10 interrupts per second of realtime.
+the sampling frequency for the real-time sampler
+to 10 interrupts per second of real-time.
 
 The Omnitrace-specific implementation can be found in 
 `source/lib/omnitrace/library/sampling.cpp <https://github.com/ROCm/omnitrace/blob/main/source/lib/omnitrace/library/sampling.cpp>`_.
@@ -369,7 +369,7 @@ you will a bundle of three sampling components:
 * The second component `backtrace <https://github.com/ROCm/omnitrace/blob/main/source/lib/omnitrace/library/components/backtrace.hpp>`_
   records the call-stack via libunwind.
 * The last component `backtrace_metrics <https://github.com/ROCm/omnitrace/blob/main/source/lib/omnitrace/library/components/backtrace_metrics.hpp>`_
-  is responsible for recording the metrics for that sample, e.g. peak RSS, HW counters, etc.
+  is responsible for recording the metrics for that sample, e.g. peak RSS, hardware counters, etc.
 
 These three components are bundled together in 
 a tuple-like struct (e.g. ``tuple<backtrace_timestamp, backtrace, backtrace_metrics>``)
@@ -396,7 +396,7 @@ integer indicating how many times to repeat the delay + duration. Thus, it is
 possible to perform tasks such as periodically enabling tracing for brief periods
 of time in between long periods without data collection during the application. 
 For example, ``OMNITRACE_TRACE_PERIODS = realtime:10:1:5 process_cputime:10:2:20`` enables
-five periods of no data collection for ten seconds of realtime, followed by one second of 
+five periods of no data collection for ten seconds of real-time, followed by one second of 
 data collection, plus twenty periods of no data collection for ten seconds
 of process CPU time, followed by two CPU-time seconds of data collection.
 

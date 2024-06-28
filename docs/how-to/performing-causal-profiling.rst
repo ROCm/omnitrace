@@ -18,7 +18,7 @@ Thus, causal profiling works by performing experiments on blocks of code during 
 insert pauses to slow down all other concurrently running code. During post-processing, these experiments
 are translated into calculations for the potential impact of speeding up this block of code.
 
-  .. note::
+.. note::
 
    Causal profiling supersedes the original critical trace feature, which was removed in Omnitrace v1.11.0.
 

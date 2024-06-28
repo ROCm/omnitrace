@@ -39,7 +39,7 @@ add this path to the ``PYTHONPATH`` environment variable, e.g.:
 
    export PYTHONPATH=/opt/omnitrace/lib/python3.8/site-packages:${PYTHONPATH}
 
-If using either the ``share/omnitrace/setup-env.sh`` script or the modulefile in 
+If using either the ``share/omnitrace/setup-env.sh`` script or the module file in 
 ``share/modulefiles/omnitrace``, prefixing the ``PYTHONPATH``
 environment variable is automatically handled.
 

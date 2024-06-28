@@ -50,7 +50,7 @@ A workaround for this problem can be applied permanently or to the current sessi
 * To avoid this problem for the duration of the current session, run the command 
   ``sudo setenforce 0`` from the shell
 
-* For a permanent worakound, edit the configuration file using the command
+* For a permanent workaround, edit the configuration file using the command
   ``sudo vim /etc/sysconfig/selinux`` and change the ``SELINUX`` setting to 
   either ``Permissive`` or ``Disabled``
 
