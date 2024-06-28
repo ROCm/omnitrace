@@ -943,10 +943,10 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ../source/lib/omnitrace-user/omnitrace/categories.h \
-                                ../source/lib/omnitrace-user/omnitrace/causal.h \
-                                ../source/lib/omnitrace-user/omnitrace/types.h \
-                                ../source/lib/omnitrace-user/omnitrace/user.h
+INPUT                  = ../../source/lib/omnitrace-user/omnitrace/categories.h \
+                                ../../source/lib/omnitrace-user/omnitrace/causal.h \
+                                ../../source/lib/omnitrace-user/omnitrace/types.h \
+                                ../../source/lib/omnitrace-user/omnitrace/user.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
