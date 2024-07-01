@@ -21,35 +21,36 @@ There are three ways to perform instrumentation with `Omnitrace <https://github.
 
 * Attaching to a process that is currently running (analogous to ``gdb -p <PID>``)
  
-  * This mode is activated via ``-p <PID>``
-  * Same caveats as ``omnitrace-instrument`` with respect to memory and overhead
+  * This mode is activated using ``-p <PID>``
+  * The same caveats as ``omnitrace-instrument`` apply with respect to memory and overhead
 
 * Generating a new executable or library with the instrumentation built-in (binary rewrite)
 
-  * This mode is activated via the ``-o <output-file>`` option
-  * Binary rewriting is limited to the text section of the target executable or library: it will not instrument
+  * This mode is activated through the ``-o <output-file>`` option
+  * Binary rewriting is limited to the text section of the target executable or library. It does not instrument
     the dynamically-linked libraries. Consequently, this mode performs the 
     instrumentation significantly faster
-    and has a much lower overhead when running the instrumented executable and/or libraries
+    and has a much lower overhead when running the instrumented executable and libraries
   * Binary rewriting is the recommended mode when the target executable uses 
-    process-level parallelism (e.g. MPI)
-  * If your target executable has a minimal main which and the bulk of your 
+    process-level parallelism (for example, MPI)
+  * If the target executable has a minimal `main`` routine and the bulk of your 
     application is in one specific dynamic library,
     see :ref:`binary-rewriting-library-label` for help
 
 The ``omnitrace-instrument`` executable
 ========================================
 
-Instrumentation is performed with the ``omnitrace`` executable. View the help menu with the ``-h`` / ``--help`` option:
+Instrumentation is performed with the ``omnitrace`` executable. For more details, use the ``-h`` or ``--help`` option to
+view the help menu.
 
 .. note::
 
-   With the introduction of ``omnitrace-sample``, in future versions of Omnitrace, 
+   With the introduction of ``omnitrace-sample`` in a future version of Omnitrace, 
    the current ``omnitrace`` executable
-   noted below will likely be renamed to ``omnitrace-instrument`` and a new 
+   mentioned here will likely be renamed to ``omnitrace-instrument``. A new 
    ``omnitrace`` executable will serve as a common
-   executable for multiple executables, e.g. ``omnitrace-instrument sample ...``, 
-   ``omnitrace run ...``, ``omnitrace rewrite ...``, etc.
+   executable for multiple executables, such as ``omnitrace-instrument sample ...``, 
+   ``omnitrace run ...``, and ``omnitrace rewrite ...``.
 
 .. code-block:: shell
 
@@ -341,15 +342,16 @@ Instrumentation is performed with the ``omnitrace`` executable. View the help me
                            TypeChecking ]
       Advanced dyninst options: BPatch::set<OPTION>(bool), e.g. bpatch->setTrampRecursive(true)
 
-The general syntax for separating Omnitrace command line arguments from the application arguments
-is consistent with the LLVM style of using a standalone double-hyphen (``--``). 
+The general syntax for separating Omnitrace command-line arguments from the application arguments
+is consistent with the LLVM standalone double-hyphen style (``--``). 
 All arguments preceding the double-hyphen
 are interpreted as belonging to Omnitrace and all arguments following the 
-double-hyphen are interpreted as the
+double-hyphen are interpreted as being part of the
 application and its arguments. In binary rewrite mode, all application arguments after the first argument
-are ignored, i.e. ``./omnitrace-instrument -o ls.inst -- ls -l`` interprets ``ls`` as 
-the target to instrument (ignores the ``-l`` argument)
-and generates a ``ls.inst`` executable that you can subsequently run ``omnitrace-run -- ls.inst -l`` with.
+are ignored. As an example, ``./omnitrace-instrument -o ls.inst -- ls -l`` interprets ``ls`` as 
+the target to instrument, ignoring the ``-l`` argument,
+and generates a ``ls.inst`` executable that you can subsequently run using the 
+``omnitrace-run -- ls.inst -l`` command.
 
 .. note::
 
@@ -389,29 +391,29 @@ Binary rewrite of a library
 -----------------------------------
 
 Many applications bundle the bulk of their functionality into one or more 
-dynamic libraries and have a relatively simple main
-which links to these libraries and simply serves as the "driver" for 
-setting up the workflow. If you binary rewrite your
-executable and find there is insufficient info because of this, you 
-can either switch to runtime instrumentation or
-binary rewrite the libraries of interest.
+dynamic libraries and have a relatively simple ``main``
+which links to these libraries and serves as the "driver" for 
+setting up the workflow. If you perform a binary rewrite of an
+executable like this and find there is insufficient information, you 
+can either switch to runtime instrumentation or perform a
+binary rewrite on the relevant libraries.
 
-Support for standalone binary rewriting of a dynamic library without binary rewriting 
+Support for stand-alone binary rewriting of a dynamic library without a binary rewrite of 
 the executable is a beta feature.
 In general, it is supported as long as the library contains the ``_init`` and 
 ``_fini`` symbols but these symbols are not
 standardized to the extent of ``main`` in an executable.
 
-The recommended workflow is as follows:
+Here is the recommended workflow for the binary rewrite of a library:
 
-#. Determine the names of the dynamically linked libraries of interest via ``ldd``
+#. Determine the names of the dynamically linked libraries of interest using ``ldd``
 #. Generate a binary rewrite of the executable
 #. Generate a binary rewrite of the desired libraries with the same base name as the 
-   original library, e.g. ``libfoo.so.2`` instead of ``libfoo.so`` (Output the instrumented 
+   original library, e.g. ``libfoo.so.2`` instead of ``libfoo.so`` (output the instrumented 
    library into a different folder than the original library)
 
-#. Prefix the ``LD_LIBRARY_PATH`` executable with the output folder from 3
-#. Verify via ``ldd`` that the instrumented executable resolves the location of the instrumented library
+#. Prefix the ``LD_LIBRARY_PATH`` executable with the output folder from the previous step
+#. Use ``ldd`` to verify that the instrumented executable can resolve the location of the instrumented library
 
 Binary rewrite of a library example
 -----------------------------------
@@ -436,7 +438,7 @@ Generate binary rewrites of ``foo`` and ``libfoo.so.2``:
    omnitrace-instrument -o ./foo.inst -- foo
    omnitrace-instrument -o ./libfoo.so.2 -- /usr/local/lib/libfoo.so.2
 
-At this point, the instrumented ``foo.inst`` executable will still dynamically load the 
+At this point, the instrumented ``foo.inst`` executable still dynamically loads the 
 original ``libfoo.so.2`` in ``/usr/local/lib``:
 
 .. code-block:: shell
@@ -453,7 +455,7 @@ the instrumented ``libfoo.so.2``:
 
    export LD_LIBRARY_PATH=/home/user:${LD_LIBRARY_PATH}
 
-When ``foo.inst`` is executed, it will now load the instrumented library:
+``foo.inst`` now loads the instrumented library when it runs:
 
 .. code-block:: shell
 
@@ -468,23 +470,23 @@ Selective instrumentation
 The default behavior of ``omnitrace-instrument`` does not instrument every symbol in the binary. 
 These default rules are:
 
-* Skip instrumenting dynamic call-sites (i.e. function pointers)
+* Skip instrumenting dynamic call-sites (such as function pointers)
 
-  * Option ``--dynamic-callsites`` will force instrumentation for all dynamic call-sites
+  * The ``--dynamic-callsites`` option forces instrumentation for all dynamic call-sites
 
 * The cost of a function can be loosely approximated by the number of 
-  instructions so by default, ``omnitrace-instrument`` only instruments functions 
+  instructions. By default, ``omnitrace-instrument`` only instruments functions 
   with at least 1024 instructions
 
-  * Option ``--min-instructions`` will modify this heuristic for all functions which do not contain loops
-  * Option ``--min-instructions-loop`` will modify this heuristic for functions which contain loops.
+  * The  ``--min-instructions`` option modifies this heuristic for all functions which do not contain loops
+  * The ``--min-instructions-loop`` option modifies this heuristic for functions which contain loops.
 
 * The cost of a function can be also be loosely approximated by the size of the function 
-  in the binary so this heuristic can also be used in lieu of or in addition to the 
+  in the binary so this heuristic can be used in lieu of or in addition to the 
   minimum number of instructions
 
-  * Option ``--min-address-range`` will modify this heuristic for all functions which do not contain loops
-  * Option ``--min-address-range-loop`` will modify this heuristic for functions which contain loops 
+  * The ``--min-address-range`` option modifies this heuristic for all functions which do not contain loops
+  * The ``--min-address-range-loop`` option modifies this heuristic for functions which contain loops 
 
 * Skip instrumentation points which require using a trap
  
@@ -492,13 +494,13 @@ These default rules are:
 
 * Skip instrumenting loops within the body of a function
 
-  * Option ``--instrument-loops`` will enable this behavior
+  * The ``--instrument-loops`` option enables this behavior
 
 * Skip instrumenting functions with overlapping function bodies and single 
   functions with multiple entry point
 
-  * These arise from various optimizations and instrumenting these functions 
-    can be enabled via the ``--allow-overlapping`` option
+  * These behaviors arise from various optimizations. Enable instrumenting for these functions 
+    by using the ``--allow-overlapping`` option
 
 .. note::
 
@@ -508,17 +510,17 @@ These default rules are:
 Viewing the available, instrumented, excluded, and overlapping functions
 -------------------------------------------------------------------------
 
-Whenever ``omnitrace-instrument`` is executed with a verbosity of zero or higher, 
-it generates files that detail which functions (and which module they were defined in)
-were available for instrumentation, which functions were instrumented, 
-which functions were excluded, and which functions contained overlapping function bodies.
-The default output path of these files will be in a ``omnitrace-<NAME>-output`` folder 
-where ``<NAME>`` is the base name of the targeted binary or
-(in the case of binary rewrite, the base name of the resulting executable), e.g.
-``omnitrace-instrument -- ls`` will output its files to ``omnitrace-ls-output`` 
-whereas ``omnitrace-instrument -o ls.inst -- ls`` will output to ``omnitrace-ls.inst-output``.
+Whenever ``omnitrace-instrument`` runs with a verbosity of zero or higher, 
+it generates files that detail which functions 
+were available for instrumentation (along with the module they were defined in), actually instrumented, 
+excluded, and which contained overlapping function bodies.
+By default, these files are saved to the ``omnitrace-<NAME>-output`` folder 
+where ``<NAME>`` is the base name of the targeted binary (or
+the base name of the resulting executable in the case of binary rewrite). For example,
+``omnitrace-instrument -- ls`` outputs these files to ``omnitrace-ls-output`` 
+whereas ``omnitrace-instrument -o ls.inst -- ls`` places them in ``omnitrace-ls.inst-output``.
 
-If you would like to generate these files without executing or generating an 
+To generate these files without running or generating an 
 executable, use the ``--simulate`` option:
 
 .. code-block:: shell
@@ -529,27 +531,27 @@ executable, use the ``--simulate`` option:
 Excluding and including modules and functions
 ----------------------------------------------
 
-Omnitrace has a set of 6 command-line options which each accept one or more 
+Omnitrace has a set of six command-line options which each accept one or more 
 regular expressions for customizing the scope of which module and/or functions are
 instrumented. Multiple regex patterns per option are treated as an OR operation, 
-e.g. ``--module-include libfoo libbar`` is effectively that same as ``--module-include 'libfoo|libbar'``.
+for example, ``--module-include libfoo libbar`` is effectively the same as ``--module-include 'libfoo|libbar'``.
 
-If you would like to force the inclusion of certain modules and/or function 
+To force the inclusion of certain modules and/or function 
 without changing any of the heuristics, use the ``--module-include`` and/or ``--function-include`` options.
-Note that these options will not exclude modules and/or functions which do 
+These options do not exclude modules or functions which do 
 not satisfy their regular expression.
 
-If you would like to narrow the scope of the instrumentation to a specific set 
+To narrow the scope of the instrumentation to a specific set 
 of libraries and/or functions, use the ``--module-restrict`` and ``--function-restrict`` options.
-Applying these options allow you to exclusively select the union one or more 
+These options allow you to exclusively select the union of one or more 
 regular expressions, regardless of whether or not the functions satisfy the
-aforementioned default heuristics. Any function or module that is not within 
-the union of these regular expressions will be excluded from instrumentation.
+previously-mentioned default heuristics. Any function or module that is not within 
+the union of these regular expressions is excluded from instrumentation.
 
-If you would like to avoid instrumenting a set of modules and/or functions, 
+To avoid instrumenting a set of modules and/or functions, 
 use the ``--module-exclude`` and ``--function-exclude`` options.
-These options are always applied regardless of whether the module or function 
-satisfied the "restrict" or "include" regular expression.
+These options are always applied, even if the module or function 
+satisfies the "restrict" or "include" regular expression.
 
 .. _available-module-function-output:
 
@@ -851,23 +853,24 @@ Sampling
    This capability has been deprecated in favor of :doc:`Call stack sampling <./sampling-call-stack>`.
 
 By default, ``omnitrace-instrument`` uses ``--mode trace`` for instrumentation. The ``--mode sampling`` option
-will only instrument ``main`` in an executable and will activate both CPU call-stack sampling and
+only instruments ``main`` in an executable. It activates both CPU call-stack sampling and
 background system-level thread sampling by default.
 Tracing capabilities which do not rely on instrumentation, such as the HIP API and kernel tracing
-(which is collected via roctracer), will still be available.
+(which is collected vbyia roctracer), are still available.
 
-The Omnitrace sampling capabilities are always available, even in trace mode, but is deactivated by default.
-In order to activate sampling in trace mode, simply set ``OMNITRACE_USE_SAMPLING=ON`` in the environment
+The Omnitrace sampling capabilities are always available, even in trace mode, but are deactivated by default.
+To activate sampling in trace mode, set ``OMNITRACE_USE_SAMPLING=ON`` in the environment
 or in an Omnitrace configuration file.
 
 Embedding a default configuration
 ========================================
 
-Using the ``--env`` option, a default configuration can be embedded into the target. Although this option
-works for runtime instrumentation, it is most useful when generating new binaries since the generated
-binary may be used later in a different login sessions when the environment may have changed.
+Use the ``--env`` option to embed a default configuration into the target. Although this option
+works for runtime instrumentation, it is most useful when generating new binaries because the generated
+binary can be used later on in a different login session when the environment might have changed.
 
-For example, if the following sequence of commands are run:
+For example, if the following commands are run,
+the configuration settings are not be preserved for subsequent sessions:
 
 .. code-block:: shell
 
@@ -876,20 +879,20 @@ For example, if the following sequence of commands are run:
    export OMNITRACE_SAMPLING_FREQ=5
    omnitrace-run -- ./foo.inst
 
-These configuration settings will not be preserved in another session, whereas:
+Whereas the following command preserves those environment variables:
 
 .. code-block:: shell
 
    omnitrace-instrument -o ./foo.samp --env OMNITRACE_USE_SAMPLING=ON OMNITRACE_SAMPLING_FREQ=5 -- ./foo
 
-will preserve those environment variables:
+They can now be used in future sessions.
 
 .. code-block:: shell
 
    # will sample 5x per second
    omnitrace-run -- ./foo.samp
 
-while still allowing the subsequent session to override those defaults:
+Even though the environment variables are preserved, subsequent sessions can still override those defaults:
 
 .. code-block:: shell
 
@@ -904,23 +907,23 @@ Checking for RPATH
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If ``ldd ./foo.inst`` from the :ref:`binary-rewriting-library-label` 
-section still returned ``/usr/local/lib/libfoo.so.2``, your executable could have 
+section still returns ``/usr/local/lib/libfoo.so.2``, the executable could have 
 an rpath encoded in the binary.
-This ELF entry will result in the dynamic linker to ignore ``LD_LIBRARY_PATH`` if 
-it finds a ``libfoo.so.2`` in the rpath.
-You can use the ``objdump`` tool to perform this query:
+This ELF entry results in the dynamic linker ignoring ``LD_LIBRARY_PATH`` if 
+it finds ``libfoo.so.2`` in the rpath.
+Using the ``objdump`` tool, perform the following query:
 
 .. code-block:: shell
 
    objdump -p <exe-or-library> | egrep 'RPATH|RUNPATH'
 
-If this produces output, e.g.:
+If this produces output that appears similar to this output.:
 
 .. code-block:: shell
 
    RUNPATH              $ORIGIN:$ORIGIN/../lib
 
-You will have to remove or modify the rpath in order to get ``foo.inst`` to resolve 
+Remove or modify the rpath to get ``foo.inst`` to resolve 
 to the instrumented ``libfoo.so.2``.
 
 Modifying an RPATH

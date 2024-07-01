@@ -13,20 +13,21 @@ The ``omnitrace-avail`` executable
 ========================================
 
 The ``omnitrace-avail`` executable provides information about the runtime settings, 
-data collection capabilities, and
-available hardware counters (when built with PAPI support). The executable is effectively
-self-updating. When new capabilities and settings are added to the Omnitrace source code, they are
-propagated to ``omnitrace-avail``, which should be viewed as the ultimate authority 
+data collection capabilities, and, when built with PAPI support, the
+available hardware counters. The executable is effectively
+self-updating. As new capabilities and settings are added to the Omnitrace source code, they are
+propagated to ``omnitrace-avail``. ``omnitrace-avail`` should be viewed as the ultimate authority 
 in the event of any conflicts with this documentation.
 
-It is recommended to create a default configuration file in ``${HOME}/.omnitrace.cfg``. This can be done via
-executing ``omnitrace-avail -G ~/.omnitrace.cfg``, or optionally, 
-use ``omnitrace-avail -G ~/.omnitrace.cfg --all``
-for a verbose configuration file with descriptions, categories, etc.
+It is recommended that you create a default configuration file in 
+``${HOME}/.omnitrace.cfg``. This can be done by
+running the command ``omnitrace-avail -G ~/.omnitrace.cfg``. Alternatively,  
+use the ``omnitrace-avail -G ~/.omnitrace.cfg --all`` option
+for a verbose configuration file with descriptions, categories, and additional information.
 
-Modify ``${HOME}/.omnitrace.cfg`` as desired. For example, enable `Perfetto <https://perfetto.dev/>`_,
+Modify ``${HOME}/.omnitrace.cfg`` as required. For example, enable `Perfetto <https://perfetto.dev/>`_,
 `timemory <https://github.com/NERSC/timemory>`_, sampling, and process-level sampling by default
-and tweak some sampling default values.
+and tweak the default sampling values.
 
 .. code-block:: shell
 
@@ -43,7 +44,7 @@ and tweak some sampling default values.
 Exploring runtime settings
 -----------------------------------
 
-In order to view the list of the available runtime settings, their current value, and descriptions 
+Use the following command to view the list of the available runtime settings, their current values, and descriptions 
 for each setting:
 
 .. code-block:: shell
@@ -54,8 +55,8 @@ for each setting:
 
    Use ``--brief`` to suppress printing current value and/or ``-c 0`` to suppress truncation of the descriptions.
 
-Any setting which is a Boolean (``omnitrace-avail --settings --value --brief --filter bool``) 
-accepts a case insensitive match to nearly all common expressions for Boolean logic: 
+Any Boolean setting (``omnitrace-avail --settings --value --brief --filter bool``) 
+accepts a case insensitive match for nearly all common Boolean logic expressions: 
 ``ON``, ``OFF``, ``YES``, ``NO``, ``TRUE``, ``FALSE``, ``0``, ``1``, etc.
 
 Exploring components
@@ -66,21 +67,21 @@ various capabilities and manage
 data and resources. By default, with ``OMNITRACE_PROFILE=ON``, Omnitrace only collects wall-clock
 timing values. However, by modifying the ``OMNITRACE_TIMEMORY_COMPONENTS`` setting, 
 Omnitrace can be configured to
-collect hardware counters, CPU-clock timers, memory usage, context-switches, page-faults, network statistics,
-and many more. In fact, Omnitrace can actually be used as a dynamic instrumentation vehicle 
+collect hardware counters, CPU-clock timers, memory usage, context switches, page faults, network statistics,
+and much more. Omnitrace can even be used as a dynamic instrumentation vehicle 
 for other third-party profiling
 APIs such as `Caliper <https://github.com/LLNL/Caliper>`_ and `LIKWID <https://github.com/RRZE-HPC/likwid>`_ 
-by building Omnitrace from source with the CMake 
-options ``TIMEMORY_USE_CALIPER=ON`` or ``TIMEMORY_USE_LIKWID=ON`` and then adding
-``caliper_marker`` and/or ``likwid_marker`` to ``OMNITRACE_TIMEMORY_COMPONENTS``.
+To leverage this capability, build Omnitrace from source with the CMake 
+options ``TIMEMORY_USE_CALIPER=ON`` or ``TIMEMORY_USE_LIKWID=ON`` and then add
+``caliper_marker``, ``likwid_marker``, or both to ``OMNITRACE_TIMEMORY_COMPONENTS``.
 
-View all possible components and their descriptions:
+To view all possible components and their descriptions:
 
 .. code-block:: shell
 
    omnitrace-avail --components --description
 
-Restrict to available components and view the string identifiers for `OMNITRACE_TIMEMORY_COMPONENTS`:
+To restrict the output to available components and view the string identifiers for `OMNITRACE_TIMEMORY_COMPONENTS`:
 
 .. code-block:: shell
 
@@ -89,29 +90,30 @@ Restrict to available components and view the string identifiers for `OMNITRACE_
 Exploring hardware counters
 -----------------------------------
 
-Omnitrace supports collecting hardware counters via PAPI and ROCm.
+Omnitrace supports hardware counter collection via PAPI and ROCm.
 Generally, PAPI is used to collect CPU-based hardware counters and ROCm is used to collect GPU-based hardware
-counters; although it is possible to install PAPI with ROCm support and collect GPU-based hardware counters
-via PAPI but this is not recommended because CPU hardware counters via PAPI cannot be collected simultaneously.
+counters. Although it is possible to install PAPI with ROCm support and use it to 
+collect GPU-based hardware counters, this is not recommended because PAPI 
+cannot simultaneously collect CPU hardware counters.
 
-View all possible hardware counters and their descriptions:
+To view all possible hardware counters and their descriptions, use the following command:
 
 .. code-block:: shell
 
    omnitrace-avail --hw-counters --description
 
-Additionally, you can pass ``-c CPU`` to restrict the hardware counters to the counters available via PAPI and
-``-c GPU`` to restrict the hardware counters displayed to the counters available via ROCm.
+Appending the ``-c CPU`` option restricts the list of hardware counters to 
+those available through PAPI, while ``-c GPU`` limits the list to those available from ROCm.
 
 Enabling hardware counters
 -----------------------------------
 
-Hardware counters via PAPI are configured with the ``OMNITRACE_PAPI_EVENTS`` configuration variable.
-Hardware counters via ROCm are configured with the ``OMNITRACE_ROCM_EVENTS`` configuration variable.
-It should be noted that ROCm hardware counters also require the ``OMNITRACE_USE_ROCPROFILER`` configuration
-variable to be enabled (i.e., ``OMNITRACE_USE_ROCPROFILER=ON``).
+PAPI Hardware counters are configured with the ``OMNITRACE_PAPI_EVENTS`` configuration variable.
+ROCm Hardware counters are configured with the ``OMNITRACE_ROCM_EVENTS`` configuration variable.
+ROCm hardware counters also require the ``OMNITRACE_USE_ROCPROFILER`` configuration
+variable to be enabled using ``OMNITRACE_USE_ROCPROFILER=ON``.
 
-Example configuration for hardware counters:
+Here is a sample configuration for hardware counters:
 
 .. code-block:: shell
 
@@ -125,22 +127,25 @@ Example configuration for hardware counters:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In order to collect the majority of hardware counters via PAPI, ensure the ``/proc/sys/kernel/perf_event_paranoid``
-has a value <= 2. If you have ``sudo`` access, you can use the following command to modify the value:
+has a value <= 2. If you have ``sudo`` access, use the following command to modify the value:
 
 .. code-block:: shell
 
    echo 0 | sudo tee /proc/sys/kernel/perf_event_paranoid
 
 However this value is not retained upon reboot. 
-The following command preserves this setting between reboots:
+Use the following command to preserve this setting after a reboot:
 
 .. code-block:: shell
 
    echo 'kernel.perf_event_paranoid=0' | sudo tee -a /etc/sysctl.conf
 
-PAPI events use something similar to a namespace. All specified hardware counters must be from the same namespace.
-For hardware counters starting with the ``PAPI_`` prefix, these are high-level aggregates of multiple hardware counters.
-Otherwise, most events use two or three colons (``::`` or ``:::``) between the component name and the counter name, e.g.,
+PAPI events use a concept similar to a namespace. All specified hardware 
+counters must be from the same namespace.
+For hardware counters starting with the ``PAPI_`` prefix, these are high-level 
+aggregates of multiple hardware counters.
+Otherwise, most events use two or three colons (``::`` or ``:::``) between the 
+component name and the counter name, e.g.,
 ``amd64_rapl::RAPL_ENERGY_PKG``, ``perf::PERF_COUNT_HW_CPU_CYCLES``, etc.
 
 For example, the following is a valid configuration:
@@ -149,7 +154,7 @@ For example, the following is a valid configuration:
 
    OMNITRACE_PAPI_EVENTS = perf::INSTRUCTIONS  perf::CACHE-REFERENCES  perf::CACHE-MISSES
 
-However, the following effectively specifies the same set of hardware counters but is an invalid configuration because it mixes
+However, the following specification of a roughly equivalent set of hardware counters is an invalid configuration because it mixes
 PAPI components from different namespaces:
 
 .. code-block:: shell
@@ -158,19 +163,23 @@ PAPI components from different namespaces:
 
 .. note::
 
-   If Omnitrace was configured with ``OMNITRACE_BUILD_PAPI=ON`` (the default), the standard PAPI command line tools such as
-   ``papi_avail``, ``papi_event_chooser``, etc. will not be able to provide information about the PAPI library used by Omnitrace
-   (Omnitrace statically links to ``libpapi``). However, all of these tools are installed with the prefix ``omnitrace-`` and all
-   underscores are replaced with hypens, e.g. ``papi_avail`` becomes ``omnitrace-papi-avail``.
+   If Omnitrace was configured with the default ``OMNITRACE_BUILD_PAPI=ON`` setting, 
+   standard PAPI command-line tools such as
+   ``papi_avail`` and ``papi_event_chooser`` are not be able to provide information 
+   about the PAPI library used by Omnitrace
+   (because Omnitrace statically links to ``libpapi``). However, all of these tools are 
+   installed with the prefix ``omnitrace-`` with
+   underscores replaced with hypens, for example ``papi_avail`` becomes ``omnitrace-papi-avail``.
 
 ``OMNITRACE_ROCM_EVENTS``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Omnitrace reads the ROCm events from the ``${ROCM_PATH}/lib/rocprofiler/metrics.xml`` 
 file. Use the ``ROCP_METRICS`` environment
-variable to point Omnitrace to a different XML metrics file, e.g., 
+variable to point Omnitrace to a different XML metrics file, for example, 
 ``export ROCP_METRICS=${PWD}/custom_metrics.xml``.
-``omnitrace-avail -H -c GPU`` shows event names with a suffix of ``:device=N`` where ``N`` is the device number.
+``omnitrace-avail -H -c GPU`` shows event names with a suffix of ``:device=N`` 
+where ``N`` is the device number.
 For example, if you have two devices, the output is:
 
 .. code-block:: shell
@@ -179,19 +188,19 @@ For example, if you have two devices, the output is:
    ...
    | Wavefronts:device=1                   | Derived counter: SQ_WAVES             |
 
-If you wish to collect the event on all the devices, simply specify the event, 
-e.g. ``Wavefronts``, without the ``:device=`` suffix.
-If you wish to collect the event only on specific device(s), use the ``:device=`` suffix.
+To collect the event on all devices, specify the event, 
+such as ``Wavefronts``, without the ``:device=`` suffix.
+To collect the event only on specific devices, use the ``:device=`` suffix.
 
-For example:
-
-.. code-block:: shell
-
-   OMNITRACE_ROCM_EVENTS = GPUBusy     SQ_WAVES:device=0    SQ_INSTS_VALU:device=1
+The following example:
 
 * Records the percentage of time the GPU was busy on all devices
 * Counts the number of waves sent to SQs on device 0
 * Counts the number of VALU instructions issued on device 1
+
+.. code-block:: shell
+
+   OMNITRACE_ROCM_EVENTS = GPUBusy     SQ_WAVES:device=0    SQ_INSTS_VALU:device=1
 
 ``omnitrace-avail`` examples
 -----------------------------------
@@ -289,14 +298,14 @@ Generating a default configuration file
 
 When creating a new configuration file, the following recommendations apply:
 
-* Use the ``--all`` option for descriptions, choices, etc. in the configuration file.
-* If you want to create a new configuration without inheriting from an existing ``${HOME}/.omnitrace.cfg``,
-  set ``OMNITRACE_SUPPRESS_CONFIG=ON`` in the environment before executing.
-* If you want to create a new configuration with some minor tweaks to an existing configuration,
-  set ``OMNITRACE_CONFIG_FILE=/path/to/existing/file`` and define the tweaks as environment 
-  variables before generating.
+* Use the ``--all`` option to view all descriptions, choices, and other information in the configuration file.
+* To create a new configuration without inheriting from an existing ``${HOME}/.omnitrace.cfg`` file,
+  set ``OMNITRACE_SUPPRESS_CONFIG=ON`` in the environment beforehand.
+* To create a new configuration that makes minor changes to an existing configuration,
+  set ``OMNITRACE_CONFIG_FILE=/path/to/existing/file`` and define the changes as environment 
+  variables before generating it.
 
-Viewing setting descriptions
+Viewing the setting descriptions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: shell
@@ -1188,10 +1197,10 @@ Creating a configuration file
 
 Omnitrace supports three configuration file formats: JSON, XML, and plain text.
 Use ``omnitrace-avail -G <filename> -F txt json xml`` to generate default 
-configuration files of each format and, optionally,
-include the ``--all`` flag for descriptions, etc.
-Configuration files are specified via the ``OMNITRACE_CONFIG_FILE`` environment variable
-and by default will look for ``${HOME}/.omnitrace.cfg`` and ``${HOME}/.omnitrace.json``.
+configuration files in each format. Optionally
+include the ``--all`` flag to include full descriptions and other information.
+Configuration files are specified by the ``OMNITRACE_CONFIG_FILE`` environment variable
+which by default looks for ``${HOME}/.omnitrace.cfg`` and ``${HOME}/.omnitrace.json``.
 Multiple configuration files can be concatenated using the ``:`` symbol, for example:
 
 .. code-block:: shell
@@ -1204,13 +1213,13 @@ the environment variable takes precedence.
 Sample text configuration file
 -----------------------------------
 
-Text files support very basic variables and are case-insensitive.
+Text files support very basic variables and are case insensitive.
 Variables are created when an lvalue starts with a ``$`` and are
 de-referenced when they appear as rvalues.
 
-Entries in the text configuration file which do not match to a known setting
+Entries in the text configuration file which do not match a known setting
 in ``omnitrace-avail`` but are prefixed with ``OMNITRACE_`` are interpreted as
-environment variables and are exported via ``setenv``
+environment variables. They are exported via ``setenv``
 but do not override an existing value for the environment variable.
 
 .. code-block:: shell
@@ -1283,8 +1292,8 @@ The full JSON specification for a configuration value contains a lot of informat
       }
    }
 
-However when writing an JSON configuration file, the following is minimally acceptable 
-to set ``OMNITRACE_ADD_SECONDARY=false``:
+However when writing an JSON configuration file, the following example is minimally acceptable 
+for ``OMNITRACE_ADD_SECONDARY``:
 
 .. code-block:: json
 

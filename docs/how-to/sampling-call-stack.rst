@@ -6,19 +6,19 @@
 Sampling the call stack
 ****************************************************
 
-`Omnitrace <https://github.com/ROCm/omnitrace>`_  call-stack sampling can be activated 
+`Omnitrace <https://github.com/ROCm/omnitrace>`_ call-stack sampling can be activated 
 with either a binary instrumented by the ``omnitrace`` executable 
-or via the ``omnitrace-sample`` executable.
-All of the commands below are effectively equivalent:
+or by using via the ``omnitrace-sample`` executable.
+All of the following commands are effectively equivalent:
 
-* Binary rewrite with only instrumentation necessary to start/stop sampling
+* Binary rewrite with only the instrumentation necessary to start and stop sampling
 
   .. code-block:: shell
 
      omnitrace-instrument -M sampling -o foo.inst -- foo
      omnitrace-run -- ./foo.inst
 
-* Runtime instrumentation with only instrumentation necessary to start/stop sampling
+* Runtime instrumentation with only the instrumentation necessary to start and stop sampling
 
   .. code-block:: shell
 
@@ -34,31 +34,31 @@ All of the commands below are effectively equivalent:
 
    Set ``OMNITRACE_USE_SAMPLING=ON`` to activate call-stack sampling when executing an instrumented binary.
 
-All ``omnitrace-instrument -M sampling`` (referred to as "instrumented-sampling" henceforth) 
+All ``omnitrace-instrument -M sampling`` (subsequently referred to as "instrumented-sampling") 
 does is wrap the ``main`` of the executable with initialization
 before ``main`` starts and finalization after ``main`` ends.
-This can be easily accomplished without instrumentation via a ``LD_PRELOAD`` 
-of a library with containing a dynamic symbol wrapper around ``__libc_start_main``.
-Thus, whenever binary instrumentation is unnecessary, using ``omnitrace-sample`` 
+This can be accomplished without instrumentation through a ``LD_PRELOAD`` 
+of a library containing a dynamic symbol wrapper around ``__libc_start_main``.
+As a result, whenever binary instrumentation is unnecessary, the use of ``omnitrace-sample`` 
 is recommended over ``omnitrace-instrument -M sampling`` for several reasons:
 
-* ``omnitrace-sample`` provides command-line options for controlling features of Omnitrace instead of 
+* ``omnitrace-sample`` provides command-line options for controlling the Omnitrace feature set instead of 
   requiring configuration files or environment variables
 * Despite the fact that instrumented-sampling only requires inserting snippets 
   around one function (``main``), Dyninst
   does not have a feature for specifying that parsing and processing all the 
   other symbols in the binary is unnecessary.
-  In the best case scenario, instrumented-sampling has a slightly slower 
-  launch time when the target binary is relatively small
-  but, in the worst case scenarios, requires a significant amount of time and memory to launch.
-* ``omnitrace-sample`` is fully compatible with MPI, e.g. ``mpirun -n 2 omnitrace-sample -- foo``, 
+  In the best-case scenario when the target binary is relatively small, 
+  instrumented-sampling has a slightly slower launch time,
+  but in the worst case scenarios it requires a significant amount of time and memory to launch.
+* ``omnitrace-sample`` is fully compatible with MPI, for example in the command ``mpirun -n 2 omnitrace-sample -- foo``, 
   whereas ``mpirun -n 2 omnitrace-instrument -M sampling -- foo``
   is incompatible with some MPI distributions (particularly OpenMPI) because of 
   MPI restrictions against forking within an MPI rank
 
-  * When MPI and binary instrumentation are both involved, two steps are required: 
-    (1) do a binary rewrite of the executable and (2) use the instrumented executable 
-    in lieu of the original executable. ``omnitrace-sample`` is thus much easier to use with MPI.
+  * When MPI and binary instrumentation are both involved, two steps are required:
+    performing a binary rewrite of the executable and then using the instrumented executable 
+    in lieu of the original executable. ``omnitrace-sample`` is therefore much easier to use with MPI.
 
 The ``omnitrace-sample`` executable
 ========================================
@@ -161,16 +161,16 @@ View the help menu of ``omnitrace-sample`` with the ``-h`` / ``--help`` option:
       [SAMPLING TIMER OPTIONS]
 
       --cputime                      Sample based on a CPU-clock timer (default). Accepts zero or more arguments:
-                                          0. Enables sampling based on CPU-clock timer.
-                                          1. Interrupts per second. E.g., 100 == sample every 10 milliseconds of CPU-time.
-                                          2. Delay (in seconds of CPU-clock time). I.e., how long each thread should wait before taking first sample.
+                                          1. Enables sampling based on CPU-clock timer.
+                                          2. Interrupts per second. E.g., 100 == sample every 10 milliseconds of CPU-time.
+                                          3. Delay (in seconds of CPU-clock time). I.e., how long each thread should wait before taking first sample.
                                           3+ Thread IDs to target for sampling, starting at 0 (the main thread).
                                              May be specified as index or range, e.g., '0 2-4' will be interpreted as:
                                                 sample the main thread (0), do not sample the first child thread but sample the 2nd, 3rd, and 4th child threads
       --realtime                     Sample based on a real-clock timer. Accepts zero or more arguments:
-                                          0. Enables sampling based on real-clock timer.
-                                          1. Interrupts per second. E.g., 100 == sample every 10 milliseconds of realtime.
-                                          2. Delay (in seconds of real-clock time). I.e., how long each thread should wait before taking first sample.
+                                          1. Enables sampling based on real-clock timer.
+                                          2. Interrupts per second. E.g., 100 == sample every 10 milliseconds of realtime.
+                                          3. Delay (in seconds of real-clock time). I.e., how long each thread should wait before taking first sample.
                                           3+ Thread IDs to target for sampling, starting at 0 (the main thread).
                                              May be specified as index or range, e.g., '0 2-4' will be interpreted as:
                                                 sample the main thread (0), do not sample the first child thread but sample the 2nd, 3rd, and 4th child threads
@@ -202,15 +202,15 @@ View the help menu of ``omnitrace-sample`` with the ``-h`` / ``--help`` option:
                                           0     avoid triggering the bug, potentially at the cost of reduced performance
                                           1     do not modify how ROCm is notified about kernel completion
 
-The general syntax for separating Omnitrace command line arguments from the 
+The general syntax for separating Omnitrace command-line arguments from the 
 following application arguments 
-is consistent with the LLVM style of using a standalone double-hyphen (``--``). 
-All arguments preceding the double-hyphen
-are interpreted as belonging to Omnitrace and all arguments following the double-hyphen 
+is consistent with the LLVM style of using a stand-alone double hyphen (``--``). 
+All arguments preceding the double hyphen
+are interpreted as belonging to Omnitrace and all arguments following it 
 are interpreted as the
-application and its arguments. The double-hyphen is only necessary when passing 
-command line arguments to the target
-which also use hyphens. E.g. ``omnitrace-sample ls`` works but, in order 
+application and its arguments. The double hyphen is only necessary when passing 
+command-line arguments to a target
+which also uses hyphens. For example, you can run ``omnitrace-sample ls``, but 
 to run ``ls -la``, use ``omnitrace-sample -- ls -la``.
 
 :doc:`Configuring the Omnitrace runtime options <./configuring-runtime-options>` 
@@ -218,14 +218,15 @@ establishes the precedence of environment variable values over values specified
 in the configuration files. This enables
 the user to configure the Omnitrace runtime to their preferred default behavior 
 in a file such as ``~/.omnitrace.cfg`` and then easily override
-those settings via something like ``OMNITRACE_ENABLED=OFF omnitrace-sample -- foo``.
-Similarly, the command line arguments passed to ``omnitrace-sample`` take precedence over environment variables.
+those settings using a command like ``OMNITRACE_ENABLED=OFF omnitrace-sample -- foo``.
+Similarly, the command-line arguments passed to ``omnitrace-sample`` take precedence 
+over environment variables.
 
 All of the command-line options above correlate to one or more configuration 
 settings, e.g. ``--cpu-events`` correlates to the ``OMNITRACE_PAPI_EVENTS`` configuration variable.
 After the command-line arguments to ``omnitrace-sample`` have been processed but 
-before the target application is executed, ``omnitrace-sample`` will emit a log
-for which environment variables where set and/or modified:
+before the target application runs, ``omnitrace-sample`` creates a log
+showing which environment variables were set or modified:
 
 The snippet below shows the environment updates when ``omnitrace-sample`` is invoked with no arguments
 
@@ -273,8 +274,8 @@ profiling, tracing, host process-sampling, device process-sampling, and all the 
    ...
 
 The snippet below shows the environment updates when ``omnitrace-sample`` enables 
-profiling, tracing, host process-sampling, device process-sampling,
-sets the output path to ``omnitrace-output``, the output prefix to ``%tag%`` and disables 
+profiling, tracing, host process-sampling, and device process-sampling,
+sets the output path to ``omnitrace-output`` and the output prefix to ``%tag%``, and disables 
 all the available backends:
 
 .. code-block:: shell

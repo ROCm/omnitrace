@@ -21,34 +21,34 @@ be the same size.
 
    When using Omnitrace for Python, the Python interpreter major and minor version (e.g. 3.7) 
    must match the interpreter major and minor version
-   used when compiling the Python bindings, i.e. when building Omnitrace, 
-   a ``libpyomnitrace.<IMPL>-<VERSION>-<ARCH>-<OS>-<ABI>.so`` will be generated
+   used when compiling the Python bindings. When building Omnitrace, 
+   the shared object file ``libpyomnitrace.<IMPL>-<VERSION>-<ARCH>-<OS>-<ABI>.so`` is generated
    where ``IMPL`` is the Python implementation, ``VERSION`` is the major and minor 
    version, ``ARCH`` is the architecture,
-   ``OS`` is the operating system, and ``ABI`` is the application binary interface; 
-   Example: ``libpyomnitrace.cpython-38-x86_64-linux-gnu.so``.
+   ``OS`` is the operating system, and ``ABI`` is the application binary interface, 
+   for example, ``libpyomnitrace.cpython-38-x86_64-linux-gnu.so``.
 
 Getting Started
 ========================================
 
-The Omnitrace Python package is installed in ``lib/pythonX.Y/site-packages/omnitrace``. In order 
-to ensure the Python interpreter can find the Omnitrace package,
-add this path to the ``PYTHONPATH`` environment variable, e.g.:
+The Omnitrace Python package is installed in ``lib/pythonX.Y/site-packages/omnitrace``. 
+To ensure the Python interpreter can find the Omnitrace package,
+add this path to the ``PYTHONPATH`` environment variable, as in the following example:
 
 .. code-block:: shell
 
    export PYTHONPATH=/opt/omnitrace/lib/python3.8/site-packages:${PYTHONPATH}
 
-If using either the ``share/omnitrace/setup-env.sh`` script or the module file in 
-``share/modulefiles/omnitrace``, prefixing the ``PYTHONPATH``
-environment variable is automatically handled.
+Both the ``share/omnitrace/setup-env.sh`` script and the module file in 
+``share/modulefiles/omnitrace`` automatically handle the prefixing of the ``PYTHONPATH``
+environment variable.
 
 Running Omnitrace on a Python script
 ========================================
 
-Omnitrace provides an ``omnitrace-python`` helper bash script which effectively 
-handles ensuring ``PYTHONPATH`` is properly set and the correct Python interpreter is used.
-Thus the following are effectively equivalent:
+Omnitrace provides an ``omnitrace-python`` helper bash script which 
+ensures ``PYTHONPATH`` is properly set and the correct Python interpreter is used.
+This means the following commands are effectively equivalent:
 
 .. code-block:: shell
 
@@ -60,7 +60,7 @@ Thus the following are effectively equivalent:
 .. note::
 
    ``omnitrace-python`` and ``python -m omnitrace`` use the same command-line syntax 
-   as the ``omnitrace`` executable (i.e. ``omnitrace-python <OMNITRACE_ARGS> -- <SCRIPT> <SCRIPT_ARGS>``) 
+   as the ``omnitrace`` executable (``omnitrace-python <OMNITRACE_ARGS> -- <SCRIPT> <SCRIPT_ARGS>``) 
    and has similar options.
 
 Command line options
@@ -103,15 +103,15 @@ Use ``omnitrace-python --help`` to view the available options:
 
 .. note::
 
-   The ``--trace-c`` option does not incorporate Omnitrace's dynamic instrumentation support, 
-   rather it just enables profiling the underlying C function call within the Python interpreter.
+   The ``--trace-c`` option does not incorporate Omnitrace's dynamic instrumentation support. 
+   It only enables profiling the underlying C function call within the Python interpreter.
 
 Selective instrumentation
 -----------------------------------
 
 Similar to the ``omnitrace`` executable, command-line options exist for restricting, 
-including, and excluded the desired functions and modules, e.g. ``--function-exclude "^__init__$"``.
-Alternatively, adding ``@profile`` decorator to the primary function of interest 
+including, and excluding certain functions and modules, for example, ``--function-exclude "^__init__$"``.
+Alternatively, adding the ``@profile`` decorator to the primary function of interest 
 in combination with the ``-b`` / ``--builtin`` option will narrow the scope of the
 instrumentation to this function and its children.
 
@@ -141,8 +141,8 @@ Consider the following Python code (``example.py``):
    if __name__ == "__main__":
       run(20)
 
-Using ``omnitrace-python ./example.py`` with ``OMNITRACE_PROFILE=ON`` and 
-``OMNITRACE_TIMEMORY_COMPONENTS=trip_count`` would produce:
+Running ``omnitrace-python ./example.py`` with ``OMNITRACE_PROFILE=ON`` and 
+``OMNITRACE_TIMEMORY_COMPONENTS=trip_count`` produces the following:
 
 .. code-block:: shell
 
@@ -175,7 +175,7 @@ Using ``omnitrace-python ./example.py`` with ``OMNITRACE_PROFILE=ON`` and
    | |0>>> |_inefficient                               |      1 |      1 | trip_count |      1 |
    |-------------------------------------------------------------------------------------------|
 
-If the ``inefficient`` function were decorated with ``@profile``:
+If the ``inefficient`` function is decorated with ``@profile`` as follows:
 
 .. code-block:: python
 
@@ -183,7 +183,7 @@ If the ``inefficient`` function were decorated with ``@profile``:
    def inefficient(n):
       # ...
 
-And then run with ``omnitrace-python -b -- ./example.py``, Omnitrace would produce:
+And then run using the command ``omnitrace-python -b -- ./example.py``, Omnitrace produces this output:
 
 .. code-block:: shell
 
@@ -260,9 +260,8 @@ original ``omnitrace-python ./example.py`` results:
 
 .. note::
 
-   When ``omnitrace-python`` is used without built-ins, the profiling results 
-   will likely be cluttered by
-   numerous functions called during the importing of more complex modules, e.g. ``import numpy``.
+   When ``omnitrace-python`` is used without built-ins, the profiling results can be cluttered by the
+   numerous functions called when more complex modules are imported, such as ``import numpy``.
 
 Omnitrace Python source instrumentation configuration
 -------------------------------------------------------------
@@ -303,7 +302,7 @@ modifying the ``omnitrace.profiler.config`` data fields.
       with profile():
          run(5)
 
-Executing this script would produce:
+Executing this script produces the following:
 
 .. code-block:: shell
 

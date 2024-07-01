@@ -12,8 +12,8 @@ The process of causal profiling can be summarized as:
 
 Causal profiling directs parallel application developers to where they should focus their optimization
 efforts by quantifying the potential impact of optimizations. Causal profiling is rooted in the concept
-that *software execution speed is relative*: speeding up a block of code by X% is mathematically equivalent
-to that block of code running at its current speed if all the other code running slower by X%.
+that *software execution speed is relative*. Speeding up a block of code by X% is mathematically equivalent
+to that block of code running at its current speed if all the other code is running slower by X%.
 Thus, causal profiling works by performing experiments on blocks of code during program execution which
 insert pauses to slow down all other concurrently running code. During post-processing, these experiments
 are translated into calculations for the potential impact of speeding up this block of code.
@@ -23,7 +23,7 @@ are translated into calculations for the potential impact of speeding up this bl
    Causal profiling supersedes the original critical trace feature, which was removed in Omnitrace v1.11.0.
 
 Consider the following C++ code executing ``foo`` and ``bar`` concurrently in two different threads
-where ``foo`` is 30% faster than ```bar``` (ideally):
+where ``foo`` is ideally 30% faster than ``bar``:
 
 .. code-block:: cpp
 
@@ -55,12 +55,12 @@ No matter how many optimizations are applied to ``foo``, the application will al
 require the same amount of time
 because the end-to-end performance is limited by ``bar``. However, a 5% speed-up 
 in ``bar`` will result in the
-end-to-end performance improving by 5% and this trend will continue linearly (10% speed-up 
-in ``bar`` yields 10% speed-up in
-end-to-end performance, and so on) up to 30% speed-up, at which point, ``bar`` executes as fast as ``foo``;
-any speed-up to ``bar`` beyond 30% will still only yield an end-to-end performance 
-speed-up of 30% since the application
-will be limited by performance of ``foo``, as demonstrated below in the causal 
+end-to-end performance improving by 5%. This trend continues linearly, with a 10% speed-up 
+in ``bar`` yielding a 10% speed-up in
+end-to-end performance, and so on, up to a 30% speed-up, at which point ``bar`` executes as fast as ``foo``.
+Any speed-up to ``bar`` beyond 30% still only yields an end-to-end performance 
+improvement of 30% because the application
+is now limited by performance of ``foo``, as demonstrated below in the causal 
 profiling visualization:
 
 .. image:: ../data/causal-foobar.png
@@ -94,9 +94,9 @@ This can happen in three different ways:
 .. note::
 
    Binary rewrite to insert progress points is not supported. When a rewritten binary 
-   is executed, Dyninst translates the instruction pointer address in order to execute 
-   the instrumentation. As a result, call-stack samples never return instruction 
-   pointer addresses in the ranges defined as valid by Omnitrace.
+   is executed, Dyninst translates the instruction pointer address in order to perform 
+   the instrumentation. As a result, call stack samples never return instruction 
+   pointer addresses within the valid Omnitrace range.
 
 Key concepts
 -----------------------------------
@@ -107,12 +107,12 @@ Key concepts
 | Backend          | ``OMNITRACE_CAUSAL_BACKEND``        | ``perf``, ``timer``              | Backend for recording samples required     |
 |                  |                                     |                                  | to calculate the virtual speed-up          |
 +------------------+-------------------------------------+----------------------------------+--------------------------------------------+
-| Mode             | ``OMNITRACE_CAUSAL_MODE``           | ``function``, ``line``           | Select entire function or individual       |
+| Mode             | ``OMNITRACE_CAUSAL_MODE``           | ``function``, ``line``           | Select an entire function or individual    |
 |                  |                                     |                                  | line of code for causal experiments        |
 +------------------+-------------------------------------+----------------------------------+--------------------------------------------+
 | End-to-end       | ``OMNITRACE_CAUSAL_END_TO_END``     | Boolean                          | Perform a single experiment during the     |
 |                  |                                     |                                  | entire run (does not require               |
-|                  |                                     |                                  | progress-points)                           |
+|                  |                                     |                                  | progress points)                           |
 +------------------+-------------------------------------+----------------------------------+--------------------------------------------+
 | Fixed speed-up   | ``OMNITRACE_CAUSAL_FIXED_SPEEDUP``  | one or more values from [0, 100] | Virtual speed-up or pool of virtual        |
 |                  |                                     |                                  | speed-ups to randomly select               |
@@ -130,53 +130,52 @@ Key concepts
 
 .. note::
 
-   * Binary scope defaults to ``%MAIN%`` (executable), but the scope can be expanded to include linked libraries.
-   * ``<file>`` and ``<file>:<line>`` support requires debug info (i.e. code was compiled with ``-g`` or, preferably, ``-g3``)
+   * Binary scope defaults to ``%MAIN%`` (in the executable), but the scope can be expanded to include linked libraries.
+   * ``<file>`` and ``<file>:<line>`` support requires debug info (for example, the code must be compiled with ``-g`` or, preferably, with ``-g3``)
    * Function mode does not require debug info but does not support stripped binaries
 
 Backends
 -----------------------------------
 
 Both causal profiling backends interrupt each thread 1000x per second of CPU-time to apply virtual speed-ups.
-The difference between the backends is how the samples which are responsible calculating 
+The difference between the backends is how the samples which are responsible for calculating 
 the virtual speed-up are recorded.
-There are 3 key differences between the two backends:
+There are three key differences between the two backends:
 
-* ``perf`` backend requires Linux Perf and elevated security priviledges
-* ``perf`` backend interrupts the application less frequently whereas the ``timer`` backend 
-  will interrupt the application 1000x per second of realtime
-* ``timer`` backend has less accurate call-stacks due to instruction pointer skid
+* the ``perf`` backend requires Linux Perf and elevated security priviledges
+* the ``perf`` backend interrupts the application less frequently whereas the ``timer`` backend 
+  interrupts the application 1000 times per second of realtime
+* the ``timer`` backend has less accurate call stacks due to instruction pointer skid
 
-In general, the ``perf`` is preferred over the ``timer`` backend when sufficient 
+In general, the ``perf`` backend is preferred over the ``timer`` backend when sufficient 
 security priviledges permit its usage.
 If ``OMNITRACE_CAUSAL_BACKEND`` is set to ``auto``, Omnitrace will fallback 
 to using the ``timer`` backend only if
-using the ``perf`` backend fails; if ``OMNITRACE_CAUSAL_BACKEND`` is 
-set to ``perf`` and using this backend fails, Omnitrace
-will abort.
+the ``perf`` backend fails. If ``OMNITRACE_CAUSAL_BACKEND`` is 
+set to ``perf`` and using this backend fails, Omnitrace aborts.
 
 Instruction pointer skid
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Instruction pointer (IP) skid is how many instructions execute between an event of interest
-happening and where the IP is when the kernel is able to stop the application.
+Instruction pointer (IP) skid is how many instructions run between an event of interest
+and where the location of the IP when the kernel is able to stop the application.
 For the ``timer`` backend, this translates to the
-difference between when the IP when the timer generated a signal and the IP when the
-signal was actually generated. Although IP skid does still occur with the ``perf`` backend,
-the overhead of pausing the entire thread with the ``timer`` backend makes this much more pronounced
-and, as such, the ``timer`` backend tends to have a lower resolution than the ``perf`` backend,
+difference between the IP when the timer generated a signal and the IP when the
+signal was actually generated. Although IP skid still occurs with the ``perf`` backend,
+the overhead of pausing the entire thread with the ``timer`` backend makes it much more pronounced.
+This means the ``timer`` backend tends to have a lower resolution than the ``perf`` backend,
 especially in ``line`` mode.
 
 Installing Linux Perf
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Linux Perf is built into the kernel and may already be installed 
-(e.g., included in the default kernel for OpenSUSE).
+(for instance, it is included in the default kernel for OpenSUSE).
 The official method of checking whether Linux Perf is installed is 
 checking for the existence of the file
-``/proc/sys/kernel/perf_event_paranoid`` -- if the file exists, the kernel has Perf installed.
+``/proc/sys/kernel/perf_event_paranoid``. If the file exists, the kernel has Perf installed.
 
-If this file does not exist, on Debian-based systems like Ubuntu, install (as superuser):
+If this file does not exist, as with Debian-based systems like Ubuntu, run the following command as superuser:
 
 .. code-block:: shell
 
@@ -184,12 +183,12 @@ If this file does not exist, on Debian-based systems like Ubuntu, install (as su
 
 and reboot your computer. In order to use the ``perf`` backend, the value 
 of ``/proc/sys/kernel/perf_event_paranoid``
-should be <= 2. If the value in this file is greater than 2, you will likely be 
-unable to use the perf backend.
+should be <= 2. If the value in this file is greater than 2, you can't 
+use the ``perf`` backend.
 
-To update the paranoid level temporarily (until the system is rebooted), run 
-one of the following methods
-as a superuser (where ``PARANOID_LEVEL=<N>`` with ``<N>`` in the range ``[-1, 2]``):
+To update the paranoid level temporarily until the system is rebooted, run 
+one of the following commands
+as a superuser (where ``PARANOID_LEVEL=<N>`` has a value of ``<N>`` in the range ``[-1, 2]``):
 
 .. code-block:: shell
 
@@ -202,10 +201,10 @@ To make the paranoid level persistent after a reboot, add ``kernel.perf_event_pa
 Speed-up prediction variability and the ``omnitrace-causal`` executable
 -----------------------------------------------------------------------
 
-Causal profiling typically require executing the application several times in 
-order to adequately sample all the domains of executing code, experiment 
-speed-ups, etc. and resolve statistical fluctuations.
-The ``omnitrace-causal`` executable is designed to simplify running this procedure:
+Causal profiling typically requires running the application several times in 
+order to adequately sample all the code domains, experiment 
+with speed-ups and other techniques, and resolve statistical fluctuations.
+The ``omnitrace-causal`` executable is designed to simplify this procedure:
 
 .. code-block:: shell
 
@@ -538,23 +537,25 @@ Using ``omnitrace-causal`` with other launchers like ``mpirun``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``omnitrace-causal`` executable is intended to assist with application replay 
-and is designed to always be at the start of the command-line (i.e. the primary process).
+and is designed to always be at the start of the command-line as the primary process.
 ``omnitrace-causal`` typically adds a ``LD_PRELOAD`` of the Omnitrace libraries 
-into the environment before launching the command in order to inject the functionality
+into the environment before launching the command to inject the functionality
 required to start the causal profiling tooling. However, this is problematic 
-when the target application for causal profiling requires another command-line
-tool in order to run, e.g. ``foo`` is the target application but executing ``foo`` 
-requires ``mpirun -n 2 foo``. If one were to simply do ``omnitrace-causal -- mpirun -n 2 foo``,
-then the causal profiling would be applied to ``mpirun`` instead of ``foo``. 
+when the target application for causal profiling uses a launcher, in which case 
+it is listed as an argument rather than as the main application. For example, 
+``foo`` is the target application for profiling, but the command to run it is 
+``mpirun -n 2 foo``. Running the command ``omnitrace-causal -- mpirun -n 2 foo`` 
+applies the causal profiling to ``mpirun`` instead of ``foo``. 
+
 ``omnitrace-causal`` remedies this by providing a command-line option ``-l` / `--launcher``
 to indicate the target application is using a launcher script/executable. The 
-argument to the command-line option is the name of (or regex for) the target application
-on the command-line. When ``--launcher`` is used, ``omnitrace-causal`` will generate 
-all the replay configurations and execute them but delay adding the ``LD_PRELOAD``, instead it
-will inject a call to itself into the command-line right before the target 
-application. This recursive call to itself will inherit the configuration from
-parent ``omnitrace-causal`` executable, insert an ``LD_PRELOAD`` into the environment, 
-and then invoke an ``execv`` to replace itself with the new process launched by the target
+argument to the command-line option is the name of, or regular expression for, the target application
+on the command line. When ``--launcher`` is used, ``omnitrace-causal`` generates 
+all the replay configurations and runs them but delays adding the ``LD_PRELOAD``. Instead it
+inserts a call to itself into the command line right before the target 
+application. This recursive call inherits the configuration from
+the parent ``omnitrace-causal`` executable, inserts an ``LD_PRELOAD`` into the environment, 
+and calls ``execv`` to replace itself with the new process launched by the target
 application.
 
 In other words, the following command:
@@ -574,9 +575,9 @@ Effectively results in:
 Visualizing the causal output
 -------------------------------------------------------------------------
 
-Omnitrace generates a ``causal/experiments.json`` and ``causal/experiments.coz`` in 
+Omnitrace generates ``causal/experiments.json`` and ``causal/experiments.coz`` in 
 ``${OMNITRACE_OUTPUT_PATH}/${OMNITRACE_OUTPUT_PREFIX}``. A standalone GUI for viewing the causal profiling
-results in under development but until this is available, visit 
+results is under development. Until this is available, visit 
 `plasma-umass.org/coz <https://plasma-umass.org/coz/>`_ and open the ``*.coz`` file.
 
 Omnitrace versus Coz
@@ -594,29 +595,29 @@ Omnitrace provides several additional features and utilities for causal profilin
    "Experiment selection", "``<file>:<line>``", "``<function>`` or ``<file>:<line>``", "See Note #2 below"
    "Experiment speed-ups", "Randomly samples b/t 0..100 in increments of 5 or one fixed speed-up", "Supports specifying smaller subset", "See Note #3 below"
    "Scope options", "Supports binary and source scopes", "Supports binary, source, and function scopes", "See Note #4, #5, and #6 below"
-   "Scope inclusion", "Uses ``%`` as wildcard for binary and source scopes", "Full regex support for binary, source, and function scopes", ""
+   "Scope inclusion", "Uses ``%`` as a wildcard for binary and source scopes", "Full regex support for binary, source, and function scopes", ""
    "Scope exclusion", "Not supported", "Supports regexes for excluding binary/source/function", "See Note #7 below"
    "Call-stack sampling", "Linux Perf", "Linux Perf, libunwind", "See Note #8 below"
 
 .. note::
 
-  #. Omnitrace supports a "function" mode which does not require debug info
-  #. Omnitrace supports selecting entire range of instruction pointers for a function instead 
-     of instruction pointer for one line. In large codes, "function" mode
-     can resolve in fewer iterations and once a target function is identified, one can 
-     switch to line mode and limit the function scope to the target function
+  #. Omnitrace supports a "function" mode which does not require debug info.
+  #. Omnitrace supports selecting an entire range of instruction pointers for a function instead 
+     of an instruction pointer for one line. In large code bases, "function" mode
+     can resolve in fewer iterations. After a target function is identified, you can 
+     switch to line mode and limit the function scope to the target function.
   #. Omnitrace supports randomly sampling from subsets, e.g. { 0, 0, 5, 10 } 
-     where 0% is randomly selected 50% of time and 5% and 10% are randomly selected 25% of the time
-  #. Omnitrace and COZ have same definition for binary scope: the binaries 
-     loaded at runtime (e.g. executable and linked libraries)
+     where 0% is randomly selected 50% of time and 5% and 10% are randomly selected 25% of the time.
+  #. Omnitrace and COZ have the same definition for binary scope, which is the binaries 
+     loaded at runtime (the executable and linked libraries).
   #. Omnitrace "source scope" supports both ``<file>`` and ``<file>:<line>`` formats 
-     in contrast to COZ "source scope" which requires ``<file>:<line>`` format
-  #. Omnitrace supports a "function" scope which narrows the functions/lines 
-     which are eligible for causal experiments to those within the matching functions
+     in contrast to the COZ "source scope" which requires ``<file>:<line>`` format.
+  #. Omnitrace supports a "function" scope which narrows the function and lines 
+     which are eligible for causal experiments to those within the matching functions.
   #. Omnitrace supports a second filter on scopes for removing binary/source/function 
-     caught by inclusive match, e.g. ``BINARY_SCOPE=.*`` + ``BINARY_EXCLUDE=libmpi.*``
-     initially includes all binaries but exclude regex removes MPI libraries
+     caught by an inclusive match. For example ``BINARY_SCOPE=.*`` and ``BINARY_EXCLUDE=libmpi.*``
+     initially includes all binaries but exclude regex removes MPI libraries.
   #. In Omnitrace, the Linux Perf backend is preferred over use libunwind. However, 
      Linux Perf usage can be restricted for security reasons.
-     Omnitrace will fallback to using a second POSIX timer and libunwind if 
+     Omnitrace falls back to using a second POSIX timer and libunwind if 
      Linux Perf is not available.

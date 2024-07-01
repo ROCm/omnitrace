@@ -6,17 +6,17 @@
 Using the Omnitrace API
 ****************************************************
 
-The following example shows how a program invokes the Omnitrace API to profile a program.
+The following example shows how a program invokes the Omnitrace API to analyze a program.
 
 .. note::
 
    By default, when Omnitrace detects any ``omnitrace_user_start_*`` or 
    ``omnitrace_user_stop_*`` function, instrumentation
-   is disabled at start-up, which means ``omnitrace_user_stop_trace()`` is not 
-   required at the beginning of ``main``. This is
-   can be manually controlled via the ``OMNITRACE_INIT_ENABLED`` environment variable. 
+   is disabled at start up, which means ``omnitrace_user_stop_trace()`` is not 
+   required at the beginning of ``main``. This behavior
+   can be manually controlled by using the ``OMNITRACE_INIT_ENABLED`` environment variable. 
    User-defined regions are always
-   recorded, regardless of whether whether ``omnitrace_user_start_*`` or 
+   recorded, regardless of whether ``omnitrace_user_start_*`` or 
    ``omnitrace_user_stop_*`` has been called.
 
 Omnitrace user API example program

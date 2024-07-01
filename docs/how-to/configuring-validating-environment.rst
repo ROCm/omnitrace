@@ -31,7 +31,7 @@ to ``MODULEPATH``:
    As an alternative, the above line can be added to the ``${HOME}/.modulerc`` file.
 
 After Omnitrace has been added to the ``MODULEPATH``, it can be loaded 
-via ``module load omnitrace/<VERSION>`` and unloaded via ``module unload omnitrace/<VERSION>``.
+using ``module load omnitrace/<VERSION>`` and unloaded using ``module unload omnitrace/<VERSION>``.
 
 .. code-block:: shell
 
@@ -40,13 +40,13 @@ via ``module load omnitrace/<VERSION>`` and unloaded via ``module unload omnitra
 
 .. note::
 
-   You may need to also add the path to the ROCm libraries to ``LD_LIBRARY_PATH``,
+   You might also need to add the path to the ROCm libraries to ``LD_LIBRARY_PATH``,
    for example, ``export LD_LIBRARY_PATH=/opt/rocm/lib:${LD_LIBRARY_PATH}``
 
 Validating the environment configuration
 ========================================
 
-If all the following commands execute successfully with the expected output, 
+If the following commands all run successfully with the expected output, 
 then you are ready to use Omnitrace:
 
 .. code-block:: shell

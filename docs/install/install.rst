@@ -177,7 +177,7 @@ Optional third-party packages
     of the OpenMPI ``mpi.h``.)
 
 * Several optional third-party profiling tools supported by timemory 
-  (e.g. `Caliper <https://github.com/LLNL/Caliper>`_, `TAU <https://www.cs.uoregon.edu/research/tau/home.php>`_, CrayPAT, etc.)
+  (for example, `Caliper <https://github.com/LLNL/Caliper>`_, `TAU <https://www.cs.uoregon.edu/research/tau/home.php>`_, CrayPAT, and others)
 
 .. csv-table:: 
    :header: "Third-Party Library", "CMake Enable Option", "CMake Build Option"
@@ -195,12 +195,12 @@ The easiest way to install Dyninst is alongside Omnitrace, but it can also be in
 Building Dyninst alongside Omnitrace
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The easiest way to install Dyninst is to configure Omnitrace with ``OMNITRACE_BUILD_DYNINST=ON``. 
-Depending on the version of Ubuntu, the ``apt`` package manager may have current enough
+To install Dyninst alongside Omnitrace, configure Omnitrace with ``OMNITRACE_BUILD_DYNINST=ON``. 
+Depending on the version of Ubuntu, the ``apt`` package manager might have current enough
 versions of the Dyninst Boost, TBB, and LibIberty dependencies 
-(i.e. ``apt-get install libtbb-dev libiberty-dev libboost-dev``). 
+(use ``apt-get install libtbb-dev libiberty-dev libboost-dev``). 
 However, it is possible to request Dyninst to install
-its dependencies via ``DYNINST_BUILD_<DEP>=ON``, e.g.:
+its dependencies via ``DYNINST_BUILD_<DEP>=ON``, as follows:
 
 .. code-block:: shell
 
@@ -228,17 +228,18 @@ Installing Dyninst via Spack
 Installing Omnitrace
 -----------------------------------
 
-Omnitrace has CMake configuration options for supporting MPI (``OMNITRACE_USE_MPI`` or 
-``OMNITRACE_USE_MPI_HEADERS``), HIP kernel tracing (``OMNITRACE_USE_ROCTRACER``),
-sampling ROCm devices (``OMNITRACE_USE_ROCM_SMI``), OpenMP-Tools (``OMNITRACE_USE_OMPT``), 
-and hardware counters via PAPI (``OMNITRACE_USE_PAPI``), among others.
+Omnitrace has CMake configuration options for MPI support (``OMNITRACE_USE_MPI`` or 
+``OMNITRACE_USE_MPI_HEADERS``), HIP kernel tracing (``OMNITRACE_USE_ROCTRACER``), 
+ROCm device sampling (``OMNITRACE_USE_ROCM_SMI``), OpenMP-Tools (``OMNITRACE_USE_OMPT``), 
+hardware counters via PAPI (``OMNITRACE_USE_PAPI``), among other features.
 Various additional features can be enabled via the 
 ``TIMEMORY_USE_*`` `CMake options <https://timemory.readthedocs.io/en/develop/installation.html#cmake-options>`_.
 Any ``OMNITRACE_USE_<VAL>`` option which has a corresponding ``TIMEMORY_USE_<VAL>`` 
-option means that the support within timemory for this feature has been integrated
-into Perfetto support for Omnitrace, e.g. ``OMNITRACE_USE_PAPI=<VAL>`` forces 
+option means that the timemory support for this feature has been integrated
+into Perfetto support for Omnitrace, for example, ``OMNITRACE_USE_PAPI=<VAL>`` also configures 
 ``TIMEMORY_USE_PAPI=<VAL>``. This means the data that timemory is able to collect via this package
-is passed along to Perfetto and will be displayed when the `.proto` file is visualized in `the Perfetto UI <https://ui.perfetto.dev>`_.
+is passed along to Perfetto and is displayed when the `.proto` file is visualized 
+in `the Perfetto UI <https://ui.perfetto.dev>`_.
 
 .. code-block:: shell
 
@@ -271,31 +272,31 @@ Omnitrace can have full (``OMNITRACE_USE_MPI=ON``) or partial (``OMNITRACE_USE_M
 The only difference between these two modes is whether or not the results collected 
 via timemory and/or Perfetto can be aggregated into a single
 output file during finalization. When full MPI support is enabled, combining the 
-timemory results always occurs whereas combining the Perfetto
+timemory results always occurs, whereas combining the Perfetto
 results is configurable via the ``OMNITRACE_PERFETTO_COMBINE_TRACES`` setting.
 
 The primary benefits of partial or full MPI support are the automatic wrapping 
 of MPI functions and the ability
 to label output with suffixes which correspond to the ``MPI_COMM_WORLD`` rank ID 
-instead of using the system process identifier (i.e. `PID`).
-In general, it is recommended to use partial MPI support with the OpenMPI 
+instead of having to use the system process identifier (i.e. ``PID``).
+In general, it's recommended to use partial MPI support with the OpenMPI 
 headers as this is the most portable configuration.
 If full MPI support is selected, make sure your target application is built 
-against the same MPI distribution as Omnitrace,
-i.e. do not build Omnitrace with MPICH and use it on a target application built against OpenMPI.
+against the same MPI distribution as Omnitrace.
+For example, do not build Omnitrace with MPICH and use it on a target application built against OpenMPI.
 If partial support is selected, the reason the OpenMPI headers are recommended instead of the MPICH headers is
 because the ``MPI_COMM_WORLD`` in OpenMPI is a pointer to ``ompi_communicator_t`` (8 bytes), 
-whereas ```MPI_COMM_WORLD``` in MPICH is an ``int`` (4 bytes). Building Omnitrace with partial MPI support 
+whereas ``MPI_COMM_WORLD`` in MPICH is an ``int`` (4 bytes). Building Omnitrace with partial MPI support 
 and the MPICH headers and then using
-Omnitrace on an application built against OpenMPI will cause a segmentation fault 
-due to the value of the ``MPI_COMM_WORLD`` being narrowed
+Omnitrace on an application built against OpenMPI causes a segmentation fault. 
+This happens because the value of the ``MPI_COMM_WORLD`` is truncated
 during the function wrapping before being passed along to the underlying MPI function.
 
 Post-installation steps
 ========================================
 
 After installation, you can optionally configure the Omnitrace environment.
-It is recommended you test the executables to confirm Omnitrace is correctly installed.
+You should also test the executables to confirm Omnitrace is correctly installed.
 
 Configure the environment
 -----------------------------------
@@ -316,7 +317,8 @@ Alternatively, you can directly source the ``setup-env.sh`` script:
 Test the executables
 -----------------------------------
 
-Successful execution of these commands indicates that the installation does not have any issues locating the installed libraries:
+Successful execution of these commands confirms that the installation does not have any 
+issues locating the installed libraries:
 
 .. code-block:: shell
 
@@ -325,5 +327,5 @@ Successful execution of these commands indicates that the installation does not 
 
 .. note::
 
-   If ROCm support was enabled, you may have to add the path to the ROCm libraries to ``LD_LIBRARY_PATH``,
+   If ROCm support is enabled, you might have to add the path to the ROCm libraries to ``LD_LIBRARY_PATH``,
    for example, ``export LD_LIBRARY_PATH=/opt/rocm/lib:${LD_LIBRARY_PATH}``.
