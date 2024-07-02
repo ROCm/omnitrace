@@ -856,7 +856,7 @@ By default, ``omnitrace-instrument`` uses ``--mode trace`` for instrumentation. 
 only instruments ``main`` in an executable. It activates both CPU call-stack sampling and
 background system-level thread sampling by default.
 Tracing capabilities which do not rely on instrumentation, such as the HIP API and kernel tracing
-(which is collected vbyia roctracer), are still available.
+(which is collected by roctracer), are still available.
 
 The Omnitrace sampling capabilities are always available, even in trace mode, but are deactivated by default.
 To activate sampling in trace mode, set ``OMNITRACE_USE_SAMPLING=ON`` in the environment

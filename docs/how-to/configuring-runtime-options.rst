@@ -154,7 +154,7 @@ For example, the following is a valid configuration:
 
    OMNITRACE_PAPI_EVENTS = perf::INSTRUCTIONS  perf::CACHE-REFERENCES  perf::CACHE-MISSES
 
-However, the following specification of a roughly equivalent set of hardware counters is an invalid configuration because it mixes
+However, the following specification of a roughly equivalent set of hardware counters is an incorrect configuration because it mixes
 PAPI components from different namespaces:
 
 .. code-block:: shell

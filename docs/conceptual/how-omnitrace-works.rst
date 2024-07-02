@@ -34,7 +34,7 @@ when instrumenting Python.
   limited to only the functions defined in the binary. This is also known as **Binary rewrite**.
 
 **Dynamic binary instrumentation**
-  Loads an existing binary into memory, inserts instrumentation, and executes the binary. 
+  Loads an existing binary into memory, inserts instrumentation, and runs the binary. 
   It is limited to executables but is capable of instrumenting linked libraries. 
   This is also known as: **Runtime instrumentation**.
 
@@ -204,7 +204,7 @@ changes which might, in some cases, lead to inaccurate results. The effect depen
 the information being collected and which features are activated in Omnitrace. 
 For example, collecting only the wall-clock timing data
 has less of an effect than collecting the wall-clock timing, CPU-clock timing, 
-memory usage, cache-misses, and number of instructions executed. Similarly, 
+memory usage, cache-misses, and number of instructions that were run. Similarly, 
 collecting a flat profile has less overhead than a hierarchical profile 
 and collecting a trace OR a profile has less overhead than collecting a 
 trace AND a profile.

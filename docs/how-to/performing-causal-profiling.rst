@@ -8,7 +8,7 @@ Performing causal profiling
 
 The process of causal profiling can be summarized as:
 
-*If you speed up a given block of code by X%, the application will execute Y% faster*.
+*If you speed up a given block of code by X%, the application will run Y% faster*.
 
 Causal profiling directs parallel application developers to where they should focus their optimization
 efforts by quantifying the potential impact of optimizations. Causal profiling is rooted in the concept
@@ -57,7 +57,7 @@ because the end-to-end performance is limited by ``bar``. However, a 5% speed-up
 in ``bar`` will result in the
 end-to-end performance improving by 5%. This trend continues linearly, with a 10% speed-up 
 in ``bar`` yielding a 10% speed-up in
-end-to-end performance, and so on, up to a 30% speed-up, at which point ``bar`` executes as fast as ``foo``.
+end-to-end performance, and so on, up to a 30% speed-up, at which point ``bar`` runs as fast as ``foo``.
 Any speed-up to ``bar`` beyond 30% still only yields an end-to-end performance 
 improvement of 30% because the application
 is now limited by performance of ``foo``, as demonstrated below in the causal 
@@ -94,7 +94,7 @@ This can happen in three different ways:
 .. note::
 
    Binary rewrite to insert progress points is not supported. When a rewritten binary 
-   is executed, Dyninst translates the instruction pointer address in order to perform 
+   runs, Dyninst translates the instruction pointer address in order to perform 
    the instrumentation. As a result, call stack samples never return instruction 
    pointer addresses within the valid Omnitrace range.
 
@@ -183,7 +183,7 @@ If this file does not exist, as with Debian-based systems like Ubuntu, run the f
 
 and reboot your computer. In order to use the ``perf`` backend, the value 
 of ``/proc/sys/kernel/perf_event_paranoid``
-should be <= 2. If the value in this file is greater than 2, you can't 
+should be less than or equal to 2. If the value in this file is greater than 2, you can't 
 use the ``perf`` backend.
 
 To update the paranoid level temporarily until the system is rebooted, run 

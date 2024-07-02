@@ -9,7 +9,7 @@ Understanding the Omnitrace output
 The general output form of `Omnitrace <https://github.com/ROCm/omnitrace>`_ is
 ``<OUTPUT_PATH>[/<TIMESTAMP>]/[<PREFIX>]<DATA_NAME>[-<OUTPUT_SUFFIX>].<EXT>``.
 
-For example, starting with thefollowing base configuration:
+For example, starting with the following base configuration:
 
 .. code-block:: shell
 

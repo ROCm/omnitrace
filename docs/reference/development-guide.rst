@@ -305,7 +305,7 @@ and roctracer directly invoke
 calls to Perfetto or timemory's storage model. Otherwise, the data is stored 
 by Omnitrace in the thread-data model
 which is more persistent than simply using ``thread_local`` static data, which gets deleted
-when the thread terminates.
+when the thread stops.
 
 Thread identification
 --------------------------------------
