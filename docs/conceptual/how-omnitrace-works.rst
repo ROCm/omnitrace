@@ -272,7 +272,7 @@ takes about 20 instructions, whereas the entry and
 exit snippets are ~1024 instructions. Therefore, you generally want to avoid 
 instrumenting functions where the instrumented function has significantly fewer
 instructions than entry and exit instrumentation. (Note that many of the 
-instructions in entr and exit functions are either logging functions or
+instructions in entry and exit functions are either logging functions or
 depend on the runtime settings and thus might never run). However, 
 due to the number of potential instructions in the entry and exit snippets,
 the default behavior of ``omnitrace-instrument`` is to only instrument functions 
