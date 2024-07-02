@@ -36,6 +36,8 @@ with open("../VERSION", encoding="utf-8") as f:
         raise ValueError("VERSION not found!")
     version_number = match[1]
 
+external_projects_current_project = "omnitrace"
+
 project = "omnitrace"
 author = "Advanced Micro Devices, Inc."
 copyright = "Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved."
