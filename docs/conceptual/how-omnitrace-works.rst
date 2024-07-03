@@ -36,7 +36,7 @@ when instrumenting Python.
 **Dynamic binary instrumentation**
   Loads an existing binary into memory, inserts instrumentation, and runs the binary. 
   It is limited to executables but is capable of instrumenting linked libraries. 
-  This is also known as: **Runtime instrumentation**.
+  This is also known as **Runtime instrumentation**.
 
 **Statistical sampling**  
   At periodic intervals, the application is paused and the current call-stack of the CPU 
@@ -113,7 +113,7 @@ General tips for using Omnitrace
 
 * Use ``omnitrace-avail`` to look up configuration settings, hardware counters, and data collection components
 
-  * Use ``-d`` flag for descriptions
+  * Use the ``-d`` flag for descriptions
 
 * Generate a default configuration with ``omnitrace-avail -G ${HOME}/.omnitrace.cfg`` and adjust it 
   to the desired default behavior
@@ -189,8 +189,8 @@ Omnitrace supports several modes of recording trace and profiling data for your 
 The two most generic and important modes are binary instrumentation and statistical sampling. 
 It is important to understand their advantages and disadvantages.
 Binary instrumentation and statistical sampling can be performed with the ``omnitrace`` 
-executable but for statistical sampling, it's highly recommended to use the
-``omnitrace-sample`` executable instead if no binary instrumentation is required/desired. 
+executable. For statistical sampling, it's highly recommended to use the
+``omnitrace-sample`` executable instead if binary instrumentation isn't required or needed. 
 Callback APIs and dynamic symbol interception can be utilized with either tool.
 
 Binary instrumentation

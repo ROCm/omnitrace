@@ -129,7 +129,7 @@ Measurement
 
 Capability
    Handles the implementation or orchestration of some feature which is used 
-   to collect measurements,for example, a component which handles setting up function wrappers 
+   to collect measurements, for example, a component which handles setting up function wrappers 
    around various functions such as ``pthread_create``or ``MPI_Init``.
 
 Components are designed to either hold no data at all or only the data for both an instantaneous 
@@ -327,7 +327,7 @@ Thread-data class
 
 Currently, most thread data is effectively stored in a static 
 ``std::array<std::unique_ptr<T>, OMNITRACE_MAX_THREADS>`` instance.
-``OMNITRACE_MAX_THREADS`` is a value defined a compile-time and set to 2048 
+``OMNITRACE_MAX_THREADS`` is a value defined a compile-time and set to ``2048`` 
 for release builds. During finalization,
 Omnitrace iterates through the thread-data and transforms that data 
 into something that can be passed along to Perfetto and/or timemory.
@@ -376,7 +376,7 @@ before taking the next sample. The allocator thread takes this data
 and either dynamically stores it in memory or writes it to a file depending on the 
 value of ``OMNITRACE_USE_TEMPORARY_FILES``.
 This schema avoids all allocations in the signal handler, allows the data to grow 
-dynamically, avoid potentially slow I/O within the signal handler, and also enables 
+dynamically, avoids potentially slow I/O within the signal handler, and also enables 
 the capability of avoiding I/O altogether.
 The maximum number of samplers handled by each allocator is governed by the 
 ``OMNITRACE_SAMPLING_ALLOCATOR_SIZE`` setting (the default is eight). Whenever an allocator 
@@ -387,7 +387,7 @@ Time-window constraint model
 ========================================
 
 With the recent introduction of tracing delay and duration, the 
-``constraint namespace <https://github.com/ROCm/omnitrace/blob/main/source/lib/core/constraint.hpp>``_
+`constraint namespace <https://github.com/ROCm/omnitrace/blob/main/source/lib/core/constraint.hpp>`_
 was introduced to improve the management of delays and duration limits for 
 data collection. The ``spec`` class takes a clock identifier, a delay value, a duration value, and an
 integer indicating how many times to repeat the delay and duration. It is therefore 
