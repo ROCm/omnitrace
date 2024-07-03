@@ -10,8 +10,12 @@ subtrees:
 
   - caption: API
     entries:
-    - file: doxygen/html/index
-    title: API
+    - file: doxygen/html/files
+      title: API library
+    - file: doxygen/html/globals
+      title: Functions
+    - file: doxygen/html/annotated
+      title: Data structures
 
   - caption: Install
     entries:
