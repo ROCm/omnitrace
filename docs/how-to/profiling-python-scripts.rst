@@ -7,7 +7,7 @@ Profiling Python scripts
 ****************************************************
 
 `Omnitrace <https://github.com/ROCm/omnitrace>`_ supports profiling Python code at the 
-source-level and/or the script-level.
+source level and the script level.
 Python support is enabled via the ``OMNITRACE_USE_PYTHON`` and the 
 ``OMNITRACE_PYTHON_VERSIONS="<MAJOR>.<MINOR>`` CMake options.
 Alternatively, to build multiple Python versions, use 

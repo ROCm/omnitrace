@@ -29,7 +29,7 @@ For example, starting with the following base configuration:
    [omnitrace] Outputting 'omnitrace-example-output/wall-clock.json'...
 
 If the ``OMNITRACE_USE_PID`` option is enabled, then running a non-MPI executable 
-with a PID of 63453 results in the following output:
+with a PID of ``63453`` results in the following output:
 
 .. code-block:: shell
 
@@ -252,7 +252,7 @@ Core configuration settings
    :widths: 30, 20, 100
 
    "``OMNITRACE_OUTPUT_PATH``", "Any valid path", "Path to folder where output files should be placed"
-   "``OMNITRACE_OUTPUT_PREFIX``", "String", "Useful for multiple runs with different arguments. See the next section on output prefix keys"
+   "``OMNITRACE_OUTPUT_PREFIX``", "String", "Useful for multiple runs with different arguments. See the next section on output prefix keys."
    "``OMNITRACE_OUTPUT_FILE``", "Any valid filepath", "Specific location for the Perfetto output file"
    "``OMNITRACE_TIME_OUTPUT``", "Boolean", "Place all output in a timestamped folder, timestamp format controlled via ``OMNITRACE_TIME_FORMAT``"
    "``OMNITRACE_TIME_FORMAT``", "String", "See ``strftime`` man pages for valid identifiers"
@@ -367,7 +367,7 @@ mode, so use this setting with caution.
 Timemory text output
 -----------------------------------------------------------------------
 
-Timemory text output files are meant for human-consumption (while JSON formats are for analysis),
+Timemory text output files are meant for human consumption (while JSON formats are for analysis),
 so some fields such as the ``LABEL`` might be truncated for readability.
 The truncation settings be changed through the ``OMNITRACE_MAX_WIDTH`` setting.
 

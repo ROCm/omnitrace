@@ -54,7 +54,7 @@ where ``foo`` is ideally 30% faster than ``bar``:
 No matter how many optimizations are applied to ``foo``, the application will always 
 require the same amount of time
 because the end-to-end performance is limited by ``bar``. However, a 5% speed-up 
-in ``bar`` will result in the
+in ``bar`` results in the
 end-to-end performance improving by 5%. This trend continues linearly, with a 10% speed-up 
 in ``bar`` yielding a 10% speed-up in
 end-to-end performance, and so on, up to a 30% speed-up, at which point ``bar`` runs as fast as ``foo``.
@@ -149,7 +149,7 @@ There are three key differences between the two backends:
 
 In general, the ``perf`` backend is preferred over the ``timer`` backend when sufficient 
 security priviledges permit its usage.
-If ``OMNITRACE_CAUSAL_BACKEND`` is set to ``auto``, Omnitrace will fallback 
+If ``OMNITRACE_CAUSAL_BACKEND`` is set to ``auto``, Omnitrace falls back 
 to using the ``timer`` backend only if
 the ``perf`` backend fails. If ``OMNITRACE_CAUSAL_BACKEND`` is 
 set to ``perf`` and using this backend fails, Omnitrace aborts.
@@ -537,7 +537,7 @@ Using ``omnitrace-causal`` with other launchers like ``mpirun``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``omnitrace-causal`` executable is intended to assist with application replay 
-and is designed to always be at the start of the command-line as the primary process.
+and is designed to always be at the start of the command line as the primary process.
 ``omnitrace-causal`` typically adds a ``LD_PRELOAD`` of the Omnitrace libraries 
 into the environment before launching the command to inject the functionality
 required to start the causal profiling tooling. However, this is problematic 
