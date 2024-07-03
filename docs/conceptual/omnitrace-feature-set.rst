@@ -20,7 +20,7 @@ Data collection modes
   * Binary rewriting: Generate a new executable and/or library with instrumentation built-in
 
 * Statistical sampling: Periodic software interrupts per-thread
-* Process-level sampling: Background thread records process-, system- and device-level metrics while the application runs
+* Process-level sampling: A background thread records process-, system- and device-level metrics while the application runs
 * Causal profiling: Quantifies the potential impact of optimizations in parallel code
   
 .. note::
@@ -114,7 +114,7 @@ the quickest path to performance improvement is minimizing
 the runtime of the GPU kernels. This is a highly flawed assumption. 
 If you optimize the runtime of a kernel from one millisecond
 to 1 microsecond (1000x speed-up) but the original application never 
-spent time waiting for kernel(s) to complete,
+spent time waiting for kernels to complete,
 there would be no statistically significant reduction in the end-to-end 
 runtime of your application. In other words, it does not matter
 how fast or slow the code on GPU is if the application has a  

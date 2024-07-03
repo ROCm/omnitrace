@@ -238,7 +238,7 @@ Any ``OMNITRACE_USE_<VAL>`` option which has a corresponding ``TIMEMORY_USE_<VAL
 option means that the timemory support for this feature has been integrated
 into Perfetto support for Omnitrace, for example, ``OMNITRACE_USE_PAPI=<VAL>`` also configures 
 ``TIMEMORY_USE_PAPI=<VAL>``. This means the data that timemory is able to collect via this package
-is passed along to Perfetto and is displayed when the `.proto` file is visualized 
+is passed along to Perfetto and is displayed when the ``.proto`` file is visualized 
 in `the Perfetto UI <https://ui.perfetto.dev>`_.
 
 .. code-block:: shell

@@ -17,7 +17,7 @@ web browser. Upload the Perfetto (``.proto``) output files produced by Omnitrace
 
 Aggregated high-level results are available as human-readable text files and 
 JSON files for programmatic analysis. The JSON output files are compatible with the 
-`hatchet <https://github.com/hatchet/hatchet>`_ python package. Hatchet converts
+`hatchet <https://github.com/hatchet/hatchet>`_ Python package. Hatchet converts
 the performance data into pandas data frames and facilitates multi-run comparisons, filtering, 
 and visualization in Jupyter notebooks.
 
