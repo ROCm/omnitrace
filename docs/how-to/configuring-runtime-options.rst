@@ -53,7 +53,7 @@ for each setting:
 
 .. note::
 
-   Use ``--brief`` to suppress printing current value and/or ``-c 0`` to suppress truncation of the descriptions.
+   Use ``--brief`` to suppress printing the current value and/or ``-c 0`` to suppress truncation of the descriptions.
 
 Any Boolean setting (``omnitrace-avail --settings --value --brief --filter bool``) 
 accepts a case insensitive match for nearly all common Boolean logic expressions: 
@@ -70,7 +70,7 @@ Omnitrace can be configured to
 collect hardware counters, CPU-clock timers, memory usage, context switches, page faults, network statistics,
 and much more. Omnitrace can even be used as a dynamic instrumentation vehicle 
 for other third-party profiling
-APIs such as `Caliper <https://github.com/LLNL/Caliper>`_ and `LIKWID <https://github.com/RRZE-HPC/likwid>`_ 
+APIs such as `Caliper <https://github.com/LLNL/Caliper>`_ and `LIKWID <https://github.com/RRZE-HPC/likwid>`_.
 To leverage this capability, build Omnitrace from source with the CMake 
 options ``TIMEMORY_USE_CALIPER=ON`` or ``TIMEMORY_USE_LIKWID=ON`` and then add
 ``caliper_marker``, ``likwid_marker``, or both to ``OMNITRACE_TIMEMORY_COMPONENTS``.
@@ -81,7 +81,7 @@ To view all possible components and their descriptions:
 
    omnitrace-avail --components --description
 
-To restrict the output to available components and view the string identifiers for `OMNITRACE_TIMEMORY_COMPONENTS`:
+To restrict the output to available components and view the string identifiers for ``OMNITRACE_TIMEMORY_COMPONENTS``:
 
 .. code-block:: shell
 
@@ -145,8 +145,8 @@ counters must be from the same namespace.
 For hardware counters starting with the ``PAPI_`` prefix, these are high-level 
 aggregates of multiple hardware counters.
 Otherwise, most events use two or three colons (``::`` or ``:::``) between the 
-component name and the counter name, e.g.,
-``amd64_rapl::RAPL_ENERGY_PKG``, ``perf::PERF_COUNT_HW_CPU_CYCLES``, etc.
+component name and the counter name, for example,
+``amd64_rapl::RAPL_ENERGY_PKG`` and ``perf::PERF_COUNT_HW_CPU_CYCLES``.
 
 For example, the following is a valid configuration:
 
@@ -165,7 +165,7 @@ PAPI components from different namespaces:
 
    If Omnitrace was configured with the default ``OMNITRACE_BUILD_PAPI=ON`` setting, 
    standard PAPI command-line tools such as
-   ``papi_avail`` and ``papi_event_chooser`` are not be able to provide information 
+   ``papi_avail`` and ``papi_event_chooser`` are not able to provide information 
    about the PAPI library used by Omnitrace
    (because Omnitrace statically links to ``libpapi``). However, all of these tools are 
    installed with the prefix ``omnitrace-`` with

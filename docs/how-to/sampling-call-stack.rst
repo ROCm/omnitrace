@@ -8,7 +8,7 @@ Sampling the call stack
 
 `Omnitrace <https://github.com/ROCm/omnitrace>`_ call-stack sampling can be activated 
 with either a binary instrumented by the ``omnitrace`` executable 
-or by using via the ``omnitrace-sample`` executable.
+or by using the ``omnitrace-sample`` executable.
 All of the following commands are effectively equivalent:
 
 * Binary rewrite with only the instrumentation necessary to start and stop sampling
@@ -216,14 +216,14 @@ to run ``ls -la``, use ``omnitrace-sample -- ls -la``.
 :doc:`Configuring the Omnitrace runtime options <./configuring-runtime-options>` 
 establishes the precedence of environment variable values over values specified 
 in the configuration files. This enables
-the user to configure the Omnitrace runtime to their preferred default behavior 
+you to configure the Omnitrace runtime to your preferred default behavior 
 in a file such as ``~/.omnitrace.cfg`` and then easily override
 those settings using a command like ``OMNITRACE_ENABLED=OFF omnitrace-sample -- foo``.
 Similarly, the command-line arguments passed to ``omnitrace-sample`` take precedence 
 over environment variables.
 
 All of the command-line options above correlate to one or more configuration 
-settings, e.g. ``--cpu-events`` correlates to the ``OMNITRACE_PAPI_EVENTS`` configuration variable.
+settings, for example, ``--cpu-events`` correlates to the ``OMNITRACE_PAPI_EVENTS`` configuration variable.
 After the command-line arguments to ``omnitrace-sample`` have been processed but 
 before the target application runs, ``omnitrace-sample`` creates a log
 showing which environment variables were set or modified:

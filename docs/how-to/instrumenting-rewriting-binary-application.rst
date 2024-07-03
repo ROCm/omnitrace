@@ -12,9 +12,9 @@ There are three ways to perform instrumentation with `Omnitrace <https://github.
   (analogous to ``gdb --args <program> <args>``)
 
   * This mode is the default if neither the ``-p`` nor ``-o`` command-line options are used
-  * Runtime instrumentation supports instrumenting not only the target executable but also the
+  * Runtime instrumentation supports instrumenting not only the target executable but also 
     the shared libraries loaded by the target executable. Consequently, this mode consumes more memory,
-    takes longer to perform the instrumentation, and tends to have a more significant overhead on the
+    takes longer to perform the instrumentation, and tends to add more significant overhead to the
     runtime of the application.
   * This mode is recommended if you want to analyze not only the performance of your executable and/or
     libraries but also the performance of the library dependencies
@@ -30,10 +30,10 @@ There are three ways to perform instrumentation with `Omnitrace <https://github.
   * Binary rewriting is limited to the text section of the target executable or library. It does not instrument
     the dynamically-linked libraries. Consequently, this mode performs the 
     instrumentation significantly faster
-    and has a much lower overhead when running the instrumented executable and libraries
+    and has a much lower overhead when running the instrumented executable and libraries.
   * Binary rewriting is the recommended mode when the target executable uses 
     process-level parallelism (for example, MPI)
-  * If the target executable has a minimal `main`` routine and the bulk of your 
+  * If the target executable has a minimal ``main`` routine and the bulk of your 
     application is in one specific dynamic library,
     see :ref:`binary-rewriting-library-label` for help
 
@@ -355,7 +355,7 @@ and generates a ``ls.inst`` executable that you can subsequently run using the
 
 .. note::
 
-   Attaching to a running process is an alpha feature and support for detaching from the target process
+   Attaching to a running process is an alpha feature and detaching from the target process
    without ending the target process is not currently supported.
 
 Runtime instrumentation example
@@ -409,8 +409,8 @@ Here is the recommended workflow for the binary rewrite of a library:
 #. Determine the names of the dynamically linked libraries of interest using ``ldd``
 #. Generate a binary rewrite of the executable
 #. Generate a binary rewrite of the desired libraries with the same base name as the 
-   original library, e.g. ``libfoo.so.2`` instead of ``libfoo.so`` (output the instrumented 
-   library into a different folder than the original library)
+   original library, for example, ``libfoo.so.2`` instead of ``libfoo.so``,  and output the instrumented 
+   library into a different folder than the original library.
 
 #. Prefix the ``LD_LIBRARY_PATH`` executable with the output folder from the previous step
 #. Use ``ldd`` to verify that the instrumented executable can resolve the location of the instrumented library
@@ -468,7 +468,7 @@ Selective instrumentation
 ========================================
 
 The default behavior of ``omnitrace-instrument`` does not instrument every symbol in the binary. 
-These default rules are:
+The default rules are:
 
 * Skip instrumenting dynamic call-sites (such as function pointers)
 
