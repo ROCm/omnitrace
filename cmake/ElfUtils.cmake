@@ -105,7 +105,9 @@ set(ElfUtils_DOWNLOAD_URL
     CACHE STRING "URLs for ElfUtils download")
 
 # Add default URLs to download elfutils from.
-list(APPEND ElfUtils_DOWNLOAD_URL
+list(
+    APPEND
+    ElfUtils_DOWNLOAD_URL
     "https://sourceware.org/elfutils/ftp/${ElfUtils_DOWNLOAD_VERSION}/elfutils-${ElfUtils_DOWNLOAD_VERSION}.tar.bz2"
     )
 
