@@ -6,10 +6,10 @@
 Omnitrace documentation
 ***********************
 
-Omnitrace is a multi-purpose analysis tool for profiling and tracing applications
-running on the CPU and GPU. It supports dynamic binary instrumentation,
-call-stack sampling, and causal profiling, along with a full set of configuration
-options. Omnitrace is now part of the AMD ROCm (TM) Software stack. To learn more, see :doc:`what-is-omnitrace`
+Omnitrace is designed for the high-level profiling and comprehensive tracing
+of applications running on the CPU or the CPU and GPU. It supports dynamic binary
+instrumentation, call-stack sampling, and various other features for determining
+which function and line number are currently executing. To learn more, see :doc:`what-is-omnitrace`
 
 The code is open and hosted at `<https://github.com/ROCm/omnitrace>`_.
 
