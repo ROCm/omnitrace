@@ -99,10 +99,20 @@ set(_eu_libs $<BUILD_INTERFACE:${_eu_root}/lib/libdw${CMAKE_STATIC_LIBRARY_SUFFI
 set(_eu_build_byproducts "${_eu_root}/lib/libdw${CMAKE_STATIC_LIBRARY_SUFFIX}"
                          "${_eu_root}/lib/libelf${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
+# List of URLS (includes mirrors) to download elfutils from.
+set(ElfUtils_DOWNLOAD_URL
+    ""
+    CACHE STRING "URLs for ElfUtils download")
+
+# Add default URLs to download elfutils from.
+list(APPEND ElfUtils_DOWNLOAD_URL
+    "https://sourceware.org/elfutils/ftp/${ElfUtils_DOWNLOAD_VERSION}/elfutils-${ElfUtils_DOWNLOAD_VERSION}.tar.bz2"
+    )
+
 externalproject_add(
     omnitrace-elfutils-build
     PREFIX ${PROJECT_BINARY_DIR}/external/elfutils
-    URL https://sourceware.org/elfutils/ftp/${ElfUtils_DOWNLOAD_VERSION}/elfutils-${ElfUtils_DOWNLOAD_VERSION}.tar.bz2
+    URL ${ElfUtils_DOWNLOAD_URL}
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND
         ${CMAKE_COMMAND} -E env CC=${ElfUtils_C_COMPILER}
