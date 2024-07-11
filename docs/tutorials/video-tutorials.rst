@@ -3,9 +3,8 @@
    :keywords: Omnitrace, ROCm, profiler, tracking, visualization, tool, Instinct, accelerator, AMD
 
 ****************************************************
-YouTube tutorials
+Video tutorials
 ****************************************************
-
 
 Installing a binary release
 ========================================

@@ -5,7 +5,7 @@
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = omnitrace
-PROJECT_NUMBER         = 1.11.2
+PROJECT_NUMBER         = 1.11.3
 PROJECT_BRIEF          = "High-level and comprehensive application tracing and profiling on both the CPU and GPU"
 PROJECT_LOGO           =
 OUTPUT_DIRECTORY       = .

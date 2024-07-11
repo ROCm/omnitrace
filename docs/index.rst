@@ -31,7 +31,7 @@ The documentation is structured as follows:
   .. grid-item-card:: Tutorials
 
     * `GitHub examples <https://github.com/ROCm/omnitrace/tree/main/examples>`_
-    * :doc:`YouTube tutorials <./tutorials/you-tube>`
+    * :doc:`Video tutorials <./tutorials/video-tutorials>`
 
   .. grid-item-card:: How to
 

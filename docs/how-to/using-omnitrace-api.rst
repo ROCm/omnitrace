@@ -159,6 +159,11 @@ Output from the API example program
 
 First, instrument and run the program.
 
+.. note::
+
+   For information on compiling and building Omnitrace, 
+   see :doc:`Compiling Omnitrace with CMake <../reference/compiling-cmake>`.
+
 .. code-block:: shell
 
    $ omnitrace-instrument -l --min-instructions=8 -E custom_push_region -o -- ./user-api
@@ -168,11 +173,11 @@ First, instrument and run the program.
    [omnitrace][omnitrace_init_tooling] Instrumentation mode: Trace
 
 
-         ______   .___  ___. .__   __.  __  .___________..______          ___       ______  _______
+       ______   .___  ___. .__   __.  __  .___________..______          ___       ______  _______
       /  __  \  |   \/   | |  \ |  | |  | |           ||   _  \        /   \     /      ||   ____|
-      |  |  |  | |  \  /  | |   \|  | |  | `---|  |----`|  |_)  |      /  ^  \   |  ,----'|  |__
-      |  |  |  | |  |\/|  | |  . `  | |  |     |  |     |      /      /  /_\  \  |  |     |   __|
-      |  `--'  | |  |  |  | |  |\   | |  |     |  |     |  |\  \----./  _____  \ |  `----.|  |____
+     |  |  |  | |  \  /  | |   \|  | |  | `---|  |----`|  |_)  |      /  ^  \   |  ,----'|  |__
+     |  |  |  | |  |\/|  | |  . `  | |  |     |  |     |      /      /  /_\  \  |  |     |   __|
+     |  `--'  | |  |  |  | |  |\   | |  |     |  |     |  |\  \----./  _____  \ |  `----.|  |____
       \______/  |__|  |__| |__| \__| |__|     |__|     | _| `._____/__/     \__\ \______||_______|
 
 

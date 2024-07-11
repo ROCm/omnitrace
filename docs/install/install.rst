@@ -10,15 +10,21 @@ The following information builds on the guidelines in the :doc:`Quick start <./q
 It covers how to install `Omnitrace <https://github.com/ROCm/omnitrace>`_ from source or a binary distribution,
 as well as post-installation steps.
 
+Release links
+========================================
+
+To review and install either the current Omnitrace release or earlier releases, use these links:
+
+* `Latest Omnitrace Release <https://github.com/ROCm/omnitrace/releases/latest>`_ 
+* `All Omnitrace Releases <https://github.com/ROCm/omnitrace/releases>`_ 
+
 Operating system support
 ========================================
 
-Omnitrace is only supported on Linux. The following distributions are tested:
+Omnitrace is only supported on Linux. The following distributions are tested in the Omnitrace GitHub workflows:
 
-* Ubuntu 18.04
 * Ubuntu 20.04
 * Ubuntu 22.04
-* OpenSUSE 15.2
 * OpenSUSE 15.3
 * OpenSUSE 15.4
 * Red Hat 8.7
@@ -176,7 +182,7 @@ Optional third-party packages
     (By default, if Omnitrace cannot find an OpenMPI MPI distribution, it uses a local copy 
     of the OpenMPI ``mpi.h``.)
 
-* Several optional third-party profiling tools supported by timemory 
+* Several optional third-party profiling tools supported by Timemory 
   (for example, `Caliper <https://github.com/LLNL/Caliper>`_, `TAU <https://www.cs.uoregon.edu/research/tau/home.php>`_, CrayPAT, and others)
 
 .. csv-table:: 
@@ -235,9 +241,9 @@ hardware counters via PAPI (``OMNITRACE_USE_PAPI``), among other features.
 Various additional features can be enabled via the 
 ``TIMEMORY_USE_*`` `CMake options <https://timemory.readthedocs.io/en/develop/installation.html#cmake-options>`_.
 Any ``OMNITRACE_USE_<VAL>`` option which has a corresponding ``TIMEMORY_USE_<VAL>`` 
-option means that the timemory support for this feature has been integrated
+option means that the Timemory support for this feature has been integrated
 into Perfetto support for Omnitrace, for example, ``OMNITRACE_USE_PAPI=<VAL>`` also configures 
-``TIMEMORY_USE_PAPI=<VAL>``. This means the data that timemory is able to collect via this package
+``TIMEMORY_USE_PAPI=<VAL>``. This means the data that Timemory is able to collect via this package
 is passed along to Perfetto and is displayed when the ``.proto`` file is visualized 
 in `the Perfetto UI <https://ui.perfetto.dev>`_.
 
@@ -270,9 +276,9 @@ MPI support within Omnitrace
 
 Omnitrace can have full (``OMNITRACE_USE_MPI=ON``) or partial (``OMNITRACE_USE_MPI_HEADERS=ON``) MPI support.
 The only difference between these two modes is whether or not the results collected 
-via timemory and/or Perfetto can be aggregated into a single
+via Timemory and/or Perfetto can be aggregated into a single
 output file during finalization. When full MPI support is enabled, combining the 
-timemory results always occurs, whereas combining the Perfetto
+Timemory results always occurs, whereas combining the Perfetto
 results is configurable via the ``OMNITRACE_PERFETTO_COMBINE_TRACES`` setting.
 
 The primary benefits of partial or full MPI support are the automatic wrapping 

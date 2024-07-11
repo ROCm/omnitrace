@@ -20,13 +20,11 @@ version and ``Y`` is the ROCm minor version, for example, ``--rocm 6.2``.
 This script supports installation on Ubuntu, OpenSUSE, Red Hat, Debian, CentOS, and Fedora.
 If the target OS is compatible with one of the operating system versions listed in
 the comprehensive :doc:`Installation guidelines <./install>`,
-specify ``-d <DISTRO> -v <VERSION>``. For example, if the OS is compatible with Ubuntu 18.04, pass
-``-d ubuntu -v 18.04`` to the script.
+specify ``-d <DISTRO> -v <VERSION>``. For example, if the OS is compatible with Ubuntu 22.04, pass
+``-d ubuntu -v 22.04`` to the script.
 
-Release links
-========================================
+.. note::
 
-To review and install either the current Omnitrace release or earlier releases, use these links:
-
-* `Latest Omnitrace Release <https://github.com/ROCm/omnitrace/releases/latest>`_ 
-* `All Omnitrace Releases <https://github.com/ROCm/omnitrace/releases>`_ 
+   If you have ROCm version 6.2 or higher installed, you can use the
+   package manager to install a pre-built copy of Omnitrace using 
+   ``apt install omnitrace`` or ``dnf install omnitrace``.

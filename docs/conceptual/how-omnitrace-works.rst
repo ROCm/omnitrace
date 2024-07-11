@@ -188,7 +188,7 @@ Omnitrace supports several modes of recording trace and profiling data for your 
 
 The two most generic and important modes are binary instrumentation and statistical sampling. 
 It is important to understand their advantages and disadvantages.
-Binary instrumentation and statistical sampling can be performed with the ``omnitrace`` 
+Binary instrumentation and statistical sampling can be performed with the ``omnitrace-instrument`` 
 executable. For statistical sampling, it's highly recommended to use the
 ``omnitrace-sample`` executable instead if binary instrumentation isn't required or needed. 
 Callback APIs and dynamic symbol interception can be utilized with either tool.
@@ -248,8 +248,8 @@ Consider the following code:
 
    void run(long n)
    {
-        long result = fib(nfib);
-        printf("[%li] fibonacci(%li) = %li\n", i, nfib, result);
+        long result = fib(n);
+        printf("[%li] fibonacci(%li) = %li\n", i, n, result);
    }
 
    int main(int argc, char** argv)

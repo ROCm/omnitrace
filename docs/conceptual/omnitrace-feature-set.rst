@@ -33,7 +33,7 @@ Data analysis
 
 * High-level summary profiles with mean, min, max, and standard deviation statistics
 
-  * Low overhead, memory efficient
+  * Low overhead and memory efficient
   * Ideal for running at scale
 
 * Comprehensive traces for every individual event and measurement
@@ -103,7 +103,7 @@ Omnitrace use cases
 
 When analyzing the performance of an application, do NOT 
 assume you know where the performance bottlenecks are
-and why they are happening. Omnitrace is a tool for the analyzing the entire 
+and why they are happening. Omnitrace is a tool for analyzing the entire 
 application and its performance. It is
 ideal for characterizing where optimization would have the greatest impact 
 on an end-to-end run of the application and for
@@ -128,8 +128,8 @@ broad picture.
 
 .. note::
 
-   AMD is working on a separate tool that provides insight into the execution of individual kernels
-   on the GPU.
+   For insight into the execution of individual kernels on the GPU, 
+   use `Omniperf <https://rocm.github.io/omniperf/index.html>`_.
 
 In terms of CPU analysis, Omnitrace does not target any specific vendor. 
 It works just as well on AMD and non-AMD CPUs.

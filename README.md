@@ -8,8 +8,6 @@
 [![Installer Packaging (CPack)](https://github.com/ROCm/omnitrace/actions/workflows/cpack.yml/badge.svg)](https://github.com/ROCm/omnitrace/actions/workflows/cpack.yml)
 [![Documentation](https://github.com/ROCm/omnitrace/actions/workflows/docs.yml/badge.svg)](https://github.com/ROCm/omnitrace/actions/workflows/docs.yml)
 
-> ***[Omnitrace](https://github.com/ROCm/omnitrace) is an AMD open source research project and is not supported as part of the ROCm software stack.***
-
 ## Overview
 
 AMD Research is seeking to improve observability and performance analysis for software running on AMD heterogeneous systems.

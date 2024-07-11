@@ -8,15 +8,6 @@ subtrees:
   - entries:
     - file: what-is-omnitrace.rst
 
-  - caption: API
-    entries:
-    - file: doxygen/html/files
-      title: API library
-    - file: doxygen/html/globals
-      title: Functions
-    - file: doxygen/html/annotated
-      title: Data structures
-
   - caption: Install
     entries:
     - file: install/quick-start.rst
@@ -28,8 +19,8 @@ subtrees:
     entries:
     - url: https://github.com/ROCm/omnitrace/tree/main/examples
       title: GitHub examples
-    - file: tutorials/you-tube.rst
-      title: YouTube tutorials
+    - file: tutorials/video-tutorials.rst
+      title: Video tutorials
 
   - caption: How to
     entries:
@@ -66,6 +57,15 @@ subtrees:
 
     - file: reference/development-guide.rst
       title: Development guide
+
+  - caption: API
+    entries:
+    - file: doxygen/html/files
+      title: API library
+    - file: doxygen/html/globals
+      title: Functions
+    - file: doxygen/html/annotated
+      title: Data structures
 
   - caption: About
     entries:
