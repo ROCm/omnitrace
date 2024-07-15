@@ -129,7 +129,7 @@ broad picture.
 .. note::
 
    For insight into the execution of individual kernels on the GPU, 
-   use `Omniperf <https://rocm.github.io/omniperf/index.html>`_.
+   use `Omniperf <https://github.com/rocm/omniperf>`_.
 
 In terms of CPU analysis, Omnitrace does not target any specific vendor. 
 It works just as well on AMD and non-AMD CPUs.

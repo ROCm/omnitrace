@@ -55,7 +55,6 @@ The documentation is structured as follows:
     * :doc:`API library <./doxygen/html/files>`
     * :doc:`Functions <./doxygen/html/globals>`
     * :doc:`Data structures <./doxygen/html/annotated>`
-    * :doc:`Compiling Omnitrace with CMake <./reference/compiling-cmake>`
     * :doc:`Development guide <./reference/development-guide>`
 
 

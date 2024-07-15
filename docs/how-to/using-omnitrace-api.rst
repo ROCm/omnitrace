@@ -6,7 +6,15 @@
 Using the Omnitrace API
 ****************************************************
 
-The following example shows how a program invokes the Omnitrace API to analyze a program.
+The following example shows how a program can use the Omnitrace API to analyze a program.
+
+Omnitrace user API example program
+========================================
+
+The Omnitrace API allows you to define custom regions to profile and trace.
+The following C++ program demonstrates this technique by calling several functions from the 
+Omnitrace API, such as ``omnitrace_user_push_region`` and 
+``omnitrace_user_stop_thread_trace``.
 
 .. note::
 
@@ -18,13 +26,6 @@ The following example shows how a program invokes the Omnitrace API to analyze a
    User-defined regions are always
    recorded, regardless of whether ``omnitrace_user_start_*`` or 
    ``omnitrace_user_stop_*`` has been called.
-
-Omnitrace user API example program
-========================================
-
-The following C++ program demonstrates how to call several functions from the 
-Omnitrace API, such as ``omnitrace_user_push_region`` and 
-``omnitrace_user_stop_thread_trace``.
 
 .. code-block:: shell
 
@@ -154,15 +155,35 @@ Omnitrace API, such as ``omnitrace_user_push_region`` and
       return (*original_callbacks.push_region)(name);
    }
 
+Linking the Omnitrace libraries to another program
+=======================================================
+
+To link the ``omnitrace-user-library`` to another program, 
+use the following CMake and ``g++`` directives.
+
+CMake
+-------------------------------------------------------
+
+.. code-block:: cmake
+
+   find_package(omnitrace REQUIRED COMPONENTS user)
+   add_executable(foo foo.cpp)
+   target_link_libraries(foo PRIVATE omnitrace::omnitrace-user-library)
+
+g++ compilation
+-------------------------------------------------------
+
+Assuming Omnitrace is installed in ``/opt/omnitrace``, use the ``g++`` compiler 
+to build the application.
+
+.. code-block:: shell
+
+   g++ -I/opt/omnitrace foo.cpp -o foo -lomnitrace-user
+
 Output from the API example program
 ========================================
 
 First, instrument and run the program.
-
-.. note::
-
-   For information on compiling and building Omnitrace, 
-   see :doc:`Compiling Omnitrace with CMake <../reference/compiling-cmake>`.
 
 .. code-block:: shell
 
