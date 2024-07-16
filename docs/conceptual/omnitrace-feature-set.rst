@@ -7,7 +7,7 @@ The Omnitrace feature set and use cases
 ***************************************
 
 `Omnitrace <https://github.com/ROCm/omnitrace>`_ is designed to be highly extensible. 
-Internally, it leverages the `timemory performance analysis toolkit <https://github.com/NERSC/timemory>`_ 
+Internally, it leverages the `Timemory performance analysis toolkit <https://github.com/NERSC/timemory>`_ 
 to manage extensions, resources, data, and other items. It supports the following features, 
 modes, metrics, and APIs.
 

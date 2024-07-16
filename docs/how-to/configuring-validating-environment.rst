@@ -9,6 +9,11 @@ Configuring and validating the environment
 After installing the `Omnitrace <https://github.com/ROCm/omnitrace>`_ application, some additional steps are required to set up
 and validate the environment.
 
+.. note::
+
+   The following instructions use the installation path ``/opt/omnitrace``. If
+   Omnitrace is installed elsewhere, substitute the actual installation path.
+
 Configuring the environment
 ========================================
 

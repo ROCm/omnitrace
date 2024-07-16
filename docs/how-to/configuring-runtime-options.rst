@@ -26,7 +26,7 @@ use the ``omnitrace-avail -G ~/.omnitrace.cfg --all`` option
 for a verbose configuration file with descriptions, categories, and additional information.
 
 Modify ``${HOME}/.omnitrace.cfg`` as required. For example, enable `Perfetto <https://perfetto.dev/>`_,
-`timemory <https://github.com/NERSC/timemory>`_, sampling, and process-level sampling by default
+`Timemory <https://github.com/NERSC/timemory>`_, sampling, and process-level sampling by default
 and tweak the default sampling values.
 
 .. code-block:: shell
@@ -62,7 +62,7 @@ accepts a case insensitive match for nearly all common Boolean logic expressions
 Exploring components
 -----------------------------------
 
-Omnitrace uses `timemory <https://github.com/NERSC/timemory>`_ extensively to provide 
+Omnitrace uses `Timemory <https://github.com/NERSC/timemory>`_ extensively to provide 
 various capabilities and manage
 data and resources. By default, with ``OMNITRACE_PROFILE=ON``, Omnitrace only collects wall-clock
 timing values. However, by modifying the ``OMNITRACE_TIMEMORY_COMPONENTS`` setting, 
@@ -94,7 +94,7 @@ Omnitrace supports hardware counter collection via PAPI and ROCm.
 Generally, PAPI is used to collect CPU-based hardware counters and ROCm is used to collect GPU-based hardware
 counters. Although it is possible to install PAPI with ROCm support and use it to 
 collect GPU-based hardware counters, this is not recommended because PAPI 
-cannot simultaneously collect CPU hardware counters.
+cannot simultaneously collect CPU and GPU hardware counters.
 
 To view all possible hardware counters and their descriptions, use the following command:
 

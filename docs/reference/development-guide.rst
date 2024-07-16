@@ -230,7 +230,7 @@ Component member functions
 
 There are no real restrictions or requirements on the member functions a component needs to provide.
 Unless the component is being used directly, the invocation of component member functions via a "component bundler"
-(provided by timemory) makes extensive use of template metaprogramming concepts. This finds the best match, if any,
+(provided by Timemory) makes extensive use of template metaprogramming concepts. This finds the best match, if any,
 for calling a component's member function. This is a bit easier to demonstrate using an example:
 
 .. code-block:: cpp
@@ -295,14 +295,14 @@ Memory model
 Collected data is generally handled in one of the three following ways:
 
 * It is handed directly to, and stored by, Perfetto
-* It is managed implicitly by timemory and accessed as needed
+* It is managed implicitly by Timemory and accessed as needed
 * As thread-local data
 
 In general, only instrumentation for relatively simple data is directly passed to 
-Perfetto and/or timemory during runtime.
+Perfetto and/or Timemory during runtime.
 For example, the callbacks from binary instrumentation, user API instrumentation, 
 and roctracer directly invoke
-calls to Perfetto or timemory's storage model. Otherwise, the data is stored 
+calls to Perfetto or Timemory's storage model. Otherwise, the data is stored 
 by Omnitrace in the thread-data model
 which is more persistent than simply using ``thread_local`` static data, which gets deleted
 when the thread stops.
@@ -330,7 +330,7 @@ Currently, most thread data is effectively stored in a static
 ``OMNITRACE_MAX_THREADS`` is a value defined a compile-time and set to ``2048`` 
 for release builds. During finalization,
 Omnitrace iterates through the thread-data and transforms that data 
-into something that can be passed along to Perfetto and/or timemory.
+into something that can be passed along to Perfetto and/or Timemory.
 The downside of the current model is that if the user exceeds ``OMNITRACE_MAX_THREADS``, 
 a segmentation fault occurs. To fix this issue,
 a new model is being adopted which has all the benefits of this model 
@@ -339,7 +339,7 @@ but permits dynamic expansion.
 Sampling model
 ========================================
 
-The general structure for the sampling is within timemory (``source/timemory/sampling``). 
+The general structure for the sampling is within Timemory (``source/timemory/sampling``). 
 Currently, all sampling is done per-thread
 via POSIX timers. Omnitrace supports both a real-time timer and a CPU-time timer. 
 Both have adjustable frequencies, delays, and durations.

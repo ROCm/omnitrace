@@ -263,7 +263,7 @@ Output prefix keys
 
 Output prefix keys have many uses but are most helpful when dealing with multiple 
 profiling runs or large MPI jobs.
-Their are included in Omnitrace because they were introduced into timemory 
+They are included in Omnitrace because they were introduced into Timemory 
 for `compile-time-perf <https://github.com/jrmadsen/compile-time-perf>`_.
 They are needed to create different output files for a generic wrapper around 
 compilation commands while still
@@ -350,7 +350,7 @@ Use ``omnitrace-avail --components --filename`` to view the base filename for ea
    |---------------------------------|---------------|------------------------|
 
 With the settings ``OMNITRACE_COLLAPSE_THREADS=ON`` and ``OMNITRACE_COLLAPSE_PROCESSES=ON``, which is only valid 
-with full MPI support, the timemory output
+with full MPI support, the Timemory output
 combines the per-thread and/or per-rank data, which have identical call stacks.
 
 The ``OMNITRACE_FLAT_PROFILE`` setting removes all call stack hierarchy. 
@@ -360,7 +360,7 @@ min/max measurements regardless of the calling context.
 The ``OMNITRACE_TIMELINE_PROFILE`` setting (with ``OMNITRACE_FLAT_PROFILE=OFF``) effectively 
 generates similar data to that found
 in Perfetto. Enabling timeline and flat profiling effectively generates 
-similar data to ``strace``. However, while timemory in general
+similar data to ``strace``. However, while Timemory in general
 requires significantly less memory than Perfetto, this is not the case in timeline 
 mode, so use this setting with caution.
 
