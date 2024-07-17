@@ -347,7 +347,7 @@ Here is the full output from the previous
 
    $ omnitrace-sample -PTDH -E all -o omnitrace-output %tag% -c -- ./parallel-overhead-locks 30 4 100
 
-   LD_PRELOAD=/home/gliff/code/omnitrace/build-release/lib/libomnitrace-dl.so.1.11.3
+   LD_PRELOAD=/opt/omnitrace/lib/libomnitrace-dl.so.1.11.3
    OMNITRACE_CONFIG_FILE=
    OMNITRACE_CPU_FREQ_ENABLED=true
    OMNITRACE_OUTPUT_PATH=omnitrace-output
@@ -396,7 +396,7 @@ Here is the full output from the previous
    [omnitrace][1785877][0][omnitrace_finalize] omnitrace/process/1785877/thread/4 : 0.212029 sec wall_clock, 0.211694 sec thread_cpu_clock,   99.8 % thread_cpu_util,    1.152 MB peak_rss [laps: 1]
    [omnitrace][1785877][0][omnitrace_finalize] 
    [omnitrace][1785877][0][omnitrace_finalize] Finalizing perfetto...
-   [omnitrace][1785877][perfetto]> Outputting '/home/gliff/code/omnitrace/build-release/omnitrace-output/2024-07-15_16.21/parallel-overhead-locksperfetto-trace-1785877.proto' (39.12 KB / 0.04 MB / 0.00 GB)... Done
+   [omnitrace][1785877][perfetto]> Outputting '/home/user/code/omnitrace/build-release/omnitrace-output/2024-07-15_16.21/parallel-overhead-locksperfetto-trace-1785877.proto' (39.12 KB / 0.04 MB / 0.00 GB)... Done
    [omnitrace][1785877][wall_clock]> Outputting 'omnitrace-output/2024-07-15_16.21/parallel-overhead-lockswall_clock-1785877.json'
    [omnitrace][1785877][wall_clock]> Outputting 'omnitrace-output/2024-07-15_16.21/parallel-overhead-lockswall_clock-1785877.txt'
    [omnitrace][1785877][metadata]> Outputting 'omnitrace-output/2024-07-15_16.21/parallel-overhead-locksmetadata-1785877.json' and 'omnitrace-output/2024-07-15_16.21/parallel-overhead-locksfunctions-1785877.json'

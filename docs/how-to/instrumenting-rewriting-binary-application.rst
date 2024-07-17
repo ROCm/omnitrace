@@ -6,9 +6,15 @@
 Instrumenting and rewriting a binary application
 ****************************************************
 
-There are three ways to perform instrumentation with `Omnitrace <https://github.com/ROCm/omnitrace>`_:
+There are three ways to perform instrumentation with the ``omnitrace-instrument`` executable:
 
-* Running the application via the ``omnitrace-instrument`` executable 
+* Runtime instrumentation
+* Attaching to an already running process
+* Binary rewrite
+
+Here is a comparison of the three modes:
+
+* Runtime instrumentation of the application using the ``omnitrace-instrument`` executable 
   (analogous to ``gdb --args <program> <args>``)
 
   * This mode is the default if neither the ``-p`` nor ``-o`` command-line options are used
@@ -22,9 +28,14 @@ There are three ways to perform instrumentation with `Omnitrace <https://github.
 * Attaching to a process that is currently running (analogous to ``gdb -p <PID>``)
  
   * This mode is activated using ``-p <PID>``
-  * The same caveats as ``omnitrace-instrument`` apply with respect to memory and overhead
+  * The same caveats from the first example apply with respect to memory and overhead
 
-* Generating a new executable or library with the instrumentation built-in (binary rewrite)
+  .. note::
+
+     Attaching to a running process is an alpha feature and detaching from the target process
+     without ending the target process is not currently supported.
+
+* Binary rewrite to generate a new executable or library with the instrumentation built-in
 
   * This mode is activated through the ``-o <output-file>`` option
   * Binary rewriting is limited to the text section of the target executable or library. It does not instrument
@@ -40,17 +51,8 @@ There are three ways to perform instrumentation with `Omnitrace <https://github.
 The ``omnitrace-instrument`` executable
 ========================================
 
-Instrumentation is performed with the ``omnitrace`` executable. For more details, use the ``-h`` or ``--help`` option to
+Instrumentation is performed with the ``omnitrace-instrument`` executable. For more details, use the ``-h`` or ``--help`` option to
 view the help menu.
-
-.. note::
-
-   With the introduction of ``omnitrace-sample`` in a future version of Omnitrace, 
-   the current ``omnitrace`` executable
-   mentioned here will likely be renamed to ``omnitrace-instrument``. A new 
-   ``omnitrace`` executable will serve as a common
-   executable for multiple executables, such as ``omnitrace-instrument sample ...``, 
-   ``omnitrace run ...``, and ``omnitrace rewrite ...``.
 
 .. code-block:: shell
 
@@ -342,8 +344,9 @@ view the help menu.
                            TypeChecking ]
       Advanced dyninst options: BPatch::set<OPTION>(bool), e.g. bpatch->setTrampRecursive(true)
 
-The general syntax for separating Omnitrace command-line arguments from the application arguments
-is consistent with the LLVM standalone double-hyphen style (``--``). 
+``omnitrace-instrument`` uses a similar syntax as LLVM to separate command-line arguments from the 
+application's arguments. It uses a standalone 
+double-hyphen (``--``) as a separator. 
 All arguments preceding the double-hyphen
 are interpreted as belonging to Omnitrace and all arguments following the 
 double-hyphen are interpreted as being part of the
@@ -352,11 +355,6 @@ are ignored. As an example, ``./omnitrace-instrument -o ls.inst -- ls -l`` inter
 the target to instrument, ignoring the ``-l`` argument,
 and generates a ``ls.inst`` executable that you can subsequently run using the 
 ``omnitrace-run -- ls.inst -l`` command.
-
-.. note::
-
-   Attaching to a running process is an alpha feature and detaching from the target process
-   without ending the target process is not currently supported.
 
 Runtime instrumentation example
 ========================================
@@ -900,6 +898,8 @@ Even though the environment variables are preserved, subsequent sessions can sti
    export OMNITRACE_SAMPLING_FREQ=100
    omnitrace-run -- ./foo.samp
 
+.. _rpath-troubleshooting:
+
 Troubleshooting
 ----------------------------------------------
 
@@ -924,10 +924,13 @@ If this produces output that appears similar to this output.:
    RUNPATH              $ORIGIN:$ORIGIN/../lib
 
 Remove or modify the rpath to get ``foo.inst`` to resolve 
-to the instrumented ``libfoo.so.2``.
+to the instrumented ``libfoo.so.2`` as explained in the next section.
 
 Modifying an RPATH
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This code snippet uses the ``patchelf`` tool to modify the rpath of the given executable 
+or library to ``/home/user``, which is where the instrumented libraries are located.
 
 .. note::
 

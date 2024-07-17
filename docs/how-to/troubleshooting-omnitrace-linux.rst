@@ -58,3 +58,9 @@ A workaround for this problem can be applied permanently or to the current sessi
 
    Permanently changing the SELinux settings can have security implications. 
    Ensure you review your system security settings before making any changes.
+
+Troubleshooting RPATH details
+========================================
+
+For information on RPATH troubleshooting, including how to check or modify an RPATH, see 
+the information on `troubleshooting RPATHs when instrumenting and rewriting binary applications <./instrumenting-rewriting-binary-application.html#rpath-troubleshooting>`_
