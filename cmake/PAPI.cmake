@@ -10,8 +10,8 @@ include_guard(GLOBAL)
 omnitrace_checkout_git_submodule(
     RELATIVE_PATH external/papi
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    REPO_URL https://bitbucket.org/icl/papi.git
-    REPO_BRANCH effd1ef4e0fd4b80e36546791277215a2d6b9eba
+    REPO_URL https://github.com/icl-utk-edu/papi.git
+    REPO_BRANCH 610b37558b3746655c6c69432afbec61878af3af
     TEST_FILE src/configure)
 
 set(PAPI_LIBPFM_SOVERSION
