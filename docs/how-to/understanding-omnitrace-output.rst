@@ -240,7 +240,7 @@ Metadata JSON Sample
 Configuring the Omnitrace output
 ========================================
 
-Omnitrace includes a core set of settings for controlling the format 
+Omnitrace includes a core set of options for controlling the format 
 and contents of the output files. For additional information, see the guide on
 :doc:`configuring runtime options <./configuring-runtime-options>`.
 
@@ -249,7 +249,7 @@ Core configuration settings
 
 .. csv-table:: 
    :header: "Setting", "Value", "Description"
-   :widths: 30, 20, 100
+   :widths: 30, 30, 100
 
    "``OMNITRACE_OUTPUT_PATH``", "Any valid path", "Path to folder where output files should be placed"
    "``OMNITRACE_OUTPUT_PREFIX``", "String", "Useful for multiple runs with different arguments. See the next section on output prefix keys."
@@ -349,9 +349,10 @@ Use ``omnitrace-avail --components --filename`` to view the base filename for ea
    | sampling_wall_clock             |     true      | sampling_wall_clock    |
    |---------------------------------|---------------|------------------------|
 
-With the settings ``OMNITRACE_COLLAPSE_THREADS=ON`` and ``OMNITRACE_COLLAPSE_PROCESSES=ON``, which is only valid 
-with full MPI support, the Timemory output
-combines the per-thread and/or per-rank data, which have identical call stacks.
+The ``OMNITRACE_COLLAPSE_THREADS`` and ``OMNITRACE_COLLAPSE_PROCESSES`` settings are 
+only valid when full `MPI support is enabled <../install/install.html#mpi-support-within-omnitrace>`_. 
+When they are set, Timemory combines the per-thread and per-rank data (respectively) of 
+identical call stacks.
 
 The ``OMNITRACE_FLAT_PROFILE`` setting removes all call stack hierarchy. 
 Using ``OMNITRACE_FLAT_PROFILE=ON`` in combination
@@ -360,7 +361,7 @@ min/max measurements regardless of the calling context.
 The ``OMNITRACE_TIMELINE_PROFILE`` setting (with ``OMNITRACE_FLAT_PROFILE=OFF``) effectively 
 generates similar data to that found
 in Perfetto. Enabling timeline and flat profiling effectively generates 
-similar data to ``strace``. However, while Timemory in general
+similar data to ``strace``. However, while Timemory generally
 requires significantly less memory than Perfetto, this is not the case in timeline 
 mode, so use this setting with caution.
 

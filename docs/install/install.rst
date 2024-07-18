@@ -271,6 +271,8 @@ in `the Perfetto UI <https://ui.perfetto.dev>`_.
    cmake --build omnitrace-build --target install
    source /opt/omnitrace/share/omnitrace/setup-env.sh
 
+.. _mpi-support-omnitrace:
+
 MPI support within Omnitrace
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

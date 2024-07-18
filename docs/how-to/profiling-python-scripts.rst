@@ -54,13 +54,17 @@ This means the following commands are effectively equivalent:
 
    omnitrace-python --help
 
+and
+
+.. code-block:: shell
+
    export PYTHONPATH=/opt/omnitrace/lib/python3.8/site-packages:${PYTHONPATH}
    python3.8 -m omnitrace --help
 
 .. note::
 
    ``omnitrace-python`` and ``python -m omnitrace`` use the same command-line syntax 
-   as the ``omnitrace`` executable (``omnitrace-python <OMNITRACE_ARGS> -- <SCRIPT> <SCRIPT_ARGS>``) 
+   as the other ``omnitrace`` executables (``omnitrace-python <OMNITRACE_ARGS> -- <SCRIPT> <SCRIPT_ARGS>``) 
    and has similar options.
 
 Command line options
@@ -109,10 +113,10 @@ Use ``omnitrace-python --help`` to view the available options:
 Selective instrumentation
 -----------------------------------
 
-Similar to the ``omnitrace`` executable, command-line options exist for restricting, 
+Similar to the ``omnitrace-instrument`` executable, command-line options exist for restricting, 
 including, and excluding certain functions and modules, for example, ``--function-exclude "^__init__$"``.
-Alternatively, adding the ``@profile`` decorator to the primary function of interest 
-in combination with the ``-b`` / ``--builtin`` option will narrow the scope of the
+Alternatively, add the ``@profile`` decorator to the primary function of interest 
+in your program and use the ``-b`` / ``--builtin`` command-line option to narrow the scope of the
 instrumentation to this function and its children.
 
 Consider the following Python code (``example.py``):

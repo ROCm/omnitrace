@@ -394,12 +394,12 @@ integer indicating how many times to repeat the delay and duration cycle. It is 
 possible to perform tasks such as periodically enabling tracing for brief periods
 of time in between long periods without data collection while the application runs. The
 syntax follows the format ``clock_identifier:delay:capture_duration:cycles``, so a value of 
-``10:1:3`` represents the following sequence of operations:
+``10:1:3`` for the last three parameters represents the following sequence of operations:
 
-* 10 seconds where no data is collected, then one second where it is
-* 10 seconds where no data is collected, then one second where it is 
-* 10 seconds where no data is collected, then one second where it is 
-* stop
+* Ten seconds where no data is collected, then one second where it is
+* Ten seconds where no data is collected, then one second where it is 
+* Ten seconds where no data is collected, then one second where it is 
+* Stop
 
 As another example, ``OMNITRACE_TRACE_PERIODS = realtime:10:1:5 process_cputime:10:2:20`` translates
 to this sequence:
