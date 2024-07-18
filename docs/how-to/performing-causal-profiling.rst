@@ -88,8 +88,8 @@ This can happen in three different ways:
   MPI, NUMA, RCCL, etc. to act as progress points
 * Users can leverage the :doc:`runtime instrumentation capabilities <./instrumenting-rewriting-binary-application>` 
   to insert progress points
-* Users can leverage the :doc:`User API <../how-to/using-omnitrace-api>`, 
-  for example ``OMNITRACE_CAUSAL_PROGRESS``
+* Users can leverage :doc:`User APIs <../how-to/using-omnitrace-api>`, 
+  such as ``OMNITRACE_CAUSAL_PROGRESS``
 
 .. note::
 
@@ -137,9 +137,10 @@ Key concepts
 Backends
 -----------------------------------
 
-Both causal profiling backends interrupt each thread 1000x per second of CPU-time to apply virtual speed-ups.
-The difference between the backends is how the samples which are responsible for calculating 
-the virtual speed-up are recorded.
+There are two backends to choose from: ``perf`` and ``timer``. 
+They are used to record the samples required to calculate the virtual speedup. 
+Both backends interrupt each thread 1000 times per second (of CPU-time) to apply the virtual speed-ups.
+The difference between each backend is how the samples are recorded.
 There are three key differences between the two backends:
 
 * the ``perf`` backend requires Linux Perf and elevated security priviledges
@@ -157,12 +158,14 @@ set to ``perf`` and using this backend fails, Omnitrace aborts.
 Instruction pointer skid
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Instruction pointer (IP) skid is how many instructions run between an event of interest
-and where the location of the IP when the kernel is able to stop the application.
+Instruction pointer (IP) skid measures how many instructions run after the event of interest
+before the program actually stops. The IP skid is calculated by subtracting
+the location of the IP at the point of interest from the location of the IP 
+when the kernel finally stops the application.
 For the ``timer`` backend, this translates to the
-difference between the IP when the timer generated a signal and the IP when the
+difference in the IP between when the timer generated a signal and when the
 signal was actually generated. Although IP skid still occurs with the ``perf`` backend,
-the overhead of pausing the entire thread with the ``timer`` backend makes it much more pronounced.
+it is much more pronounced with the ``timer`` backend due to the overhead of pausing the entire thread.
 This means the ``timer`` backend tends to have a lower resolution than the ``perf`` backend,
 especially in ``line`` mode.
 
@@ -193,6 +196,11 @@ as a superuser (where ``PARANOID_LEVEL=<N>`` has a value of ``<N>`` in the range
 .. code-block:: shell
 
    echo ${PARANOID_LEVEL} | sudo tee /proc/sys/kernel/perf_event_paranoid
+
+or
+
+.. code-block:: shell
+
    sysctl kernel.perf_event_paranoid=${PARANOID_LEVEL}
 
 To make the paranoid level persistent after a reboot, add ``kernel.perf_event_paranoid=<N>``
@@ -576,9 +584,8 @@ Visualizing the causal output
 -------------------------------------------------------------------------
 
 Omnitrace generates ``causal/experiments.json`` and ``causal/experiments.coz`` in 
-``${OMNITRACE_OUTPUT_PATH}/${OMNITRACE_OUTPUT_PREFIX}``. A standalone GUI for viewing the causal profiling
-results is under development. Until this is available, visit 
-`plasma-umass.org/coz <https://plasma-umass.org/coz/>`_ and open the ``*.coz`` file.
+``${OMNITRACE_OUTPUT_PATH}/${OMNITRACE_OUTPUT_PREFIX}``. Visit 
+`plasma-umass.org/coz <https://plasma-umass.org/coz/>`_ to open the ``*.coz`` file.
 
 Omnitrace versus Coz
 =======================================

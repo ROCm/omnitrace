@@ -62,5 +62,7 @@ A workaround for this problem can be applied permanently or to the current sessi
 Troubleshooting RPATH details
 ========================================
 
-For information on RPATH troubleshooting, including how to check or modify an RPATH, see 
-the information on `troubleshooting RPATHs when instrumenting and rewriting binary applications <./instrumenting-rewriting-binary-application.html#rpath-troubleshooting>`_
+If you're experiencing problems loading your application with an instrumented library, 
+then you might have to check and modify the RPATH specified in your application. 
+See the section on `troubleshooting RPATHs <./instrumenting-rewriting-binary-application.html#rpath-troubleshooting>`_
+for further details.

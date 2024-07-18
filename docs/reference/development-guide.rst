@@ -130,7 +130,7 @@ Measurement
 Capability
    Handles the implementation or orchestration of some feature which is used 
    to collect measurements, for example, a component which handles setting up function wrappers 
-   around various functions such as ``pthread_create``or ``MPI_Init``.
+   around various functions such as ``pthread_create`` or ``MPI_Init``.
 
 Components are designed to either hold no data at all or only the data for both an instantaneous 
 measurement and a phase measurement.
@@ -389,14 +389,23 @@ Time-window constraint model
 With the recent introduction of tracing delay and duration, the 
 `constraint namespace <https://github.com/ROCm/omnitrace/blob/main/source/lib/core/constraint.hpp>`_
 was introduced to improve the management of delays and duration limits for 
-data collection. The ``spec`` class takes a clock identifier, a delay value, a duration value, and an
-integer indicating how many times to repeat the delay and duration. It is therefore 
+data collection. The ``spec`` class accepts a clock identifier, a delay value, a duration value, and an
+integer indicating how many times to repeat the delay and duration cycle. It is therefore 
 possible to perform tasks such as periodically enabling tracing for brief periods
-of time in between long periods without data collection during the application. 
-For example, ``OMNITRACE_TRACE_PERIODS = realtime:10:1:5 process_cputime:10:2:20`` enables
-five periods of no data collection for ten seconds of real-time, followed by one second of 
-data collection, plus twenty periods of no data collection for ten seconds
-of process CPU time, followed by two CPU-time seconds of data collection.
+of time in between long periods without data collection while the application runs. The
+syntax follows the format ``clock_identifier:delay:capture_duration:cycles``, so a value of 
+``10:1:3`` represents the following sequence of operations:
+
+* 10 seconds where no data is collected, then one second where it is
+* 10 seconds where no data is collected, then one second where it is 
+* 10 seconds where no data is collected, then one second where it is 
+* stop
+
+As another example, ``OMNITRACE_TRACE_PERIODS = realtime:10:1:5 process_cputime:10:2:20`` translates
+to this sequence:
+
+* Five cycles of: no data collection for ten seconds of real-time followed by one second of data collection
+* Twenty cycles of: no data collection for ten seconds of process CPU time followed by two CPU-time seconds of data collection
 
 Eventually, the goal is to migrate all subsets of data collection which currently support 
 more rudimentary models of time window constraints, such as process sampling and causal profiling,
