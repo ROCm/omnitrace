@@ -14,7 +14,7 @@ Troubleshooting Omnitrace instrumentation on RHEL
 RHEL (Red Hat Enterprise Linux) distributions of Linux automatically enable a security feature 
 called SELinux that prevents `Omnitrace <https://github.com/ROCm/omnitrace>`_ from operating successfully.
 This issue applies to systems running the CentOS 9 operating system using
-AMD ROCm Software version 6.1.x alongside an AMD Instinct MI300 GPU.
+any version of the AMD ROCm Software alongside an AMD Instinct MI300 GPU.
 
 Steps to reproduce the issue
 -------------------------------
