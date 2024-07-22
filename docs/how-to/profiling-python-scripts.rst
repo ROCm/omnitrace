@@ -19,7 +19,7 @@ be the same size.
 
 .. note::
 
-   When using Omnitrace for Python, the Python interpreter major and minor version (e.g. 3.7) 
+   When using Omnitrace with Python programs, the Python interpreter major and minor version (e.g. 3.7) 
    must match the interpreter major and minor version
    used when compiling the Python bindings. When building Omnitrace, 
    the shared object file ``libpyomnitrace.<IMPL>-<VERSION>-<ARCH>-<OS>-<ABI>.so`` is generated

@@ -48,7 +48,7 @@ Here is a comparison of the three modes:
     application is in one specific dynamic library,
     see :ref:`binary-rewriting-library-label` for help
 
-The ``omnitrace-instrument`` executable
+The omnitrace-instrument executable
 ========================================
 
 Instrumentation is performed with the ``omnitrace-instrument`` executable. For more details, use the ``-h`` or ``--help`` option to
@@ -541,7 +541,7 @@ not satisfy their regular expression.
 
 To narrow the scope of the instrumentation to a specific set 
 of libraries and/or functions, use the ``--module-restrict`` and ``--function-restrict`` options.
-These options allow you to exclusively select the union of one or more 
+These options let you exclusively select the union of one or more 
 regular expressions, regardless of whether or not the functions satisfy the
 previously-mentioned default heuristics. Any function or module that is not within 
 the union of these regular expressions is excluded from instrumentation.

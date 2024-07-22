@@ -42,7 +42,7 @@ The documentation is structured as follows:
     * :doc:`Performing causal profiling <./how-to/performing-causal-profiling>`
     * :doc:`Understanding the Omnitrace output <./how-to/understanding-omnitrace-output>`
     * :doc:`Profiling Python scripts <./how-to/profiling-python-scripts>`
-    * :doc:`Troubleshooting Omnitrace on Linux <./how-to/troubleshooting-omnitrace-linux>`
+    * :doc:`Troubleshooting Omnitrace <./how-to/troubleshooting-omnitrace-linux>`
     * :doc:`Using the Omnitrace API <./how-to/using-omnitrace-api>`
 
   .. grid-item-card:: Conceptual

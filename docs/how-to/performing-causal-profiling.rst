@@ -206,7 +206,7 @@ or
 To make the paranoid level persistent after a reboot, add ``kernel.perf_event_paranoid=<N>``
 (where ``<N>`` is the desired paranoid level) to the ``/etc/sysctl.conf`` file.
 
-Speed-up prediction variability and the ``omnitrace-causal`` executable
+Speed-up prediction variability and the omnitrace-causal executable
 -----------------------------------------------------------------------
 
 Causal profiling typically requires running the application several times in 
@@ -541,7 +541,7 @@ Examples
       --                                      \
       ./lulesh-omni -i 50 -s 200 -r 20 -b 5 -c 5 -p
 
-Using ``omnitrace-causal`` with other launchers like ``mpirun``
+Using omnitrace-causal with other launchers like mpirun
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``omnitrace-causal`` executable is intended to assist with application replay 

@@ -63,7 +63,7 @@ is not necessary. This is for a number of reasons:
     performing a binary rewrite of the executable and then using the instrumented executable 
     in lieu of the original executable. ``omnitrace-sample`` is therefore much easier to use with MPI.
 
-The ``omnitrace-sample`` executable
+The omnitrace-sample executable
 ========================================
 
 View the help menu of ``omnitrace-sample`` with the ``-h`` / ``--help`` option:
@@ -337,7 +337,7 @@ The following snippets show how ``omnitrace-sample`` runs with various environme
       OMNITRACE_PROFILE=true
       ...
 
-An ``omnitrace-sample`` example
+An omnitrace-sample example
 ========================================
 
 Here is the full output from the previous 

@@ -6,7 +6,7 @@
 Configuring and validating the environment
 ****************************************************
 
-After installing the `Omnitrace <https://github.com/ROCm/omnitrace>`_ application, some additional steps are required to set up
+After installing `Omnitrace <https://github.com/ROCm/omnitrace>`_, additional steps are required to set up
 and validate the environment.
 
 .. note::

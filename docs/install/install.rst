@@ -15,8 +15,8 @@ Release links
 
 To review and install either the current Omnitrace release or earlier releases, use these links:
 
-* `Latest Omnitrace Release <https://github.com/ROCm/omnitrace/releases/latest>`_ 
-* `All Omnitrace Releases <https://github.com/ROCm/omnitrace/releases>`_ 
+* Latest Omnitrace Release: `<https://github.com/ROCm/omnitrace/releases/latest>`_ 
+* All Omnitrace Releases: `<https://github.com/ROCm/omnitrace/releases>`_ 
 
 Operating system support
 ========================================
@@ -31,7 +31,7 @@ Omnitrace is only supported on Linux. The following distributions are tested in 
 * Red Hat 9.0
 * Red Hat 9.1
 
-Other OS distributions might be supported but are not tested.
+Other OS distributions might function but are not supported or tested.
 
 Identifying the operating system
 -----------------------------------

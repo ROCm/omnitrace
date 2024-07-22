@@ -11,7 +11,7 @@ The following example shows how a program can use the Omnitrace API to analyze a
 Omnitrace user API example program
 ========================================
 
-The Omnitrace API allows you to define custom regions to profile and trace.
+You can use the Omnitrace API to define custom regions to profile and trace.
 The following C++ program demonstrates this technique by calling several functions from the 
 Omnitrace API, such as ``omnitrace_user_push_region`` and 
 ``omnitrace_user_stop_thread_trace``.

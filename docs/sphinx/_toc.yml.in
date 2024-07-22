@@ -39,7 +39,7 @@ subtrees:
     - file: how-to/profiling-python-scripts.rst
       title: Profiling Python scripts  
     - file: how-to/troubleshooting-omnitrace-linux.rst
-      title: Troubleshooting Omnitrace on Linux
+      title: Troubleshooting Omnitrace
     - file: how-to/using-omnitrace-api.rst
       title: Using the Omnitrace API
 
@@ -54,9 +54,6 @@ subtrees:
     entries:
     - file: reference/development-guide.rst
       title: Development guide
-
-  - caption: API
-    entries:
     - file: doxygen/html/files
       title: API library
     - file: doxygen/html/globals

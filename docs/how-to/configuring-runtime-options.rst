@@ -9,7 +9,7 @@ Configuring runtime options
 The ``omnitrace.cfg`` file maintains a list of the `Omnitrace <https://github.com/ROCm/omnitrace>`_ runtime options. To create this configuration 
 file and view the current runtime options, use the ``omnitrace-avail`` executable.
 
-The ``omnitrace-avail`` executable
+The omnitrace-avail executable
 ========================================
 
 The ``omnitrace-avail`` executable provides information about the runtime settings, 
@@ -123,7 +123,7 @@ Here is a sample configuration for hardware counters:
    # using perf identifiers
    OMNITRACE_PAPI_EVENTS   = perf::INSTRUCTIONS perf::CACHE-REFERENCES perf::CACHE-MISSES
 
-``OMNITRACE_PAPI_EVENTS``
+OMNITRACE_PAPI_EVENTS
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In order to collect the majority of hardware counters via PAPI, ensure the ``/proc/sys/kernel/perf_event_paranoid``
@@ -171,7 +171,7 @@ PAPI components from different namespaces:
    installed with the prefix ``omnitrace-`` with
    underscores replaced with hypens, for example ``papi_avail`` becomes ``omnitrace-papi-avail``.
 
-``OMNITRACE_ROCM_EVENTS``
+OMNITRACE_ROCM_EVENTS
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Omnitrace reads the ROCm events from the ``${ROCM_PATH}/lib/rocprofiler/metrics.xml`` 
@@ -202,7 +202,7 @@ The following example:
 
    OMNITRACE_ROCM_EVENTS = GPUBusy     SQ_WAVES:device=0    SQ_INSTS_VALU:device=1
 
-``omnitrace-avail`` examples
+omnitrace-avail examples
 -----------------------------------
 
 The following examples demonstrate how to use ``omnitrace-avail`` to perform several common 

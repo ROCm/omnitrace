@@ -3,16 +3,21 @@
    :keywords: Omnitrace, ROCm, profiler, tracking, visualization, tool, Instinct, accelerator, AMD
 
 ****************************************************
-Troubleshooting Omnitrace on Linux
+Troubleshooting Omnitrace
 ****************************************************
+
+This guide explains how to resolve certain issues when installing or running Omnitrace.
+
+Troubleshooting Omnitrace instrumentation on RHEL
+==================================================
 
 RHEL (Red Hat Enterprise Linux) distributions of Linux automatically enable a security feature 
 called SELinux that prevents `Omnitrace <https://github.com/ROCm/omnitrace>`_ from operating successfully.
 This issue applies to systems running the CentOS 9 operating system using
-AMD ROCm Software version 6.1.x alongside an MI300 GPU.
+AMD ROCm Software version 6.1.x alongside an AMD Instinct MI300 GPU.
 
 Steps to reproduce the issue
-========================================
+-------------------------------
 
 The problem occurs after the following operations:
 
@@ -43,7 +48,7 @@ Instead of successfully running the binary with call-stack sampling,
 Omnitrace crashes with a segmentation fault.
 
 Temporary and permanent workarounds
-========================================
+------------------------------------
 
 A workaround for this problem can be applied permanently or to the current session:
 

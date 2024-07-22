@@ -196,7 +196,7 @@ Callback APIs and dynamic symbol interception can be utilized with either tool.
 Binary instrumentation
 -----------------------------------
 
-Binary instrumentation allows you to record deterministic measurements for 
+Binary instrumentation lets you record deterministic measurements for 
 every single invocation of a given function.
 Binary instrumentation effectively adds instructions to the target application to 
 collect the required information. It therefore has the potential to cause performance 
@@ -218,8 +218,8 @@ Statistical sampling
 
 Statistical call-stack sampling periodically interrupts the application at 
 regular intervals using operating system interrupts.
-Sampling is typically less numerically accurate and specific, but allows the 
-target program to run nearly at full speed.
+Sampling is typically less numerically accurate and specific, but the 
+target program runs at nearly full speed.
 In contrast to the data derived from binary instrumentation, the resulting 
 data is not exact but is instead a statistical approximation.
 However, sampling often provides a more accurate picture of the application 
@@ -280,7 +280,7 @@ which contain fewer than 1024 instructions.
 
 However, recording every single invocation of the function can be extremely 
 useful for detecting anomalies, such as profiles that show minimum or maximum values much smaller or larger
-than the average or a high standard deviation. In this case, traces allow you to 
+than the average or a high standard deviation. In this case, the traces help you 
 identify exactly when and where those instances deviated from the norm.
 Compare the level of detail in the following traces. In the top image, 
 every instance of the ``fib`` function is instrumented, while in the bottom image,
