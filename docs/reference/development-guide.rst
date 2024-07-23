@@ -273,7 +273,7 @@ When the preceding code runs, the following messages are printed:
 .. code-block:: shell
 
    A
-   bar::start()
+   spam::start()
    B
    foo::sample()
    bar::sample(int)
