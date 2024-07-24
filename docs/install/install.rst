@@ -8,7 +8,8 @@ Omnitrace installation
 
 The following information builds on the guidelines in the :doc:`Quick start <./quick-start>` guide.
 It covers how to install `Omnitrace <https://github.com/ROCm/omnitrace>`_ from source or a binary distribution,
-as well as post-installation steps.
+as well as the :ref:`post-installation-steps`. If you have problems using Omnitrace after installation,
+consult the :ref:`post-installation-troubleshooting` section.
 
 Release links
 ========================================
@@ -300,6 +301,8 @@ Omnitrace on an application built against OpenMPI causes a segmentation fault.
 This happens because the value of the ``MPI_COMM_WORLD`` is truncated
 during the function wrapping before being passed along to the underlying MPI function.
 
+.. _post-installation-steps:
+
 Post-installation steps
 ========================================
 
@@ -338,6 +341,8 @@ issues locating the installed libraries:
    If ROCm support is enabled, you might have to add the path to the ROCm libraries to ``LD_LIBRARY_PATH``,
    for example, ``export LD_LIBRARY_PATH=/opt/rocm/lib:${LD_LIBRARY_PATH}``.
 
+.. _post-installation-troubleshooting:
+
 Post-installation troubleshooting
 ========================================
 
@@ -346,10 +351,10 @@ This section explains how to resolve certain issues that might happen when you f
 Issues with RHEL and SELinux
 ----------------------------------------------------
 
-RHEL (Red Hat Enterprise Linux) distributions of Linux automatically enable a security feature 
+RHEL (Red Hat Enterprise Linux) and related distributions of Linux automatically enable a security feature 
 named SELinux (Security-Enhanced Linux) that prevents Omnitrace from running.
-This issue applies to systems running the CentOS 9 operating system using
-any version of the AMD ROCm Software alongside an AMD Instinct MI300 GPU.
+This issue applies to any Linux distribution with SELinux installed, including RHEL,
+CentOS, Fedora, and Rocky Linux. The problem can happen with any GPU, or even without a GPU.
 
 The problem occurs after you instrument a program and try to
 run ``omnitrace-run`` with the instrumented program.
@@ -362,6 +367,11 @@ run ``omnitrace-run`` with the instrumented program.
 
 Instead of successfully running the binary with call-stack sampling, 
 Omnitrace crashes with a segmentation fault.
+
+.. note::
+
+   If you are physically logged in on the system (not using SSH or a remote connection),
+   the operating system might display an SELinux pop-up warning in the notifications.
 
 To workaround this problem, either disable SELinux or configure it to use a more 
 permissive setting.

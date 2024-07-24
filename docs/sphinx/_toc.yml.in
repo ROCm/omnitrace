@@ -38,8 +38,6 @@ subtrees:
       title: Understanding the Omnitrace output 
     - file: how-to/profiling-python-scripts.rst
       title: Profiling Python scripts  
-    - file: how-to/troubleshooting-omnitrace-linux.rst
-      title: Troubleshooting Omnitrace
     - file: how-to/using-omnitrace-api.rst
       title: Using the Omnitrace API
 
