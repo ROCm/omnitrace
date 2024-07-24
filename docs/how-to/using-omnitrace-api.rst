@@ -6,7 +6,7 @@
 Using the Omnitrace API
 ****************************************************
 
-The following example shows how a program can use the Omnitrace API to analyze a program.
+The following example shows how a program can use the Omnitrace API for run-time analysis.
 
 Omnitrace user API example program
 ========================================

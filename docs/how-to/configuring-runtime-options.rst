@@ -123,6 +123,8 @@ Here is a sample configuration for hardware counters:
    # using perf identifiers
    OMNITRACE_PAPI_EVENTS   = perf::INSTRUCTIONS perf::CACHE-REFERENCES perf::CACHE-MISSES
 
+.. _omnitrace_papi_events:
+
 OMNITRACE_PAPI_EVENTS
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

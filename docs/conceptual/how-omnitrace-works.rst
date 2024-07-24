@@ -6,7 +6,7 @@
 How Omnitrace works
 *******************
 
-This page explains the nomenclature necessary to use Omnitrace and provides 
+This topic explains the nomenclature necessary to use Omnitrace and provides 
 some basic tips to help you get started. It also explains the main data
 collection modes, including a comparison between binary instrumentation 
 and statistical sampling.

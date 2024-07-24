@@ -337,3 +337,62 @@ issues locating the installed libraries:
 
    If ROCm support is enabled, you might have to add the path to the ROCm libraries to ``LD_LIBRARY_PATH``,
    for example, ``export LD_LIBRARY_PATH=/opt/rocm/lib:${LD_LIBRARY_PATH}``.
+
+Post-installation troubleshooting
+========================================
+
+This section explains how to resolve certain issues that might happen when you first use Omnitrace.
+
+Issues with RHEL and SELinux
+----------------------------------------------------
+
+RHEL (Red Hat Enterprise Linux) distributions of Linux automatically enable a security feature 
+named SELinux (Security-Enhanced Linux) that prevents Omnitrace from running.
+This issue applies to systems running the CentOS 9 operating system using
+any version of the AMD ROCm Software alongside an AMD Instinct MI300 GPU.
+
+The problem occurs after you instrument a program and try to
+run ``omnitrace-run`` with the instrumented program.
+
+.. code-block:: shell
+
+   g++ hello.cpp -o hello
+   omniperf-instrument -M sampling -o hello.instr -- ./hello
+   omnitrace-run -- ./hello.instr
+
+Instead of successfully running the binary with call-stack sampling, 
+Omnitrace crashes with a segmentation fault.
+
+To workaround this problem, either disable SELinux or configure it to use a more 
+permissive setting.
+
+To avoid this problem for the duration of the current session, run this command 
+from the shell:
+
+.. code-block:: shell
+
+   sudo setenforce 0
+
+For a permanent workaround, edit the SELinux configuration file using the command
+``sudo vim /etc/sysconfig/selinux`` and change the ``SELINUX`` setting to 
+either ``Permissive`` or ``Disabled``.
+
+.. note::
+
+   Permanently changing the SELinux settings can have security implications. 
+   Ensure you review your system security settings before making any changes.
+
+Modifying RPATH details
+----------------------------------------------------
+
+If you're experiencing problems loading your application with an instrumented library, 
+then you might have to check and modify the RPATH specified in your application. 
+See the section on `troubleshooting RPATHs <../how-to/instrumenting-rewriting-binary-application.html#rpath-troubleshooting>`_
+for further details.
+
+Configuring PAPI to collect hardware counters
+----------------------------------------------------
+
+To use PAPI to collect the majority of hardware counters, ensure 
+the ``/proc/sys/kernel/perf_event_paranoid`` setting has a value less than or equal to ``2``. 
+For more information, see the :ref:`omnitrace_papi_events` section.
