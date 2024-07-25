@@ -57,8 +57,8 @@ The documentation is structured as follows:
     * :doc:`Omnitrace glossary <./reference/omnitrace-glossary>`
     * :doc:`API library <./doxygen/html/files>`
     * :doc:`Functions <./doxygen/html/functions>`
-    * :doc:`Globals <./doxygen/html/globals_globals>`
-    * :doc:`Data structures <./doxygen/html/annotated_data_structures>`
+    * :doc:`Globals <./doxygen/html/globals>`
+    * :doc:`Data structures <./doxygen/html/annotated>`
 
 To contribute to the documentation, refer to
 `Contributing to ROCm <https://rocm.docs.amd.com/en/latest/contribute/contributing.html>`_.
