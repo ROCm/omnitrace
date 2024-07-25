@@ -58,8 +58,10 @@ subtrees:
       title: Omnitrace glossary
     - file: doxygen/html/files
       title: API library
-    - file: doxygen/html/globals
+    - file: doxygen/html/functions
       title: Functions
+    - file: doxygen/html/globals
+      title: Globals
     - file: doxygen/html/annotated
       title: Data structures
 
