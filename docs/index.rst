@@ -43,19 +43,21 @@ The documentation is structured as follows:
     * :doc:`Understanding the Omnitrace output <./how-to/understanding-omnitrace-output>`
     * :doc:`Profiling Python scripts <./how-to/profiling-python-scripts>`
     * :doc:`Using the Omnitrace API <./how-to/using-omnitrace-api>`
+    * :doc:`General tips for using Omnitrace <./how-to/general-tips-using-omnitrace>`
+
 
   .. grid-item-card:: Conceptual
 
-    * :doc:`How Omnitrace works <./conceptual/how-omnitrace-works>`
+    * :doc:`Data collection modes <./conceptual/data-collection-modes>`
     * :doc:`The Omnitrace feature set <./conceptual/omnitrace-feature-set>`
   
   .. grid-item-card:: Reference
 
+    * :doc:`Development guide <./reference/development-guide>`
+    * :doc:`Omnitrace glossary <./reference/omnitrace-glossary>`
     * :doc:`API library <./doxygen/html/files>`
     * :doc:`Functions <./doxygen/html/globals>`
     * :doc:`Data structures <./doxygen/html/annotated>`
-    * :doc:`Development guide <./reference/development-guide>`
-
 
 To contribute to the documentation, refer to
 `Contributing to ROCm <https://rocm.docs.amd.com/en/latest/contribute/contributing.html>`_.

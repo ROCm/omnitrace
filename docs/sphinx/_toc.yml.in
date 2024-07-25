@@ -40,11 +40,13 @@ subtrees:
       title: Profiling Python scripts  
     - file: how-to/using-omnitrace-api.rst
       title: Using the Omnitrace API
+    - file: how-to/general-tips-using-omnitrace.rst 
+      title: General tips for using Omnitrace 
 
   - caption: Conceptual
     entries:
-    - file: conceptual/how-omnitrace-works.rst
-      title: How Omnitrace works
+    - file: conceptual/data-collection-modes.rst
+      title: Data collection modes
     - file: conceptual/omnitrace-feature-set.rst
       title: The Omnitrace feature set and use cases
 
@@ -52,6 +54,8 @@ subtrees:
     entries:
     - file: reference/development-guide.rst
       title: Development guide
+    - file: reference/omnitrace-glossary.rst
+      title: Omnitrace glossary
     - file: doxygen/html/files
       title: API library
     - file: doxygen/html/globals
