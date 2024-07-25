@@ -56,9 +56,9 @@ The documentation is structured as follows:
     * :doc:`Development guide <./reference/development-guide>`
     * :doc:`Omnitrace glossary <./reference/omnitrace-glossary>`
     * :doc:`API library <./doxygen/html/files>`
-    * :doc:`Functions <./doxygen/html/functions>`
+    * :doc:`Class member functions <./doxygen/html/functions>`
     * :doc:`Globals <./doxygen/html/globals>`
-    * :doc:`Data structures <./doxygen/html/annotated>`
+    * :doc:`Classes, structures, and interfaces <./doxygen/html/annotated>`
 
 To contribute to the documentation, refer to
 `Contributing to ROCm <https://rocm.docs.amd.com/en/latest/contribute/contributing.html>`_.

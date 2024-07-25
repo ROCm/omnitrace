@@ -59,11 +59,11 @@ subtrees:
     - file: doxygen/html/files
       title: API library
     - file: doxygen/html/functions
-      title: Functions
+      title: Class member functions
     - file: doxygen/html/globals
       title: Globals
     - file: doxygen/html/annotated
-      title: Data structures
+      title: Classes, structures, and interfaces
 
   - caption: About
     entries:
