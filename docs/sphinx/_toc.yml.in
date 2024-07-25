@@ -60,9 +60,9 @@ subtrees:
       title: API library
     - file: doxygen/html/functions
       title: Functions
-    - file: doxygen/html/globals
+    - file: doxygen/html/globals_globals
       title: Globals
-    - file: doxygen/html/annotated
+    - file: doxygen/html/annotated_data_structures
       title: Data structures
 
   - caption: About
