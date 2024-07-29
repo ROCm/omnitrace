@@ -8,7 +8,9 @@ Omnitrace installation
 
 The following information builds on the guidelines in the :doc:`Quick start <./quick-start>` guide.
 It covers how to install `Omnitrace <https://github.com/ROCm/omnitrace>`_ from source or a binary distribution,
-as well as the :ref:`post-installation-steps`. If you have problems using Omnitrace after installation,
+as well as the :ref:`post-installation-steps`.
+
+If you have problems using Omnitrace after installation,
 consult the :ref:`post-installation-troubleshooting` section.
 
 Release links
