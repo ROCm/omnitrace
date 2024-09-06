@@ -189,6 +189,7 @@ jobs:
           -DOMNITRACE_BUILD_HIDDEN_VISIBILITY=${{ matrix.hidden }}
           -DOMNITRACE_BUILD_STATIC_LIBGCC=${{ matrix.static-libgcc }}
           -DOMNITRACE_BUILD_STATIC_LIBSTDCXX=${{ matrix.static-libstdcxx }}
+          -DOMNITRACE_INSTALL_PERFETTO_TOOLS=ON
           -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
           -DOMNITRACE_PYTHON_ENVS="py3.7;py3.8;py3.9;py3.10;py3.11"
           -DOMNITRACE_STRIP_LIBRARIES=${{ matrix.strip }}
