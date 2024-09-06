@@ -986,7 +986,7 @@ function(OMNITRACE_ADD_VALIDATION_TEST)
                 "${TEST_PERFETTO_METRIC}" ${TEST_ARGS} -i
                 ${PROJECT_BINARY_DIR}/omnitrace-tests-output/${TEST_NAME}/${TEST_PERFETTO_FILE}
                 -t
-                ${PROJECT_BINARY_DIR}/external/perfetto/source/out/linux/trace_processor_shell
+                ${OMNITRACE_PERFETTO_BINARY_DIR}/trace_processor_shell
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
     endif()
 
