@@ -2,10 +2,10 @@
 
 import sys
 import argparse
-from perfetto.trace_processor import TraceProcessor
+from perfetto.trace_processor import TraceProcessor, TraceProcessorConfig
 
 
-def load_trace(inp, max_tries=5, retry_wait=1):
+def load_trace(inp, max_tries=5, retry_wait=1, bin_path=None):
     """Occasionally connecting to the trace processor fails with HTTP errors
     so this function tries to reduce spurious test failures"""
 
@@ -13,7 +13,11 @@ def load_trace(inp, max_tries=5, retry_wait=1):
     tp = None
     while tp is None:
         try:
-            tp = TraceProcessor(trace=(inp))
+            if bin_path:
+                config = TraceProcessorConfig(bin_path=bin_path)
+                tp = TraceProcessor(trace=(inp), config=config)
+            else:
+                tp = TraceProcessor(trace=(inp))
             break
         except Exception as e:
             sys.stderr.write(f"{e}\n")
@@ -71,6 +75,7 @@ if __name__ == "__main__":
         "-p", "--print", action="store_true", help="Print the processed perfetto data"
     )
     parser.add_argument("-i", "--input", type=str, help="Input file", required=True)
+    parser.add_argument("-t", "--trace_processor_shell", type=str, help="Path of trace_processor_shell")
     parser.add_argument(
         "--key-names",
         type=str,
@@ -93,7 +98,7 @@ if __name__ == "__main__":
             "The same number of labels, counts, and depths must be specified"
         )
 
-    tp = load_trace(args.input)
+    tp = load_trace(args.input, bin_path=args.trace_processor_shell)
 
     if tp is None:
         raise ValueError(f"trace {args.input} could not be loaded")
