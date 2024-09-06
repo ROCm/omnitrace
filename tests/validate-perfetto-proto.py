@@ -75,7 +75,9 @@ if __name__ == "__main__":
         "-p", "--print", action="store_true", help="Print the processed perfetto data"
     )
     parser.add_argument("-i", "--input", type=str, help="Input file", required=True)
-    parser.add_argument("-t", "--trace_processor_shell", type=str, help="Path of trace_processor_shell")
+    parser.add_argument(
+        "-t", "--trace_processor_shell", type=str, help="Path of trace_processor_shell"
+    )
     parser.add_argument(
         "--key-names",
         type=str,
