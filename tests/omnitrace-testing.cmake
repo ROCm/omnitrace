@@ -985,8 +985,7 @@ function(OMNITRACE_ADD_VALIDATION_TEST)
                 ${CMAKE_CURRENT_LIST_DIR}/validate-perfetto-proto.py -m
                 "${TEST_PERFETTO_METRIC}" ${TEST_ARGS} -i
                 ${PROJECT_BINARY_DIR}/omnitrace-tests-output/${TEST_NAME}/${TEST_PERFETTO_FILE}
-                -t
-                ${OMNITRACE_PERFETTO_BINARY_DIR}/trace_processor_shell
+                -t ${OMNITRACE_PERFETTO_BINARY_DIR}/trace_processor_shell
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
     endif()
 
