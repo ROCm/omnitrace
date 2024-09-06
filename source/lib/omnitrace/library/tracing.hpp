@@ -648,8 +648,8 @@ mark_perfetto_track(CategoryT, const char* name, ::perfetto::Track _track, uint6
     // skip if category is disabled
     if(category_mark_disabled<CategoryT>()) return;
 
-    TRACE_EVENT_INSTANT(trait::name<CategoryT>::value, ::perfetto::DynamicString{name}, _track, _ts,
-                        std::forward<Args>(args)...);
+    TRACE_EVENT_INSTANT(trait::name<CategoryT>::value, ::perfetto::DynamicString{name},
+                        _track, _ts, std::forward<Args>(args)...);
 }
 }  // namespace tracing
 }  // namespace omnitrace
