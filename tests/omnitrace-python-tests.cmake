@@ -167,8 +167,7 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
             COMMAND
                 ${_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/validate-perfetto-proto.py
                 -m ${TEST_PERFETTO_METRIC} ${TEST_ARGS} -p -t
-                ${OMNITRACE_PERFETTO_BINARY_DIR}/trace_processor_shell
-                -i
+                ${OMNITRACE_PERFETTO_BINARY_DIR}/trace_processor_shell -i
             PYTHON_VERSION ${_VERSION}
             FILE omnitrace-tests-output/${TEST_NAME}/${_VERSION}/${TEST_PERFETTO_FILE}
             DEPENDS ${TEST_NAME}-${_VERSION}
