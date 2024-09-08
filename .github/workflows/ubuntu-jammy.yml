@@ -111,7 +111,7 @@ jobs:
           apt-get upgrade -y &&
           apt-get install -y build-essential m4 autoconf libtool python3-pip libiberty-dev clang libomp-dev libopenmpi-dev libfabric-dev openmpi-bin environment-modules ${{ matrix.compiler }} &&
           python3 -m pip install --upgrade pip &&
-          python3 -m pip install numpy &&
+          python3 -m pip install numpy perfetto dataclasses &&
           python3 -m pip install 'cmake==3.21.4' &&
           for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done
 

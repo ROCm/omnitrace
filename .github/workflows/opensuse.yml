@@ -58,6 +58,12 @@ jobs:
         timeout_minutes: 25
         max_attempts: 5
         command: |
+            - name: Install Packages
+      shell: bash
+      run: |
+          python3 -m pip install --upgrade pip &&
+          python3 -m pip install numpy perfetto dataclasses &&
+          python3 -m pip install 'cmake==3.21.4' &&
           for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done
 
     - name: Configure Env
