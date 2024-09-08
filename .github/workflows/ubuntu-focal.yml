@@ -95,8 +95,7 @@ jobs:
           apt-get upgrade -y &&
           apt-get install -y build-essential m4 autoconf libtool python3-pip libiberty-dev clang libmpich-dev mpich environment-modules ${{ matrix.compiler }} &&
           python3 -m pip install --upgrade pip &&
-          python3 -m pip install numpy &&
-          python3 -m pip install perfetto &&
+          python3 -m pip install numpy perfetto dataclasses &&
           python3 -m pip install 'cmake==3.16.3' &&
           for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done &&
           apt-get -y --purge autoremove &&
@@ -151,6 +150,7 @@ jobs:
           -DOMNITRACE_BUILD_LTO=${{ matrix.lto }}
           -DOMNITRACE_BUILD_STATIC_LIBGCC=${{ matrix.static-libgcc }}
           -DOMNITRACE_BUILD_STATIC_LIBSTDCXX=${{ matrix.static-libstdcxx }}
+          -DOMNITRACE_INSTALL_PERFETTO_TOOLS=YES
           -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
           -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10;py3.11"
           -DOMNITRACE_MAX_THREADS=64
@@ -246,20 +246,12 @@ jobs:
         mpi-headers: ['OFF']
         build-jobs: ['3']
         ctest-exclude: ['-LE "mpi-example|transpose"']
-        perfetto-tools: ['OFF']
         include:
-          - compiler: 'g++'
-            rocm-version: '4.5'
-            mpi-headers: 'OFF'
-            build-jobs: '2'
-            ctest-exclude: '-LE "mpi-example|transpose"'
-            perfetto-tools: 'ON'
           - compiler: 'g++'
             rocm-version: 'debian'
             mpi-headers: 'ON'
             build-jobs: '2'
             ctest-exclude: '-LE transpose'
-            perfetto-tools: 'OFF'
 
     env:
       BUILD_TYPE: MinSizeRel
@@ -284,6 +276,7 @@ jobs:
           apt-get update &&
           apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev ${{ matrix.compiler }} libudev1 libnuma1 rocm-dev rocm-utils rocm-smi-lib roctracer-dev rocprofiler-dev rccl-dev hip-base hsa-amd-aqlprofile hsa-rocr-dev hsakmt-roct-dev libpapi-dev curl libopenmpi-dev openmpi-bin libfabric-dev &&
           python3 -m pip install --upgrade pip &&
+          python3 -m pip install numpy perfetto dataclasses &&
           python3 -m pip install 'cmake==3.21.4' &&
           for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done &&
           apt-get -y --purge autoremove &&
@@ -345,7 +338,7 @@ jobs:
           -DOMNITRACE_USE_PYTHON=ON
           -DOMNITRACE_USE_MPI_HEADERS=${{ matrix.mpi-headers }}
           -DOMNITRACE_USE_SANITIZER=OFF
-          -DOMNITRACE_INSTALL_PERFETTO_TOOLS=${{ matrix.perfetto-tools }}
+          -DOMNITRACE_INSTALL_PERFETTO_TOOLS=YES
           -DOMNITRACE_PYTHON_PREFIX=/opt/conda/envs
           -DOMNITRACE_PYTHON_ENVS="py3.6;py3.7;py3.8;py3.9;py3.10;py3.11"
           -DOMNITRACE_CI_MPI_RUN_AS_ROOT=${{ matrix.mpi-headers }}
@@ -445,8 +438,7 @@ jobs:
           if [ "${{ matrix.mpi }}" = "mpich" ]; then sudo apt-get install -y libmpich-dev mpich; fi &&
           if [ "${{ matrix.mpi }}" = "openmpi" ]; then sudo apt-get install -y libopenmpi-dev openmpi-bin libfabric-dev; fi &&
           python3 -m pip install --upgrade pip &&
-          python3 -m pip install numpy &&
-          python3 -m pip install perfetto &&
+          python3 -m pip install numpy perfetto dataclasses &&
           python3 -m pip install 'cmake==3.16.3' &&
           sudo apt-get -y --purge autoremove &&
           sudo apt-get -y clean
@@ -485,6 +477,7 @@ jobs:
           -DOMNITRACE_BUILD_DYNINST=ON
           -DOMNITRACE_USE_MPI=${USE_MPI}
           -DOMNITRACE_USE_HIP=OFF
+          -DOMNITRACE_INSTALL_PERFETTO_TOOLS=YES
           -DOMNITRACE_USE_PYTHON=${{ matrix.python }}
           -DOMNITRACE_USE_OMPT=${{ matrix.ompt }}
           -DOMNITRACE_USE_PAPI=${{ matrix.papi }}
@@ -597,8 +590,7 @@ jobs:
           apt-get update &&
           apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev environment-modules gcc g++ mpich libmpich-dev texinfo &&
           python3 -m pip install --upgrade pip &&
-          python3 -m pip install numpy &&
-          python3 -m pip install perfetto &&
+          python3 -m pip install numpy perfetto dataclasses &&
           python3 -m pip install 'cmake==3.24.1' &&
           for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done &&
           apt-get -y --purge autoremove &&
@@ -634,5 +626,6 @@ jobs:
           -DOMNITRACE_USE_HIP=OFF
           -DOMNITRACE_USE_RCCL=OFF
           -DOMNITRACE_MAX_THREADS=64
+          -DOMNITRACE_INSTALL_PERFETTO_TOOLS=YES
           -DOMNITRACE_DISABLE_EXAMPLES="transpose;rccl"
           -DOMNITRACE_BUILD_NUMBER=${{ github.run_attempt }}
