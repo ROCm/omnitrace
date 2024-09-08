@@ -58,9 +58,6 @@ jobs:
         timeout_minutes: 25
         max_attempts: 5
         command: |
-            - name: Install Packages
-      shell: bash
-      run: |
           python3 -m pip install --upgrade pip &&
           python3 -m pip install numpy perfetto dataclasses &&
           python3 -m pip install 'cmake==3.21.4' &&
