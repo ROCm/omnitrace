@@ -14,15 +14,15 @@ def load_trace(inp, max_tries=5, retry_wait=1, bin_path=None):
     tp = None
 
     # Check if bin_path is set and if it exists
-    print("bin_path: ", bin_path)
+    print("trace_processor path: ", bin_path)
     if bin_path and not os.path.isfile(bin_path):
-        print(f"bin_path {bin_path} does not exist. Using the default path.")
+        print(f"Path {bin_path} does not exist. Using the default path.")
         bin_path = None
 
     while tp is None:
         try:
             if bin_path:
-                config = TraceProcessorConfig(bin_path=bin_path, verbose=True)
+                config = TraceProcessorConfig(bin_path=bin_path)
                 tp = TraceProcessor(trace=inp, config=config)
             else:
                 tp = TraceProcessor(trace=inp)
