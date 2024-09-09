@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 import argparse
 from perfetto.trace_processor import TraceProcessor, TraceProcessorConfig
 
@@ -11,17 +12,25 @@ def load_trace(inp, max_tries=5, retry_wait=1, bin_path=None):
 
     n = 0
     tp = None
+
+    # Check if bin_path is set and if it exists
+    print("bin_path: ", bin_path)
+    if bin_path and not os.path.isfile(bin_path):
+        print(f"bin_path {bin_path} does not exist. Using the default path.")
+        bin_path = None
+
     while tp is None:
         try:
             if bin_path:
-                config = TraceProcessorConfig(bin_path=bin_path)
-                tp = TraceProcessor(trace=(inp), config=config)
+                config = TraceProcessorConfig(bin_path=bin_path, verbose=True)
+                tp = TraceProcessor(trace=inp, config=config)
             else:
-                tp = TraceProcessor(trace=(inp))
+                tp = TraceProcessor(trace=inp)
             break
-        except Exception as e:
-            sys.stderr.write(f"{e}\n")
+        except Exception as ex:
+            sys.stderr.write(f"{ex}\n")
             sys.stderr.flush()
+
             if n >= max_tries:
                 raise
             else:
