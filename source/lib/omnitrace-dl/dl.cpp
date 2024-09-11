@@ -1175,7 +1175,7 @@ get_default_mode()
     auto _link_map = get_link_map(nullptr);
     for(const auto& itr : _link_map)
     {
-        if(itr.find("libomnitrace-rt.so") != std::string::npos ||
+        if(itr.find("librocsys-rt.so") != std::string::npos ||
            itr.find("libdyninstAPI_RT.so") != std::string::npos)
             return "trace";
     }
@@ -1256,7 +1256,7 @@ omnitrace_preload()
         get_env("OMNITRACE_INSTRUMENT_MODE", dl::InstrumentMode::BinaryRewrite);
     for(const auto& itr : _link_map)
     {
-        if(itr.find("libomnitrace-rt.so") != std::string::npos ||
+        if(itr.find("librocsys-rt.so") != std::string::npos ||
            itr.find("libdyninstAPI_RT.so") != std::string::npos)
         {
             omnitrace_set_instrumented(static_cast<int>(_instr_mode));
