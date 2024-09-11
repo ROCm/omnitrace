@@ -240,7 +240,7 @@ lookup_ipaddr_entry(uintptr_t _addr, unw_context_t* _context_p,
             for(const auto& itr : binary::get_link_map("libomnitrace.so", "", ""))
                 _insert_exclude_range(itr.real());
 
-            for(const auto& itr : binary::get_link_map("libomnitrace-dl.so", "", ""))
+            for(const auto& itr : binary::get_link_map("librocsys.so", "", ""))
                 _insert_exclude_range(itr.real());
 
             return _exclude_range_v;

@@ -36,7 +36,7 @@ add_target_cxx_flag_if_avail(omnitrace-dl-library "-g3")
 
 set_target_properties(
     omnitrace-dl-library
-    PROPERTIES OUTPUT_NAME omnitrace-dl
+    PROPERTIES OUTPUT_NAME rocsys-dl
                VERSION ${PROJECT_VERSION}
                SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
                BUILD_RPATH "\$ORIGIN"

@@ -113,7 +113,7 @@ get_omnitrace_is_preloaded()
 {
     static bool _v = []() {
         auto&& _preload_libs = get_env("LD_PRELOAD", std::string{});
-        return (_preload_libs.find("libomnitrace-dl.so") != std::string::npos);
+        return (_preload_libs.find("librocsys-dl.so") != std::string::npos);
     }();
     return _v;
 }
@@ -125,7 +125,7 @@ get_omnitrace_preload()
         auto&& _preload      = get_env("OMNITRACE_PRELOAD", true);
         auto&& _preload_libs = get_env("LD_PRELOAD", std::string{});
         return (_preload &&
-                _preload_libs.find("libomnitrace-dl.so") != std::string::npos);
+                _preload_libs.find("librocsys-dl.so") != std::string::npos);
     }();
     return _v;
 }
@@ -134,7 +134,7 @@ inline void
 reset_omnitrace_preload()
 {
     auto&& _preload_libs = get_env("LD_PRELOAD", std::string{});
-    if(_preload_libs.find("libomnitrace-dl.so") != std::string::npos)
+    if(_preload_libs.find("librocsys-dl.so") != std::string::npos)
     {
         (void) get_omnitrace_is_preloaded();
         (void) get_omnitrace_preload();
@@ -494,7 +494,7 @@ get_indirect()
 
     static auto  _libomni = get_env("OMNITRACE_LIBRARY", "libomnitrace.so");
     static auto  _libuser = get_env("OMNITRACE_USER_LIBRARY", "libomnitrace-user.so");
-    static auto  _libdlib = get_env("OMNITRACE_DL_LIBRARY", "libomnitrace-dl.so");
+    static auto  _libdlib = get_env("OMNITRACE_DL_LIBRARY", "librocsys-dl.so");
     static auto* _v       = new indirect{ _libomni, _libuser, _libdlib };
     return *_v;
 }
