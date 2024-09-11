@@ -282,6 +282,23 @@ target_link_libraries(omnitrace-elfutils INTERFACE ${ElfUtils_LIBRARIES})
 #
 # ----------------------------------------------------------------------------------------#
 
+if(NOT OMNITRACE_BUILD_DYNINST)
+    find_package(Dyninst QUIET
+                COMPONENTS dyninstAPI parseAPI instructionAPI symtabAPI)
+    if (NOT Dyninst_FOUND)
+        # Build DYNINST,TBB,BOOST,ELFUTILS,LIBIBERTY
+        message(WARNING
+                 "Dyninst not found. Building Dyninst and dependencies from source.")
+
+        set(OMNITRACE_BUILD_DYNINST ON)
+        set(DYNINST_BUILD_TBB ON)
+        set(DYNINST_BUILD_BOOST ON)
+        set(DYNINST_BUILD_ELFUTILS ON)
+        set(DYNINST_BUILD_LIBIBERTY ON)
+
+    endif()
+endif()
+
 if(OMNITRACE_BUILD_DYNINST)
     omnitrace_checkout_git_submodule(
         RELATIVE_PATH external/dyninst
