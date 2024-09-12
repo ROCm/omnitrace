@@ -237,9 +237,9 @@ extern "C"
                         OMNITRACE_ABORT(
                             "%s was invoked with libomnitrace.so as the "
                             "KOKKOS_PROFILE_LIBRARY.\n"
-                            "However, librocprof-sys-dl.so has already been loaded by the "
-                            "process.\nTo avoid duplicate collections culminating is an "
-                            "error, please set KOKKOS_PROFILE_LIBRARY=%s.\nLoaded "
+                            "However, librocprof-sys-dl.so has already been loaded by "
+                            "the process.\nTo avoid duplicate collections culminating "
+                            "is an error, please set KOKKOS_PROFILE_LIBRARY=%s.\nLoaded "
                             "libraries:\n%s",
                             __FUNCTION__, itr.c_str(), _libs_str.str().c_str());
                     }
