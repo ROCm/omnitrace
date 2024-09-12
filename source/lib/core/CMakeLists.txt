@@ -72,4 +72,4 @@ target_link_libraries(
         $<BUILD_INTERFACE:omnitrace::omnitrace-sanitizer>
         $<BUILD_INTERFACE:$<IF:$<BOOL:${OMNITRACE_BUILD_LTO}>,omnitrace::omnitrace-lto,>>)
 
-set_target_properties(omnitrace-core-library PROPERTIES OUTPUT_NAME omnitrace-core)
+set_target_properties(omnitrace-core-library PROPERTIES OUTPUT_NAME rocprof-sys-core)
