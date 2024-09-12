@@ -25,4 +25,4 @@ target_link_libraries(
     omnitrace-binary-library PRIVATE omnitrace::omnitrace-interface-library
                                      omnitrace::omnitrace-core)
 
-set_target_properties(omnitrace-binary-library PROPERTIES OUTPUT_NAME omnitrace-binary)
+set_target_properties(omnitrace-binary-library PROPERTIES OUTPUT_NAME rocprof-sys-binary)
