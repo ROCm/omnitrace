@@ -229,7 +229,7 @@ extern "C"
                 }
                 for(const auto& itr : _libs)
                 {
-                    if(itr.find("librocsys-dl.so") != std::string::npos)
+                    if(itr.find("librocprof-sys-dl.so") != std::string::npos)
                     {
                         std::stringstream _libs_str{};
                         for(const auto& litr : _libs)
@@ -237,7 +237,7 @@ extern "C"
                         OMNITRACE_ABORT(
                             "%s was invoked with libomnitrace.so as the "
                             "KOKKOS_PROFILE_LIBRARY.\n"
-                            "However, librocsys-dl.so has already been loaded by the "
+                            "However, librocprof-sys-dl.so has already been loaded by the "
                             "process.\nTo avoid duplicate collections culminating is an "
                             "error, please set KOKKOS_PROFILE_LIBRARY=%s.\nLoaded "
                             "libraries:\n%s",

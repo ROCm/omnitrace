@@ -157,12 +157,12 @@ PYBIND11_MODULE(libpyomnitrace, omni)
     pyuser::generate(omni);
 
     auto _python_path = tim::get_env("OMNITRACE_PATH", std::string{}, false);
-    auto _libpath     = std::string{ "librocsys-dl.so" };
+    auto _libpath     = std::string{ "librocprof-sys-dl.so" };
     if(!_python_path.empty()) _libpath = TIMEMORY_JOIN("/", _python_path, _libpath);
     // permit env override if default path fails/is wrong
     _libpath = tim::get_env("OMNITRACE_DL_LIBRARY", _libpath);
     // this is necessary when building with -static-libstdc++
-    // without it, loading libomnitrace.so within librocsys-dl.so segfaults
+    // without it, loading libomnitrace.so within librocprof-sys-dl.so segfaults
     if(!dlopen(_libpath.c_str(), RTLD_NOW | RTLD_GLOBAL))
     {
         auto _msg =

@@ -255,7 +255,7 @@ configure_settings(bool _init)
 
     OMNITRACE_CONFIG_EXT_SETTING(int, "OMNITRACE_DL_VERBOSE",
                                  "Verbosity within the omnitrace-dl library", 0,
-                                 "debugging", "librocsys-dl", "advanced");
+                                 "debugging", "librocprof-sys-dl", "advanced");
 
     OMNITRACE_CONFIG_SETTING(
         size_t, "OMNITRACE_NUM_THREADS_HINT",
@@ -1163,7 +1163,7 @@ configure_mode_settings(const std::shared_ptr<settings>& _config)
     if(_config->get<bool>("OMNITRACE_USE_KOKKOSP"))
     {
         auto _current_kokkosp_lib = tim::get_env<std::string>("KOKKOS_PROFILE_LIBRARY");
-        if(_current_kokkosp_lib.find("librocsys-dl.so") == std::string::npos &&
+        if(_current_kokkosp_lib.find("librocprof-sys-dl.so") == std::string::npos &&
            _current_kokkosp_lib.find("libomnitrace.so") == std::string::npos)
         {
             auto        _force   = 0;

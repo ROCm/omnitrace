@@ -219,7 +219,7 @@ init_parser(parser_data& _data)
         }
     }
 
-    _data.dl_libpath   = get_realpath(get_internal_libpath("librocsys-dl.so").c_str());
+    _data.dl_libpath   = get_realpath(get_internal_libpath("librocprof-sys-dl.so").c_str());
     _data.omni_libpath = get_realpath(get_internal_libpath("libomnitrace.so").c_str());
 
 #if defined(OMNITRACE_USE_ROCTRACER) || defined(OMNITRACE_USE_ROCPROFILER)
