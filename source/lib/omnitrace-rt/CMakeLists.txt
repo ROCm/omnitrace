@@ -108,7 +108,7 @@ add_target_cxx_flag_if_avail(omnitrace-rt-library "-g3")
 
 set_target_properties(
     omnitrace-rt-library
-    PROPERTIES OUTPUT_NAME rocsys-rt
+    PROPERTIES OUTPUT_NAME rocprof-sys-rt
                VERSION ${PROJECT_VERSION}
                SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
                BUILD_RPATH "\$ORIGIN"
