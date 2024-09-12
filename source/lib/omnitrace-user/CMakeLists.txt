@@ -30,7 +30,7 @@ target_link_libraries(omnitrace-user-library
 
 set_target_properties(
     omnitrace-user-library
-    PROPERTIES OUTPUT_NAME omnitrace-user
+    PROPERTIES OUTPUT_NAME rocprof-sys-user
                VERSION ${PROJECT_VERSION}
                SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
                POSITION_INDEPENDENT_CODE ON

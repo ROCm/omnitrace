@@ -493,7 +493,7 @@ get_indirect()
     omnitrace_preinit_library();
 
     static auto  _libomni = get_env("OMNITRACE_LIBRARY", "libomnitrace.so");
-    static auto  _libuser = get_env("OMNITRACE_USER_LIBRARY", "libomnitrace-user.so");
+    static auto  _libuser = get_env("OMNITRACE_USER_LIBRARY", "librocprof-sys-user.so");
     static auto  _libdlib = get_env("OMNITRACE_DL_LIBRARY", "librocsys-dl.so");
     static auto* _v       = new indirect{ _libomni, _libuser, _libdlib };
     return *_v;
