@@ -9,12 +9,15 @@ import random
 
 _prefix = ""
 
+
 def fib(n):
     return n if n < 2 else (fib(n - 1) + fib(n - 2))
+
 
 def _sum(arr):
     print(f"----  in _sum")
     return sum(arr)
+
 
 def inefficient(n):
     print(f"[{_prefix}] ... running inefficient({n})")
