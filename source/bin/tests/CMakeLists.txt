@@ -305,8 +305,9 @@ omnitrace_add_bin_test(
         "ENVIRONMENT VARIABLE,[ \n]+OMNITRACE_THREAD_POOL_SIZE,[ \n]+OMNITRACE_USE_PID,[ \n]+"
     FAIL_REGEX "OMNITRACE_TRACE|OMNITRACE_ABORT_FAIL_REGEX")
 
-string(REPLACE "+" "\\\+" _AVAIL_CFG_PATH
-               "${PROJECT_BINARY_DIR}/omnitrace-tests-output/rocprof-sys-avail/rocprof-sys-")
+string(
+    REPLACE "+" "\\\+" _AVAIL_CFG_PATH
+            "${PROJECT_BINARY_DIR}/omnitrace-tests-output/rocprof-sys-avail/rocprof-sys-")
 # use of TWD == Test Working Directory (added by function)
 omnitrace_add_bin_test(
     NAME rocprof-sys-avail-write-config
@@ -330,8 +331,8 @@ omnitrace_add_bin_test(
 omnitrace_add_bin_test(
     NAME rocprof-sys-avail-write-config-tweak
     TARGET omnitrace-avail
-    ARGS -G %env{TWD}%/omnitrace-tests-output/rocprof-sys-avail/rocprof-sys-tweak.cfg -F txt
-         json xml --force
+    ARGS -G %env{TWD}%/omnitrace-tests-output/rocprof-sys-avail/rocprof-sys-tweak.cfg -F
+         txt json xml --force
     TIMEOUT 45
     LABELS "rocprof-sys-avail"
     ENVIRONMENT "OMNITRACE_TRACE=OFF;OMNITRACE_PROFILE=ON"
