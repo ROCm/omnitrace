@@ -1086,11 +1086,12 @@ extern "C"
 #if OMNITRACE_USE_ROCPROFILER > 0
     void OnLoadToolProp(void* settings)
     {
-        OMNITRACE_DL_LOG(-16,
-                         "invoking %s(rocprofiler_settings_t*) within librocprof-sys-dl.so "
-                         "will cause a silent failure for rocprofiler. ROCP_TOOL_LIB "
-                         "should be set to librocprof-sys.so\n",
-                         __FUNCTION__);
+        OMNITRACE_DL_LOG(
+            -16,
+            "invoking %s(rocprofiler_settings_t*) within librocprof-sys-dl.so "
+            "will cause a silent failure for rocprofiler. ROCP_TOOL_LIB "
+            "should be set to librocprof-sys.so\n",
+            __FUNCTION__);
         abort();
         return OMNITRACE_DL_INVOKE(get_indirect().rocp_on_load_tool_prop_f, settings);
     }

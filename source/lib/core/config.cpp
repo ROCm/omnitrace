@@ -121,7 +121,7 @@ using utility::parse_numeric_range;
     [&]() {                                                                              \
         auto _ret = _config->insert<TYPE, TYPE>(                                         \
             ENV_NAME, get_setting_name(ENV_NAME), DESCRIPTION, TYPE{ INITIAL_VALUE },    \
-            std::set<std::string>{ "custom", "omnitrace", "librocprof-sys",                \
+            std::set<std::string>{ "custom", "omnitrace", "librocprof-sys",              \
                                    __VA_ARGS__ });                                       \
         if(!_ret.second)                                                                 \
         {                                                                                \
@@ -151,7 +151,8 @@ using utility::parse_numeric_range;
     [&]() {                                                                              \
         auto _ret = _config->insert<TYPE, TYPE>(                                         \
             ENV_NAME, get_setting_name(ENV_NAME), DESCRIPTION, TYPE{ INITIAL_VALUE },    \
-            std::set<std::string>{ "custom", "omnitrace", "librocprof-sys", __VA_ARGS__ }, \
+            std::set<std::string>{ "custom", "omnitrace", "librocprof-sys",              \
+                                   __VA_ARGS__ },                                        \
             std::vector<std::string>{ CMD_LINE });                                       \
         if(!_ret.second)                                                                 \
         {                                                                                \
