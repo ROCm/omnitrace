@@ -1,4 +1,4 @@
-#!/usr/bin/python3.10
+#!@PYTHON_EXECUTABLE@
 
 import os
 import sys
