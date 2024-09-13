@@ -647,12 +647,12 @@ omnitrace_reset_preload_hidden(void)
 {
     tim::set_env("OMNITRACE_PRELOAD", "0", 1);
     auto&& _preload_libs = common::get_env("LD_PRELOAD", std::string{});
-    if(_preload_libs.find("libomnitrace") != std::string::npos)
+    if(_preload_libs.find("librocprof-sys") != std::string::npos)
     {
         auto _modified_preload = std::string{};
         for(const auto& itr : delimit(_preload_libs, ":"))
         {
-            if(itr.find("libomnitrace") != std::string::npos) continue;
+            if(itr.find("librocprof-sys") != std::string::npos) continue;
             _modified_preload += common::join("", ":", itr);
         }
         if(!_modified_preload.empty() && _modified_preload.find(':') == 0)

@@ -162,7 +162,7 @@ PYBIND11_MODULE(libpyomnitrace, omni)
     // permit env override if default path fails/is wrong
     _libpath = tim::get_env("OMNITRACE_DL_LIBRARY", _libpath);
     // this is necessary when building with -static-libstdc++
-    // without it, loading libomnitrace.so within librocprof-sys-dl.so segfaults
+    // without it, loading librocprof-sys.so within librocprof-sys-dl.so segfaults
     if(!dlopen(_libpath.c_str(), RTLD_NOW | RTLD_GLOBAL))
     {
         auto _msg =

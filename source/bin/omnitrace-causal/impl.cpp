@@ -244,7 +244,7 @@ prepare_environment_for_run(std::vector<char*>& _env)
     {
         update_env(_env, "LD_PRELOAD",
                    join(":", LIBPTHREAD_SO,
-                        get_realpath(get_internal_libpath("libomnitrace-dl.so"))),
+                        get_realpath(get_internal_libpath("librocprof-sys-dl.so"))),
                    true);
     }
 }

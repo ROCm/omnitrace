@@ -99,7 +99,7 @@ extern "C"
         OMNITRACE_USER_ERROR_NO_BINDING,        ///< Function pointer was not assigned
         OMNITRACE_USER_ERROR_BAD_VALUE,         ///< Provided value was invalid
         OMNITRACE_USER_ERROR_INVALID_CATEGORY,  ///< Invalid user binding category
-        OMNITRACE_USER_ERROR_INTERNAL,  ///< Internal error occurred within libomnitrace
+        OMNITRACE_USER_ERROR_INTERNAL,  ///< Internal error occurred within librocprof-sys
         OMNITRACE_USER_ERROR_LAST
     } omnitrace_user_error_t;
 

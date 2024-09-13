@@ -141,7 +141,7 @@ reset_omnitrace_preload()
         auto _modified_preload = std::string{};
         for(const auto& itr : delimit(_preload_libs, ":"))
         {
-            if(itr.find("libomnitrace") != std::string::npos) continue;
+            if(itr.find("librocprof-sys") != std::string::npos) continue;
             _modified_preload += common::join("", ":", itr);
         }
         if(!_modified_preload.empty() && _modified_preload.find(':') == 0)
@@ -176,8 +176,8 @@ int _omnitrace_dl_verbose = get_omnitrace_dl_env();
 
 // The docs for dlopen suggest that the combination of RTLD_LOCAL + RTLD_DEEPBIND
 // (when available) helps ensure that the symbols in the instrumentation library
-// libomnitrace.so will use it's own symbols... not symbols that are potentially
-// instrumented. However, this only applies to the symbols in libomnitrace.so,
+// librocprof-sys.so will use it's own symbols... not symbols that are potentially
+// instrumented. However, this only applies to the symbols in librocprof-sys.so,
 // which is NOT self-contained, i.e. symbols in timemory and the libs it links to
 // (such as libpapi.so) are not protected by the deep-bind option. Additionally,
 // it should be noted that DynInst does *NOT* add instrumentation by manipulating the
@@ -396,7 +396,7 @@ struct OMNITRACE_INTERNAL_API indirect
 public:
     using user_cb_t = omnitrace_user_callbacks_t;
 
-    // libomnitrace functions
+    // librocprof-sys functions
     void (*omnitrace_init_library_f)(void)                                   = nullptr;
     void (*omnitrace_init_tooling_f)(void)                                   = nullptr;
     void (*omnitrace_init_f)(const char*, bool, const char*)                 = nullptr;
@@ -418,7 +418,7 @@ public:
     void (*omnitrace_annotated_progress_f)(const char*, omnitrace_annotation_t*,
                                            size_t)                           = nullptr;
 
-    // libomnitrace-user functions
+    // librocprof-sys-user functions
     int (*omnitrace_user_configure_f)(int, user_cb_t, user_cb_t*) = nullptr;
 
     // KokkosP functions
@@ -492,7 +492,7 @@ get_indirect()
 {
     omnitrace_preinit_library();
 
-    static auto  _libomni = get_env("OMNITRACE_LIBRARY", "libomnitrace.so");
+    static auto  _libomni = get_env("OMNITRACE_LIBRARY", "librocprof-sys.so");
     static auto  _libuser = get_env("OMNITRACE_USER_LIBRARY", "librocprof-sys-user.so");
     static auto  _libdlib = get_env("OMNITRACE_DL_LIBRARY", "librocprof-sys-dl.so");
     static auto* _v       = new indirect{ _libomni, _libuser, _libdlib };
@@ -1087,9 +1087,9 @@ extern "C"
     void OnLoadToolProp(void* settings)
     {
         OMNITRACE_DL_LOG(-16,
-                         "invoking %s(rocprofiler_settings_t*) within omnitrace-dl.so "
+                         "invoking %s(rocprofiler_settings_t*) within librocprof-sys-dl.so "
                          "will cause a silent failure for rocprofiler. ROCP_TOOL_LIB "
-                         "should be set to libomnitrace.so\n",
+                         "should be set to librocprof-sys.so\n",
                          __FUNCTION__);
         abort();
         return OMNITRACE_DL_INVOKE(get_indirect().rocp_on_load_tool_prop_f, settings);
@@ -1419,7 +1419,7 @@ extern "C"
             {
                 auto _env_v = std::string_view{ envp[_idx++] };
                 if(_env_v.find("OMNITRACE") != 0 &&
-                   _env_v.find("libomnitrace") == std::string_view::npos)
+                   _env_v.find("librocprof-sys") == std::string_view::npos)
                     continue;
                 auto _pos = _env_v.find('=');
                 if(_pos < _env_v.length())

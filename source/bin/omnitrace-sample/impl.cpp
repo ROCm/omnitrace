@@ -130,8 +130,8 @@ get_initial_environment()
         }
     }
 
-    auto _dl_libpath   = get_realpath(get_internal_libpath("libomnitrace-dl.so"));
-    auto _omni_libpath = get_realpath(get_internal_libpath("libomnitrace.so"));
+    auto _dl_libpath   = get_realpath(get_internal_libpath("librocprof-sys-dl.so"));
+    auto _omni_libpath = get_realpath(get_internal_libpath("librocprof-sys.so"));
 
     update_env(_env, "LD_PRELOAD", _dl_libpath, UPD_APPEND);
     update_env(_env, "LD_LIBRARY_PATH", tim::filepath::dirname(_dl_libpath), UPD_APPEND);
@@ -315,9 +315,9 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
     };
 
     auto* _dl_libpath =
-        realpath(get_internal_libpath("libomnitrace-dl.so").c_str(), nullptr);
+        realpath(get_internal_libpath("librocprof-sys-dl.so").c_str(), nullptr);
     auto* _omni_libpath =
-        realpath(get_internal_libpath("libomnitrace.so").c_str(), nullptr);
+        realpath(get_internal_libpath("librocprof-sys.so").c_str(), nullptr);
 
     auto parser = parser_t(argv[0]);
 

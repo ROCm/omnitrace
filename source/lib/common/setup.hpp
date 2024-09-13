@@ -87,7 +87,7 @@ inline namespace common
 {
 inline std::vector<env_config>
 get_environ(int _verbose, std::string _search_paths = {},
-            std::string _omnilib    = "libomnitrace.so",
+            std::string _omnilib    = "librocprof-sys.so",
             std::string _omnilib_dl = "librocprof-sys-dl.so")
 {
     auto _data            = std::vector<env_config>{};
@@ -274,7 +274,7 @@ get_environ(int _verbose, std::string _search_paths = {},
 
 inline void
 setup_environ(int _verbose, const std::string& _search_paths = {},
-              std::string _omnilib    = "libomnitrace.so",
+              std::string _omnilib    = "librocprof-sys.so",
               std::string _omnilib_dl = "librocprof-sys-dl.so")
 {
     auto _data =

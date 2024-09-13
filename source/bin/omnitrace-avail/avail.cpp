@@ -118,7 +118,7 @@ write_hw_counter_info(std::ostream&, const array_t<bool, N>& = {},
 
 namespace
 {
-// initialize HIP before main so that libomnitrace is not HSA_TOOLS_LIB
+// initialize HIP before main so that librocprof-sys is not HSA_TOOLS_LIB
 int gpu_count = omnitrace::gpu::hip_device_count();
 
 // statically allocated shared_ptrs to prevent use after free errors

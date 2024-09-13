@@ -260,7 +260,7 @@ std::pair<binary_info_t, binary_info_t>&
 get_cached_binary_info()
 {
     static auto _v = []() {
-        // get the linked binaries for the exe (excluding ones from libomnitrace)
+        // get the linked binaries for the exe (excluding ones from librocprof-sys)
         auto _link_map = binary::get_link_map();
         auto _files    = std::vector<std::string>{};
         _files.reserve(_link_map.size());

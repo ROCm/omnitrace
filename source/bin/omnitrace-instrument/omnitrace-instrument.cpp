@@ -345,6 +345,7 @@ main(int argc, char** argv)
     for(const auto& itr : omnitrace_get_link_map(nullptr))
     {
         if(itr.find("omnitrace") != std::string::npos ||
+           itr.find("rocprof-sys") != std::string::npos ||
            std::regex_search(
                itr, std::regex{ "lib(dyninstAPI|stackwalk|pcontrol|patchAPI|parseAPI|"
                                 "instructionAPI|symtabAPI|dynDwarf|common|dynElf|tbb|"
@@ -376,7 +377,7 @@ main(int argc, char** argv)
     string_t              mutname       = {};
     string_t              outfile       = {};
     string_t              logfile       = {};
-    std::vector<string_t> inputlib      = { "libomnitrace-dl" };
+    std::vector<string_t> inputlib      = { "librocprof-sys-dl" };
     std::vector<string_t> libname       = {};
     std::vector<string_t> sharedlibname = {};
     std::vector<string_t> staticlibname = {};
@@ -1757,9 +1758,9 @@ main(int argc, char** argv)
         if(_pos != npos_v) _name = _name.substr(_pos + 1);
         _pos = _name.find('.');
         if(_pos != npos_v) _name = _name.substr(0, _pos);
-        _pos = _name.find("libomnitrace-");
+        _pos = _name.find("librocprof-sys-");
         if(_pos != npos_v)
-            _name = _name.erase(_pos, std::string("libomnitrace-").length());
+            _name = _name.erase(_pos, std::string("librocprof-sys-").length());
         _pos = _name.find("lib");
         if(_pos == 0) _name = _name.substr(_pos + std::string("lib").length());
         while((_pos = _name.find('-')) != npos_v)
@@ -1768,7 +1769,7 @@ main(int argc, char** argv)
         verbprintf(2,
                    "Supplemental instrumentation library '%s' is named '%s' after "
                    "removing everything before last '/', everything after first '.', and "
-                   "'libomnitrace-'...\n",
+                   "'librocprof-sys-'...\n",
                    itr.c_str(), _name.c_str());
 
         use_stubs[_name] = false;
@@ -1927,7 +1928,7 @@ main(int argc, char** argv)
     {
         if(_libname.empty()) _libname = get_absolute_lib_filepath(itr);
     }
-    if(_libname.empty()) _libname = "libomnitrace-dl.so";
+    if(_libname.empty()) _libname = "librocprof-sys-dl.so";
 
     if(!binary_rewrite && !is_attached) env_vars.clear();
 
@@ -2076,7 +2077,7 @@ main(int argc, char** argv)
             size_t _ninits = 0;
             for(auto* itr : _objs)
             {
-                if(itr->name().find("libomnitrace") != std::string::npos) continue;
+                if(itr->name().find("librocprof-sys") != std::string::npos) continue;
                 try
                 {
                     verbprintf(2, "Adding main init callbacks (via %s)...\n",
@@ -2815,7 +2816,7 @@ find_dyn_api_rt()
 {
 #if defined(OMNITRACE_BUILD_DYNINST)
     std::string _dyn_api_rt_base =
-        (binary_rewrite) ? "libomnitrace-rt" : "libdyninstAPI_RT";
+        (binary_rewrite) ? "librocprof-sys-rt" : "libdyninstAPI_RT";
 #else
     std::string _dyn_api_rt_base = "libdyninstAPI_RT";
 #endif

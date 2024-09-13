@@ -220,7 +220,7 @@ init_parser(parser_data& _data)
     }
 
     _data.dl_libpath = get_realpath(get_internal_libpath("librocprof-sys-dl.so").c_str());
-    _data.omni_libpath = get_realpath(get_internal_libpath("libomnitrace.so").c_str());
+    _data.omni_libpath = get_realpath(get_internal_libpath("librocprof-sys.so").c_str());
 
 #if defined(OMNITRACE_USE_ROCTRACER) || defined(OMNITRACE_USE_ROCPROFILER)
     update_env(_data, "HSA_TOOLS_LIB", _data.dl_libpath);

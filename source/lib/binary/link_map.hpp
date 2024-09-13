@@ -54,11 +54,11 @@ std::optional<std::string>
 get_linked_path(const char*, open_modes_vec_t&& = {});
 
 // default parameters: get the linked binaries for the exe but exclude the linked binaries
-// from libomnitrace
+// from librocprof-sys
 std::set<link_file>
 get_link_map(const char*        _lib               = nullptr,
-             const std::string& _exclude_linked_by = "libomnitrace.so",
-             const std::string& _exclude_re        = "libomnitrace-([a-zA-Z]+)\\.so",
+             const std::string& _exclude_linked_by = "librocprof-sys.so",
+             const std::string& _exclude_re        = "librocprof-sys-([a-zA-Z]+)\\.so",
              open_modes_vec_t&& _open_modes        = {});
 }  // namespace binary
 }  // namespace omnitrace

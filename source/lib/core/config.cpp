@@ -121,7 +121,7 @@ using utility::parse_numeric_range;
     [&]() {                                                                              \
         auto _ret = _config->insert<TYPE, TYPE>(                                         \
             ENV_NAME, get_setting_name(ENV_NAME), DESCRIPTION, TYPE{ INITIAL_VALUE },    \
-            std::set<std::string>{ "custom", "omnitrace", "libomnitrace",                \
+            std::set<std::string>{ "custom", "omnitrace", "librocprof-sys",                \
                                    __VA_ARGS__ });                                       \
         if(!_ret.second)                                                                 \
         {                                                                                \
@@ -131,7 +131,7 @@ using utility::parse_numeric_range;
         return _config->find(ENV_NAME)->second;                                          \
     }()
 
-// below does not include "libomnitrace"
+// below does not include "librocprof-sys"
 #define OMNITRACE_CONFIG_EXT_SETTING(TYPE, ENV_NAME, DESCRIPTION, INITIAL_VALUE, ...)    \
     [&]() {                                                                              \
         auto _ret = _config->insert<TYPE, TYPE>(                                         \
@@ -151,7 +151,7 @@ using utility::parse_numeric_range;
     [&]() {                                                                              \
         auto _ret = _config->insert<TYPE, TYPE>(                                         \
             ENV_NAME, get_setting_name(ENV_NAME), DESCRIPTION, TYPE{ INITIAL_VALUE },    \
-            std::set<std::string>{ "custom", "omnitrace", "libomnitrace", __VA_ARGS__ }, \
+            std::set<std::string>{ "custom", "omnitrace", "librocprof-sys", __VA_ARGS__ }, \
             std::vector<std::string>{ CMD_LINE });                                       \
         if(!_ret.second)                                                                 \
         {                                                                                \
@@ -864,7 +864,7 @@ configure_settings(bool _init)
         {
             auto _categories = itr->second->get_categories();
             _categories.emplace("omnitrace");
-            _categories.emplace("libomnitrace");
+            _categories.emplace("librocprof-sys");
             itr->second->set_categories(_categories);
         }
     };
@@ -1164,7 +1164,7 @@ configure_mode_settings(const std::shared_ptr<settings>& _config)
     {
         auto _current_kokkosp_lib = tim::get_env<std::string>("KOKKOS_PROFILE_LIBRARY");
         if(_current_kokkosp_lib.find("librocprof-sys-dl.so") == std::string::npos &&
-           _current_kokkosp_lib.find("libomnitrace.so") == std::string::npos)
+           _current_kokkosp_lib.find("librocprof-sys.so") == std::string::npos)
         {
             auto        _force   = 0;
             std::string _message = {};
@@ -1175,8 +1175,8 @@ configure_mode_settings(const std::shared_ptr<settings>& _config)
                     JOIN("", " (forced. Previous value: '", _current_kokkosp_lib, "')");
             }
             OMNITRACE_BASIC_VERBOSE_F(1, "Setting KOKKOS_PROFILE_LIBRARY=%s%s\n",
-                                      "libomnitrace.so", _message.c_str());
-            tim::set_env("KOKKOS_PROFILE_LIBRARY", "libomnitrace.so", _force);
+                                      "librocprof-sys.so", _message.c_str());
+            tim::set_env("KOKKOS_PROFILE_LIBRARY", "librocprof-sys.so", _force);
         }
     }
 

@@ -32,7 +32,7 @@ target_link_libraries(
     PRIVATE omnitrace::omnitrace-interface-library omnitrace::omnitrace-core
             omnitrace::omnitrace-binary)
 
-set_target_properties(omnitrace-static-library PROPERTIES OUTPUT_NAME omnitrace)
+set_target_properties(omnitrace-static-library PROPERTIES OUTPUT_NAME rocprof-sys)
 
 # ------------------------------------------------------------------------------#
 #
@@ -51,7 +51,7 @@ target_link_libraries(
 
 set_target_properties(
     omnitrace-shared-library
-    PROPERTIES OUTPUT_NAME omnitrace
+    PROPERTIES OUTPUT_NAME rocprof-sys
                VERSION ${PROJECT_VERSION}
                SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
                INSTALL_RPATH "${OMNITRACE_LIB_INSTALL_RPATH}")
