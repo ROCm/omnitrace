@@ -30,7 +30,8 @@ target_link_libraries(
             omnitrace::omnitrace-interface-library omnitrace::libomnitrace-static)
 set_target_properties(
     omnitrace-avail PROPERTIES BUILD_RPATH "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
-                               INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}")
+                               INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}"
+                               OUTPUT_NAME rocprof-sys-avail)
 
 omnitrace_strip_target(omnitrace-avail)
 

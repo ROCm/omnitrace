@@ -837,11 +837,11 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
                 remove_env(_env, "KOKKOS_PROFILE_LIBRARY");
         });
 
-    parser.start_group("HARDWARE COUNTER OPTIONS", "See also: omnitrace-avail -H");
+    parser.start_group("HARDWARE COUNTER OPTIONS", "See also: rocprof-sys-avail -H");
     parser
         .add_argument({ "-C", "--cpu-events" },
                       "Set the CPU hardware counter events to record (ref: "
-                      "`omnitrace-avail -H -c CPU`)")
+                      "`rocprof-sys-avail -H -c CPU`)")
         .action([&](parser_t& p) {
             auto _events =
                 join(array_config{ "," }, p.get<std::vector<std::string>>("cpu-events"));
@@ -852,7 +852,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
     parser
         .add_argument({ "-G", "--gpu-events" },
                       "Set the GPU hardware counter events to record (ref: "
-                      "`omnitrace-avail -H -c GPU`)")
+                      "`rocprof-sys-avail -H -c GPU`)")
         .action([&](parser_t& p) {
             auto _events =
                 join(array_config{ "," }, p.get<std::vector<std::string>>("gpu-events"));

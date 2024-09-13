@@ -278,7 +278,7 @@ get_trace_hsa_api_types();
 std::string&
 get_perfetto_backend();
 
-// make this visible so omnitrace-avail can call it
+// make this visible so rocprof-sys-avail can call it
 std::string
 get_perfetto_output_filename();
 

@@ -362,7 +362,7 @@ dump_log()
 void
 dump_log_abort(int _v)
 {
-    fprintf(stderr, "\n[omnitrace-avail] Exiting with signal %i...\n", _v);
+    fprintf(stderr, "\n[rocprof-sys-avail] Exiting with signal %i...\n", _v);
     debug_msg = true;
     dump_log();
 }

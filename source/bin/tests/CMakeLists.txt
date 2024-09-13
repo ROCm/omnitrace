@@ -209,66 +209,66 @@ omnitrace_add_bin_test(
     FAIL_REGEX "No such file or directory|not found|OMNITRACE_ABORT_FAIL_REGEX")
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-help
+    NAME rocprof-sys-avail-help
     TARGET omnitrace-avail
     ARGS --help
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     TIMEOUT 45
     PASS_REGEX
-        ".*\\\[omnitrace-avail\\\] Usage:.*\\\[DEBUG OPTIONS\\\].*\\\[INFO OPTIONS\\\].*\\\[FILTER OPTIONS\\\].*\\\[COLUMN OPTIONS\\\].*\\\[DISPLAY OPTIONS\\\].*\\\[OUTPUT OPTIONS\\\].*"
+        ".*\\\[rocprof-sys-avail\\\] Usage:.*\\\[DEBUG OPTIONS\\\].*\\\[INFO OPTIONS\\\].*\\\[FILTER OPTIONS\\\].*\\\[COLUMN OPTIONS\\\].*\\\[DISPLAY OPTIONS\\\].*\\\[OUTPUT OPTIONS\\\].*"
     )
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-all
+    NAME rocprof-sys-avail-all
     TARGET omnitrace-avail
     ARGS --all
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     TIMEOUT 45)
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-all-expand-keys
+    NAME rocprof-sys-avail-all-expand-keys
     TARGET omnitrace-avail
     ARGS --all --expand-keys
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     TIMEOUT 45
     FAIL_REGEX "%[a-zA-Z_]%|OMNITRACE_ABORT_FAIL_REGEX")
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-all-only-available-alphabetical
+    NAME rocprof-sys-avail-all-only-available-alphabetical
     TARGET omnitrace-avail
     ARGS --all --available --alphabetical --debug --output
-         ${CMAKE_CURRENT_BINARY_DIR}/omnitrace-avail-all-only-available-alphabetical.log
-    LABELS "omnitrace-avail"
+         ${CMAKE_CURRENT_BINARY_DIR}/rocprof-sys-avail-all-only-available-alphabetical.log
+    LABELS "rocprof-sys-avail"
     TIMEOUT 45
     PROPERTIES
         ATTACHED_FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/omnitrace-avail-all-only-available-alphabetical.log)
+        ${CMAKE_CURRENT_BINARY_DIR}/rocprof-sys-avail-all-only-available-alphabetical.log)
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-all-csv
+    NAME rocprof-sys-avail-all-csv
     TARGET omnitrace-avail
     ARGS --all --csv --csv-separator "#"
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     TIMEOUT 45
     PASS_REGEX
         "COMPONENT#AVAILABLE#VALUE_TYPE#STRING_IDS#FILENAME#DESCRIPTION#CATEGORY#.*ENVIRONMENT VARIABLE#VALUE#DATA TYPE#DESCRIPTION#CATEGORIES#.*HARDWARE COUNTER#DEVICE#AVAILABLE#DESCRIPTION#"
     )
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-filter-wall-clock-available
+    NAME rocprof-sys-avail-filter-wall-clock-available
     TARGET omnitrace-avail
     ARGS -r wall_clock -C --available
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     TIMEOUT 45
     PASS_REGEX
         "\\\|[-]+\\\|\n\\\|[ ]+COMPONENT[ ]+\\\|\n\\\|[-]+\\\|\n\\\| (wall_clock)[ ]+\\\|\n\\\|[-]+\\\|"
     )
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-category-filter-omnitrace
+    NAME rocprof-sys-avail-category-filter-omnitrace
     TARGET omnitrace-avail
     ARGS --categories settings::omnitrace --brief
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     TIMEOUT 45
     PASS_REGEX "OMNITRACE_(SETTINGS_DESC|OUTPUT_FILE|OUTPUT_PREFIX)"
     FAIL_REGEX
@@ -276,17 +276,17 @@ omnitrace_add_bin_test(
     )
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-category-filter-timemory
+    NAME rocprof-sys-avail-category-filter-timemory
     TARGET omnitrace-avail
     ARGS --categories settings::timemory --brief --advanced
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     TIMEOUT 45
     PASS_REGEX
         "OMNITRACE_(ADD_SECONDARY|SCIENTIFIC|PRECISION|MEMORY_PRECISION|TIMING_PRECISION)"
     FAIL_REGEX "OMNITRACE_(SETTINGS_DESC|OUTPUT_FILE)|OMNITRACE_ABORT_FAIL_REGEX")
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-regex-negation
+    NAME rocprof-sys-avail-regex-negation
     TARGET omnitrace-avail
     ARGS -R
          omnitrace
@@ -299,20 +299,20 @@ omnitrace_add_bin_test(
          --csv
          --brief
          --advanced
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     TIMEOUT 45
     PASS_REGEX
         "ENVIRONMENT VARIABLE,[ \n]+OMNITRACE_THREAD_POOL_SIZE,[ \n]+OMNITRACE_USE_PID,[ \n]+"
     FAIL_REGEX "OMNITRACE_TRACE|OMNITRACE_ABORT_FAIL_REGEX")
 
 string(REPLACE "+" "\\\+" _AVAIL_CFG_PATH
-               "${PROJECT_BINARY_DIR}/omnitrace-tests-output/omnitrace-avail/omnitrace-")
+               "${PROJECT_BINARY_DIR}/omnitrace-tests-output/rocprof-sys-avail/rocprof-sys-")
 # use of TWD == Test Working Directory (added by function)
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-write-config
+    NAME rocprof-sys-avail-write-config
     TARGET omnitrace-avail
     ARGS -G
-         %env{TWD}%/omnitrace-tests-output/omnitrace-avail/omnitrace-test.cfg
+         %env{TWD}%/omnitrace-tests-output/rocprof-sys-avail/rocprof-sys-test.cfg
          -F
          txt
          json
@@ -322,53 +322,53 @@ omnitrace_add_bin_test(
          -c
          omnitrace
     TIMEOUT 45
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     PASS_REGEX
         "Outputting JSON configuration file '${_AVAIL_CFG_PATH}test\\\.json'(.*)Outputting XML configuration file '${_AVAIL_CFG_PATH}test\\\.xml'(.*)Outputting text configuration file '${_AVAIL_CFG_PATH}test\\\.cfg'(.*)"
     )
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-write-config-tweak
+    NAME rocprof-sys-avail-write-config-tweak
     TARGET omnitrace-avail
-    ARGS -G %env{TWD}%/omnitrace-tests-output/omnitrace-avail/omnitrace-tweak.cfg -F txt
+    ARGS -G %env{TWD}%/omnitrace-tests-output/rocprof-sys-avail/rocprof-sys-tweak.cfg -F txt
          json xml --force
     TIMEOUT 45
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     ENVIRONMENT "OMNITRACE_TRACE=OFF;OMNITRACE_PROFILE=ON"
     PASS_REGEX
         "Outputting JSON configuration file '${_AVAIL_CFG_PATH}tweak\\\.json'(.*)Outputting XML configuration file '${_AVAIL_CFG_PATH}tweak\\\.xml'(.*)Outputting text configuration file '${_AVAIL_CFG_PATH}tweak\\\.cfg'(.*)"
     )
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-list-keys
+    NAME rocprof-sys-avail-list-keys
     TARGET omnitrace-avail
     ARGS --list-keys --expand-keys
     TIMEOUT 45
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     PASS_REGEX "Output Keys:\n(.*)%argv%(.*)%argv_hash%")
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-list-keys-markdown
+    NAME rocprof-sys-avail-list-keys-markdown
     TARGET omnitrace-avail
     ARGS --list-keys --expand-keys --markdown
     TIMEOUT 45
-    LABELS "omnitrace-avail;markdown"
+    LABELS "rocprof-sys-avail;markdown"
     PASS_REGEX "(.*)`%argv%`(.*)`%argv_hash%`")
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-list-categories
+    NAME rocprof-sys-avail-list-categories
     TARGET omnitrace-avail
     ARGS --list-categories
     TIMEOUT 45
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     PASS_REGEX " component::(.*) hw_counters::(.*) settings::")
 
 omnitrace_add_bin_test(
-    NAME omnitrace-avail-core-categories
+    NAME rocprof-sys-avail-core-categories
     TARGET omnitrace-avail
     ARGS -c core
     TIMEOUT 45
-    LABELS "omnitrace-avail"
+    LABELS "rocprof-sys-avail"
     PASS_REGEX
         "OMNITRACE_CONFIG_FILE(.*)OMNITRACE_ENABLED(.*)OMNITRACE_SUPPRESS_CONFIG(.*)OMNITRACE_SUPPRESS_PARSING(.*)OMNITRACE_VERBOSE"
     )

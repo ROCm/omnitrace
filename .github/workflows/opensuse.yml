@@ -111,10 +111,10 @@ jobs:
       run: |
         set -v
         export OMNITRACE_DEBUG=ON
-        which omnitrace-avail
-        ldd $(which omnitrace-avail)
-        omnitrace-avail --help
-        omnitrace-avail -a
+        which rocprof-sys-avail
+        ldd $(which rocprof-sys-avail)
+        rocprof-sys-avail --help
+        rocprof-sys-avail -a
         which omnitrace
         ldd $(which omnitrace)
         omnitrace-instrument --help

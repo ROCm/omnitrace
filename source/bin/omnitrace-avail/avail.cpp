@@ -193,7 +193,7 @@ main(int argc, char** argv)
 
     std::string file = {};
 
-    parser_t parser("omnitrace-avail");
+    parser_t parser("rocprof-sys-avail");
 
     parser.set_help_width(40);
     auto _cols = std::get<0>(tim::utility::console::get_columns());
@@ -202,7 +202,7 @@ main(int argc, char** argv)
             std::min<int>(_cols - parser.get_help_width() - 8, 120));
 
     parser.enable_help();
-    parser.enable_version("omnitrace-avail", OMNITRACE_ARGPARSE_VERSION_INFO);
+    parser.enable_version("rocprof-sys-avail", OMNITRACE_ARGPARSE_VERSION_INFO);
 
     parser.start_group("DEBUG");
 
@@ -556,7 +556,7 @@ main(int argc, char** argv)
             generate_config(_config_file, _config_fmts, options);
         } catch(std::runtime_error& _e)
         {
-            std::cerr << "[omnitrace-avail] " << _e.what() << std::endl;
+            std::cerr << "[rocprof-sys-avail] " << _e.what() << std::endl;
             return EXIT_FAILURE;
         }
         return EXIT_SUCCESS;

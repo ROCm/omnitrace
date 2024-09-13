@@ -716,7 +716,7 @@ configure_settings(bool _init)
 
     OMNITRACE_CONFIG_SETTING(
         std::string, "OMNITRACE_TIMEMORY_COMPONENTS",
-        "List of components to collect via timemory (see `omnitrace-avail -C`)",
+        "List of components to collect via timemory (see `rocprof-sys-avail -C`)",
         "wall_clock", "timemory", "component");
 
     OMNITRACE_CONFIG_SETTING(std::string, "OMNITRACE_OUTPUT_FILE",

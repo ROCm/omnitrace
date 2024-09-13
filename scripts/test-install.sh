@@ -49,7 +49,7 @@ usage()
     echo "Options:"
     print_option source-dir "<PATH>" "Location of source directory" "${SOURCE_DIR}"
     print_option test-omnitrace-instrument "0|1" "Enable testing omnitrace-instrument exe" "${ENABLE_OMNITRACE_INSTRUMENT}"
-    print_option test-omnitrace-avail "0|1" "Enable testing omnitrace-avail" "${ENABLE_OMNITRACE_AVAIL}"
+    print_option test-rocprof-sys-avail "0|1" "Enable testing rocprof-sys-avail" "${ENABLE_OMNITRACE_AVAIL}"
     print_option test-omnitrace-sample "0|1" "Enable testing omnitrace-sample" "${ENABLE_OMNITRACE_SAMPLE}"
     print_option test-omnitrace-python "0|1" "Enable testing omnitrace-python" "${ENABLE_OMNITRACE_PYTHON}"
     print_option test-omnitrace-rewrite "0|1" "Enable testing omnitrace-instrument binary rewrite" "${ENABLE_OMNITRACE_REWRITE}"
@@ -104,7 +104,7 @@ do
             ENABLE_OMNITRACE_INSTRUMENT=${VAL}
             continue
             ;;
-        --test-omnitrace-avail)
+        --test-rocprof-sys-avail)
             ENABLE_OMNITRACE_AVAIL=${VAL}
             continue
             ;;
@@ -143,12 +143,12 @@ test-omnitrace()
     verbose-run omnitrace-instrument --help
 }
 
-test-omnitrace-avail()
+test-rocprof-sys-avail()
 {
-    verbose-run which omnitrace-avail
-    verbose-run ldd $(which omnitrace-avail)
-    verbose-run omnitrace-avail --help
-    verbose-run omnitrace-avail -a
+    verbose-run which rocprof-sys-avail
+    verbose-run ldd $(which rocprof-sys-avail)
+    verbose-run rocprof-sys-avail --help
+    verbose-run rocprof-sys-avail -a
 }
 
 test-omnitrace-sample()
@@ -199,7 +199,7 @@ test-omnitrace-runtime()
 }
 
 if [ "${ENABLE_OMNITRACE_INSTRUMENT}" -ne 0 ]; then verbose-run test-omnitrace; fi
-if [ "${ENABLE_OMNITRACE_AVAIL}" -ne 0 ]; then verbose-run test-omnitrace-avail; fi
+if [ "${ENABLE_OMNITRACE_AVAIL}" -ne 0 ]; then verbose-run test-rocprof-sys-avail; fi
 if [ "${ENABLE_OMNITRACE_SAMPLE}" -ne 0 ]; then verbose-run test-omnitrace-sample; fi
 if [ "${ENABLE_OMNITRACE_PYTHON}" -ne 0 ]; then verbose-run test-omnitrace-python; fi
 if [ "${ENABLE_OMNITRACE_REWRITE}" -ne 0 ]; then verbose-run test-omnitrace-rewrite; fi

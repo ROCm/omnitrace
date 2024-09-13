@@ -1191,14 +1191,14 @@ add_core_arguments(parser_t& _parser, parser_data& _data)
 
     add_group_arguments(_parser, "sampling", _data);
 
-    _parser.start_group("HARDWARE COUNTER OPTIONS", "See also: omnitrace-avail -H");
+    _parser.start_group("HARDWARE COUNTER OPTIONS", "See also: rocprof-sys-avail -H");
 
     if(_data.environ_filter("cpu_events", _data))
     {
         _parser
             .add_argument({ "-C", "--cpu-events" },
                           "Set the CPU hardware counter events to record (ref: "
-                          "`omnitrace-avail -H -c CPU`)")
+                          "`rocprof-sys-avail -H -c CPU`)")
             .min_count(1)
             .dtype("[EVENT ...]")
             .action([&](parser_t& p) {
@@ -1216,7 +1216,7 @@ add_core_arguments(parser_t& _parser, parser_data& _data)
         _parser
             .add_argument({ "-G", "--gpu-events" },
                           "Set the GPU hardware counter events to record (ref: "
-                          "`omnitrace-avail -H -c GPU`)")
+                          "`rocprof-sys-avail -H -c GPU`)")
             .min_count(1)
             .dtype("[EVENT ...]")
             .action([&](parser_t& p) {
@@ -1353,7 +1353,7 @@ add_group_arguments(parser_t& _parser, const std::string& _group_name, parser_da
                                }),
                 _choices.end());
             _choices.emplace_back(
-                "... run `omnitrace-avail -H -c CPU` for full list ...");
+                "... run `rocprof-sys-avail -H -c CPU` for full list ...");
             itr.second->set_choices(_choices);
         }
     }
@@ -1414,7 +1414,7 @@ add_extended_arguments(parser_t& _parser, parser_data& _data)
                                }),
                 _choices.end());
             _choices.emplace_back(
-                "... run `omnitrace-avail -H -c CPU` for full list ...");
+                "... run `rocprof-sys-avail -H -c CPU` for full list ...");
             itr.second->set_choices(_choices);
         }
 
