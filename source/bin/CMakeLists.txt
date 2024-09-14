@@ -19,9 +19,8 @@ add_subdirectory(omnitrace-causal)
 add_subdirectory(omnitrace-sample)
 add_subdirectory(omnitrace-instrument)
 add_subdirectory(omnitrace-run)
-# omnitrace-exe is deprecated
-add_subdirectory(omnitrace-exe)
 
+# tests
 if(OMNITRACE_BUILD_TESTING OR "$ENV{OMNITRACE_CI}" MATCHES "[1-9]+|ON|on|y|yes")
     add_subdirectory(tests)
 endif()
