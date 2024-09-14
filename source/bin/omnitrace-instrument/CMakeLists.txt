@@ -39,7 +39,8 @@ set_target_properties(
     omnitrace-instrument
     PROPERTIES BUILD_RPATH "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
                INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}"
-               INSTALL_RPATH_USE_LINK_PATH ON)
+               INSTALL_RPATH_USE_LINK_PATH ON
+               OUTPUT_NAME "rocprof-sys-instrument")
 
 if(OMNITRACE_BUILD_DYNINST)
     target_compile_definitions(omnitrace-instrument PRIVATE OMNITRACE_BUILD_DYNINST=1)

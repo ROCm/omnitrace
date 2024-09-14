@@ -1,6 +1,7 @@
 # ------------------------------------------------------------------------------#
 #
-# omnitrace-exe target (deprecated 'omnitrace' executable, now 'omnitrace-instrument')
+# TODO: [DFG] Remove this file after 'rocprof-sys' rebranding is complete
+# omnitrace-exe target (deprecated 'omnitrace' executable, now 'rocprof-sys-instrument')
 #
 # ------------------------------------------------------------------------------#
 

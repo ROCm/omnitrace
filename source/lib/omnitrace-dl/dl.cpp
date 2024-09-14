@@ -1361,10 +1361,10 @@ verify_instrumented_preloaded()
         mpirun -n 2 omnitrace-run -- <EXECUTABLE> <ARGS...>
 
     Note: the command-line arguments passed to 'omnitrace-run' (which are specified before the double hyphen) will override configuration variables
-    and/or any configuration values specified to 'omnitrace-instrument' via the '--config' or '--env' options.
+    and/or any configuration values specified to 'rocprof-sys-instrument' via the '--config' or '--env' options.
     E.g.:
 
-        $ omnitrace-instrument -o ./sleep.inst --env OMNITRACE_SAMPLING_DELAY=5.0 -- sleep
+        $ rocprof-sys-instrument -o ./sleep.inst --env OMNITRACE_SAMPLING_DELAY=5.0 -- sleep
         $ echo "OMNITRACE_SAMPLING_FREQ = 500" > omnitrace.cfg
         $ export OMNITRACE_CONFIG_FILE=omnitrace.cfg
         $ omnitrace-run --sampling-freq=100 --sampling-delay=1.0 -- ./sleep.inst 10

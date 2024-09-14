@@ -66,10 +66,10 @@ main(int argc, char** argv)
                                                                                                                                    gggggg
 
 
-    OmniTrace has renamed the "omnitrace" executable to "omnitrace-instrument" to reduce confusion.
+    OmniTrace has renamed the "omnitrace" executable to "rocprof-sys-instrument" to reduce confusion.
 
     This executable only exists to provide this deprecation warning and maintain backwards compatibility for a few releases.
-    This executable will soon invoke "omnitrace-instrument" with the arguments you just provided after we've given you
+    This executable will soon invoke "rocprof-sys-instrument" with the arguments you just provided after we've given you
     a chance to read this message.
 
     If you are running this job interactively, please acknowledge that you've read this message and whether you want to continue.
@@ -96,7 +96,7 @@ main(int argc, char** argv)
         _emit_warning();
         std::cerr << "[" << argv[0] << "] Detected " << _env_var
                   << " environment variable. Exiting to prevent consuming CI resources. "
-                     "Use \"omnitrace-instrument\" executable instead of \"omnitrace\" "
+                     "Use \"rocprof-sys-instrument\" executable instead of \"omnitrace\" "
                      "to prevent this error."
                   << std::endl;
         std::exit(EXIT_FAILURE);

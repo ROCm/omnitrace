@@ -466,11 +466,11 @@ main(int argc, char** argv)
     // it is unrecognized, then set the errflag to report an error.  When we come to a
     // non '-' charcter, then we must be at the application name.
     using parser_t = tim::argparse::argument_parser;
-    parser_t parser("omnitrace-instrument");
+    parser_t parser("rocprof-sys-instrument");
     string_t extra_help = "-- <CMD> <ARGS>";
 
     parser.enable_help();
-    parser.enable_version("omnitrace-instrument", OMNITRACE_ARGPARSE_VERSION_INFO);
+    parser.enable_version("rocprof-sys-instrument", OMNITRACE_ARGPARSE_VERSION_INFO);
 
     parser.add_argument({ "" }, "");
     parser.add_argument({ "[DEBUG OPTIONS]" }, "");
