@@ -115,8 +115,8 @@ jobs:
         ldd $(which rocprof-sys-avail)
         rocprof-sys-avail --help
         rocprof-sys-avail -a
-        which omnitrace
-        ldd $(which omnitrace)
+        which rocprof-sys-instrument
+        ldd $(which rocprof-sys-instrument)
         rocprof-sys-instrument --help
         rocprof-sys-instrument -e -v 1 -o ls.inst --simulate -- ls
         for i in $(find omnitrace-ls.inst-output -type f); do echo -e "\n\n --> ${i} \n\n"; cat ${i}; done

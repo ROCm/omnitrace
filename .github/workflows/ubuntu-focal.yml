@@ -168,8 +168,8 @@ jobs:
         module use ./share/modulefiles
         module avail
         module load omnitrace
-        echo $(which omnitrace)
-        ldd $(which omnitrace)
+        echo $(which rocprof-sys-instrument)
+        ldd $(which rocprof-sys-instrument)
         rocprof-sys-instrument --help
         rocprof-sys-avail --help
         rocprof-sys-sample --help
@@ -180,8 +180,8 @@ jobs:
       run: |
         cd build
         source ./share/omnitrace/setup-env.sh
-        echo $(which omnitrace)
-        ldd $(which omnitrace)
+        echo $(which rocprof-sys-instrument)
+        ldd $(which rocprof-sys-instrument)
         rocprof-sys-instrument --help
         rocprof-sys-avail --help
         rocprof-sys-sample --help
