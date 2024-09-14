@@ -195,20 +195,20 @@ endif()
 
 execute_process(
     COMMAND ${CMAKE_CXX_COMPILER} -O2 -g -std=c++17
-            ${CMAKE_CURRENT_LIST_DIR}/omnitrace-capchk.cpp -o omnitrace-capchk
+            ${CMAKE_CURRENT_LIST_DIR}/omnitrace-capchk.cpp -o rocprof-sys-capchk
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/bin
     RESULT_VARIABLE _capchk_compile
     OUTPUT_QUIET ERROR_QUIET)
 
 if(_capchk_compile EQUAL 0)
     execute_process(
-        COMMAND ${PROJECT_BINARY_DIR}/bin/omnitrace-capchk CAP_SYS_ADMIN effective
+        COMMAND ${PROJECT_BINARY_DIR}/bin/rocprof-sys-capchk CAP_SYS_ADMIN effective
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
         RESULT_VARIABLE omnitrace_cap_sys_admin
         OUTPUT_QUIET ERROR_QUIET)
 
     execute_process(
-        COMMAND ${PROJECT_BINARY_DIR}/bin/omnitrace-capchk CAP_PERFMON effective
+        COMMAND ${PROJECT_BINARY_DIR}/bin/rocprof-sys-capchk CAP_PERFMON effective
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
         RESULT_VARIABLE omnitrace_cap_perfmon
         OUTPUT_QUIET ERROR_QUIET)

@@ -353,7 +353,7 @@ int
 main(int argc, char** argv)
 {
     const auto* _usage = R"usage(
-usage: omnitrace-capchk <capability-name> <capability-set> <pid>
+usage: rocprof-sys-capchk <capability-name> <capability-set> <pid>
 
     Description:
         Simple tool for checking the effective capabilities of a running process
@@ -382,10 +382,10 @@ usage: omnitrace-capchk <capability-name> <capability-set> <pid>
         3 if the capability set name is not supported
 
     Examples:
-        $ omnitrace-capchk CAP_SYS_ADMIN
+        $ rocprof-sys-capchk CAP_SYS_ADMIN
             Check if this exe (self) has CAP_SYS_ADMIN capability in the (default) effective capability set
 
-        $ omnitrace-capchk sys_admin bounding 423032
+        $ rocprof-sys-capchk sys_admin bounding 423032
             Check if process 423032 has CAP_SYS_ADMIN capability in the bounding capability set
     )usage";
 
