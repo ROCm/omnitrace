@@ -202,7 +202,7 @@ get_initial_environment()
     update_env(_env, "OMNITRACE_USE_PROCESS_SAMPLING", false);
     update_env(_env, "OMNITRACE_THREAD_POOL_SIZE",
                get_env<int>("OMNITRACE_THREAD_POOL_SIZE", 0));
-    update_env(_env, "OMNITRACE_LAUNCHER", "omnitrace-causal");
+    update_env(_env, "OMNITRACE_LAUNCHER", "rocprof-sys-causal");
 
     return _env;
 }
@@ -228,7 +228,7 @@ prepare_command_for_run(char* _exe, std::vector<char*>& _argv)
         if(!_injected)
         {
             throw std::runtime_error(
-                join("", "omnitrace-causal was unable to match \"", launcher,
+                join("", "rocprof-sys-causal was unable to match \"", launcher,
                      "\" to any arguments on the command line: \"",
                      join(array_config{ " ", "", "" }, _argv), "\""));
         }
@@ -419,13 +419,13 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
     This executable is designed to streamline that process.
     For example (assume all commands end with '-- <exe> <args>'):
 
-        omnitrace-causal -n 5 -- <exe>                  # runs <exe> 5x with causal profiling enabled
+        rocprof-sys-causal -n 5 -- <exe>                  # runs <exe> 5x with causal profiling enabled
 
-        omnitrace-causal -s 0 5,10,15,20                # runs <exe> 2x with virtual speedups:
+        rocprof-sys-causal -s 0 5,10,15,20                # runs <exe> 2x with virtual speedups:
                                                         #   - 0
                                                         #   - randomly selected from 5, 10, 15, and 20
 
-        omnitrace-causal -F func_A func_B func_(A|B)    # runs <exe> 3x with the function scope limited to:
+        rocprof-sys-causal -F func_A func_B func_(A|B)    # runs <exe> 3x with the function scope limited to:
                                                         #   1. func_A
                                                         #   2. func_B
                                                         #   3. func_A or func_B
@@ -435,8 +435,8 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
     - Collect a flat profile via sampling
         - E.g., rocprof-sys-sample -F -- <exe> <args>
         - Inspect sampling_wall_clock.txt and sampling_cpu_clock.txt for functions to target
-    - Run omnitrace-causal in "function" mode first (does not require debug info)
-    - Run omnitrace-causal in "line" mode when you are targeting one function (requires debug info)
+    - Run rocprof-sys-causal in "function" mode first (does not require debug info)
+    - Run rocprof-sys-causal in "line" mode when you are targeting one function (requires debug info)
         - Preferably, use predictions from the "function" mode to determine which function to target
     - Limit the virtual speedups to a smaller pool, e.g., 0,5,10,25,50, to get reliable predictions quicker
     - Make use of the binary, source, and function scope to limit the functions/lines selected for experiments
@@ -451,7 +451,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
     });
 
     parser.enable_help();
-    parser.enable_version("omnitrace-causal", OMNITRACE_ARGPARSE_VERSION_INFO);
+    parser.enable_version("rocprof-sys-causal", OMNITRACE_ARGPARSE_VERSION_INFO);
 
     auto _cols = std::get<0>(console::get_columns());
     if(_cols > parser.get_help_width() + 8)
@@ -483,7 +483,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         });
 
     std::string _config_file      = {};
-    std::string _config_folder    = "omnitrace-causal-config";
+    std::string _config_folder    = "rocprof-sys-causal-config";
     bool        _generate_configs = false;
     bool        _add_defaults     = true;
 
@@ -498,10 +498,10 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
     parser
         .add_argument(
             { "-l", "--launcher" },
-            "When running MPI jobs, omnitrace-causal needs to be *before* the executable "
+            "When running MPI jobs, rocprof-sys-causal needs to be *before* the executable "
             "which launches the MPI processes (i.e. before `mpirun`, `srun`, etc.). Pass "
             "the name of the target executable (or a regex for matching to the name of "
-            "the target) for causal profiling, e.g., `omnitrace-causal -l foo -- mpirun "
+            "the target) for causal profiling, e.g., `rocprof-sys-causal -l foo -- mpirun "
             "-n 4 foo`. This ensures that the omnitrace library is LD_PRELOADed on the "
             "proper target")
         .count(1)
@@ -511,7 +511,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         .add_argument({ "-g", "--generate-configs" },
                       "Generate config files instead of passing environment variables "
                       "directly. If no arguments are provided, the config files will be "
-                      "placed in ${PWD}/omnitrace-causal-config folder")
+                      "placed in ${PWD}/rocprof-sys-causal-config folder")
         .min_count(0)
         .max_count(1)
         .dtype("folder")

@@ -17,7 +17,8 @@ target_link_libraries(
             omnitrace::omnitrace-common-library omnitrace::omnitrace-core)
 set_target_properties(
     omnitrace-causal PROPERTIES BUILD_RPATH "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
-                                INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}")
+                                INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}"
+                                OUTPUT_NAME "rocprof-sys-causal")
 
 omnitrace_strip_target(omnitrace-causal)
 

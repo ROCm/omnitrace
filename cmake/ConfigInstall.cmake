@@ -45,9 +45,9 @@ export(PACKAGE ${PROJECT_NAME})
 #
 configure_file(
     ${PROJECT_SOURCE_DIR}/tests/validate-causal-json.py
-    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/omnitrace-causal-print COPYONLY)
+    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/rocprof-sys-causal-print COPYONLY)
 
-install(PROGRAMS ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/omnitrace-causal-print
+install(PROGRAMS ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/rocprof-sys-causal-print
         DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # ------------------------------------------------------------------------------#

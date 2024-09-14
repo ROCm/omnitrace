@@ -22,7 +22,7 @@
 
 #pragma once
 
-#define TIMEMORY_PROJECT_NAME "omnitrace-causal"
+#define TIMEMORY_PROJECT_NAME "rocprof-sys-causal"
 
 #include <csignal>
 #include <map>

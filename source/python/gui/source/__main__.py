@@ -118,7 +118,7 @@ def main():
 
     for itr in [
         settings_path,
-        os.path.join(os.environ.get("HOME"), ".omnitrace-causal-plot.json"),
+        os.path.join(os.environ.get("HOME"), ".rocprof-sys-causal-plot.json"),
     ]:
         if os.path.exists(itr):
             with open(itr, "r") as f:
@@ -150,11 +150,11 @@ def main():
             prog, max_help_position=40
         ),
         usage="""
-        omnitrace-causal-plot [ARGS...]
+        rocprof-sys-causal-plot [ARGS...]
 
         -------------------------------------------------------------------------------
         Examples:
-        \tomnitrace-causal-plot --path workloads/toy -n 0
+        \trocprof-sys-causal-plot --path workloads/toy -n 0
         -------------------------------------------------------------------------------
         """,
     )
@@ -162,7 +162,7 @@ def main():
     my_parser.add_argument(
         "--version",
         action="version",
-        version="OmniTrace Causal Viewer v{}\n".format(f"{__version__}".strip("\n")),
+        version="ROCm Systems Profiler Causal Viewer v{}\n".format(f"{__version__}".strip("\n")),
     )
 
     my_parser.add_argument(
