@@ -50,7 +50,7 @@ usage()
     print_option source-dir "<PATH>" "Location of source directory" "${SOURCE_DIR}"
     print_option test-omnitrace-instrument "0|1" "Enable testing omnitrace-instrument exe" "${ENABLE_OMNITRACE_INSTRUMENT}"
     print_option test-rocprof-sys-avail "0|1" "Enable testing rocprof-sys-avail" "${ENABLE_OMNITRACE_AVAIL}"
-    print_option test-omnitrace-sample "0|1" "Enable testing omnitrace-sample" "${ENABLE_OMNITRACE_SAMPLE}"
+    print_option test-rocprof-sys-sample "0|1" "Enable testing rocprof-sys-sample" "${ENABLE_OMNITRACE_SAMPLE}"
     print_option test-omnitrace-python "0|1" "Enable testing omnitrace-python" "${ENABLE_OMNITRACE_PYTHON}"
     print_option test-omnitrace-rewrite "0|1" "Enable testing omnitrace-instrument binary rewrite" "${ENABLE_OMNITRACE_REWRITE}"
     print_option test-omnitrace-runtime "0|1" "Enable testing omnitrace-instrument runtime instrumentation" "${ENABLE_OMNITRACE_RUNTIME}"
@@ -108,7 +108,7 @@ do
             ENABLE_OMNITRACE_AVAIL=${VAL}
             continue
             ;;
-        --test-omnitrace-sample)
+        --test-rocprof-sys-sample)
             ENABLE_OMNITRACE_SAMPLE=${VAL}
             continue
             ;;
@@ -151,12 +151,12 @@ test-rocprof-sys-avail()
     verbose-run rocprof-sys-avail -a
 }
 
-test-omnitrace-sample()
+test-rocprof-sys-sample()
 {
-    verbose-run which omnitrace-sample
-    verbose-run ldd $(which omnitrace-sample)
-    verbose-run omnitrace-sample --help
-    verbose-run omnitrace-sample --cputime 100 --realtime 50 --hsa-interrupt 0 -TPH -- python3 ${SOURCE_DIR}/examples/python/external.py -n 5 -v 20
+    verbose-run which rocprof-sys-sample
+    verbose-run ldd $(which rocprof-sys-sample)
+    verbose-run rocprof-sys-sample --help
+    verbose-run rocprof-sys-sample --cputime 100 --realtime 50 --hsa-interrupt 0 -TPH -- python3 ${SOURCE_DIR}/examples/python/external.py -n 5 -v 20
 }
 
 test-omnitrace-python()
@@ -200,7 +200,7 @@ test-omnitrace-runtime()
 
 if [ "${ENABLE_OMNITRACE_INSTRUMENT}" -ne 0 ]; then verbose-run test-omnitrace; fi
 if [ "${ENABLE_OMNITRACE_AVAIL}" -ne 0 ]; then verbose-run test-rocprof-sys-avail; fi
-if [ "${ENABLE_OMNITRACE_SAMPLE}" -ne 0 ]; then verbose-run test-omnitrace-sample; fi
+if [ "${ENABLE_OMNITRACE_SAMPLE}" -ne 0 ]; then verbose-run test-rocprof-sys-sample; fi
 if [ "${ENABLE_OMNITRACE_PYTHON}" -ne 0 ]; then verbose-run test-omnitrace-python; fi
 if [ "${ENABLE_OMNITRACE_REWRITE}" -ne 0 ]; then verbose-run test-omnitrace-rewrite; fi
 if [ "${ENABLE_OMNITRACE_RUNTIME}" -ne 0 ]; then verbose-run test-omnitrace-runtime; fi

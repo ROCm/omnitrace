@@ -433,7 +433,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
     - Insert progress points at hotspots in your code or use omnitrace's runtime instrumentation
         - Note: binary rewrite will produce a incompatible new binary
     - Collect a flat profile via sampling
-        - E.g., omnitrace-sample -F -- <exe> <args>
+        - E.g., rocprof-sys-sample -F -- <exe> <args>
         - Inspect sampling_wall_clock.txt and sampling_cpu_clock.txt for functions to target
     - Run omnitrace-causal in "function" mode first (does not require debug info)
     - Run omnitrace-causal in "line" mode when you are targeting one function (requires debug info)

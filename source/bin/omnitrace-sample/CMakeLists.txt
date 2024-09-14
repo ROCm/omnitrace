@@ -15,7 +15,8 @@ target_link_libraries(
             omnitrace::omnitrace-common-library)
 set_target_properties(
     omnitrace-sample PROPERTIES BUILD_RPATH "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
-                                INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}")
+                                INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}"
+                                OUTPUT_NAME "rocprof-sys-sample")
 
 omnitrace_strip_target(omnitrace-sample)
 

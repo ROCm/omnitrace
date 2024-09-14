@@ -172,7 +172,7 @@ jobs:
         ldd $(which omnitrace)
         omnitrace-instrument --help
         rocprof-sys-avail --help
-        omnitrace-sample --help
+        rocprof-sys-sample --help
 
     - name: Test Build-Tree Source Script
       timeout-minutes: 45
@@ -184,7 +184,7 @@ jobs:
         ldd $(which omnitrace)
         omnitrace-instrument --help
         rocprof-sys-avail --help
-        omnitrace-sample --help
+        rocprof-sys-sample --help
 
     - name: Install
       timeout-minutes: 10
