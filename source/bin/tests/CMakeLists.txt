@@ -375,11 +375,11 @@ omnitrace_add_bin_test(
     )
 
 omnitrace_add_bin_test(
-    NAME omnitrace-run-help
+    NAME rocprof-sys-run-help
     TARGET omnitrace-run
     ARGS --help
     TIMEOUT 45
-    LABELS "omnitrace-run")
+    LABELS "rocprof-sys-run")
 
 file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/omnitrace-tests-config")
 file(
@@ -396,7 +396,7 @@ set_target_properties(
                                                  ${PROJECT_BINARY_DIR}/bin/testing)
 
 omnitrace_add_bin_test(
-    NAME omnitrace-run-args
+    NAME rocprof-sys-run-args
     TARGET omnitrace-run
     ARGS --monochrome
          --debug=false
@@ -406,7 +406,7 @@ omnitrace_add_bin_test(
          %env{TWD}%/omnitrace-tests-config/empty.cfg
          -o
          omnitrace-tests-output
-         omnitrace-run-args-output/
+         rocprof-sys-run-args-output/
          -TPHD
          -S
          cputime
@@ -489,4 +489,4 @@ omnitrace_add_bin_test(
          $<TARGET_FILE:sleeper>
          5
     TIMEOUT 45
-    LABELS "omnitrace-run")
+    LABELS "rocprof-sys-run")

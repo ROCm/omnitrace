@@ -181,7 +181,7 @@ test-rocprof-sys-rewrite()
     verbose-run rocprof-sys-instrument -e -v 1 -o ${CONFIG_DIR}/ls.inst --simulate -- ${LS_NAME}
     for i in $(find ${CONFIG_DIR}/omnitrace-tests-output/ls.inst -type f); do verbose-run ls ${i}; done
     verbose-run rocprof-sys-instrument -e -v 1 -o ${CONFIG_DIR}/ls.inst -- ${LS_NAME}
-    verbose-run omnitrace-run -- ${CONFIG_DIR}/ls.inst ${LS_ARGS}
+    verbose-run rocprof-sys-run -- ${CONFIG_DIR}/ls.inst ${LS_ARGS}
 }
 
 test-rocprof-sys-runtime()

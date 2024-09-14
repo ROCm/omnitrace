@@ -1345,11 +1345,13 @@ verify_instrumented_preloaded()
                     \____/|_|  |_|_| \_|_____|  |_|  |_|  \_\/_/    \_\_____|______|    |_|  \_\\____/|_| \_|
 
 
-    Due to a variety of edge cases we've encountered, OmniTrace now requires that binary rewritten executables and libraries be launched
-    with the 'omnitrace-run' executable.
+    Due to a variety of edge cases we've encountered, ROCm Systems Profiller now requires that binary rewritten
+    executables and libraries be launched with the 'rocprof-sys-run' executable.
 
-    In order to launch the executable with 'omnitrace-run', prefix the current command with 'omnitrace-run' and a standalone double hyphen ('--').
-    For MPI applications, place 'omnitrace-run --' after the MPI command.
+    In order to launch the executable with 'rocprof-sys-run', prefix the current command with 'rocprof-sys-run'
+    and a standalone double hyphen ('--').
+
+    For MPI applications, place 'rocprof-sys-run --' after the MPI command.
     E.g.:
 
         <EXECUTABLE> <ARGS...>
@@ -1357,23 +1359,23 @@ verify_instrumented_preloaded()
 
     should be:
 
-        omnitrace-run -- <EXECUTABLE> <ARGS...>
-        mpirun -n 2 omnitrace-run -- <EXECUTABLE> <ARGS...>
+        rocprof-sys-run -- <EXECUTABLE> <ARGS...>
+        mpirun -n 2 rocprof-sys-run -- <EXECUTABLE> <ARGS...>
 
-    Note: the command-line arguments passed to 'omnitrace-run' (which are specified before the double hyphen) will override configuration variables
+    Note: the command-line arguments passed to 'rocprof-sys-run' (which are specified before the double hyphen) will override configuration variables
     and/or any configuration values specified to 'rocprof-sys-instrument' via the '--config' or '--env' options.
     E.g.:
 
         $ rocprof-sys-instrument -o ./sleep.inst --env OMNITRACE_SAMPLING_DELAY=5.0 -- sleep
         $ echo "OMNITRACE_SAMPLING_FREQ = 500" > omnitrace.cfg
         $ export OMNITRACE_CONFIG_FILE=omnitrace.cfg
-        $ omnitrace-run --sampling-freq=100 --sampling-delay=1.0 -- ./sleep.inst 10
+        $ rocprof-sys-run --sampling-freq=100 --sampling-delay=1.0 -- ./sleep.inst 10
 
     In the first command, a default sampling delay of 5 seconds in embedded into the instrumented 'sleep.inst'.
-    In the second command, the sampling frequency will be set to 500 interrupts per second when OmniTrace reads the config file
+    In the second command, the sampling frequency will be set to 500 interrupts per second when ROCm Systems Profiller reads the config file
     In the fourth command, the sampling frequency and sampling delay are overridden to 100 interrupts per second and 1 second, respectively, when sleep.inst runs
 
-    Thanks for using OmniTrace and happy optimizing!
+    Thanks for using ROCm Systems Profiler and happy optimizing!
     )notice";
 
     // emit notice

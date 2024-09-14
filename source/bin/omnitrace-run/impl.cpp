@@ -176,7 +176,7 @@ prepare_command_for_run(char* _exe, parser_data_t& _data)
         if(!_injected)
         {
             throw std::runtime_error(
-                join("", "omnitrace-run was unable to match \"", _data.launcher,
+                join("", "rocprof-sys-run was unable to match \"", _data.launcher,
                      "\" to any arguments on the command line: \"",
                      join(array_config{ " ", "", "" }, _data.command), "\""));
         }
@@ -292,8 +292,8 @@ parse_args(int argc, char** argv, parser_data_t& _parser_data, bool& _fork_exec)
         exit(EXIT_FAILURE);
     });
 
-    parser.enable_help("", "Usage: omnitrace-run <OPTIONS> -- <COMMAND> <ARGS>");
-    parser.enable_version("omnitrace-run", OMNITRACE_ARGPARSE_VERSION_INFO);
+    parser.enable_help("", "Usage: rocprof-sys-run <OPTIONS> -- <COMMAND> <ARGS>");
+    parser.enable_version("rocprof-sys-run", OMNITRACE_ARGPARSE_VERSION_INFO);
 
     auto _cols = std::get<0>(console::get_columns());
     if(_cols > parser.get_help_width() + 8)
