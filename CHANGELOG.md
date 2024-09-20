@@ -3,7 +3,7 @@
 Full documentation for Omnitrace is available at
 [https://rocm.docs.amd.com/projects/omnitrace/en/latest](https://rocm.docs.amd.com/projects/omnitrace/en/latest).
 
-## Omnitrace v1.11.2 for rocm-6.2.0
+## Omnitrace v1.11.2 for ROCm 6.2.0
 
 ### Known Issues
 
