@@ -482,8 +482,8 @@ set(perfetto_DIR ${PROJECT_SOURCE_DIR}/external/perfetto)
 omnitrace_checkout_git_submodule(
     RELATIVE_PATH external/perfetto
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    REPO_URL https://android.googlesource.com/platform/external/perfetto
-    REPO_BRANCH v28.0
+    REPO_URL https://github.com/google/perfetto.git
+    REPO_BRANCH v46.0
     TEST_FILE sdk/perfetto.cc)
 
 include(Perfetto)
