@@ -16,7 +16,7 @@ Omnitrace quick start
 
    .. code-block:: shell
 
-      wget https://github.com/ROCm/omnitrace/releases/{{ config.version }}/download/omnitrace-install.py
+      wget https://github.com/ROCm/omnitrace/releases/download/v{{ config.version }}/omnitrace-install.py
       python3 ./omnitrace-install.py --prefix /opt/omnitrace --rocm 6.2
 
 This script supports installation on Ubuntu, OpenSUSE, Red Hat, Debian, CentOS, and Fedora.
