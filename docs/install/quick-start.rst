@@ -6,16 +6,18 @@
 Omnitrace quick start
 *************************************
 
-To install Omnitrace, download the `Omnitrace installer <https://github.com/ROCm/omnitrace/releases/latest/download/omnitrace-install.py>`_ 
-and specify ``--prefix <install-directory>``. The script attempts to auto-detect 
-the appropriate OS distribution and version. To include AMD ROCm Software support, 
-specify ``--rocm X.Y``, where ``X`` is the ROCm major
-version and ``Y`` is the ROCm minor version, for example, ``--rocm 6.2``.
+.. datatemplate:nodata::
 
-.. code-block:: shell
+   To install Omnitrace, download the `Omnitrace installer <https://github.com/ROCm/omnitrace/releases/v{{ config.version }}/download/omnitrace-install.py>`_ 
+   and specify ``--prefix <install-directory>``. The script attempts to auto-detect 
+   the appropriate OS distribution and version. To include AMD ROCm Software support, 
+   specify ``--rocm X.Y``, where ``X`` is the ROCm major
+   version and ``Y`` is the ROCm minor version, for example, ``--rocm 6.2``.
 
-   wget https://github.com/ROCm/omnitrace/releases/latest/download/omnitrace-install.py
-   python3 ./omnitrace-install.py --prefix /opt/omnitrace --rocm 6.2
+   .. code-block:: shell
+
+      wget https://github.com/ROCm/omnitrace/releases/{{ config.version }}/download/omnitrace-install.py
+      python3 ./omnitrace-install.py --prefix /opt/omnitrace --rocm 6.2
 
 This script supports installation on Ubuntu, OpenSUSE, Red Hat, Debian, CentOS, and Fedora.
 If the target OS is compatible with one of the operating system versions listed in
