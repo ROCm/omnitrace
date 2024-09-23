@@ -35,7 +35,7 @@ with open("../VERSION", encoding="utf-8") as f:
     version_number = match[1]
 
 # project info
-project = "Omniperf"
+project = "Omnitrace"
 author = "Advanced Micro Devices, Inc."
 copyright = "Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved."
 version = version_number
@@ -55,4 +55,3 @@ doxygen_project = {
     "name": "Omnitrace API",
     "path": "doxygen/xml",
 }
-external_projects_remote_repository = ""

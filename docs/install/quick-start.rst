@@ -8,7 +8,7 @@ Omnitrace quick start
 
 .. datatemplate:nodata::
 
-   To install Omnitrace, download the `Omnitrace installer <https://github.com/ROCm/omnitrace/releases/v{{ config.version }}/download/omnitrace-install.py>`_ 
+   To install Omnitrace, download the `Omnitrace installer <https://github.com/ROCm/omnitrace/releases/download/v{{ config.version }}/omnitrace-install.py>`_ 
    and specify ``--prefix <install-directory>``. The script attempts to auto-detect 
    the appropriate OS distribution and version. To include AMD ROCm Software support, 
    specify ``--rocm X.Y``, where ``X`` is the ROCm major
