@@ -52,7 +52,7 @@ external_projects_current_project = "omnitrace"
 doxygen_root = "doxygen"
 doxysphinx_enabled = True
 doxygen_project = {
-    "name": "ROCm Docs Core Test Project - Extension",
+    "name": "Omnitrace API",
     "path": "doxygen/xml",
 }
 external_projects_remote_repository = ""
