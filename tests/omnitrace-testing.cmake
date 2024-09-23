@@ -799,12 +799,12 @@ function(OMNITRACE_ADD_PYTHON_TEST)
         else()
             add_test(
                 NAME ${TEST_NAME}-${TEST_PYTHON_VERSION}
-                COMMAND ${TEST_PYTHON_EXECUTABLE} -m omnitrace ${TEST_PROFILE_ARGS} --
+                COMMAND ${TEST_PYTHON_EXECUTABLE} -m rocprofsys ${TEST_PROFILE_ARGS} --
                         ${_TEST_FILE} ${TEST_RUN_ARGS}
                 WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
             add_test(
                 NAME ${TEST_NAME}-${TEST_PYTHON_VERSION}-annotated
-                COMMAND ${TEST_PYTHON_EXECUTABLE} -m omnitrace ${TEST_PROFILE_ARGS}
+                COMMAND ${TEST_PYTHON_EXECUTABLE} -m rocprofsys ${TEST_PROFILE_ARGS}
                         --annotate-trace -- ${_TEST_FILE} ${TEST_RUN_ARGS}
                 WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
         endif()

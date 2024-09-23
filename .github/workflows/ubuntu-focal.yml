@@ -199,7 +199,7 @@ jobs:
         module use /opt/omnitrace/share/modulefiles
         module avail
         module load omnitrace
-        ./scripts/test-install.sh --test-rocprof-sys-{instrument,avail,sample,rewrite,runtime}=1 --test-omnitrace-python=${{ matrix.python }}
+        ./scripts/test-install.sh --test-rocprof-sys-{instrument,avail,sample,rewrite,runtime}=1 --test-rocprof-sys-python=${{ matrix.python }}
 
     - name: Test User API
       timeout-minutes: 10

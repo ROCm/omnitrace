@@ -48,7 +48,7 @@ usage()
     print_option() { printf "    --%-10s %-30s     %s (default: %s)\n" "${1}" "${2}" "${3}" "${4}"; }
     echo "Options:"
     print_option source-dir "<PATH>" "Location of source directory" "${SOURCE_DIR}"
-    print_option test-rocprof-sys-instrument "0|1" "Enable testing rocprof-sys-instrument exe" "${ENABLE_OMNITRACE_INSTRUMENT}"
+    print_option test-rocprof-sys-instrument "0|1" "Enable testing rocprof-sys-instrument" "${ENABLE_OMNITRACE_INSTRUMENT}"
     print_option test-rocprof-sys-avail "0|1" "Enable testing rocprof-sys-avail" "${ENABLE_OMNITRACE_AVAIL}"
     print_option test-rocprof-sys-sample "0|1" "Enable testing rocprof-sys-sample" "${ENABLE_OMNITRACE_SAMPLE}"
     print_option test-rocprof-sys-python "0|1" "Enable testing rocprof-sys-python" "${ENABLE_OMNITRACE_PYTHON}"
@@ -136,10 +136,10 @@ do
     esac
 done
 
-test-omnitrace()
+test-rocprof-sys-instrument()
 {
-    verbose-run which omnitrace
-    verbose-run ldd $(which omnitrace)
+    verbose-run which rocprof-sys-instrument
+    verbose-run ldd $(which rocprof-sys-instrument)
     verbose-run rocprof-sys-instrument --help
 }
 
@@ -161,11 +161,11 @@ test-rocprof-sys-sample()
 
 test-rocprof-sys-python()
 {
-    verbose-run which omnitrace-python
-    verbose-run omnitrace-python --help
-    verbose-run omnitrace-python -b -- ${SOURCE_DIR}/examples/python/builtin.py -n 5 -v 5
-    verbose-run omnitrace-python -b -- ${SOURCE_DIR}/examples/python/noprofile.py -n 5 -v 5
-    verbose-run omnitrace-python -- ${SOURCE_DIR}/examples/python/external.py -n 5 -v 5
+    verbose-run which rocprof-sys-python
+    verbose-run rocprof-sys-python --help
+    verbose-run rocprof-sys-python -b -- ${SOURCE_DIR}/examples/python/builtin.py -n 5 -v 5
+    verbose-run rocprof-sys-python -b -- ${SOURCE_DIR}/examples/python/noprofile.py -n 5 -v 5
+    verbose-run rocprof-sys-python -- ${SOURCE_DIR}/examples/python/external.py -n 5 -v 5
     verbose-run python3 ${SOURCE_DIR}/examples/python/source.py -n 5 -v 5
 }
 
@@ -198,7 +198,7 @@ test-rocprof-sys-runtime()
     verbose-run rocprof-sys-instrument -e -v 1 -- ${LS_NAME} ${LS_ARGS}
 }
 
-if [ "${ENABLE_OMNITRACE_INSTRUMENT}" -ne 0 ]; then verbose-run test-omnitrace; fi
+if [ "${ENABLE_OMNITRACE_INSTRUMENT}" -ne 0 ]; then verbose-run test-rocprof-sys-instrument; fi
 if [ "${ENABLE_OMNITRACE_AVAIL}" -ne 0 ]; then verbose-run test-rocprof-sys-avail; fi
 if [ "${ENABLE_OMNITRACE_SAMPLE}" -ne 0 ]; then verbose-run test-rocprof-sys-sample; fi
 if [ "${ENABLE_OMNITRACE_PYTHON}" -ne 0 ]; then verbose-run test-rocprof-sys-python; fi

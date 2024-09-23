@@ -28,16 +28,16 @@ function(OMNITRACE_CONFIGURE_PYTARGET _TARGET _VERSION)
         PROPERTIES PREFIX ""
                    OUTPUT_NAME libpyomnitrace
                    LIBRARY_OUTPUT_DIRECTORY
-                   ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}/omnitrace
+                   ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}/rocprofsys
                    ARCHIVE_OUTPUT_DIRECTORY
-                   ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}/omnitrace
+                   ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}/rocprofsys
                    RUNTIME_OUTPUT_DIRECTORY
-                   ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}/omnitrace
+                   ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}/rocprofsys
                    PDB_OUTPUT_DIRECTORY
-                   ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}/omnitrace
+                   ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}/rocprofsys
                    ${EXTRA_PROPERTIES})
 
-    set(_PYLIB ${CMAKE_INSTALL_PYTHONDIR}/omnitrace)
+    set(_PYLIB ${CMAKE_INSTALL_PYTHONDIR}/rocprofsys)
     if(NOT IS_ABSOLUTE "${_PYLIB}")
         set(_PYLIB ${CMAKE_INSTALL_PREFIX}/${_PYLIB})
     endif()
@@ -54,7 +54,7 @@ function(OMNITRACE_CONFIGURE_PYTARGET _TARGET _VERSION)
 
     install(
         TARGETS ${_TARGET}
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/omnitrace
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/rocprofsys
         OPTIONAL)
 endfunction()
 
@@ -92,23 +92,23 @@ omnitrace_target_compile_definitions(libpyomnitrace-interface
 
 add_custom_target(libpyomnitrace)
 
-file(GLOB_RECURSE PYTHON_FILES ${CMAKE_CURRENT_SOURCE_DIR}/omnitrace/*.py)
+file(GLOB_RECURSE PYTHON_FILES ${CMAKE_CURRENT_SOURCE_DIR}/rocprofsys/*.py)
 foreach(_IN ${PYTHON_FILES})
-    string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/omnitrace"
-                   "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}/omnitrace" _OUT
+    string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/rocprofsys"
+                   "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}/rocprofsys" _OUT
                    "${_IN}")
     configure_file(${_IN} ${_OUT} @ONLY)
     install(
         FILES ${_OUT}
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/omnitrace
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/rocprofsys
         OPTIONAL)
 endforeach()
 
-omnitrace_python_console_script("omnitrace-python" "omnitrace")
+omnitrace_python_console_script("rocprof-sys-python" "rocprofsys")
 
 set(_INDEX 0)
 foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
-    # add_library(libpyomnitrace MODULE ${pysources} ${pyheaders})
+    # add_library(libpyrocprofsys MODULE ${pysources} ${pyheaders})
     list(GET OMNITRACE_PYTHON_ROOT_DIRS ${_INDEX} Python3_ROOT_DIR)
     omnitrace_pybind11_add_module(
         libpyomnitrace-${_VERSION} MODULE
@@ -118,7 +118,7 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
 
     if(OMNITRACE_USE_PYTHON)
         omnitrace_python_console_script(
-            "omnitrace-python" "omnitrace"
+            "rocprof-sys-python" "rocprofsys"
             VERSION ${_VERSION}
             ROOT_DIR "${Python3_ROOT_DIR}")
     endif()

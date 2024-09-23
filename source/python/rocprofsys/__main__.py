@@ -1,7 +1,7 @@
 #!/usr/bin/env python@_VERSION@
 # MIT License
 #
-# Copyright (c) 2022 Advanced Micro Devices, Inc. All Rights Reserved.
+# Copyright (c) 2024 Advanced Micro Devices, Inc. All Rights Reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,11 +23,11 @@
 
 from __future__ import absolute_import
 
-__author__ = "AMD Research"
-__copyright__ = "Copyright 2022, Advanced Micro Devices, Inc."
+__author__ = "AMD ROCm"
+__copyright__ = "Copyright 2024, Advanced Micro Devices, Inc."
 __license__ = "MIT"
 __version__ = "@PROJECT_VERSION@"
-__maintainer__ = "AMD Research"
+__maintainer__ = "AMD ROCm"
 __status__ = "Development"
 
 """ @file __main__.py
@@ -102,9 +102,9 @@ def parse_args(args=None):
         _default_label.append("line")
 
     parser = argparse.ArgumentParser(
-        "omnitrace",
+        "rocprofsys",
         add_help=True,
-        epilog="usage: {} -m omnitrace <OMNITRACE_ARGS> -- <SCRIPT> <SCRIPT_ARGS>".format(
+        epilog="usage: {} -m rocprofsys <OMNITRACE_ARGS> -- <SCRIPT> <SCRIPT_ARGS>".format(
             os.path.basename(sys.executable)
         ),
     )
@@ -290,7 +290,7 @@ def main(main_args=sys.argv):
                 raise RuntimeError(
                     "Could not determine input script in '{}'. Use '--' before "
                     "the script and its arguments to ensure correct parsing. \nE.g. "
-                    "python -m omnitrace -- ./script.py".format(" ".join(argv))
+                    "python -m rocprofsys -- ./script.py".format(" ".join(argv))
                 )
 
     if len(argv) > 1:
@@ -335,7 +335,7 @@ def main(main_args=sys.argv):
     _profiler_config.annotate_trace = opts.annotate_trace
     _profiler_config.verbosity = opts.verbosity
 
-    print("[omnitrace]> profiling: {}".format(argv))
+    print("[rocprofsys]> profiling: {}".format(argv))
 
     main_args[:] = argv
     if opts.setup is not None:

@@ -1,8 +1,8 @@
 [metadata]
-name = @PROJECT_NAME@
+name = rocprofsys
 url = @PROJECT_HOMEPAGE_URL@
 download_url = @PROJECT_HOMEPAGE_URL@.git
-maintainer = AMD Research
+maintainer = AMD ROCm
 license = MIT
 description = @PROJECT_DESCRIPTION@
 keywords =
@@ -30,6 +30,6 @@ classifiers =
     Topic :: Utilities
 
 [options]
-packages = @PROJECT_NAME@
+packages = rocprofsys
 zip_safe = false
 include_package_data = false
