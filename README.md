@@ -8,7 +8,8 @@
 [![Documentation](https://github.com/ROCm/omnitrace/actions/workflows/docs.yml/badge.svg)](https://github.com/ROCm/omnitrace/actions/workflows/docs.yml)
 
 > [!NOTE]
-> Perfetto validation is done with trace_processor v46.0, as there is a known issue with v47. If you are experiencing problems viewing you trace in[Perfetto UI v46.0](https://ui.perfetto.dev/v46.0-35b3d9845/#!/).
+> Perfetto validation is done with trace_processor v46.0, as there is a known issue with v47.0.
+If you are experiencing problems viewing you trace in the latest version of [Perfetto](http://ui.perfetto.dev), then try using [Perfetto UI v46.0](https://ui.perfetto.dev/v46.0-35b3d9845/#!/).
 
 ## Overview
 
