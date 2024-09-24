@@ -81,7 +81,7 @@ def parse_args(args=None):
     if args is None:
         args = sys.argv[1:]
 
-    from .libpyomnitrace.profiler import config as _profiler_config
+    from .libpyrocprofsys.profiler import config as _profiler_config
 
     def str2bool(v):
         if isinstance(v, bool):
@@ -312,14 +312,14 @@ def main(main_args=sys.argv):
             [os.environ.get("OMNITRACE_CONFIG_FILE", ""), opts.config]
         )
 
-    from .libpyomnitrace import initialize
+    from .libpyrocprofsys import initialize
 
     if os.path.isfile(argv[0]):
         argv[0] = os.path.realpath(argv[0])
 
     initialize(argv)
 
-    from .libpyomnitrace.profiler import config as _profiler_config
+    from .libpyrocprofsys.profiler import config as _profiler_config
 
     _profiler_config.trace_c = opts.trace_c
     _profiler_config.include_args = "args" in opts.label
@@ -408,6 +408,6 @@ if __name__ == "__main__":
         os.environ["OMNITRACE_USE_PID"] = "ON"
 
     main(args)
-    from .libpyomnitrace import finalize
+    from .libpyrocprofsys import finalize
 
     finalize()

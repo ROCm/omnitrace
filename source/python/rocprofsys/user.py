@@ -32,14 +32,14 @@ __status__ = "Development"
 
 from functools import wraps
 
-from . import libpyomnitrace
-from .libpyomnitrace import user as _libuser
-from .libpyomnitrace.user import start_trace
-from .libpyomnitrace.user import start_thread_trace
-from .libpyomnitrace.user import stop_trace
-from .libpyomnitrace.user import stop_thread_trace
-from .libpyomnitrace.user import push_region
-from .libpyomnitrace.user import pop_region
+from . import libpyrocprofsys
+from .libpyrocprofsys import user as _libuser
+from .libpyrocprofsys.user import start_trace
+from .libpyrocprofsys.user import start_thread_trace
+from .libpyrocprofsys.user import stop_trace
+from .libpyrocprofsys.user import stop_thread_trace
+from .libpyrocprofsys.user import push_region
+from .libpyrocprofsys.user import pop_region
 
 from .common import _initialize
 from .common import _file

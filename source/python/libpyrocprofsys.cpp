@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "libpyomnitrace.hpp"
+#include "libpyrocprofsys.hpp"
 #include "dl/dl.hpp"
 #include "library/coverage.hpp"
 #include "library/coverage/impl.hpp"
@@ -56,7 +56,7 @@
 #define OMNITRACE_PYTHON_VERSION                                                         \
     ((10000 * PY_MAJOR_VERSION) + (100 * PY_MINOR_VERSION) + PY_MICRO_VERSION)
 
-namespace pyomnitrace
+namespace pyrocprofsys
 {
 namespace pyprofile
 {
@@ -73,17 +73,17 @@ namespace pyuser
 py::module
 generate(py::module& _pymod);
 }
-}  // namespace pyomnitrace
+}  // namespace pyrocprofsys
 
 template <typename... Tp>
 using uomap_t = std::unordered_map<Tp...>;
 
-PYBIND11_MODULE(libpyomnitrace, omni)
+PYBIND11_MODULE(libpyrocprofsys, omni)
 {
-    using namespace pyomnitrace;
+    using namespace pyrocprofsys;
 
-    py::doc("Omnitrace Python bindings for profiling, user API, and code coverage "
-            "post-processing");
+    py::doc("ROCm Systems Profiler Python bindings for profiling, user API, and "
+            "code coverage post-processing");
 
     static bool _is_initialized = false;
     static bool _is_finalized   = false;
@@ -110,18 +110,18 @@ PYBIND11_MODULE(libpyomnitrace, omni)
         "initialize",
         [](const std::string& _v) {
             if(_is_initialized)
-                throw std::runtime_error("Error! omnitrace is already initialized");
+                throw std::runtime_error("Error! rocprofsys is already initialized");
             _is_initialized = true;
             omnitrace_set_mpi(_get_use_mpi(), false);
             omnitrace_init("trace", false, _v.c_str());
         },
-        "Initialize omnitrace");
+        "Initialize rocprofsys");
 
     omni.def(
         "initialize",
         [](const py::list& _v) {
             if(_is_initialized)
-                throw std::runtime_error("Error! omnitrace is already initialized");
+                throw std::runtime_error("Error! rocprofsys is already initialized");
             _is_initialized = true;
             omnitrace_set_instrumented(
                 static_cast<int>(omnitrace::dl::InstrumentMode::PythonProfile));
@@ -140,17 +140,17 @@ PYBIND11_MODULE(libpyomnitrace, omni)
             }
             omnitrace_init("trace", false, _cmd.c_str());
         },
-        "Initialize omnitrace");
+        "Initialize rocprofsys");
 
     omni.def(
         "finalize",
         []() {
             if(_is_finalized)
-                throw std::runtime_error("Error! omnitrace is already finalized");
+                throw std::runtime_error("Error! rocprofsys is already finalized");
             _is_finalized = true;
             omnitrace_finalize();
         },
-        "Finalize omnitrace");
+        "Finalize rocprofsys");
 
     pyprofile::generate(omni);
     pycoverage::generate(omni);
@@ -168,14 +168,14 @@ PYBIND11_MODULE(libpyomnitrace, omni)
         auto _msg =
             TIMEMORY_JOIN("", "dlopen(\"", _libpath, "\", RTLD_NOW | RTLD_GLOBAL)");
         perror(_msg.c_str());
-        fprintf(stderr, "[omnitrace][dl][pid=%i] %s :: %s\n", getpid(), _msg.c_str(),
+        fprintf(stderr, "[rocprofsys][dl][pid=%i] %s :: %s\n", getpid(), _msg.c_str(),
                 dlerror());
     }
 }
 
 //======================================================================================//
 //
-namespace pyomnitrace
+namespace pyrocprofsys
 {
 namespace pyprofile
 {
@@ -556,7 +556,7 @@ generate(py::module& _pymod)
         try
         {
             auto _file =
-                py::module::import("omnitrace").attr("__file__").cast<std::string>();
+                py::module::import("rocprofsys").attr("__file__").cast<std::string>();
             if(_file.find('/') != std::string::npos)
                 _file = _file.substr(0, _file.find_last_of('/'));
             get_config().base_module_path = _file;
@@ -774,7 +774,7 @@ generate(py::module& _pymod)
 
             try
             {
-                ar->setNextName("omnitrace");
+                ar->setNextName("rocprofsys");
                 ar->startNode();
                 ar->setNextName("coverage");
                 ar->startNode();
@@ -798,7 +798,7 @@ generate(py::module& _pymod)
             auto ar =
                 tim::policy::output_archive<cereal::PrettyJSONOutputArchive>::get(oss);
 
-            ar->setNextName("omnitrace");
+            ar->setNextName("rocprofsys");
             ar->startNode();
             ar->setNextName("coverage");
             ar->startNode();
@@ -949,6 +949,6 @@ generate(py::module& _pymod)
     return _pyuser;
 }
 }  // namespace pyuser
-}  // namespace pyomnitrace
+}  // namespace pyrocprofsys
 //
 //======================================================================================//

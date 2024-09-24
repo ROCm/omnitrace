@@ -39,15 +39,15 @@ from .common import exec_
 from .common import _initialize
 from .common import _file
 
-from . import libpyomnitrace
-from .libpyomnitrace.profiler import (
+from . import libpyrocprofsys
+from .libpyrocprofsys.profiler import (
     profiler_function as _profiler_function,
 )
-from .libpyomnitrace.profiler import config as _profiler_config
-from .libpyomnitrace.profiler import profiler_init as _profiler_init
-from .libpyomnitrace.profiler import profiler_finalize as _profiler_fini
-from .libpyomnitrace.profiler import profiler_pause as _profiler_pause
-from .libpyomnitrace.profiler import profiler_resume as _profiler_resume
+from .libpyrocprofsys.profiler import config as _profiler_config
+from .libpyrocprofsys.profiler import profiler_init as _profiler_init
+from .libpyrocprofsys.profiler import profiler_finalize as _profiler_fini
+from .libpyrocprofsys.profiler import profiler_pause as _profiler_pause
+from .libpyrocprofsys.profiler import profiler_resume as _profiler_resume
 
 __all__ = [
     "profile",
@@ -100,7 +100,7 @@ class Profiler:
         self._use = (
             not _profiler_config._is_running
             and Profiler.is_enabled() is True
-            and not libpyomnitrace.is_finalized()
+            and not libpyrocprofsys.is_finalized()
         )
         self._file = _file()
         self.debug = kwargs["debug"] if "debug" in kwargs else False
@@ -136,7 +136,7 @@ class Profiler:
             not _profiler_config._is_running
             and Profiler.is_enabled() is True
             and sys.getprofile() == self._original_function
-            and not libpyomnitrace.is_finalized()
+            and not libpyrocprofsys.is_finalized()
         )
 
     def start(self):

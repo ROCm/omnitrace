@@ -20,13 +20,13 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME python)
 function(OMNITRACE_CONFIGURE_PYTARGET _TARGET _VERSION)
 
     add_library(omnitrace::${_TARGET} ALIAS ${_TARGET})
-    target_link_libraries(${_TARGET} PRIVATE libpyomnitrace-interface)
-    add_dependencies(libpyomnitrace ${_TARGET})
+    target_link_libraries(${_TARGET} PRIVATE libpyrocprofsys-interface)
+    add_dependencies(libpyrocprofsys ${_TARGET})
 
     set_target_properties(
         ${_TARGET}
         PROPERTIES PREFIX ""
-                   OUTPUT_NAME libpyomnitrace
+                   OUTPUT_NAME libpyrocprofsys
                    LIBRARY_OUTPUT_DIRECTORY
                    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}/rocprofsys
                    ARCHIVE_OUTPUT_DIRECTORY
@@ -68,14 +68,14 @@ add_target_cxx_flag_if_avail(
     "-Wno-deprecated-declarations" "-Wno-unused-but-set-parameter"
     "-ftls-model=global-dynamic")
 
-file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/libpyomnitrace*.hpp)
-set(pysources ${CMAKE_CURRENT_LIST_DIR}/libpyomnitrace.cpp)
+file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/libpyrocprofsys*.hpp)
+set(pysources ${CMAKE_CURRENT_LIST_DIR}/libpyrocprofsys.cpp)
 
 set(pybind_libs pybind11::module)
 
-add_library(libpyomnitrace-interface INTERFACE)
+add_library(libpyrocprofsys-interface INTERFACE)
 target_link_libraries(
-    libpyomnitrace-interface
+    libpyrocprofsys-interface
     INTERFACE pybind11::module
               timemory::timemory-headers
               omnitrace::omnitrace-headers
@@ -87,10 +87,10 @@ target_link_libraries(
               omnitrace::omnitrace-python
               omnitrace::omnitrace-python-compile-options)
 
-omnitrace_target_compile_definitions(libpyomnitrace-interface
+omnitrace_target_compile_definitions(libpyrocprofsys-interface
                                      INTERFACE OMNITRACE_PYBIND11_SOURCE)
 
-add_custom_target(libpyomnitrace)
+add_custom_target(libpyrocprofsys)
 
 file(GLOB_RECURSE PYTHON_FILES ${CMAKE_CURRENT_SOURCE_DIR}/rocprofsys/*.py)
 foreach(_IN ${PYTHON_FILES})
@@ -111,10 +111,10 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
     # add_library(libpyrocprofsys MODULE ${pysources} ${pyheaders})
     list(GET OMNITRACE_PYTHON_ROOT_DIRS ${_INDEX} Python3_ROOT_DIR)
     omnitrace_pybind11_add_module(
-        libpyomnitrace-${_VERSION} MODULE
+        libpyrocprofsys-${_VERSION} MODULE
         PYTHON_VERSION ${_VERSION}
         VISIBILITY "hidden" ${pysources} ${pyheaders})
-    omnitrace_configure_pytarget(libpyomnitrace-${_VERSION} ${_VERSION})
+    omnitrace_configure_pytarget(libpyrocprofsys-${_VERSION} ${_VERSION})
 
     if(OMNITRACE_USE_PYTHON)
         omnitrace_python_console_script(

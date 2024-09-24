@@ -33,9 +33,9 @@ __status__ = "Development"
 import os
 import sys
 
-from . import libpyomnitrace
-from .libpyomnitrace.profiler import profiler_init as _profiler_init
-from .libpyomnitrace.profiler import profiler_finalize as _profiler_fini
+from . import libpyrocprofsys
+from .libpyrocprofsys.profiler import profiler_init as _profiler_init
+from .libpyrocprofsys.profiler import profiler_finalize as _profiler_fini
 
 
 __all__ = ["exec_", "_file", "_get_argv", "_initialize", "_finalize"]
@@ -127,10 +127,10 @@ def _get_argv(init_file, argv=None):
 
 
 def _initialize(_file):
-    if not libpyomnitrace.is_initialized():
-        libpyomnitrace.initialize(_get_argv(_file))
+    if not libpyrocprofsys.is_initialized():
+        libpyrocprofsys.initialize(_get_argv(_file))
 
 
 def _finalize():
-    if libpyomnitrace.is_initialized() and not libpyomnitrace.is_finalized():
+    if libpyrocprofsys.is_initialized() and not libpyrocprofsys.is_finalized():
         _profiler_fini()

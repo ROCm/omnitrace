@@ -41,19 +41,19 @@ try:
         os.path.join(os.path.dirname(__file__), "../../..")
     )
 
-    from .libpyomnitrace import coverage
+    from .libpyrocprofsys import coverage
     from . import user
     from .profiler import Profiler, FakeProfiler
-    from .libpyomnitrace.profiler import (
+    from .libpyrocprofsys.profiler import (
         profiler_function,
         profiler_init,
         profiler_finalize,
     )
-    from .libpyomnitrace import initialize
-    from .libpyomnitrace import finalize
-    from .libpyomnitrace import is_initialized
-    from .libpyomnitrace import is_finalized
-    from .libpyomnitrace.profiler import config as Config
+    from .libpyrocprofsys import initialize
+    from .libpyrocprofsys import finalize
+    from .libpyrocprofsys import is_initialized
+    from .libpyrocprofsys import is_finalized
+    from .libpyrocprofsys.profiler import config as Config
 
     config = Config
     profile = Profiler
