@@ -122,7 +122,7 @@ omnitrace_libc_start_main(int (*_main)(int, char**, char**), int _argc, char** _
     }
     else
     {
-        fputs("Error! omnitrace could not find __libc_start_main!", stderr);
+        fputs("Error! rocprof-sys could not find __libc_start_main!", stderr);
         return -1;
     }
 }
