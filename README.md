@@ -7,6 +7,9 @@
 [![Installer Packaging (CPack)](https://github.com/ROCm/omnitrace/actions/workflows/cpack.yml/badge.svg)](https://github.com/ROCm/omnitrace/actions/workflows/cpack.yml)
 [![Documentation](https://github.com/ROCm/omnitrace/actions/workflows/docs.yml/badge.svg)](https://github.com/ROCm/omnitrace/actions/workflows/docs.yml)
 
+> [!NOTE]
+> Perfetto validation is done with trace_processor v46.0, as there is a known issue with v47. If you are experiencing problems viewing you trace in[Perfetto UI v46.0](https://ui.perfetto.dev/v46.0-35b3d9845/#!/).
+
 ## Overview
 
 AMD Research is seeking to improve observability and performance analysis for software running on AMD heterogeneous systems.
