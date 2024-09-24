@@ -6,7 +6,8 @@ on:
   push:
     branches: [main, releases/**]
     tags:
-      - v*
+      - "v[1-9].[0-9]+.[0-9]+*"
+      - "rocm-[1-9].[0-9]+.[0-9]+*"
     paths-ignore:
       - '*.md'
       - 'source/docs/**'
@@ -266,7 +267,7 @@ jobs:
           done
 
       - name: Upload STGZ Release Assets
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') && github.repository == 'ROCm/omnitrace'
         with:
           fail_on_unmatched_files: True
