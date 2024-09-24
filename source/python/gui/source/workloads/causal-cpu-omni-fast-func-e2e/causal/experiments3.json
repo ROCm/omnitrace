@@ -1,0 +1,4242 @@
+{
+ "omnitrace": {
+  "causal": {
+   "records": [
+    {
+     "cereal_class_version": 0,
+     "startup_time": 93176758722491,
+     "experiments": [
+      {
+       "cereal_class_version": 0,
+       "index": 1,
+       "virtual_speedup": 0,
+       "sampling_period": 998704,
+       "start_time": 93176763433049,
+       "end_time": 93179768689405,
+       "experiment_time": 3005256356,
+       "batch_size": 10,
+       "duration": 3005256356,
+       "scaling_factor": 50,
+       "selected": 2391,
+       "sample_delay": 0,
+       "delay_scaling": 0.0,
+       "total_delay": 0,
+       "global_delay": 0,
+       "selection": {
+        "cereal_class_version": 0,
+        "address": 94546654073258,
+        "symbol_address": 0,
+        "info": {
+         "cereal_class_version": 0,
+         "address": {
+          "cereal_class_version": 0,
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94546654060544,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "cereal_class_version": 0,
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "cereal_class_version": 0,
+        "sum": 8403934730,
+        "count": 8378,
+        "min": 875407,
+        "max": 2000472,
+        "sqr": 8456589968874554,
+        "mean": 1003095,
+        "stddev": 1026907
+       }
+      }
+     ],
+     "runtime": 3005256356,
+     "samples": [
+      {
+       "cereal_class_version": 0,
+       "location": "0x000055fd5bbb0863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94546654060544,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055fd5bbb08e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94546654060544,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93179928572489,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 10,
+       "sampling_period": 3333333,
+       "start_time": 93179932373625,
+       "end_time": 93183236034071,
+       "experiment_time": 3303660446,
+       "batch_size": 10,
+       "duration": 3041799725,
+       "scaling_factor": 50,
+       "selected": 2396,
+       "sample_delay": 333333,
+       "delay_scaling": 0.1,
+       "total_delay": 261860721,
+       "global_delay": 261860721,
+       "selection": {
+        "address": 94131920064938,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94131920052224,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8916886428,
+        "count": 8618,
+        "min": 619064,
+        "max": 4000262,
+        "sqr": 9543725643152070,
+        "mean": 1034681,
+        "stddev": 1015119
+       }
+      }
+     ],
+     "runtime": 3303660446,
+     "samples": [
+      {
+       "location": "0x0000559ccba848e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94131920052224,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x0000559ccba84863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94131920052224,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93183422732508,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 20,
+       "sampling_period": 998867,
+       "start_time": 93183427397991,
+       "end_time": 93186932096237,
+       "experiment_time": 3504698246,
+       "batch_size": 10,
+       "duration": 3029921314,
+       "scaling_factor": 50,
+       "selected": 2394,
+       "sample_delay": 199773,
+       "delay_scaling": 0.2,
+       "total_delay": 474776932,
+       "global_delay": 474776932,
+       "selection": {
+        "address": 93946633392554,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 93946633379840,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9345881082,
+        "count": 8817,
+        "min": 931702,
+        "max": 3001524,
+        "sqr": 10654660317306496,
+        "mean": 1059984,
+        "stddev": 1127584
+       }
+      }
+     ],
+     "runtime": 3504698246,
+     "samples": [
+      {
+       "location": "0x00005571a7b60863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 93946633379840,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x00005571a7b608e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 4,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 93946633379840,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93187099549487,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 30,
+       "sampling_period": 998819,
+       "start_time": 93187104242432,
+       "end_time": 93190909155642,
+       "experiment_time": 3804913210,
+       "batch_size": 10,
+       "duration": 3095751043,
+       "scaling_factor": 50,
+       "selected": 2391,
+       "sample_delay": 299645,
+       "delay_scaling": 0.3,
+       "total_delay": 709162167,
+       "global_delay": 709162167,
+       "selection": {
+        "address": 94429062660522,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94429062647808,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9814903144,
+        "count": 9160,
+        "min": 671773,
+        "max": 4000242,
+        "sqr": 11711943898243788,
+        "mean": 1071495,
+        "stddev": 1109000
+       }
+      }
+     ],
+     "runtime": 3804913210,
+     "samples": [
+      {
+       "location": "0x000055e1fabc78e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94429062647808,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93191075306142,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 0,
+       "sampling_period": 999005,
+       "start_time": 93191080334748,
+       "end_time": 93194082983923,
+       "experiment_time": 3002649175,
+       "batch_size": 10,
+       "duration": 3002649175,
+       "scaling_factor": 50,
+       "selected": 2394,
+       "sample_delay": 0,
+       "delay_scaling": 0.0,
+       "total_delay": 0,
+       "global_delay": 0,
+       "selection": {
+        "address": 94215477084586,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94215477071872,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8403903104,
+        "count": 8404,
+        "min": 971166,
+        "max": 1030077,
+        "sqr": 8404042052936910,
+        "mean": 999988,
+        "stddev": 1022199
+       }
+      }
+     ],
+     "runtime": 3002649175,
+     "samples": [
+      {
+       "location": "0x000055b0400b3863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 4,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94215477071872,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055b0400b38e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94215477071872,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93194248973940,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 10,
+       "sampling_period": 3333333,
+       "start_time": 93194252481646,
+       "end_time": 93197556278219,
+       "experiment_time": 3303796573,
+       "batch_size": 10,
+       "duration": 3042633166,
+       "scaling_factor": 50,
+       "selected": 2392,
+       "sample_delay": 333333,
+       "delay_scaling": 0.1,
+       "total_delay": 261163407,
+       "global_delay": 261163407,
+       "selection": {
+        "address": 94389245075882,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94389245063168,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8916889189,
+        "count": 8658,
+        "min": 681161,
+        "max": 3999992,
+        "sqr": 9465356794709593,
+        "mean": 1029901,
+        "stddev": 1008468
+       }
+      }
+     ],
+     "runtime": 3303796573,
+     "samples": [
+      {
+       "location": "0x000055d8b56c58e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94389245063168,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055d8b56c5863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94389245063168,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93197747567969,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 20,
+       "sampling_period": 998946,
+       "start_time": 93197752353959,
+       "end_time": 93201155247134,
+       "experiment_time": 3402893175,
+       "batch_size": 10,
+       "duration": 3007801006,
+       "scaling_factor": 50,
+       "selected": 2395,
+       "sample_delay": 199789,
+       "delay_scaling": 0.2,
+       "total_delay": 395092169,
+       "global_delay": 395092169,
+       "selection": {
+        "address": 94898188366250,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94898188353536,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9187891659,
+        "count": 8772,
+        "min": 951049,
+        "max": 3002306,
+        "sqr": 10205284515551207,
+        "mean": 1047411,
+        "stddev": 1124774
+       }
+      }
+     ],
+     "runtime": 3402893175,
+     "samples": [
+      {
+       "location": "0x0000564f34cea863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94898188353536,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x0000564f34cea8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94898188353536,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93201315176634,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 30,
+       "sampling_period": 998940,
+       "start_time": 93201320372234,
+       "end_time": 93205126079340,
+       "experiment_time": 3805707106,
+       "batch_size": 10,
+       "duration": 3095346948,
+       "scaling_factor": 50,
+       "selected": 2393,
+       "sample_delay": 299682,
+       "delay_scaling": 0.3,
+       "total_delay": 710360158,
+       "global_delay": 710360158,
+       "selection": {
+        "address": 94558310678954,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94558310666240,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9816876651,
+        "count": 9077,
+        "min": 883211,
+        "max": 4000313,
+        "sqr": 12031060804517397,
+        "mean": 1081511,
+        "stddev": 1129322
+       }
+      }
+     ],
+     "runtime": 3805707106,
+     "samples": [
+      {
+       "location": "0x000056001284b8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94558310666240,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000056001284b863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94558310666240,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93205288995847,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 0,
+       "sampling_period": 3333333,
+       "start_time": 93205292473447,
+       "end_time": 93208295601204,
+       "experiment_time": 3003127757,
+       "batch_size": 10,
+       "duration": 3003127757,
+       "scaling_factor": 50,
+       "selected": 2394,
+       "sample_delay": 0,
+       "delay_scaling": 0.0,
+       "total_delay": 0,
+       "global_delay": 0,
+       "selection": {
+        "address": 94124048327082,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94124048314368,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8403888090,
+        "count": 8401,
+        "min": 968361,
+        "max": 2000322,
+        "sqr": 8410219602912416,
+        "mean": 1000343,
+        "stddev": 1022750
+       }
+      }
+     ],
+     "runtime": 3003127757,
+     "samples": [
+      {
+       "location": "0x0000559af6771863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94124048314368,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x0000559af67718e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94124048314368,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93208478168343,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 10,
+       "sampling_period": 3333333,
+       "start_time": 93208480479479,
+       "end_time": 93211783332107,
+       "experiment_time": 3302852628,
+       "batch_size": 10,
+       "duration": 3042370957,
+       "scaling_factor": 50,
+       "selected": 2397,
+       "sample_delay": 333333,
+       "delay_scaling": 0.1,
+       "total_delay": 260481671,
+       "global_delay": 260481671,
+       "selection": {
+        "address": 93977357705642,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 93977357692928,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8915904457,
+        "count": 8730,
+        "min": 969734,
+        "max": 3999921,
+        "sqr": 9314464384058145,
+        "mean": 1021294,
+        "stddev": 996086
+       }
+      }
+     ],
+     "runtime": 3302852628,
+     "samples": [
+      {
+       "location": "0x00005578cf05d863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 93977357692928,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93211969315721,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 20,
+       "sampling_period": 3333333,
+       "start_time": 93211972499077,
+       "end_time": 93215577848571,
+       "experiment_time": 3605349494,
+       "batch_size": 10,
+       "duration": 3082333733,
+       "scaling_factor": 50,
+       "selected": 2398,
+       "sample_delay": 666666,
+       "delay_scaling": 0.2,
+       "total_delay": 523015761,
+       "global_delay": 523015761,
+       "selection": {
+        "address": 94745973199274,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94745973186560,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9444918641,
+        "count": 9068,
+        "min": 971547,
+        "max": 6999192,
+        "sqr": 10424865451546049,
+        "mean": 1041565,
+        "stddev": 1089301
+       }
+      }
+     ],
+     "runtime": 3605349494,
+     "samples": [
+      {
+       "location": "0x0000562bc4138863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94745973186560,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x0000562bc41388e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94745973186560,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93215769253057,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 30,
+       "sampling_period": 3333333,
+       "start_time": 93215772489944,
+       "end_time": 93219577115828,
+       "experiment_time": 3804625884,
+       "batch_size": 10,
+       "duration": 3020340818,
+       "scaling_factor": 50,
+       "selected": 2394,
+       "sample_delay": 999999,
+       "delay_scaling": 0.3,
+       "total_delay": 784285066,
+       "global_delay": 784285066,
+       "selection": {
+        "address": 94418622669226,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94418622656512,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9963887183,
+        "count": 9218,
+        "min": 971166,
+        "max": 8000074,
+        "sqr": 12546095406936197,
+        "mean": 1080916,
+        "stddev": 1130605
+       }
+      }
+     ],
+     "runtime": 3804625884,
+     "samples": [
+      {
+       "location": "0x000055df8c76d8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94418622656512,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93219764384929,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 0,
+       "sampling_period": 3333333,
+       "start_time": 93219768343862,
+       "end_time": 93222771376833,
+       "experiment_time": 3003032971,
+       "batch_size": 10,
+       "duration": 3003032971,
+       "scaling_factor": 50,
+       "selected": 2391,
+       "sample_delay": 0,
+       "delay_scaling": 0.0,
+       "total_delay": 0,
+       "global_delay": 0,
+       "selection": {
+        "address": 94317885854122,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94317885841408,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8403816134,
+        "count": 8402,
+        "min": 152697,
+        "max": 2002906,
+        "sqr": 8410898634711246,
+        "mean": 1000216,
+        "stddev": 1022735
+       }
+      }
+     ],
+     "runtime": 3003032971,
+     "samples": [
+      {
+       "location": "0x000055c818150863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94317885841408,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055c8181508e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94317885841408,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93222952075688,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 10,
+       "sampling_period": 3333333,
+       "start_time": 93222956313447,
+       "end_time": 93226259434152,
+       "experiment_time": 3303120705,
+       "batch_size": 10,
+       "duration": 3041105993,
+       "scaling_factor": 50,
+       "selected": 2395,
+       "sample_delay": 333333,
+       "delay_scaling": 0.1,
+       "total_delay": 262014712,
+       "global_delay": 262014712,
+       "selection": {
+        "address": 94280183173546,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94280183160832,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8918886510,
+        "count": 8616,
+        "min": 595801,
+        "max": 3999580,
+        "sqr": 9555435789569112,
+        "mean": 1035153,
+        "stddev": 1015661
+       }
+      }
+     ],
+     "runtime": 3303120705,
+     "samples": [
+      {
+       "location": "0x000055bf50d3c863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94280183160832,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93226446009358,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 20,
+       "sampling_period": 3333333,
+       "start_time": 93226448481978,
+       "end_time": 93230053072725,
+       "experiment_time": 3604590747,
+       "batch_size": 10,
+       "duration": 3082320290,
+       "scaling_factor": 50,
+       "selected": 2394,
+       "sample_delay": 666666,
+       "delay_scaling": 0.2,
+       "total_delay": 522270457,
+       "global_delay": 522270457,
+       "selection": {
+        "address": 94036800315818,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94036800303104,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9441885688,
+        "count": 8881,
+        "min": 562848,
+        "max": 8000525,
+        "sqr": 10990888152700462,
+        "mean": 1063155,
+        "stddev": 1129966
+       }
+      }
+     ],
+     "runtime": 3604590747,
+     "samples": [
+      {
+       "location": "0x00005586a6141863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94036800303104,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x00005586a61418e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94036800303104,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93230237491857,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 30,
+       "sampling_period": 3333333,
+       "start_time": 93230240357345,
+       "end_time": 93234045198214,
+       "experiment_time": 3804840869,
+       "batch_size": 10,
+       "duration": 3017939204,
+       "scaling_factor": 50,
+       "selected": 2393,
+       "sample_delay": 999999,
+       "delay_scaling": 0.3,
+       "total_delay": 786901665,
+       "global_delay": 786901665,
+       "selection": {
+        "address": 94015988564394,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94015988551680,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9973892094,
+        "count": 9207,
+        "min": 674869,
+        "max": 7999052,
+        "sqr": 12535315426129570,
+        "mean": 1083294,
+        "stddev": 1129677
+       }
+      }
+     ],
+     "runtime": 3804840869,
+     "samples": [
+      {
+       "location": "0x00005581cd99f8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94015988551680,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x00005581cd99f863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94015988551680,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93234231593322,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 0,
+       "sampling_period": 998933,
+       "start_time": 93234236485120,
+       "end_time": 93237239885923,
+       "experiment_time": 3003400803,
+       "batch_size": 10,
+       "duration": 3003400803,
+       "scaling_factor": 50,
+       "selected": 2393,
+       "sample_delay": 0,
+       "delay_scaling": 0.0,
+       "total_delay": 0,
+       "global_delay": 0,
+       "selection": {
+        "address": 94286603080106,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94286603067392,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8403890216,
+        "count": 8401,
+        "min": 260760,
+        "max": 2000141,
+        "sqr": 8411539709682704,
+        "mean": 1000344,
+        "stddev": 1022827
+       }
+      }
+     ],
+     "runtime": 3003400803,
+     "samples": [
+      {
+       "location": "0x000055c0cf7bc863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 4,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94286603067392,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055c0cf7bc8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94286603067392,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93237405689930,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 10,
+       "sampling_period": 3333333,
+       "start_time": 93237408366823,
+       "end_time": 93240711307571,
+       "experiment_time": 3302940748,
+       "batch_size": 10,
+       "duration": 3041742816,
+       "scaling_factor": 50,
+       "selected": 2388,
+       "sample_delay": 333333,
+       "delay_scaling": 0.1,
+       "total_delay": 261197932,
+       "global_delay": 261197932,
+       "selection": {
+        "address": 94502356906410,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94502356893696,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8915889112,
+        "count": 8653,
+        "min": 857913,
+        "max": 4001464,
+        "sqr": 9465255108860738,
+        "mean": 1030381,
+        "stddev": 1008850
+       }
+      }
+     ],
+     "runtime": 3302940748,
+     "samples": [
+      {
+       "location": "0x000055f30b69e863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94502356893696,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93240900985913,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 20,
+       "sampling_period": 3333333,
+       "start_time": 93240904360048,
+       "end_time": 93244509249299,
+       "experiment_time": 3604889251,
+       "batch_size": 10,
+       "duration": 3081223929,
+       "scaling_factor": 50,
+       "selected": 2397,
+       "sample_delay": 666666,
+       "delay_scaling": 0.2,
+       "total_delay": 523665322,
+       "global_delay": 523665322,
+       "selection": {
+        "address": 94574610837930,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94574610825216,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9445886822,
+        "count": 8949,
+        "min": 629784,
+        "max": 6000203,
+        "sqr": 10776314153461214,
+        "mean": 1055524,
+        "stddev": 1114406
+       }
+      }
+     ],
+     "runtime": 3604889251,
+     "samples": [
+      {
+       "location": "0x00005603de156863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94574610825216,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x00005603de1568e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 4,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94574610825216,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93244694732030,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 30,
+       "sampling_period": 3333333,
+       "start_time": 93244697431727,
+       "end_time": 93248505388076,
+       "experiment_time": 3807956349,
+       "batch_size": 10,
+       "duration": 3023009041,
+       "scaling_factor": 50,
+       "selected": 2368,
+       "sample_delay": 999999,
+       "delay_scaling": 0.3,
+       "total_delay": 784947308,
+       "global_delay": 784947308,
+       "selection": {
+        "address": 94224335323562,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94224335310848,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9968882247,
+        "count": 9104,
+        "min": 631107,
+        "max": 10000946,
+        "sqr": 13165582186889715,
+        "mean": 1095000,
+        "stddev": 1166223
+       }
+      }
+     ],
+     "runtime": 3807956349,
+     "samples": [
+      {
+       "location": "0x000055b2500938e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94224335310848,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055b250093863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94224335310848,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93248693322127,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 0,
+       "sampling_period": 3333333,
+       "start_time": 93248696435442,
+       "end_time": 93251699132070,
+       "experiment_time": 3002696628,
+       "batch_size": 10,
+       "duration": 3002696628,
+       "scaling_factor": 50,
+       "selected": 2397,
+       "sample_delay": 0,
+       "delay_scaling": 0.0,
+       "total_delay": 0,
+       "global_delay": 0,
+       "selection": {
+        "address": 94702037889450,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94702037876736,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8403886536,
+        "count": 8404,
+        "min": 970615,
+        "max": 1030538,
+        "sqr": 8403919596994586,
+        "mean": 999986,
+        "stddev": 1022193
+       }
+      }
+     ],
+     "runtime": 3002696628,
+     "samples": [
+      {
+       "location": "0x000056218953e863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94702037876736,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000056218953e8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94702037876736,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93251886681478,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 10,
+       "sampling_period": 3333333,
+       "start_time": 93251888652635,
+       "end_time": 93255192512633,
+       "experiment_time": 3303859998,
+       "batch_size": 10,
+       "duration": 3043376654,
+       "scaling_factor": 50,
+       "selected": 2397,
+       "sample_delay": 333333,
+       "delay_scaling": 0.1,
+       "total_delay": 260483344,
+       "global_delay": 260483344,
+       "selection": {
+        "address": 94431264960938,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94431264948224,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8914911966,
+        "count": 8573,
+        "min": 968010,
+        "max": 3999090,
+        "sqr": 9631631754119412,
+        "mean": 1039882,
+        "stddev": 1022841
+       }
+      }
+     ],
+     "runtime": 3303859998,
+     "samples": [
+      {
+       "location": "0x000055e27e00e863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 8,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94431264948224,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93255379264939,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 20,
+       "sampling_period": 3333333,
+       "start_time": 93255383419752,
+       "end_time": 93258887156731,
+       "experiment_time": 3503736979,
+       "batch_size": 10,
+       "duration": 2980848493,
+       "scaling_factor": 50,
+       "selected": 2389,
+       "sample_delay": 666666,
+       "delay_scaling": 0.2,
+       "total_delay": 522888486,
+       "global_delay": 522888486,
+       "selection": {
+        "address": 93942278648234,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 93942278635520,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9267871641,
+        "count": 8737,
+        "min": 801207,
+        "max": 5999992,
+        "sqr": 10752243455217645,
+        "mean": 1060761,
+        "stddev": 1146239
+       }
+      }
+     ],
+     "runtime": 3503736979,
+     "samples": [
+      {
+       "location": "0x00005570a425e863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 93942278635520,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x00005570a425e8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 93942278635520,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93259075931513,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 30,
+       "sampling_period": 998875,
+       "start_time": 93259080364688,
+       "end_time": 93262883386810,
+       "experiment_time": 3803022122,
+       "batch_size": 10,
+       "duration": 3092068800,
+       "scaling_factor": 50,
+       "selected": 2394,
+       "sample_delay": 299662,
+       "delay_scaling": 0.3,
+       "total_delay": 710953322,
+       "global_delay": 710953322,
+       "selection": {
+        "address": 94013257748906,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94013257736192,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9819878616,
+        "count": 9067,
+        "min": 617892,
+        "max": 4000443,
+        "sqr": 12208658136159978,
+        "mean": 1083035,
+        "stddev": 1138241
+       }
+      }
+     ],
+     "runtime": 3803022122,
+     "samples": [
+      {
+       "location": "0x000055812ad508e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94013257736192,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055812ad50863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94013257736192,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93263045935137,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 0,
+       "sampling_period": 3333333,
+       "start_time": 93263048464884,
+       "end_time": 93266050983389,
+       "experiment_time": 3002518505,
+       "batch_size": 10,
+       "duration": 3002518505,
+       "scaling_factor": 50,
+       "selected": 2396,
+       "sample_delay": 0,
+       "delay_scaling": 0.0,
+       "total_delay": 0,
+       "global_delay": 0,
+       "selection": {
+        "address": 94689402442154,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94689402429440,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8403912425,
+        "count": 8404,
+        "min": 970605,
+        "max": 1030378,
+        "sqr": 8404240981265039,
+        "mean": 999989,
+        "stddev": 1022209
+       }
+      }
+     ],
+     "runtime": 3002518505,
+     "samples": [
+      {
+       "location": "0x0000561e98324863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94689402429440,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x0000561e983248e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94689402429440,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93266240704721,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 10,
+       "sampling_period": 3333333,
+       "start_time": 93266244339877,
+       "end_time": 93269546993607,
+       "experiment_time": 3302653730,
+       "batch_size": 10,
+       "duration": 3061990867,
+       "scaling_factor": 50,
+       "selected": 2396,
+       "sample_delay": 333333,
+       "delay_scaling": 0.1,
+       "total_delay": 240662863,
+       "global_delay": 240662863,
+       "selection": {
+        "address": 94493489328554,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94493489315840,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8878979470,
+        "count": 8668,
+        "min": 970255,
+        "max": 3999791,
+        "sqr": 9322118751558504,
+        "mean": 1024340,
+        "stddev": 1004179
+       }
+      }
+     ],
+     "runtime": 3302653730,
+     "samples": [
+      {
+       "location": "0x000055f0fadd6863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94493489315840,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93269734787615,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 20,
+       "sampling_period": 998705,
+       "start_time": 93269739427890,
+       "end_time": 93273242951906,
+       "experiment_time": 3503524016,
+       "batch_size": 10,
+       "duration": 3028739774,
+       "scaling_factor": 50,
+       "selected": 2395,
+       "sample_delay": 199741,
+       "delay_scaling": 0.2,
+       "total_delay": 474784242,
+       "global_delay": 474784242,
+       "selection": {
+        "address": 94537442943402,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94537442930688,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9345914217,
+        "count": 8854,
+        "min": 966117,
+        "max": 3000482,
+        "sqr": 10588202743366397,
+        "mean": 1055558,
+        "stddev": 1121764
+       }
+      }
+     ],
+     "runtime": 3503524016,
+     "samples": [
+      {
+       "location": "0x000055fb36b45863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94537442930688,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055fb36b458e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94537442930688,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93273407634997,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 30,
+       "sampling_period": 998674,
+       "start_time": 93273412324064,
+       "end_time": 93277217295955,
+       "experiment_time": 3804971891,
+       "batch_size": 10,
+       "duration": 3094318895,
+       "scaling_factor": 50,
+       "selected": 2394,
+       "sample_delay": 299602,
+       "delay_scaling": 0.3,
+       "total_delay": 710652996,
+       "global_delay": 710652996,
+       "selection": {
+        "address": 94166546117034,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94166546104320,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9817885010,
+        "count": 9165,
+        "min": 970495,
+        "max": 4003778,
+        "sqr": 11710393125793620,
+        "mean": 1071236,
+        "stddev": 1108319
+       }
+      }
+     ],
+     "runtime": 3804971891,
+     "samples": [
+      {
+       "location": "0x000055a4db87e863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 4,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94166546104320,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93277387627564,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 0,
+       "sampling_period": 999004,
+       "start_time": 93277392379378,
+       "end_time": 93280398332754,
+       "experiment_time": 3005953376,
+       "batch_size": 10,
+       "duration": 3005953376,
+       "scaling_factor": 50,
+       "selected": 2396,
+       "sample_delay": 0,
+       "delay_scaling": 0.0,
+       "total_delay": 0,
+       "global_delay": 0,
+       "selection": {
+        "address": 94558656733610,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94558656720896,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8402930288,
+        "count": 8403,
+        "min": 969443,
+        "max": 1029807,
+        "sqr": 8403149050705942,
+        "mean": 999991,
+        "stddev": 1022323
+       }
+      }
+     ],
+     "runtime": 3005953376,
+     "samples": [
+      {
+       "location": "0x00005600272518e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94558656720896,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93280561961212,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 10,
+       "sampling_period": 3333333,
+       "start_time": 93280564350245,
+       "end_time": 93283868746381,
+       "experiment_time": 3304396136,
+       "batch_size": 10,
+       "duration": 3043370594,
+       "scaling_factor": 50,
+       "selected": 2398,
+       "sample_delay": 333333,
+       "delay_scaling": 0.1,
+       "total_delay": 261025542,
+       "global_delay": 261025542,
+       "selection": {
+        "address": 94221160501674,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94221160488960,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8915908540,
+        "count": 8654,
+        "min": 966217,
+        "max": 4001014,
+        "sqr": 9474064415234638,
+        "mean": 1030264,
+        "stddev": 1009298
+       }
+      }
+     ],
+     "runtime": 3304396136,
+     "samples": [
+      {
+       "location": "0x000055b192cd4863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94221160488960,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93284060289449,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 20,
+       "sampling_period": 3333333,
+       "start_time": 93284064330578,
+       "end_time": 93287670806065,
+       "experiment_time": 3606475487,
+       "batch_size": 10,
+       "duration": 3083878859,
+       "scaling_factor": 50,
+       "selected": 2396,
+       "sample_delay": 666666,
+       "delay_scaling": 0.2,
+       "total_delay": 522596628,
+       "global_delay": 522596628,
+       "selection": {
+        "address": 94079243178410,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94079243165696,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9441889392,
+        "count": 8884,
+        "min": 842664,
+        "max": 6000822,
+        "sqr": 10965941885037066,
+        "mean": 1062797,
+        "stddev": 1128526
+       }
+      }
+     ],
+     "runtime": 3606475487,
+     "samples": [
+      {
+       "location": "0x0000559087dec863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94079243165696,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x0000559087dec8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94079243165696,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93287859060188,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 30,
+       "sampling_period": 1075806,
+       "start_time": 93287864321773,
+       "end_time": 93291467437262,
+       "experiment_time": 3603115489,
+       "batch_size": 10,
+       "duration": 2949463799,
+       "scaling_factor": 50,
+       "selected": 2395,
+       "sample_delay": 322741,
+       "delay_scaling": 0.3,
+       "total_delay": 653651690,
+       "global_delay": 653651690,
+       "selection": {
+        "address": 94095214956970,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94095214944256,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9589879447,
+        "count": 8994,
+        "min": 970645,
+        "max": 4000623,
+        "sqr": 11479810885617367,
+        "mean": 1066252,
+        "stddev": 1131300
+       }
+      }
+     ],
+     "runtime": 3603115489,
+     "samples": [
+      {
+       "location": "0x000055943fdcc8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94095214944256,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055943fdcc863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94095214944256,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93291637965875,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 0,
+       "sampling_period": 3333333,
+       "start_time": 93291640477959,
+       "end_time": 93294642836756,
+       "experiment_time": 3002358797,
+       "batch_size": 10,
+       "duration": 3002358797,
+       "scaling_factor": 50,
+       "selected": 2350,
+       "sample_delay": 0,
+       "delay_scaling": 0.0,
+       "total_delay": 0,
+       "global_delay": 0,
+       "selection": {
+        "address": 94725222465962,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94725222453248,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8403907291,
+        "count": 8357,
+        "min": 906344,
+        "max": 2000242,
+        "sqr": 8498322689465891,
+        "mean": 1005612,
+        "stddev": 1030681
+       }
+      }
+     ],
+     "runtime": 3002358797,
+     "samples": [
+      {
+       "location": "0x00005626ef3c7863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94725222453248,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x00005626ef3c78e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94725222453248,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93294837500912,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 10,
+       "sampling_period": 3333333,
+       "start_time": 93294840480925,
+       "end_time": 93298143596185,
+       "experiment_time": 3303115260,
+       "batch_size": 10,
+       "duration": 3042267586,
+       "scaling_factor": 50,
+       "selected": 2395,
+       "sample_delay": 333333,
+       "delay_scaling": 0.1,
+       "total_delay": 260847674,
+       "global_delay": 260847674,
+       "selection": {
+        "address": 94399437275562,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94399437262848,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8916881418,
+        "count": 8655,
+        "min": 970455,
+        "max": 4000112,
+        "sqr": 9467497946640032,
+        "mean": 1030257,
+        "stddev": 1008753
+       }
+      }
+     ],
+     "runtime": 3303115260,
+     "samples": [
+      {
+       "location": "0x000055db14ecf8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94399437262848,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055db14ecf863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94399437262848,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93298333038822,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 20,
+       "sampling_period": 3333333,
+       "start_time": 93298336326755,
+       "end_time": 93301939525432,
+       "experiment_time": 3603198677,
+       "batch_size": 10,
+       "duration": 3078343728,
+       "scaling_factor": 50,
+       "selected": 2391,
+       "sample_delay": 666666,
+       "delay_scaling": 0.2,
+       "total_delay": 524854949,
+       "global_delay": 524854949,
+       "selection": {
+        "address": 94292638511530,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94292638498816,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9448876695,
+        "count": 8983,
+        "min": 971266,
+        "max": 7000284,
+        "sqr": 10729083600023629,
+        "mean": 1051862,
+        "stddev": 1109550
+       }
+      }
+     ],
+     "runtime": 3603198677,
+     "samples": [
+      {
+       "location": "0x000055c237392863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94292638498816,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93302123426870,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 30,
+       "sampling_period": 999199,
+       "start_time": 93302128790256,
+       "end_time": 93305933936318,
+       "experiment_time": 3805146062,
+       "batch_size": 10,
+       "duration": 3095066603,
+       "scaling_factor": 50,
+       "selected": 2372,
+       "sample_delay": 299759,
+       "delay_scaling": 0.3,
+       "total_delay": 710079459,
+       "global_delay": 710079459,
+       "selection": {
+        "address": 93966539497898,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 93966539485184,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9815884133,
+        "count": 8986,
+        "min": 965425,
+        "max": 4000964,
+        "sqr": 12544560864459025,
+        "mean": 1092353,
+        "stddev": 1159812
+       }
+      }
+     ],
+     "runtime": 3805146062,
+     "samples": [
+      {
+       "location": "0x000055764a3518e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 93966539485184,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055764a351863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 93966539485184,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93306102789436,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 0,
+       "sampling_period": 998778,
+       "start_time": 93306107417118,
+       "end_time": 93309110779895,
+       "experiment_time": 3003362777,
+       "batch_size": 10,
+       "duration": 3003362777,
+       "scaling_factor": 50,
+       "selected": 2395,
+       "sample_delay": 0,
+       "delay_scaling": 0.0,
+       "total_delay": 0,
+       "global_delay": 0,
+       "selection": {
+        "address": 94809888199082,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94809888186368,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8403907864,
+        "count": 8369,
+        "min": 968531,
+        "max": 2000402,
+        "sqr": 8474181736869756,
+        "mean": 1004171,
+        "stddev": 1028508
+       }
+      }
+     ],
+     "runtime": 3003362777,
+     "samples": [
+      {
+       "location": "0x0000563aa5b508e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94809888186368,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93309290474262,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 10,
+       "sampling_period": 3333333,
+       "start_time": 93309292873002,
+       "end_time": 93312596681678,
+       "experiment_time": 3303808676,
+       "batch_size": 10,
+       "duration": 3043476647,
+       "scaling_factor": 50,
+       "selected": 2396,
+       "sample_delay": 333333,
+       "delay_scaling": 0.1,
+       "total_delay": 260332029,
+       "global_delay": 260332029,
+       "selection": {
+        "address": 94197981000106,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94197980987392,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8914888768,
+        "count": 8528,
+        "min": 970745,
+        "max": 4001424,
+        "sqr": 9733248391291902,
+        "mean": 1045366,
+        "stddev": 1031134
+       }
+      }
+     ],
+     "runtime": 3303808676,
+     "samples": [
+      {
+       "location": "0x000055ac2d3228e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94197980987392,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055ac2d322863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 7,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94197980987392,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93312784084692,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 20,
+       "sampling_period": 998751,
+       "start_time": 93312788335104,
+       "end_time": 93316291711145,
+       "experiment_time": 3503376041,
+       "batch_size": 10,
+       "duration": 3029415840,
+       "scaling_factor": 50,
+       "selected": 2367,
+       "sample_delay": 199750,
+       "delay_scaling": 0.2,
+       "total_delay": 473960201,
+       "global_delay": 473960201,
+       "selection": {
+        "address": 94392695013802,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94392695001088,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9343893857,
+        "count": 8800,
+        "min": 971166,
+        "max": 3000382,
+        "sqr": 10699977654632647,
+        "mean": 1061806,
+        "stddev": 1131218
+       }
+      }
+     ],
+     "runtime": 3503376041,
+     "samples": [
+      {
+       "location": "0x000055d9830e3863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94392695001088,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055d9830e38e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94392695001088,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93316454198207,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 30,
+       "sampling_period": 3333333,
+       "start_time": 93316456549589,
+       "end_time": 93320260576626,
+       "experiment_time": 3804027037,
+       "batch_size": 10,
+       "duration": 3017526919,
+       "scaling_factor": 50,
+       "selected": 2398,
+       "sample_delay": 999999,
+       "delay_scaling": 0.3,
+       "total_delay": 786500118,
+       "global_delay": 786500118,
+       "selection": {
+        "address": 94422307148202,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94422307135488,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9968875286,
+        "count": 9268,
+        "min": 968752,
+        "max": 9001106,
+        "sqr": 12191190649000458,
+        "mean": 1075623,
+        "stddev": 1110117
+       }
+      }
+     ],
+     "runtime": 3804027037,
+     "samples": [
+      {
+       "location": "0x000055e0681388e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 4,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94422307135488,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055e068138863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94422307135488,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93320453364735,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 0,
+       "sampling_period": 3333333,
+       "start_time": 93320456503766,
+       "end_time": 93323459038217,
+       "experiment_time": 3002534451,
+       "batch_size": 10,
+       "duration": 3002534451,
+       "scaling_factor": 50,
+       "selected": 2396,
+       "sample_delay": 0,
+       "delay_scaling": 0.0,
+       "total_delay": 0,
+       "global_delay": 0,
+       "selection": {
+        "address": 94158880829866,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94158880817152,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8403897992,
+        "count": 8403,
+        "min": 953583,
+        "max": 1999751,
+        "sqr": 8406819290815236,
+        "mean": 1000106,
+        "stddev": 1022424
+       }
+      }
+     ],
+     "runtime": 3002534451,
+     "samples": [
+      {
+       "location": "0x000055a312a4e863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94158880817152,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055a312a4e8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94158880817152,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93323646826805,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 10,
+       "sampling_period": 998829,
+       "start_time": 93323651459717,
+       "end_time": 93326953900080,
+       "experiment_time": 3302440363,
+       "batch_size": 10,
+       "duration": 3065094521,
+       "scaling_factor": 50,
+       "selected": 2392,
+       "sample_delay": 99882,
+       "delay_scaling": 0.1,
+       "total_delay": 237345842,
+       "global_delay": 237345842,
+       "selection": {
+        "address": 94388349968810,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94388349956096,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8869887385,
+        "count": 8655,
+        "min": 964434,
+        "max": 2000391,
+        "sqr": 9300289123316771,
+        "mean": 1024828,
+        "stddev": 1004699
+       }
+      }
+     ],
+     "runtime": 3302440363,
+     "samples": [
+      {
+       "location": "0x000055d880121863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94388349956096,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93327121051011,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 20,
+       "sampling_period": 3333333,
+       "start_time": 93327124357699,
+       "end_time": 93330727992789,
+       "experiment_time": 3603635090,
+       "batch_size": 10,
+       "duration": 3080555623,
+       "scaling_factor": 50,
+       "selected": 2391,
+       "sample_delay": 666666,
+       "delay_scaling": 0.2,
+       "total_delay": 523079467,
+       "global_delay": 523079467,
+       "selection": {
+        "address": 94608458592682,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94608458579968,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9443879177,
+        "count": 8787,
+        "min": 971166,
+        "max": 5999963,
+        "sqr": 11251973100103593,
+        "mean": 1074755,
+        "stddev": 1148971
+       }
+      }
+     ],
+     "runtime": 3603635090,
+     "samples": [
+      {
+       "location": "0x0000560bbf912863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94608458579968,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x0000560bbf9128e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94608458579968,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93330917287068,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 30,
+       "sampling_period": 3333333,
+       "start_time": 93330920323798,
+       "end_time": 93334724756509,
+       "experiment_time": 3804432711,
+       "batch_size": 10,
+       "duration": 3017139985,
+       "scaling_factor": 50,
+       "selected": 2394,
+       "sample_delay": 999999,
+       "delay_scaling": 0.3,
+       "total_delay": 787292726,
+       "global_delay": 787292726,
+       "selection": {
+        "address": 94368254263722,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94368254251008,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9971874537,
+        "count": 9129,
+        "min": 971116,
+        "max": 9000224,
+        "sqr": 12980225342383345,
+        "mean": 1092329,
+        "stddev": 1155666
+       }
+      }
+     ],
+     "runtime": 3804432711,
+     "samples": [
+      {
+       "location": "0x000055d3d245f8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94368254251008,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055d3d245f863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94368254251008,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93334913601934,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 0,
+       "sampling_period": 3333333,
+       "start_time": 93334916265863,
+       "end_time": 93337921740483,
+       "experiment_time": 3005474620,
+       "batch_size": 10,
+       "duration": 3005474620,
+       "scaling_factor": 50,
+       "selected": 2395,
+       "sample_delay": 0,
+       "delay_scaling": 0.0,
+       "total_delay": 0,
+       "global_delay": 0,
+       "selection": {
+        "address": 94319493366186,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94319493353472,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8402901576,
+        "count": 8403,
+        "min": 686340,
+        "max": 1311216,
+        "sqr": 8403869346666586,
+        "mean": 999988,
+        "stddev": 1022369
+       }
+      }
+     ],
+     "runtime": 3005474620,
+     "samples": [
+      {
+       "location": "0x000055c877e5b8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94319493353472,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93338113134701,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 10,
+       "sampling_period": 3333333,
+       "start_time": 93338116485702,
+       "end_time": 93341419975550,
+       "experiment_time": 3303489848,
+       "batch_size": 10,
+       "duration": 3042148595,
+       "scaling_factor": 50,
+       "selected": 2348,
+       "sample_delay": 333333,
+       "delay_scaling": 0.1,
+       "total_delay": 261341253,
+       "global_delay": 261341253,
+       "selection": {
+        "address": 94148861362602,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94148861349888,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 8915883189,
+        "count": 8600,
+        "min": 971066,
+        "max": 3001393,
+        "sqr": 9566043525639883,
+        "mean": 1036730,
+        "stddev": 1017497
+       }
+      }
+     ],
+     "runtime": 3303489848,
+     "samples": [
+      {
+       "location": "0x000055a0bd6ff8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 3,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94148861349888,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055a0bd6ff863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94148861349888,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93341603436861,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 20,
+       "sampling_period": 998925,
+       "start_time": 93341608261774,
+       "end_time": 93345112556372,
+       "experiment_time": 3504294598,
+       "batch_size": 10,
+       "duration": 3032276376,
+       "scaling_factor": 50,
+       "selected": 2364,
+       "sample_delay": 199785,
+       "delay_scaling": 0.2,
+       "total_delay": 472018222,
+       "global_delay": 472018222,
+       "selection": {
+        "address": 94120852378026,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94120852365312,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9342886138,
+        "count": 8788,
+        "min": 971207,
+        "max": 3000463,
+        "sqr": 10758901655857316,
+        "mean": 1063141,
+        "stddev": 1135094
+       }
+      }
+     ],
+     "runtime": 3504294598,
+     "samples": [
+      {
+       "location": "0x0000559a37f8c863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94120852365312,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x0000559a37f8c8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 2,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94120852365312,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    },
+    {
+     "startup_time": 93345275626392,
+     "experiments": [
+      {
+       "index": 1,
+       "virtual_speedup": 30,
+       "sampling_period": 998982,
+       "start_time": 93345280487963,
+       "end_time": 93349084422850,
+       "experiment_time": 3803934887,
+       "batch_size": 10,
+       "duration": 3090868214,
+       "scaling_factor": 50,
+       "selected": 2394,
+       "sample_delay": 299694,
+       "delay_scaling": 0.3,
+       "total_delay": 713066673,
+       "global_delay": 713066673,
+       "selection": {
+        "address": 94539880653226,
+        "symbol_address": 0,
+        "info": {
+         "address": {
+          "low": 12714,
+          "high": 12718
+         },
+         "load_address": 94539880640512,
+         "line": 165,
+         "func": "_Z13cpu_fast_funcli",
+         "file": "/home/jose/omnitrace/examples/causal/causal.cpp",
+         "inlines": [],
+         "dwarf_info": [],
+         "dfunc": "cpu_fast_func(long, int)"
+        }
+       },
+       "progress_points": [
+        {
+         "hash": 8767047793871525327,
+         "name": "causal-cpu-omni",
+         "delta": 1,
+         "arrival": 0,
+         "departure": 0
+        }
+       ],
+       "period_stats": {
+        "sum": 9823899892,
+        "count": 9104,
+        "min": 970755,
+        "max": 4000432,
+        "sqr": 12048734562638190,
+        "mean": 1079075,
+        "stddev": 1127835
+       }
+      }
+     ],
+     "runtime": 3803934887,
+     "samples": [
+      {
+       "location": "0x000055fbc800d8e0 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 4,
+       "info": {
+        "address": {
+         "low": 10464,
+         "high": 10471
+        },
+        "load_address": 94539880640512,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      },
+      {
+       "location": "0x000055fbc800d863 :: /usr/include/c++/9/bits/unique_ptr.h:153",
+       "count": 1,
+       "info": {
+        "address": {
+         "low": 10339,
+         "high": 10346
+        },
+        "load_address": 94539880640512,
+        "line": 153,
+        "func": "main",
+        "file": "/usr/include/c++/9/bits/unique_ptr.h",
+        "inlines": [],
+        "dwarf_info": [],
+        "dfunc": "main"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ }
+}
