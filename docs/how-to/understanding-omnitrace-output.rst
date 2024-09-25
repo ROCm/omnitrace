@@ -321,7 +321,12 @@ Perfetto output
 Use the ``OMNITRACE_OUTPUT_FILE`` to specify a specific location. If this is an
 absolute path, then all ``OMNITRACE_OUTPUT_PATH`` and similar
 settings are ignored. Visit `ui.perfetto.dev <https://ui.perfetto.dev>`_ and open
-this file (See `NOTE <https://github.com/ROCm/omnitrace/blob/main/README.md>`_).
+this file.
+
+.. important::
+   Perfetto validation is done with trace_processor v46.0 as there is a known issue with v47.0.
+   If you are experiencing problems viewing your trace in the latest version of `Perfetto <http://ui.perfetto.dev>`_,
+   then try using `Perfetto UI v46.0 <https://ui.perfetto.dev/v46.0-35b3d9845/#!/>`_.
 
 .. image:: ../data/omnitrace-perfetto.png
    :alt: Visualization of a performance graph in Perfetto
