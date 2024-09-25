@@ -13,8 +13,12 @@ which function and line number are currently executing.
 
 A visualization of the comprehensive Omnitrace results can be observed in any modern
 web browser. Upload the Perfetto (``.proto``) output files produced by Omnitrace at
-`ui.perfetto.dev <https://ui.perfetto.dev/>`_ to see the details
-(See `NOTE <https://github.com/ROCm/omnitrace/blob/main/README.md>`_).
+`ui.perfetto.dev <https://ui.perfetto.dev/>`_ to see the details.
+
+.. important::
+   Perfetto validation is done with trace_processor v46.0 as there is a known issue with v47.0.
+   If you are experiencing problems viewing your trace in the latest version of `Perfetto <http://ui.perfetto.dev>`_,
+   then try using `Perfetto UI v46.0 <https://ui.perfetto.dev/v46.0-35b3d9845/#!/>`_.
 
 Aggregated high-level results are available as human-readable text files and
 JSON files for programmatic analysis. The JSON output files are compatible with the
