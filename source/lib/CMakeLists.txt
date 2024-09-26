@@ -33,7 +33,7 @@ add_library(rocprofsys::rocprofsys-interface-library ALIAS rocprofsys-interface-
 
 target_include_directories(
     rocprofsys-interface-library INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
-                                          ${CMAKE_CURRENT_SOURCE_DIR}/omnitrace)
+                                           ${CMAKE_CURRENT_SOURCE_DIR}/omnitrace)
 
 target_link_libraries(
     rocprofsys-interface-library
@@ -57,7 +57,8 @@ target_link_libraries(
         $<BUILD_INTERFACE:rocprofsys::rocprofsys-static-libgcc-optional>
         $<BUILD_INTERFACE:rocprofsys::rocprofsys-static-libstdcxx-optional>
         $<BUILD_INTERFACE:rocprofsys::rocprofsys-sanitizer>
-        $<BUILD_INTERFACE:$<IF:$<BOOL:${OMNITRACE_BUILD_LTO}>,rocprofsys::rocprofsys-lto,>>)
+        $<BUILD_INTERFACE:$<IF:$<BOOL:${OMNITRACE_BUILD_LTO}>,rocprofsys::rocprofsys-lto,>>
+    )
 
 # ------------------------------------------------------------------------------#
 #

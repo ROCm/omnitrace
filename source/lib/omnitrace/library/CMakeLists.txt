@@ -50,7 +50,7 @@ endif()
 if(OMNITRACE_USE_ROCPROFILER)
     target_sources(
         rocprofsys-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/rocprofiler.cpp
-                                         ${CMAKE_CURRENT_LIST_DIR}/rocprofiler.hpp)
+                                          ${CMAKE_CURRENT_LIST_DIR}/rocprofiler.hpp)
 endif()
 
 if(OMNITRACE_USE_ROCM_SMI)

@@ -17,7 +17,8 @@ if(NOT TARGET rocprofsys::rocprofsys-user-library)
     find_package(rocprofsys REQUIRED COMPONENTS user)
 endif()
 add_executable(user-api user-api.cpp)
-target_link_libraries(user-api PRIVATE Threads::Threads rocprofsys::rocprofsys-user-library)
+target_link_libraries(user-api PRIVATE Threads::Threads
+                                       rocprofsys::rocprofsys-user-library)
 
 if(OMNITRACE_INSTALL_EXAMPLES)
     install(

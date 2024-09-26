@@ -201,8 +201,9 @@ omnitrace_add_bin_test(
 omnitrace_add_bin_test(
     NAME rocprofsys-instrument-write-log-check
     DEPENDS rocprofsys-instrument-write-log
-    COMMAND ls
-            rocprofsys-tests-output/rocprofsys-instrument-write-log/instrumentation/user.log
+    COMMAND
+        ls
+        rocprofsys-tests-output/rocprofsys-instrument-write-log/instrumentation/user.log
     LABELS "log"
     TIMEOUT 60
     PASS_REGEX "user.log"

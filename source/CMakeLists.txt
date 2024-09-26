@@ -19,8 +19,8 @@ endif()
 
 if(OMNITRACE_BUILD_DEVELOPER)
     add_custom_target(rocprofsys-precommit)
-    foreach(_TARGET format-rocprofsys-source format-rocprofsys-cmake format-timemory-source
-                    format-timemory-cmake)
+    foreach(_TARGET format-rocprofsys-source format-rocprofsys-cmake
+                    format-timemory-source format-timemory-cmake)
         if(TARGET ${_TARGET})
             add_dependencies(rocprofsys-precommit ${_TARGET})
         endif()

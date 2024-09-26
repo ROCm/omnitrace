@@ -44,7 +44,7 @@ add_library(rocprofsys-core-library STATIC)
 add_library(rocprofsys::rocprofsys-core ALIAS rocprofsys-core-library)
 
 target_sources(rocprofsys-core-library PRIVATE ${core_sources} ${core_headers}
-                                              ${CMAKE_CURRENT_BINARY_DIR}/defines.hpp)
+                                               ${CMAKE_CURRENT_BINARY_DIR}/defines.hpp)
 add_subdirectory(binary)
 add_subdirectory(components)
 add_subdirectory(containers)
@@ -70,6 +70,7 @@ target_link_libraries(
         $<BUILD_INTERFACE:rocprofsys::rocprofsys-static-libgcc-optional>
         $<BUILD_INTERFACE:rocprofsys::rocprofsys-static-libstdcxx-optional>
         $<BUILD_INTERFACE:rocprofsys::rocprofsys-sanitizer>
-        $<BUILD_INTERFACE:$<IF:$<BOOL:${OMNITRACE_BUILD_LTO}>,rocprofsys::rocprofsys-lto,>>)
+        $<BUILD_INTERFACE:$<IF:$<BOOL:${OMNITRACE_BUILD_LTO}>,rocprofsys::rocprofsys-lto,>>
+    )
 
 set_target_properties(rocprofsys-core-library PROPERTIES OUTPUT_NAME rocprof-sys-core)

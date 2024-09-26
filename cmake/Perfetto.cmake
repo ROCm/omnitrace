@@ -158,8 +158,9 @@ if(OMNITRACE_INSTALL_PERFETTO_TOOLS)
     add_custom_target(
         rocprofsys-perfetto-clean
         COMMAND ${OMNITRACE_NINJA_EXECUTABLE} -t clean
-        COMMAND ${CMAKE_COMMAND} -E rm -rf
-                ${PROJECT_BINARY_DIR}/external/perfetto/src/rocprofsys-perfetto-build-stamp
+        COMMAND
+            ${CMAKE_COMMAND} -E rm -rf
+            ${PROJECT_BINARY_DIR}/external/perfetto/src/rocprofsys-perfetto-build-stamp
         WORKING_DIRECTORY ${OMNITRACE_PERFETTO_BINARY_DIR}
         COMMENT "Cleaning Perfetto...")
 
@@ -195,7 +196,7 @@ add_library(rocprofsys-perfetto-library STATIC)
 add_library(rocprofsys::rocprofsys-perfetto-library ALIAS rocprofsys-perfetto-library)
 target_sources(
     rocprofsys-perfetto-library PRIVATE ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.cc
-                                       ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.h)
+                                        ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.h)
 target_link_libraries(
     rocprofsys-perfetto-library
     PRIVATE rocprofsys::rocprofsys-threading rocprofsys::rocprofsys-static-libgcc
@@ -233,4 +234,4 @@ target_include_directories(rocprofsys-perfetto SYSTEM
                            INTERFACE $<BUILD_INTERFACE:${PERFETTO_INCLUDE_DIR}>)
 target_link_libraries(
     rocprofsys-perfetto INTERFACE $<BUILD_INTERFACE:${PERFETTO_LIBRARY}>
-                                 $<BUILD_INTERFACE:rocprofsys::rocprofsys-threading>)
+                                  $<BUILD_INTERFACE:rocprofsys::rocprofsys-threading>)

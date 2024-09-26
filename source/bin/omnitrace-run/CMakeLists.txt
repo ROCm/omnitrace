@@ -17,9 +17,10 @@ target_link_libraries(
             rocprofsys::rocprofsys-common-library rocprofsys::rocprofsys-core
             rocprofsys::rocprofsys-sanitizer)
 set_target_properties(
-    rocprofsys-run PROPERTIES BUILD_RPATH "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
-                             INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}"
-                             OUTPUT_NAME "rocprof-sys-run")
+    rocprofsys-run
+    PROPERTIES BUILD_RPATH "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
+               INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}"
+               OUTPUT_NAME "rocprof-sys-run")
 
 omnitrace_strip_target(rocprofsys-run)
 

@@ -193,7 +193,7 @@ if(OMNITRACE_USE_ROCTRACER)
     omnitrace_target_compile_definitions(rocprofsys-roctracer
                                          INTERFACE OMNITRACE_USE_ROCTRACER)
     target_link_libraries(rocprofsys-roctracer INTERFACE roctracer::roctracer
-                                                        rocprofsys::rocprofsys-hip)
+                                                         rocprofsys::rocprofsys-hip)
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -246,7 +246,7 @@ if(OMNITRACE_USE_MPI)
     find_package(MPI ${rocprofsys_FIND_QUIETLY} REQUIRED)
     target_link_libraries(rocprofsys-mpi INTERFACE MPI::MPI_C MPI::MPI_CXX)
     omnitrace_target_compile_definitions(rocprofsys-mpi INTERFACE TIMEMORY_USE_MPI=1
-                                                                 OMNITRACE_USE_MPI)
+                                                                  OMNITRACE_USE_MPI)
 elseif(OMNITRACE_USE_MPI_HEADERS)
     find_package(MPI-Headers ${rocprofsys_FIND_QUIETLY} REQUIRED)
     omnitrace_target_compile_definitions(
@@ -414,7 +414,7 @@ else()
         endif()
 
         target_link_libraries(rocprofsys-dyninst INTERFACE ${DYNINST_LIBRARIES}
-                                                          ${Boost_LIBRARIES})
+                                                           ${Boost_LIBRARIES})
         foreach(
             _TARG
             dyninst
@@ -438,7 +438,7 @@ else()
         endforeach()
         target_include_directories(
             rocprofsys-dyninst SYSTEM INTERFACE ${TBB_INCLUDE_DIR} ${Boost_INCLUDE_DIRS}
-                                               ${DYNINST_HEADER_DIR})
+                                                ${DYNINST_HEADER_DIR})
         omnitrace_target_compile_definitions(rocprofsys-dyninst
                                              INTERFACE OMNITRACE_USE_DYNINST)
     endif()
@@ -762,7 +762,7 @@ target_sources(rocprofsys-ptl
                INTERFACE $<BUILD_INTERFACE:$<TARGET_OBJECTS:PTL::ptl-object>>)
 target_include_directories(
     rocprofsys-ptl INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/PTL/source>
-                            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/PTL/source>)
+                             $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/PTL/source>)
 
 # ----------------------------------------------------------------------------------------#
 #

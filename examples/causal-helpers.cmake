@@ -49,8 +49,9 @@ function(omnitrace_causal_example_executable _NAME)
     target_include_directories(${_NAME}-omni PRIVATE ${OMNITRACE_EXAMPLE_ROOT_DIR}/causal
                                                      ${CAUSAL_INCLUDE_DIRECTORIES})
     target_link_libraries(
-        ${_NAME}-omni PRIVATE ${CAUSAL_LINK_LIBRARIES} rocprofsys::rocprofsys-user-library
-                              omni-causal-example-lib-debug)
+        ${_NAME}-omni
+        PRIVATE ${CAUSAL_LINK_LIBRARIES} rocprofsys::rocprofsys-user-library
+                omni-causal-example-lib-debug)
 
     add_executable(${_NAME}-ndebug ${CAUSAL_SOURCES})
     target_compile_definitions(${_NAME}-ndebug PRIVATE USE_COZ=0 USE_OMNI=0

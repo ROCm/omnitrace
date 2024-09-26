@@ -260,7 +260,7 @@ set(PAPI_pfm_STATIC_LIBRARY
 target_include_directories(rocprofsys-papi SYSTEM
                            INTERFACE $<BUILD_INTERFACE:${PAPI_INCLUDE_DIR}>)
 target_link_libraries(rocprofsys-papi INTERFACE $<BUILD_INTERFACE:${PAPI_LIBRARY}>
-                                               $<BUILD_INTERFACE:${PAPI_pfm_LIBRARY}>)
+                                                $<BUILD_INTERFACE:${PAPI_pfm_LIBRARY}>)
 omnitrace_target_compile_definitions(
     rocprofsys-papi INTERFACE OMNITRACE_USE_PAPI $<BUILD_INTERFACE:TIMEMORY_USE_PAPI=1>)
 

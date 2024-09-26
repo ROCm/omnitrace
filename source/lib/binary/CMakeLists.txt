@@ -23,6 +23,6 @@ target_sources(rocprofsys-binary-library PRIVATE ${binary_sources} ${binary_head
 
 target_link_libraries(
     rocprofsys-binary-library PRIVATE rocprofsys::rocprofsys-interface-library
-                                     rocprofsys::rocprofsys-core)
+                                      rocprofsys::rocprofsys-core)
 
 set_target_properties(rocprofsys-binary-library PROPERTIES OUTPUT_NAME rocprof-sys-binary)

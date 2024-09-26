@@ -325,8 +325,8 @@ if(OMNITRACE_USE_SANITIZER)
                                   INTERFACE rocprofsys-${_TYPE}-sanitizer)
         else()
             message(
-                FATAL_ERROR "Error! Target 'rocprofsys-${_TYPE}-sanitizer' does not exist!"
-                )
+                FATAL_ERROR
+                    "Error! Target 'rocprofsys-${_TYPE}-sanitizer' does not exist!")
         endif()
     endforeach()
 else()

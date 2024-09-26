@@ -89,7 +89,8 @@ if(OMNITRACE_CLANG_FORMAT_EXE
             format-rocprofsys-source
             ${OMNITRACE_CLANG_FORMAT_EXE} -i ${sources} ${headers} ${examples}
             ${tests_source}
-            COMMENT "[rocprof-sys] Running C++ formatter ${OMNITRACE_CLANG_FORMAT_EXE}...")
+            COMMENT "[rocprof-sys] Running C++ formatter ${OMNITRACE_CLANG_FORMAT_EXE}..."
+            )
     endif()
 
     if(OMNITRACE_BLACK_FORMAT_EXE)
@@ -107,8 +108,8 @@ if(OMNITRACE_CLANG_FORMAT_EXE
         add_custom_target(
             format-rocprofsys-cmake
             ${OMNITRACE_CMAKE_FORMAT_EXE} -i ${cmake_files}
-            COMMENT "[rocprof-sys] Running CMake formatter ${OMNITRACE_CMAKE_FORMAT_EXE}..."
-            )
+            COMMENT
+                "[rocprof-sys] Running CMake formatter ${OMNITRACE_CMAKE_FORMAT_EXE}...")
         if(NOT TARGET format-cmake)
             add_custom_target(format-cmake)
         endif()

@@ -16,9 +16,10 @@ target_link_libraries(
     PRIVATE rocprofsys::rocprofsys-compile-definitions rocprofsys::rocprofsys-headers
             rocprofsys::rocprofsys-common-library rocprofsys::rocprofsys-core)
 set_target_properties(
-    rocprofsys-causal PROPERTIES BUILD_RPATH "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
-                                INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}"
-                                OUTPUT_NAME "rocprof-sys-causal")
+    rocprofsys-causal
+    PROPERTIES BUILD_RPATH "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
+               INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}"
+               OUTPUT_NAME "rocprof-sys-causal")
 
 omnitrace_strip_target(rocprofsys-causal)
 

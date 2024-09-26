@@ -97,7 +97,7 @@ add_library(rocprofsys::rocprofsys-rt-library ALIAS rocprofsys-rt-library)
 target_sources(rocprofsys-rt-library PRIVATE ${SRC_LIST})
 target_include_directories(
     rocprofsys-rt-library PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-                                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/h>)
+                                  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/h>)
 target_compile_definitions(rocprofsys-rt-library PRIVATE ${UNIFIED_DEFINES})
 target_link_libraries(
     rocprofsys-rt-library
