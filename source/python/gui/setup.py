@@ -65,6 +65,8 @@ setup(
     install_requires=parse_requirements(),
     python_requires=">=3.6",
     entry_points={
-        "console_scripts": ["rocprof-sys-causal-plot=rocprof_sys_causal_viewer.__main__:main"]
+        "console_scripts": [
+            "rocprof-sys-causal-plot=rocprof_sys_causal_viewer.__main__:main"
+        ]
     },
 )
