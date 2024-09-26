@@ -162,7 +162,7 @@ omnitrace_add_bin_test(
     LABELS "simulate"
     TIMEOUT 120
     PASS_REGEX
-        "\\\[rocprof-sys\\\]\\\[exe\\\] Runtime instrumentation is not possible!(.*)\n(.*)\\\[rocprof-sys\\\]\\\[exe\\\] Switching to binary rewrite mode and assuming '--simulate --all-functions'"
+        "\\\[omnitrace\\\]\\\[exe\\\] Runtime instrumentation is not possible!(.*)\n(.*)\\\[omnitrace\\\]\\\[exe\\\] Switching to binary rewrite mode and assuming '--simulate --all-functions'"
     )
 
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/rocprofsys-tests-output/tmp)
