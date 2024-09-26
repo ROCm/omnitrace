@@ -1,13 +1,13 @@
 # ------------------------------------------------------------------------------#
 #
-# omnitrace-avail target
+# rocprofsys-avail target
 #
 # ------------------------------------------------------------------------------#
 
-add_executable(omnitrace-avail)
+add_executable(rocprofsys-avail)
 
 target_sources(
-    omnitrace-avail
+    rocprofsys-avail
     PRIVATE ${CMAKE_CURRENT_LIST_DIR}/avail.cpp
             ${CMAKE_CURRENT_LIST_DIR}/avail.hpp
             ${CMAKE_CURRENT_LIST_DIR}/common.cpp
@@ -22,21 +22,21 @@ target_sources(
             ${CMAKE_CURRENT_LIST_DIR}/info_type.cpp
             ${CMAKE_CURRENT_LIST_DIR}/info_type.hpp)
 
-target_include_directories(omnitrace-avail PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-target_compile_definitions(omnitrace-avail PRIVATE OMNITRACE_EXTERN_COMPONENTS=0)
+target_include_directories(rocprofsys-avail PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+target_compile_definitions(rocprofsys-avail PRIVATE OMNITRACE_EXTERN_COMPONENTS=0)
 target_link_libraries(
-    omnitrace-avail
-    PRIVATE omnitrace::omnitrace-compile-definitions
-            omnitrace::omnitrace-interface-library omnitrace::libomnitrace-static)
+    rocprofsys-avail
+    PRIVATE rocprofsys::rocprofsys-compile-definitions
+            rocprofsys::rocprofsys-interface-library rocprofsys::librocprofsys-static)
 set_target_properties(
-    omnitrace-avail
+    rocprofsys-avail
     PROPERTIES BUILD_RPATH "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
                INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}"
                OUTPUT_NAME rocprof-sys-avail)
 
-omnitrace_strip_target(omnitrace-avail)
+omnitrace_strip_target(rocprofsys-avail)
 
 install(
-    TARGETS omnitrace-avail
+    TARGETS rocprofsys-avail
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     OPTIONAL)

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(omnitrace-mpi-examples LANGUAGES C CXX)
+project(rocprofsys-mpi-examples LANGUAGES C CXX)
 
 if(OMNITRACE_DISABLE_EXAMPLES)
     get_filename_component(_DIR ${CMAKE_CURRENT_LIST_DIR} NAME)
@@ -13,12 +13,12 @@ endif()
 
 find_package(MPI)
 if(NOT MPI_FOUND)
-    if("${CMAKE_PROJECT_NAME}" STREQUAL "omnitrace" AND "$ENV{OMNITRACE_CI}")
+    if("${CMAKE_PROJECT_NAME}" STREQUAL "rocprofsys" AND "$ENV{OMNITRACE_CI}")
         set(_MSG_TYPE STATUS) # don't generate warnings during CI
     else()
         set(_MSG_TYPE AUTHOR_WARNING)
     endif()
-    message(${_MSG_TYPE} "MPI could not be found. Cannot build omnitrace-mpi target")
+    message(${_MSG_TYPE} "MPI could not be found. Cannot build rocprofsys-mpi target")
     return()
 endif()
 
@@ -30,7 +30,7 @@ add_library(mpi-c-interface-library INTERFACE)
 target_link_libraries(
     mpi-c-interface-library
     INTERFACE Threads::Threads MPI::MPI_C
-              $<TARGET_NAME_IF_EXISTS:omnitrace::omnitrace-compile-options>)
+              $<TARGET_NAME_IF_EXISTS:rocprofsys::rocprofsys-compile-options>)
 target_compile_options(mpi-c-interface-library INTERFACE -Wno-double-promotion)
 
 add_executable(mpi-allgather allgather.c)
@@ -60,7 +60,7 @@ add_library(mpi-cxx-interface-library INTERFACE)
 target_link_libraries(
     mpi-cxx-interface-library
     INTERFACE Threads::Threads MPI::MPI_CXX
-              $<TARGET_NAME_IF_EXISTS:omnitrace::omnitrace-compile-options>)
+              $<TARGET_NAME_IF_EXISTS:rocprofsys::rocprofsys-compile-options>)
 
 add_executable(mpi-example mpi.cpp)
 target_link_libraries(mpi-example PRIVATE mpi-cxx-interface-library)
@@ -70,5 +70,5 @@ if(OMNITRACE_INSTALL_EXAMPLES)
         TARGETS mpi-example mpi-allgather mpi-bcast mpi-all2all mpi-reduce
                 mpi-scatter-gather mpi-send-recv
         DESTINATION bin
-        COMPONENT omnitrace-examples)
+        COMPONENT rocprofsys-examples)
 endif()

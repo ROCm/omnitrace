@@ -18,12 +18,12 @@ else()
 endif()
 
 add_test(
-    NAME omnitrace-invalid-config
-    COMMAND $<TARGET_FILE:omnitrace-instrument> -- ${_CONFIG_TEST_EXE}
+    NAME rocprofsys-invalid-config
+    COMMAND $<TARGET_FILE:rocprofsys-instrument> -- ${_CONFIG_TEST_EXE}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
 set_tests_properties(
-    omnitrace-invalid-config
+    rocprofsys-invalid-config
     PROPERTIES
         ENVIRONMENT
         "OMNITRACE_CONFIG_FILE=${CMAKE_CURRENT_BINARY_DIR}/invalid.cfg;OMNITRACE_CI=ON;OMNITRACE_CI_TIMEOUT=120"
@@ -35,12 +35,12 @@ set_tests_properties(
         ON)
 
 add_test(
-    NAME omnitrace-missing-config
-    COMMAND $<TARGET_FILE:omnitrace-instrument> -- ${_CONFIG_TEST_EXE}
+    NAME rocprofsys-missing-config
+    COMMAND $<TARGET_FILE:rocprofsys-instrument> -- ${_CONFIG_TEST_EXE}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
 set_tests_properties(
-    omnitrace-missing-config
+    rocprofsys-missing-config
     PROPERTIES
         ENVIRONMENT
         "OMNITRACE_CONFIG_FILE=${CMAKE_CURRENT_BINARY_DIR}/missing.cfg;OMNITRACE_CI=ON;OMNITRACE_CI_TIMEOUT=120"

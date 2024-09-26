@@ -444,12 +444,13 @@ module_function::is_internal_constrained() const
     auto _module_base = _basename(module_name);
     auto _module_real = _realpath(module_name);
 
-    if(std::regex_search(module_name, std::regex{ "lib(omnitrace|timemory|perfetto)" }))
+    if(std::regex_search(module_name, std::regex{ "lib(rocprof-sys|rocprofsys|omnitrace|timemory|perfetto)" }))
         return _report("Excluding", "module", "omnitrace", 3);
     else if(std::regex_match(module_name,
                              std::regex{ ".*/source/lib/"
                                          "(core|common|binary|omnitrace|omnitrace-dl|"
-                                         "omnitrace-user)/.*/.*\\.(h|c|cpp|hpp)$" }))
+                                         "omnitrace-user|rocprofsys|rocprofsys-dl|"
+                                         "rocprofsys-user)/.*/.*\\.(h|c|cpp|hpp)$" }))
         return _report("Excluding", "module", "omnitrace", 3);
 
     if(std::regex_search(function_name, std::regex{ "9omnitrace|omnitrace(::|_)" }))
@@ -507,7 +508,8 @@ module_function::is_module_constrained() const
     static std::regex sys_build_regex{ "^(\\.\\./sysdeps/|/build/)", regex_opts };
     static std::regex dyninst_regex{ "(dyninst|DYNINST|(^|/)RT[[:graph:]]+\\.c$)",
                                      regex_opts };
-    static std::regex dependlib_regex{ "^(lib|)(omnitrace|pthread|caliper|gotcha|papi|"
+    static std::regex dependlib_regex{ "^(lib|)(rocprof-sys|rocprofsys|omnitrace|"
+                                       "pthread|caliper|gotcha|papi|"
                                        "cupti|TAU|likwid|pfm|nvperf|unwind)",
                                        regex_opts };
     static std::regex core_cmod_regex{

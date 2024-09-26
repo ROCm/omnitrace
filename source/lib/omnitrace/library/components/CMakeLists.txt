@@ -34,18 +34,18 @@ set(component_headers
     ${CMAKE_CURRENT_LIST_DIR}/pthread_create_gotcha.hpp
     ${CMAKE_CURRENT_LIST_DIR}/pthread_mutex_gotcha.hpp)
 
-target_sources(omnitrace-object-library PRIVATE ${component_sources} ${component_headers})
+target_sources(rocprofsys-object-library PRIVATE ${component_sources} ${component_headers})
 
 if(OMNITRACE_USE_ROCPROFILER)
-    target_sources(omnitrace-object-library
+    target_sources(rocprofsys-object-library
                    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/rocprofiler.cpp)
 endif()
 
 if(OMNITRACE_USE_ROCTRACER)
-    target_sources(omnitrace-object-library
+    target_sources(rocprofsys-object-library
                    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/roctracer.cpp)
 endif()
 
 if(OMNITRACE_USE_RCCL)
-    target_sources(omnitrace-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/rcclp.cpp)
+    target_sources(rocprofsys-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/rcclp.cpp)
 endif()

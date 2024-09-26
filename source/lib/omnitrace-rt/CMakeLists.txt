@@ -91,45 +91,45 @@ if(UNIX)
     endif()
 endif()
 
-add_library(omnitrace-rt-library SHARED)
-add_library(omnitrace::omnitrace-rt-library ALIAS omnitrace-rt-library)
+add_library(rocprofsys-rt-library SHARED)
+add_library(rocprofsys::rocprofsys-rt-library ALIAS rocprofsys-rt-library)
 
-target_sources(omnitrace-rt-library PRIVATE ${SRC_LIST})
+target_sources(rocprofsys-rt-library PRIVATE ${SRC_LIST})
 target_include_directories(
-    omnitrace-rt-library PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    rocprofsys-rt-library PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
                                  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/h>)
-target_compile_definitions(omnitrace-rt-library PRIVATE ${UNIFIED_DEFINES})
+target_compile_definitions(rocprofsys-rt-library PRIVATE ${UNIFIED_DEFINES})
 target_link_libraries(
-    omnitrace-rt-library
+    rocprofsys-rt-library
     PUBLIC $<BUILD_INTERFACE:${dl_LIBRARY}>
-    PRIVATE omnitrace::omnitrace-threading)
+    PRIVATE rocprofsys::rocprofsys-threading)
 
-add_target_cxx_flag_if_avail(omnitrace-rt-library "-g3")
+add_target_cxx_flag_if_avail(rocprofsys-rt-library "-g3")
 
 set_target_properties(
-    omnitrace-rt-library
+    rocprofsys-rt-library
     PROPERTIES OUTPUT_NAME rocprof-sys-rt
                VERSION ${PROJECT_VERSION}
                SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
                BUILD_RPATH "\$ORIGIN"
                INSTALL_RPATH "\$ORIGIN")
 
-omnitrace_strip_target(omnitrace-rt-library)
+omnitrace_strip_target(rocprofsys-rt-library)
 
-install(TARGETS omnitrace-rt-library DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS rocprofsys-rt-library DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(NOT EXISTS ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
     file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
 endif()
 
 add_custom_target(
-    omnitrace-rt-library-dyninstAPI_RT-symlink ALL
-    ${CMAKE_COMMAND} -E create_symlink ../$<TARGET_FILE_NAME:omnitrace-rt-library>
+    rocprofsys-rt-library-dyninstAPI_RT-symlink ALL
+    ${CMAKE_COMMAND} -E create_symlink ../$<TARGET_FILE_NAME:rocprofsys-rt-library>
     ${CMAKE_SHARED_LIBRARY_PREFIX}dyninstAPI_RT${CMAKE_SHARED_LIBRARY_SUFFIX}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
-    DEPENDS omnitrace-rt-library
+    DEPENDS rocprofsys-rt-library
     COMMENT
-        "Creating ${CMAKE_SHARED_LIBRARY_PREFIX}dyninstAPI_RT${CMAKE_SHARED_LIBRARY_SUFFIX} to omnitrace-rt..."
+        "Creating ${CMAKE_SHARED_LIBRARY_PREFIX}dyninstAPI_RT${CMAKE_SHARED_LIBRARY_SUFFIX} to rocprofsys-rt..."
     )
 
 install(

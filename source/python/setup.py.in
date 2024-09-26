@@ -3,10 +3,10 @@
 from setuptools import setup
 
 setup(
-    name="rocprofsys",
+    name="@PROJECT_NAME@",
     version="@PROJECT_VERSION@",
     description="@PROJECT_DESCRIPTION@",
     author="AMD ROCm",
     url="@PROJECT_HOMEPAGE_URL@",
-    packages=["rocprofsys"],
+    packages=["@PROJECT_NAME@"],
 )

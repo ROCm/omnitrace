@@ -30,13 +30,13 @@ endif()
 add_test(
     NAME parallel-overhead-attach
     COMMAND
-        ${CMAKE_CURRENT_LIST_DIR}/run-omnitrace-pid.sh $<TARGET_FILE:omnitrace-instrument>
+        ${CMAKE_CURRENT_LIST_DIR}/run-rocprofsys-pid.sh $<TARGET_FILE:rocprofsys-instrument>
         -ME "\.c$" -E fib -e -v 1 --label return args file -l --
         $<TARGET_FILE:parallel-overhead> 30 8 1000
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
 set(_parallel_overhead_attach_environ
-    "${_attach_environment}" "OMNITRACE_OUTPUT_PATH=omnitrace-tests-output"
+    "${_attach_environment}" "OMNITRACE_OUTPUT_PATH=rocprofsys-tests-output"
     "OMNITRACE_OUTPUT_PREFIX=parallel-overhead-attach/")
 
 set_tests_properties(

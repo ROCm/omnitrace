@@ -32,29 +32,29 @@ set(library_headers
     ${CMAKE_CURRENT_LIST_DIR}/thread_info.hpp
     ${CMAKE_CURRENT_LIST_DIR}/tracing.hpp)
 
-target_sources(omnitrace-object-library PRIVATE ${library_sources} ${library_headers})
+target_sources(rocprofsys-object-library PRIVATE ${library_sources} ${library_headers})
 
 if(OMNITRACE_USE_ROCTRACER OR OMNITRACE_USE_ROCPROFILER)
-    target_sources(omnitrace-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/rocm.cpp)
+    target_sources(rocprofsys-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/rocm.cpp)
 endif()
 
 if(OMNITRACE_USE_ROCTRACER)
-    target_sources(omnitrace-object-library
+    target_sources(rocprofsys-object-library
                    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/roctracer.cpp)
 endif()
 
 if(OMNITRACE_USE_RCCL)
-    target_sources(omnitrace-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/rcclp.cpp)
+    target_sources(rocprofsys-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/rcclp.cpp)
 endif()
 
 if(OMNITRACE_USE_ROCPROFILER)
     target_sources(
-        omnitrace-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/rocprofiler.cpp
+        rocprofsys-object-library PRIVATE ${CMAKE_CURRENT_LIST_DIR}/rocprofiler.cpp
                                          ${CMAKE_CURRENT_LIST_DIR}/rocprofiler.hpp)
 endif()
 
 if(OMNITRACE_USE_ROCM_SMI)
-    target_sources(omnitrace-object-library
+    target_sources(rocprofsys-object-library
                    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/rocm_smi.cpp)
 endif()
 

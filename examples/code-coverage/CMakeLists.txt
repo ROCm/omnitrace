@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
-project(omnitrace-code-coverage-example LANGUAGES CXX)
+project(rocprofsys-code-coverage-example LANGUAGES CXX)
 
 if(OMNITRACE_DISABLE_EXAMPLES)
     get_filename_component(_DIR ${CMAKE_CURRENT_LIST_DIR} NAME)
@@ -23,7 +23,7 @@ if(OMNITRACE_INSTALL_EXAMPLES)
     install(
         TARGETS code-coverage
         DESTINATION bin
-        COMPONENT omnitrace-examples)
+        COMPONENT rocprofsys-examples)
 endif()
 
 set(PYTHON_FILES code-coverage.py)
@@ -41,7 +41,7 @@ if(Python3_FOUND)
             install(
                 PROGRAMS ${PROJECT_BINARY_DIR}/${_FILE}
                 DESTINATION bin
-                COMPONENT omnitrace-examples)
+                COMPONENT rocprofsys-examples)
         endif()
     endforeach()
 endif()

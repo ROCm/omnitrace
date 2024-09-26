@@ -16,13 +16,13 @@ set(binary_headers
     ${CMAKE_CURRENT_LIST_DIR}/scope_filter.hpp
     ${CMAKE_CURRENT_LIST_DIR}/symbol.hpp)
 
-add_library(omnitrace-binary-library STATIC)
-add_library(omnitrace::omnitrace-binary ALIAS omnitrace-binary-library)
+add_library(rocprofsys-binary-library STATIC)
+add_library(rocprofsys::rocprofsys-binary ALIAS rocprofsys-binary-library)
 
-target_sources(omnitrace-binary-library PRIVATE ${binary_sources} ${binary_headers})
+target_sources(rocprofsys-binary-library PRIVATE ${binary_sources} ${binary_headers})
 
 target_link_libraries(
-    omnitrace-binary-library PRIVATE omnitrace::omnitrace-interface-library
-                                     omnitrace::omnitrace-core)
+    rocprofsys-binary-library PRIVATE rocprofsys::rocprofsys-interface-library
+                                     rocprofsys::rocprofsys-core)
 
-set_target_properties(omnitrace-binary-library PROPERTIES OUTPUT_NAME rocprof-sys-binary)
+set_target_properties(rocprofsys-binary-library PROPERTIES OUTPUT_NAME rocprof-sys-binary)

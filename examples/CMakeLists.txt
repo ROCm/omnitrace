@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(omnitrace-examples LANGUAGES C CXX)
+project(rocprofsys-examples LANGUAGES C CXX)
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE
@@ -23,13 +23,13 @@ endif()
 
 option(BUILD_SHARED_LIBS "Build dynamic libraries" ON)
 
-if(CMAKE_PROJECT_NAME STREQUAL "omnitrace")
+if(CMAKE_PROJECT_NAME STREQUAL "rocprofsys")
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-    omnitrace_add_option(OMNITRACE_INSTALL_EXAMPLES "Install omnitrace examples" OFF)
+    omnitrace_add_option(OMNITRACE_INSTALL_EXAMPLES "Install rocprofsys examples" OFF)
 else()
-    option(OMNITRACE_INSTALL_EXAMPLES "Install omnitrace examples" ON)
+    option(OMNITRACE_INSTALL_EXAMPLES "Install rocprofsys examples" ON)
 endif()
 
 if(OMNITRACE_INSTALL_EXAMPLES)

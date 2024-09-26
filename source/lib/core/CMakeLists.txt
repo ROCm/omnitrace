@@ -40,36 +40,36 @@ set(core_headers
     ${CMAKE_CURRENT_LIST_DIR}/timemory.hpp
     ${CMAKE_CURRENT_LIST_DIR}/utility.hpp)
 
-add_library(omnitrace-core-library STATIC)
-add_library(omnitrace::omnitrace-core ALIAS omnitrace-core-library)
+add_library(rocprofsys-core-library STATIC)
+add_library(rocprofsys::rocprofsys-core ALIAS rocprofsys-core-library)
 
-target_sources(omnitrace-core-library PRIVATE ${core_sources} ${core_headers}
+target_sources(rocprofsys-core-library PRIVATE ${core_sources} ${core_headers}
                                               ${CMAKE_CURRENT_BINARY_DIR}/defines.hpp)
 add_subdirectory(binary)
 add_subdirectory(components)
 add_subdirectory(containers)
 
-target_include_directories(omnitrace-core-library BEFORE
+target_include_directories(rocprofsys-core-library BEFORE
                            PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
-target_link_libraries(omnitrace-core-library
-                      PRIVATE omnitrace::omnitrace-interface-library)
+target_link_libraries(rocprofsys-core-library
+                      PRIVATE rocprofsys::rocprofsys-interface-library)
 target_link_libraries(
-    omnitrace-core-library
+    rocprofsys-core-library
     PRIVATE
-        $<BUILD_INTERFACE:omnitrace::omnitrace-headers>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-threading>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-common-library>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-compile-definitions>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-compile-options>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-perfetto>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-timemory>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-mpi>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-hip>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-rocm-smi>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-static-libgcc-optional>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-static-libstdcxx-optional>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-sanitizer>
-        $<BUILD_INTERFACE:$<IF:$<BOOL:${OMNITRACE_BUILD_LTO}>,omnitrace::omnitrace-lto,>>)
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-headers>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-threading>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-common-library>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-compile-definitions>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-compile-options>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-perfetto>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-timemory>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-mpi>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-hip>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-rocm-smi>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-static-libgcc-optional>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-static-libstdcxx-optional>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-sanitizer>
+        $<BUILD_INTERFACE:$<IF:$<BOOL:${OMNITRACE_BUILD_LTO}>,rocprofsys::rocprofsys-lto,>>)
 
-set_target_properties(omnitrace-core-library PROPERTIES OUTPUT_NAME rocprof-sys-core)
+set_target_properties(rocprofsys-core-library PROPERTIES OUTPUT_NAME rocprof-sys-core)

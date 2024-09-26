@@ -1,6 +1,6 @@
 # ########################################################################################
 #
-# omnitrace (Python)
+# rocprofsys (Python)
 #
 # ########################################################################################
 
@@ -19,7 +19,7 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME python)
 
 function(OMNITRACE_CONFIGURE_PYTARGET _TARGET _VERSION)
 
-    add_library(omnitrace::${_TARGET} ALIAS ${_TARGET})
+    add_library(rocprofsys::${_TARGET} ALIAS ${_TARGET})
     target_link_libraries(${_TARGET} PRIVATE libpyrocprofsys-interface)
     add_dependencies(libpyrocprofsys ${_TARGET})
 
@@ -60,11 +60,11 @@ endfunction()
 
 # ########################################################################################
 
-add_library(omnitrace-python-compile-options INTERFACE)
-add_library(omnitrace::omnitrace-python-compile-options ALIAS
-            omnitrace-python-compile-options)
+add_library(rocprofsys-python-compile-options INTERFACE)
+add_library(rocprofsys::rocprofsys-python-compile-options ALIAS
+            rocprofsys-python-compile-options)
 add_target_cxx_flag_if_avail(
-    omnitrace-python-compile-options "-Wno-unused-value" "-Wno-range-loop-analysis"
+    rocprofsys-python-compile-options "-Wno-unused-value" "-Wno-range-loop-analysis"
     "-Wno-deprecated-declarations" "-Wno-unused-but-set-parameter"
     "-ftls-model=global-dynamic")
 
@@ -78,14 +78,14 @@ target_link_libraries(
     libpyrocprofsys-interface
     INTERFACE pybind11::module
               timemory::timemory-headers
-              omnitrace::omnitrace-headers
-              omnitrace::omnitrace-compile-options
-              omnitrace::omnitrace-static-libgcc-optional
-              omnitrace::omnitrace-lto
-              omnitrace::omnitrace-dl-library
-              omnitrace::omnitrace-user-library
-              omnitrace::omnitrace-python
-              omnitrace::omnitrace-python-compile-options)
+              rocprofsys::rocprofsys-headers
+              rocprofsys::rocprofsys-compile-options
+              rocprofsys::rocprofsys-static-libgcc-optional
+              rocprofsys::rocprofsys-lto
+              rocprofsys::rocprofsys-dl-library
+              rocprofsys::rocprofsys-user-library
+              rocprofsys::rocprofsys-python
+              rocprofsys::rocprofsys-python-compile-options)
 
 omnitrace_target_compile_definitions(libpyrocprofsys-interface
                                      INTERFACE OMNITRACE_PYBIND11_SOURCE)

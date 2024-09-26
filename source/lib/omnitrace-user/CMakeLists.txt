@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------#
 #
-# omnitrace user library
+# rocprofsys user library
 #
 # ------------------------------------------------------------------------------#
 
@@ -10,8 +10,8 @@ set(BUILD_RPATH_USE_ORIGIN ON)
 set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
-add_library(omnitrace-user-library SHARED)
-add_library(omnitrace::omnitrace-user-library ALIAS omnitrace-user-library)
+add_library(rocprofsys-user-library SHARED)
+add_library(rocprofsys::rocprofsys-user-library ALIAS rocprofsys-user-library)
 
 set(_user_headers
     ${CMAKE_CURRENT_SOURCE_DIR}/omnitrace/user.h
@@ -21,15 +21,15 @@ set(_user_headers
 
 set(_user_sources ${CMAKE_CURRENT_SOURCE_DIR}/user.cpp)
 
-target_sources(omnitrace-user-library PRIVATE ${_user_sources} ${_user_headers})
+target_sources(rocprofsys-user-library PRIVATE ${_user_sources} ${_user_headers})
 target_include_directories(
-    omnitrace-user-library PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    rocprofsys-user-library PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
                                   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-target_link_libraries(omnitrace-user-library
-                      PRIVATE $<BUILD_INTERFACE:omnitrace::omnitrace-compile-definitions>)
+target_link_libraries(rocprofsys-user-library
+                      PRIVATE $<BUILD_INTERFACE:rocprofsys::rocprofsys-compile-definitions>)
 
 set_target_properties(
-    omnitrace-user-library
+    rocprofsys-user-library
     PROPERTIES OUTPUT_NAME rocprof-sys-user
                VERSION ${PROJECT_VERSION}
                SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
@@ -37,7 +37,7 @@ set_target_properties(
                BUILD_RPATH "\$ORIGIN"
                INSTALL_RPATH "\$ORIGIN")
 
-omnitrace_strip_target(omnitrace-user-library)
+omnitrace_strip_target(rocprofsys-user-library)
 
 foreach(_HEADER ${_user_headers})
     string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/"
@@ -46,9 +46,9 @@ foreach(_HEADER ${_user_headers})
     configure_file(${_HEADER} ${_DEST} COPYONLY)
 endforeach()
 
-install(FILES ${_user_headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/omnitrace)
+install(FILES ${_user_headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rocprofsys)
 
 install(
-    TARGETS omnitrace-user-library
-    EXPORT omnitrace-library-targets
+    TARGETS rocprofsys-user-library
+    EXPORT rocprofsys-library-targets
     DESTINATION ${CMAKE_INSTALL_LIBDIR})

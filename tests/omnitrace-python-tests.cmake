@@ -74,10 +74,10 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
         FILE ${CMAKE_SOURCE_DIR}/examples/code-coverage/code-coverage.py
         RUN_ARGS
             -i
-            ${PROJECT_BINARY_DIR}/omnitrace-tests-output/code-coverage-basic-blocks-binary-rewrite/coverage.json
-            ${PROJECT_BINARY_DIR}/omnitrace-tests-output/code-coverage-basic-blocks-hybrid-runtime-instrument/coverage.json
+            ${PROJECT_BINARY_DIR}/rocprofsys-tests-output/code-coverage-basic-blocks-binary-rewrite/coverage.json
+            ${PROJECT_BINARY_DIR}/rocprofsys-tests-output/code-coverage-basic-blocks-hybrid-runtime-instrument/coverage.json
             -o
-            ${PROJECT_BINARY_DIR}/omnitrace-tests-output/code-coverage-basic-blocks-summary/coverage.json
+            ${PROJECT_BINARY_DIR}/rocprofsys-tests-output/code-coverage-basic-blocks-summary/coverage.json
         DEPENDS code-coverage-basic-blocks-binary-rewrite
                 code-coverage-basic-blocks-binary-rewrite-run
                 code-coverage-basic-blocks-hybrid-runtime-instrument
@@ -105,7 +105,7 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
             NAME python-external-check
             COMMAND ${OMNITRACE_CAT_COMMAND}
             PYTHON_VERSION ${_VERSION}
-            FILE omnitrace-tests-output/python-external/${_VERSION}/trip_count.txt
+            FILE rocprofsys-tests-output/python-external/${_VERSION}/trip_count.txt
             PASS_REGEX
                 "(\\\[compile\\\]).*(\\\| \\\|0>>> \\\[run\\\]\\\[external.py\\\]).*(\\\| \\\|0>>> \\\|_\\\[fib\\\]\\\[external.py\\\]).*(\\\| \\\|0>>> \\\|_\\\[inefficient\\\]\\\[external.py\\\])"
             DEPENDS python-external-${_VERSION}
@@ -115,7 +115,7 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
             NAME python-external-exclude-inefficient-check
             COMMAND ${OMNITRACE_CAT_COMMAND}
             PYTHON_VERSION ${_VERSION}
-            FILE omnitrace-tests-output/python-external-exclude-inefficient/${_VERSION}/trip_count.txt
+            FILE rocprofsys-tests-output/python-external-exclude-inefficient/${_VERSION}/trip_count.txt
             FAIL_REGEX "(\\\|_inefficient).*(\\\|_sum)|OMNITRACE_ABORT_FAIL_REGEX"
             DEPENDS python-external-exclude-inefficient-${_VERSION}
             ENVIRONMENT "${_python_environment}")
@@ -124,7 +124,7 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
             NAME python-builtin-check
             COMMAND ${OMNITRACE_CAT_COMMAND}
             PYTHON_VERSION ${_VERSION}
-            FILE omnitrace-tests-output/python-builtin/${_VERSION}/trip_count.txt
+            FILE rocprofsys-tests-output/python-builtin/${_VERSION}/trip_count.txt
             PASS_REGEX "\\\[inefficient\\\]\\\[builtin.py:14\\\]"
             DEPENDS python-builtin-${_VERSION}
             ENVIRONMENT "${_python_environment}")
@@ -133,7 +133,7 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
             NAME python-builtin-noprofile-check
             COMMAND ${OMNITRACE_CAT_COMMAND}
             PYTHON_VERSION ${_VERSION}
-            FILE omnitrace-tests-output/python-builtin-noprofile/${_VERSION}/trip_count.txt
+            FILE rocprofsys-tests-output/python-builtin-noprofile/${_VERSION}/trip_count.txt
             PASS_REGEX ".(run)..(noprofile.py)."
             FAIL_REGEX ".(fib|inefficient)..(noprofile.py).|OMNITRACE_ABORT_FAIL_REGEX"
             DEPENDS python-builtin-noprofile-${_VERSION}
@@ -156,10 +156,10 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
                 ${_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/validate-timemory-json.py
                 -m ${TEST_TIMEMORY_METRIC} ${TEST_ARGS} -i
             PYTHON_VERSION ${_VERSION}
-            FILE omnitrace-tests-output/${TEST_NAME}/${_VERSION}/${TEST_TIMEMORY_FILE}
+            FILE rocprofsys-tests-output/${TEST_NAME}/${_VERSION}/${TEST_TIMEMORY_FILE}
             DEPENDS ${TEST_NAME}-${_VERSION}
             PASS_REGEX
-                "omnitrace-tests-output/${TEST_NAME}/${_VERSION}/${TEST_TIMEMORY_FILE} validated"
+                "rocprofsys-tests-output/${TEST_NAME}/${_VERSION}/${TEST_TIMEMORY_FILE} validated"
             ENVIRONMENT "${_python_environment}")
 
         omnitrace_add_python_test(
@@ -169,10 +169,10 @@ foreach(_VERSION ${OMNITRACE_PYTHON_VERSIONS})
                 -m ${TEST_PERFETTO_METRIC} ${TEST_ARGS} -p -t
                 /opt/trace_processor/bin/trace_processor_shell -i
             PYTHON_VERSION ${_VERSION}
-            FILE omnitrace-tests-output/${TEST_NAME}/${_VERSION}/${TEST_PERFETTO_FILE}
+            FILE rocprofsys-tests-output/${TEST_NAME}/${_VERSION}/${TEST_PERFETTO_FILE}
             DEPENDS ${TEST_NAME}-${_VERSION}
             PASS_REGEX
-                "omnitrace-tests-output/${TEST_NAME}/${_VERSION}/${TEST_PERFETTO_FILE} validated"
+                "rocprofsys-tests-output/${TEST_NAME}/${_VERSION}/${TEST_PERFETTO_FILE} validated"
             ENVIRONMENT "${_python_environment}")
     endfunction()
 

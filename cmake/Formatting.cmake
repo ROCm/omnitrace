@@ -86,18 +86,18 @@ if(OMNITRACE_CLANG_FORMAT_EXE
 
     if(OMNITRACE_CLANG_FORMAT_EXE)
         add_custom_target(
-            format-omnitrace-source
+            format-rocprofsys-source
             ${OMNITRACE_CLANG_FORMAT_EXE} -i ${sources} ${headers} ${examples}
             ${tests_source}
-            COMMENT "[omnitrace] Running C++ formatter ${OMNITRACE_CLANG_FORMAT_EXE}...")
+            COMMENT "[rocprof-sys] Running C++ formatter ${OMNITRACE_CLANG_FORMAT_EXE}...")
     endif()
 
     if(OMNITRACE_BLACK_FORMAT_EXE)
         add_custom_target(
-            format-omnitrace-python
+            format-rocprofsys-python
             ${OMNITRACE_BLACK_FORMAT_EXE} -q ${PROJECT_SOURCE_DIR}
             COMMENT
-                "[omnitrace] Running Python formatter ${OMNITRACE_BLACK_FORMAT_EXE}...")
+                "[rocprof-sys] Running Python formatter ${OMNITRACE_BLACK_FORMAT_EXE}...")
         if(NOT TARGET format-python)
             add_custom_target(format-python)
         endif()
@@ -105,9 +105,9 @@ if(OMNITRACE_CLANG_FORMAT_EXE
 
     if(OMNITRACE_CMAKE_FORMAT_EXE)
         add_custom_target(
-            format-omnitrace-cmake
+            format-rocprofsys-cmake
             ${OMNITRACE_CMAKE_FORMAT_EXE} -i ${cmake_files}
-            COMMENT "[omnitrace] Running CMake formatter ${OMNITRACE_CMAKE_FORMAT_EXE}..."
+            COMMENT "[rocprof-sys] Running CMake formatter ${OMNITRACE_CMAKE_FORMAT_EXE}..."
             )
         if(NOT TARGET format-cmake)
             add_custom_target(format-cmake)
@@ -115,15 +115,15 @@ if(OMNITRACE_CLANG_FORMAT_EXE
     endif()
 
     foreach(_TYPE source python cmake)
-        if(TARGET format-omnitrace-${_TYPE})
-            add_dependencies(format-omnitrace format-omnitrace-${_TYPE})
-            add_dependencies(format-${_TYPE} format-omnitrace-${_TYPE})
+        if(TARGET format-rocprofsys-${_TYPE})
+            add_dependencies(format-omnitrace format-rocprofsys-${_TYPE})
+            add_dependencies(format-${_TYPE} format-rocprofsys-${_TYPE})
         endif()
     endforeach()
 
     foreach(_TYPE source python)
-        if(TARGET format-omnitrace-${_TYPE})
-            add_dependencies(format format-omnitrace-${_TYPE})
+        if(TARGET format-rocprofsys-${_TYPE})
+            add_dependencies(format format-rocprofsys-${_TYPE})
         endif()
     endforeach()
 else()

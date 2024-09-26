@@ -12,7 +12,7 @@ endif()
 if(NOT UNIX OR APPLE)
     message(
         AUTHOR_WARNING
-            "omnitrace only supports Linux. Configure and/or build is likely to fail")
+            "rocprofsys only supports Linux. Configure and/or build is likely to fail")
 endif()
 
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" FULL_VERSION_STRING LIMIT_COUNT 1)
@@ -21,11 +21,11 @@ string(REGEX REPLACE "([0-9]+)\.([0-9]+)\.([0-9]+)(.*)" "\\1.\\2.\\3" OMNITRACE_
                      "${FULL_VERSION_STRING}")
 
 project(
-    omnitrace
+    rocprofsys
     LANGUAGES C CXX
     VERSION ${OMNITRACE_VERSION}
     DESCRIPTION "CPU/GPU Application tracing with static/dynamic binary instrumentation"
-    HOMEPAGE_URL "https://github.com/ROCm/omnitrace")
+    HOMEPAGE_URL "https://github.com/ROCm/rocprofiler-systems")
 
 find_package(Git)
 

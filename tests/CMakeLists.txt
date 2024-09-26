@@ -1,5 +1,5 @@
 #
-#   omnitrace tests
+#   rocprofsys tests
 #
 include_guard(GLOBAL)
 

@@ -1,15 +1,15 @@
 # ------------------------------------------------------------------------------#
 #
-# omnitrace-instrument target (formerly omnitrace-exe target prior to 1.8.1)
+# rocprofsys-instrument target (formerly rocprofsys-exe target prior to 1.8.1)
 #
 # ------------------------------------------------------------------------------#
 
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 
-add_executable(omnitrace-instrument)
+add_executable(rocprofsys-instrument)
 
 target_sources(
-    omnitrace-instrument
+    rocprofsys-instrument
     PRIVATE ${CMAKE_CURRENT_LIST_DIR}/details.cpp
             ${CMAKE_CURRENT_LIST_DIR}/function_signature.cpp
             ${CMAKE_CURRENT_LIST_DIR}/function_signature.hpp
@@ -25,37 +25,37 @@ target_sources(
             ${CMAKE_CURRENT_LIST_DIR}/omnitrace-instrument.hpp)
 
 target_link_libraries(
-    omnitrace-instrument
-    PRIVATE omnitrace::omnitrace-headers
-            omnitrace::omnitrace-dyninst
-            omnitrace::omnitrace-compile-options
-            omnitrace::omnitrace-compile-definitions
-            omnitrace::omnitrace-sanitizer
+    rocprofsys-instrument
+    PRIVATE rocprofsys::rocprofsys-headers
+            rocprofsys::rocprofsys-dyninst
+            rocprofsys::rocprofsys-compile-options
+            rocprofsys::rocprofsys-compile-definitions
+            rocprofsys::rocprofsys-sanitizer
             timemory::timemory-headers
             timemory::timemory-extensions
             timemory::timemory-core)
 
 set_target_properties(
-    omnitrace-instrument
+    rocprofsys-instrument
     PROPERTIES BUILD_RPATH "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
                INSTALL_RPATH "${OMNITRACE_EXE_INSTALL_RPATH}"
                INSTALL_RPATH_USE_LINK_PATH ON
                OUTPUT_NAME "rocprof-sys-instrument")
 
 if(OMNITRACE_BUILD_DYNINST)
-    target_compile_definitions(omnitrace-instrument PRIVATE OMNITRACE_BUILD_DYNINST=1)
+    target_compile_definitions(rocprofsys-instrument PRIVATE OMNITRACE_BUILD_DYNINST=1)
 endif()
 
-add_target_flag_if_avail(omnitrace-instrument "-Wno-deprecated-declarations")
+add_target_flag_if_avail(rocprofsys-instrument "-Wno-deprecated-declarations")
 
-omnitrace_strip_target(omnitrace-instrument)
+omnitrace_strip_target(rocprofsys-instrument)
 
 if(CMAKE_BUILD_TYPE MATCHES "^(DEBUG|Debug)")
     string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-    target_compile_options(omnitrace-instrument PRIVATE ${_FLAGS})
+    target_compile_options(rocprofsys-instrument PRIVATE ${_FLAGS})
 endif()
 
 install(
-    TARGETS omnitrace-instrument
+    TARGETS rocprofsys-instrument
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     OPTIONAL)

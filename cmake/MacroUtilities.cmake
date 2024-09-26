@@ -17,7 +17,7 @@ include(CMakeParseArguments)
 #
 function(OMNITRACE_MESSAGE TYPE)
     if(NOT OMNITRACE_QUIET_CONFIG)
-        message(${TYPE} "[omnitrace] ${ARGN}")
+        message(${TYPE} "[rocprof-sys] ${ARGN}")
     endif()
 endfunction()
 
@@ -169,9 +169,9 @@ endfunction()
 # Creates a target which runs ctest but depends on all the tests being built.
 #
 function(ADD_OMNITRACE_TEST_TARGET)
-    if(NOT TARGET omnitrace-test)
+    if(NOT TARGET rocprofsys-test)
         add_custom_target(
-            omnitrace-test
+            rocprofsys-test
             COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target test
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
             COMMENT "Running tests...")
@@ -555,7 +555,7 @@ function(omnitrace_custom_compilation)
     cmake_parse_arguments(COMP "GLOBAL;PROJECT" "COMPILER" "DIRECTORY;TARGET;SOURCE"
                           ${ARGN})
 
-    # find omnitrace-launch-compiler
+    # find rocprofsys-launch-compiler
     find_program(
         OMNITRACE_COMPILE_LAUNCHER
         NAMES omnitrace-launch-compiler
@@ -570,7 +570,7 @@ function(omnitrace_custom_compilation)
     if(NOT OMNITRACE_COMPILE_LAUNCHER)
         message(
             FATAL_ERROR
-                "omnitrace could not find 'omnitrace-launch-compiler'. Please set '-DOMNITRACE_COMPILE_LAUNCHER=/path/to/launcher'"
+                "rocprofsys could not find 'rocprofsys-launch-compiler'. Please set '-DOMNITRACE_COMPILE_LAUNCHER=/path/to/launcher'"
             )
     endif()
 

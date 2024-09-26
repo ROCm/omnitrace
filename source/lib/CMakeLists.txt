@@ -1,10 +1,10 @@
 # ----------------------------------------------------------------------------- #
 #
-# omnitrace: contains all instrumentation functionality
+# rocprofsys: contains all instrumentation functionality
 #
-# omnitrace-dl: contains minimal symbols and dlopen's omnitrace
+# rocprofsys-dl: contains minimal symbols and dlopen's rocprofsys
 #
-# omnitrace-user: contains symbols for user API
+# rocprofsys-user: contains symbols for user API
 #
 # ----------------------------------------------------------------------------- #
 
@@ -17,51 +17,51 @@ if(OMNITRACE_USE_ROCPROFILER
    AND ROCmVersion_TRIPLE_VERSION VERSION_LESS 5.2.0
    AND NOT CMAKE_INSTALL_RPATH_USE_LINK_PATH)
     set(OMNITRACE_LIB_INSTALL_RPATH
-        "\$ORIGIN:\$ORIGIN/omnitrace:${rocprofiler_LIBRARY_DIR}")
+        "\$ORIGIN:\$ORIGIN/rocprofsys:${rocprofiler_LIBRARY_DIR}")
 else()
-    set(OMNITRACE_LIB_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/omnitrace")
+    set(OMNITRACE_LIB_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/rocprofsys")
 endif()
 
 # ------------------------------------------------------------------------------#
 #
-# omnitrace interface library
+# rocprofsys interface library
 #
 # ------------------------------------------------------------------------------#
 
-add_library(omnitrace-interface-library INTERFACE)
-add_library(omnitrace::omnitrace-interface-library ALIAS omnitrace-interface-library)
+add_library(rocprofsys-interface-library INTERFACE)
+add_library(rocprofsys::rocprofsys-interface-library ALIAS rocprofsys-interface-library)
 
 target_include_directories(
-    omnitrace-interface-library INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
+    rocprofsys-interface-library INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
                                           ${CMAKE_CURRENT_SOURCE_DIR}/omnitrace)
 
 target_link_libraries(
-    omnitrace-interface-library
+    rocprofsys-interface-library
     INTERFACE
-        $<BUILD_INTERFACE:omnitrace::omnitrace-headers>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-threading>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-common-library>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-compile-options>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-compile-definitions>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-perfetto>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-timemory>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-elfutils>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-bfd>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-mpi>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-ptl>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-hip>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-roctracer>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-rocprofiler>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-rocm-smi>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-rccl>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-static-libgcc-optional>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-static-libstdcxx-optional>
-        $<BUILD_INTERFACE:omnitrace::omnitrace-sanitizer>
-        $<BUILD_INTERFACE:$<IF:$<BOOL:${OMNITRACE_BUILD_LTO}>,omnitrace::omnitrace-lto,>>)
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-headers>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-threading>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-common-library>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-compile-options>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-compile-definitions>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-perfetto>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-timemory>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-elfutils>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-bfd>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-mpi>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-ptl>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-hip>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-roctracer>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-rocprofiler>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-rocm-smi>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-rccl>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-static-libgcc-optional>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-static-libstdcxx-optional>
+        $<BUILD_INTERFACE:rocprofsys::rocprofsys-sanitizer>
+        $<BUILD_INTERFACE:$<IF:$<BOOL:${OMNITRACE_BUILD_LTO}>,rocprofsys::rocprofsys-lto,>>)
 
 # ------------------------------------------------------------------------------#
 #
-# omnitrace internal libraries
+# rocprofsys internal libraries
 #
 # ------------------------------------------------------------------------------#
 
@@ -71,7 +71,7 @@ add_subdirectory(binary)
 
 # ------------------------------------------------------------------------------#
 #
-# omnitrace exported libraries
+# rocprofsys exported libraries
 #
 # ------------------------------------------------------------------------------#
 

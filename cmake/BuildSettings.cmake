@@ -33,16 +33,16 @@ omnitrace_add_cache_option(
 omnitrace_add_cache_option(OMNITRACE_BUILD_NUMBER "Internal CI use" STRING "0" ADVANCED
                            NO_FEATURE)
 
-omnitrace_add_interface_library(omnitrace-static-libgcc
+omnitrace_add_interface_library(rocprofsys-static-libgcc
                                 "Link to static version of libgcc")
-omnitrace_add_interface_library(omnitrace-static-libstdcxx
+omnitrace_add_interface_library(rocprofsys-static-libstdcxx
                                 "Link to static version of libstdc++")
-omnitrace_add_interface_library(omnitrace-static-libgcc-optional
+omnitrace_add_interface_library(rocprofsys-static-libgcc-optional
                                 "Link to static version of libgcc")
-omnitrace_add_interface_library(omnitrace-static-libstdcxx-optional
+omnitrace_add_interface_library(rocprofsys-static-libstdcxx-optional
                                 "Link to static version of libstdc++")
 
-target_compile_definitions(omnitrace-compile-options INTERFACE $<$<CONFIG:DEBUG>:DEBUG>)
+target_compile_definitions(rocprofsys-compile-options INTERFACE $<$<CONFIG:DEBUG>:DEBUG>)
 
 set(OMNITRACE_SANITIZER_TYPE
     "leak"
@@ -78,7 +78,7 @@ find_package_handle_standard_args(rt-library REQUIRED_VARS rt_LIBRARY)
 # find_package_handle_standard_args(dw-library REQUIRED_VARS dw_LIBRARY)
 
 if(dl_LIBRARY)
-    target_link_libraries(omnitrace-compile-options INTERFACE ${dl_LIBRARY})
+    target_link_libraries(rocprofsys-compile-options INTERFACE ${dl_LIBRARY})
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -105,57 +105,57 @@ endif()
 # extra flags for debug information in debug or optimized binaries
 #
 omnitrace_add_interface_library(
-    omnitrace-compile-debuginfo
+    rocprofsys-compile-debuginfo
     "Attempts to set best flags for more expressive profiling information in debug or optimized binaries"
     )
 
-add_target_flag_if_avail(omnitrace-compile-debuginfo "-g3" "-fno-omit-frame-pointer"
+add_target_flag_if_avail(rocprofsys-compile-debuginfo "-g3" "-fno-omit-frame-pointer"
                          "-fno-optimize-sibling-calls")
 
 if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
-    add_target_cuda_flag(omnitrace-compile-debuginfo "-lineinfo")
+    add_target_cuda_flag(rocprofsys-compile-debuginfo "-lineinfo")
 endif()
 
 target_compile_options(
-    omnitrace-compile-debuginfo
+    rocprofsys-compile-debuginfo
     INTERFACE $<$<COMPILE_LANGUAGE:C>:$<$<C_COMPILER_ID:GNU>:-rdynamic>>
               $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-rdynamic>>)
 
 if(NOT APPLE)
-    target_link_options(omnitrace-compile-debuginfo INTERFACE
+    target_link_options(rocprofsys-compile-debuginfo INTERFACE
                         $<$<CXX_COMPILER_ID:GNU>:-rdynamic>)
 endif()
 
 if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
     target_compile_options(
-        omnitrace-compile-debuginfo
+        rocprofsys-compile-debuginfo
         INTERFACE
             $<$<COMPILE_LANGUAGE:CUDA>:$<$<CXX_COMPILER_ID:GNU>:-Xcompiler=-rdynamic>>)
 endif()
 
 if(dl_LIBRARY)
-    target_link_libraries(omnitrace-compile-debuginfo INTERFACE ${dl_LIBRARY})
+    target_link_libraries(rocprofsys-compile-debuginfo INTERFACE ${dl_LIBRARY})
 endif()
 
 if(rt_LIBRARY)
-    target_link_libraries(omnitrace-compile-debuginfo INTERFACE ${rt_LIBRARY})
+    target_link_libraries(rocprofsys-compile-debuginfo INTERFACE ${rt_LIBRARY})
 endif()
 
 # ----------------------------------------------------------------------------------------#
 # non-debug optimizations
 #
-omnitrace_add_interface_library(omnitrace-compile-extra "Extra optimization flags")
+omnitrace_add_interface_library(rocprofsys-compile-extra "Extra optimization flags")
 if(NOT OMNITRACE_BUILD_CODECOV AND OMNITRACE_BUILD_EXTRA_OPTIMIZATIONS)
     add_target_flag_if_avail(
-        omnitrace-compile-extra "-finline-functions" "-funroll-loops" "-ftree-vectorize"
+        rocprofsys-compile-extra "-finline-functions" "-funroll-loops" "-ftree-vectorize"
         "-ftree-loop-optimize" "-ftree-loop-vectorize")
 endif()
 
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug"
    AND OMNITRACE_BUILD_EXTRA_OPTIMIZATIONS
    AND NOT OMNITRACE_BUILD_CODECOV)
-    target_link_libraries(omnitrace-compile-options
-                          INTERFACE $<BUILD_INTERFACE:omnitrace-compile-extra>)
+    target_link_libraries(rocprofsys-compile-options
+                          INTERFACE $<BUILD_INTERFACE:rocprofsys-compile-extra>)
     add_flag_if_avail(
         "-fno-signaling-nans" "-fno-trapping-math" "-fno-signed-zeros"
         "-ffinite-math-only" "-fno-math-errno" "-fpredictive-commoning"
@@ -168,28 +168,28 @@ endif()
 #
 add_cxx_flag_if_avail("-faligned-new")
 
-omnitrace_add_interface_library(omnitrace-lto "Adds link-time-optimization flags")
+omnitrace_add_interface_library(rocprofsys-lto "Adds link-time-optimization flags")
 
 if(NOT OMNITRACE_BUILD_CODECOV)
     omnitrace_save_variables(FLTO VARIABLES CMAKE_CXX_FLAGS)
     set(_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     set(CMAKE_CXX_FLAGS "-flto=thin ${_CXX_FLAGS}")
 
-    add_target_flag_if_avail(omnitrace-lto "-flto=thin")
+    add_target_flag_if_avail(rocprofsys-lto "-flto=thin")
     if(NOT cxx_omnitrace_lto_flto_thin)
         set(CMAKE_CXX_FLAGS "-flto ${_CXX_FLAGS}")
-        add_target_flag_if_avail(omnitrace-lto "-flto")
+        add_target_flag_if_avail(rocprofsys-lto "-flto")
         if(NOT cxx_omnitrace_lto_flto)
             set(OMNITRACE_BUILD_LTO OFF)
         else()
-            target_link_options(omnitrace-lto INTERFACE -flto)
+            target_link_options(rocprofsys-lto INTERFACE -flto)
         endif()
-        add_target_flag_if_avail(omnitrace-lto "-fno-fat-lto-objects")
+        add_target_flag_if_avail(rocprofsys-lto "-fno-fat-lto-objects")
         if(cxx_omnitrace_lto_fno_fat_lto_objects)
-            target_link_options(omnitrace-lto INTERFACE -fno-fat-lto-objects)
+            target_link_options(rocprofsys-lto INTERFACE -fno-fat-lto-objects)
         endif()
     else()
-        target_link_options(omnitrace-lto INTERFACE -flto=thin)
+        target_link_options(rocprofsys-lto INTERFACE -flto=thin)
     endif()
 
     omnitrace_restore_variables(FLTO VARIABLES CMAKE_CXX_FLAGS)
@@ -199,31 +199,31 @@ endif()
 # print compilation timing reports (Clang compiler)
 #
 omnitrace_add_interface_library(
-    omnitrace-compile-timing
+    rocprofsys-compile-timing
     "Adds compiler flags which report compilation timing metrics")
 if(CMAKE_CXX_COMPILER_IS_CLANG)
-    add_target_flag_if_avail(omnitrace-compile-timing "-ftime-trace")
+    add_target_flag_if_avail(rocprofsys-compile-timing "-ftime-trace")
     if(NOT cxx_omnitrace_compile_timing_ftime_trace)
-        add_target_flag_if_avail(omnitrace-compile-timing "-ftime-report")
+        add_target_flag_if_avail(rocprofsys-compile-timing "-ftime-report")
     endif()
 else()
-    add_target_flag_if_avail(omnitrace-compile-timing "-ftime-report")
+    add_target_flag_if_avail(rocprofsys-compile-timing "-ftime-report")
 endif()
 
 if(OMNITRACE_USE_COMPILE_TIMING)
-    target_link_libraries(omnitrace-compile-options INTERFACE omnitrace-compile-timing)
+    target_link_libraries(rocprofsys-compile-options INTERFACE rocprofsys-compile-timing)
 endif()
 
 # ----------------------------------------------------------------------------------------#
 # fstack-protector
 #
-omnitrace_add_interface_library(omnitrace-stack-protector
+omnitrace_add_interface_library(rocprofsys-stack-protector
                                 "Adds stack-protector compiler flags")
-add_target_flag_if_avail(omnitrace-stack-protector "-fstack-protector-strong"
+add_target_flag_if_avail(rocprofsys-stack-protector "-fstack-protector-strong"
                          "-Wstack-protector")
 
 if(OMNITRACE_BUILD_STACK_PROTECTOR)
-    target_link_libraries(omnitrace-compile-options INTERFACE omnitrace-stack-protector)
+    target_link_libraries(rocprofsys-compile-options INTERFACE rocprofsys-stack-protector)
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -231,17 +231,17 @@ endif()
 #
 if(OMNITRACE_BUILD_DEVELOPER)
     add_target_flag_if_avail(
-        omnitrace-compile-options "-Werror" "-Wdouble-promotion" "-Wshadow" "-Wextra"
+        rocprofsys-compile-options "-Werror" "-Wdouble-promotion" "-Wshadow" "-Wextra"
         "-Wpedantic" "-Wstack-usage=524288" # 512 KB
         "/showIncludes")
     if(OMNITRACE_BUILD_NUMBER GREATER 2)
-        add_target_flag_if_avail(omnitrace-compile-options "-gsplit-dwarf")
+        add_target_flag_if_avail(rocprofsys-compile-options "-gsplit-dwarf")
     endif()
 endif()
 
 if(OMNITRACE_BUILD_LINKER)
     target_link_options(
-        omnitrace-compile-options INTERFACE
+        rocprofsys-compile-options INTERFACE
         $<$<C_COMPILER_ID:GNU>:-fuse-ld=${OMNITRACE_BUILD_LINKER}>
         $<$<CXX_COMPILER_ID:GNU>:-fuse-ld=${OMNITRACE_BUILD_LINKER}>)
 endif()
@@ -251,20 +251,20 @@ endif()
 #
 if(OMNITRACE_BUILD_RELEASE AND NOT OMNITRACE_BUILD_DEBUG)
     add_target_flag_if_avail(
-        omnitrace-compile-options "-g1" "-feliminate-unused-debug-symbols"
+        rocprofsys-compile-options "-g1" "-feliminate-unused-debug-symbols"
         "-gno-column-info" "-gno-variable-location-views" "-gline-tables-only")
 endif()
 
 # ----------------------------------------------------------------------------------------#
 # visibility build flags
 #
-omnitrace_add_interface_library(omnitrace-default-visibility
+omnitrace_add_interface_library(rocprofsys-default-visibility
                                 "Adds -fvisibility=default compiler flag")
-omnitrace_add_interface_library(omnitrace-hidden-visibility
+omnitrace_add_interface_library(rocprofsys-hidden-visibility
                                 "Adds -fvisibility=hidden compiler flag")
 
-add_target_flag_if_avail(omnitrace-default-visibility "-fvisibility=default")
-add_target_flag_if_avail(omnitrace-hidden-visibility "-fvisibility=hidden"
+add_target_flag_if_avail(rocprofsys-default-visibility "-fvisibility=default")
+add_target_flag_if_avail(rocprofsys-hidden-visibility "-fvisibility=hidden"
                          "-fvisibility-inlines-hidden")
 
 # ----------------------------------------------------------------------------------------#
@@ -292,26 +292,26 @@ set(OMNITRACE_SANITIZER_TYPES
     alignment)
 set_property(CACHE OMNITRACE_SANITIZER_TYPE PROPERTY STRINGS
                                                      "${OMNITRACE_SANITIZER_TYPES}")
-omnitrace_add_interface_library(omnitrace-sanitizer-compile-options
+omnitrace_add_interface_library(rocprofsys-sanitizer-compile-options
                                 "Adds compiler flags for sanitizers")
 omnitrace_add_interface_library(
-    omnitrace-sanitizer
+    rocprofsys-sanitizer
     "Adds compiler flags to enable ${OMNITRACE_SANITIZER_TYPE} sanitizer (-fsanitizer=${OMNITRACE_SANITIZER_TYPE})"
     )
 
 set(COMMON_SANITIZER_FLAGS "-fno-optimize-sibling-calls" "-fno-omit-frame-pointer"
                            "-fno-inline-functions")
-add_target_flag(omnitrace-sanitizer-compile-options ${COMMON_SANITIZER_FLAGS})
+add_target_flag(rocprofsys-sanitizer-compile-options ${COMMON_SANITIZER_FLAGS})
 
 foreach(_TYPE ${OMNITRACE_SANITIZER_TYPES})
     set(_FLAG "-fsanitize=${_TYPE}")
     omnitrace_add_interface_library(
-        omnitrace-${_TYPE}-sanitizer
+        rocprofsys-${_TYPE}-sanitizer
         "Adds compiler flags to enable ${_TYPE} sanitizer (${_FLAG})")
-    add_target_flag(omnitrace-${_TYPE}-sanitizer ${_FLAG})
-    target_link_libraries(omnitrace-${_TYPE}-sanitizer
-                          INTERFACE omnitrace-sanitizer-compile-options)
-    set_property(TARGET omnitrace-${_TYPE}-sanitizer
+    add_target_flag(rocprofsys-${_TYPE}-sanitizer ${_FLAG})
+    target_link_libraries(rocprofsys-${_TYPE}-sanitizer
+                          INTERFACE rocprofsys-sanitizer-compile-options)
+    set_property(TARGET rocprofsys-${_TYPE}-sanitizer
                  PROPERTY INTERFACE_LINK_OPTIONS ${_FLAG} ${COMMON_SANITIZER_FLAGS})
 endforeach()
 
@@ -320,12 +320,12 @@ unset(COMMON_SANITIZER_FLAGS)
 
 if(OMNITRACE_USE_SANITIZER)
     foreach(_TYPE ${OMNITRACE_SANITIZER_TYPE})
-        if(TARGET omnitrace-${_TYPE}-sanitizer)
-            target_link_libraries(omnitrace-sanitizer
-                                  INTERFACE omnitrace-${_TYPE}-sanitizer)
+        if(TARGET rocprofsys-${_TYPE}-sanitizer)
+            target_link_libraries(rocprof-sys-sanitizer
+                                  INTERFACE rocprofsys-${_TYPE}-sanitizer)
         else()
             message(
-                FATAL_ERROR "Error! Target 'omnitrace-${_TYPE}-sanitizer' does not exist!"
+                FATAL_ERROR "Error! Target 'rocprofsys-${_TYPE}-sanitizer' does not exist!"
                 )
         endif()
     endforeach()
@@ -337,29 +337,29 @@ endif()
 # static lib flags
 #
 target_compile_options(
-    omnitrace-static-libgcc
+    rocprofsys-static-libgcc
     INTERFACE $<$<COMPILE_LANGUAGE:C>:$<$<C_COMPILER_ID:GNU>:-static-libgcc>>
               $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-static-libgcc>>)
 target_link_options(
-    omnitrace-static-libgcc INTERFACE
+    rocprofsys-static-libgcc INTERFACE
     $<$<COMPILE_LANGUAGE:C>:$<$<C_COMPILER_ID:GNU,Clang>:-static-libgcc>>
     $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU,Clang>:-static-libgcc>>)
 
 target_compile_options(
-    omnitrace-static-libstdcxx
+    rocprofsys-static-libstdcxx
     INTERFACE $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-static-libstdc++>>)
 target_link_options(
-    omnitrace-static-libstdcxx INTERFACE
+    rocprofsys-static-libstdcxx INTERFACE
     $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU,Clang>:-static-libstdc++>>)
 
 if(OMNITRACE_BUILD_STATIC_LIBGCC)
-    target_link_libraries(omnitrace-static-libgcc-optional
-                          INTERFACE omnitrace-static-libgcc)
+    target_link_libraries(rocprofsys-static-libgcc-optional
+                          INTERFACE rocprofsys-static-libgcc)
 endif()
 
 if(OMNITRACE_BUILD_STATIC_LIBSTDCXX)
-    target_link_libraries(omnitrace-static-libstdcxx-optional
-                          INTERFACE omnitrace-static-libstdcxx)
+    target_link_libraries(rocprofsys-static-libstdcxx-optional
+                          INTERFACE rocprofsys-static-libstdcxx)
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -368,5 +368,5 @@ endif()
 get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
 
 if(NOT APPLE OR "$ENV{CONDA_PYTHON_EXE}" STREQUAL "")
-    add_user_flags(omnitrace-compile-options "CXX")
+    add_user_flags(rocprofsys-compile-options "CXX")
 endif()

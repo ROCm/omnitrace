@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(omnitrace-lulesh-example LANGUAGES C CXX)
+project(rocprofsys-lulesh-example LANGUAGES C CXX)
 
 if(OMNITRACE_DISABLE_EXAMPLES)
     get_filename_component(_DIR ${CMAKE_CURRENT_LIST_DIR} NAME)
@@ -76,7 +76,7 @@ if(OMNITRACE_INSTALL_EXAMPLES)
         install(
             TARGETS kokkoscore kokkoscontainers
             DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            COMPONENT omnitrace-examples)
+            COMPONENT rocprofsys-examples)
         set_target_properties(lulesh PROPERTIES INSTALL_RPATH
                                                 "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
     endif()

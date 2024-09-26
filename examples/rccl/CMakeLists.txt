@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(omnitrace-rccl-example LANGUAGES CXX)
+project(rocprofsys-rccl-example LANGUAGES CXX)
 
 if(OMNITRACE_DISABLE_EXAMPLES)
     get_filename_component(_DIR ${CMAKE_CURRENT_LIST_DIR} NAME)
@@ -12,12 +12,12 @@ if(OMNITRACE_DISABLE_EXAMPLES)
 endif()
 
 function(rccl_message _MSG_TYPE)
-    if("${CMAKE_PROJECT_NAME}" STREQUAL "omnitrace"
+    if("${CMAKE_PROJECT_NAME}" STREQUAL "rocprofsys"
        AND "$ENV{OMNITRACE_CI}"
        AND "${_MSG_TYPE}" MATCHES "WARNING")
         set(_MSG_TYPE STATUS) # don't generate warnings during CI
     endif()
-    if("${CMAKE_PROJECT_NAME}" STREQUAL "omnitrace")
+    if("${CMAKE_PROJECT_NAME}" STREQUAL "rocprofsys")
         omnitrace_message(${_MSG_TYPE} ${ARGN})
     else()
         message(${_MSG_TYPE} ${ARGN})
@@ -31,7 +31,7 @@ if(NOT hip_FOUND)
     return()
 endif()
 
-if("${CMAKE_PROJECT_NAME}" STREQUAL "omnitrace"
+if("${CMAKE_PROJECT_NAME}" STREQUAL "rocprofsys"
    AND ("$ENV{OMNITRACE_CI}"
         OR OMNITRACE_CI
         OR OMNITRACE_BUILD_CI))
@@ -48,7 +48,7 @@ endif()
 if(hip_FOUND AND rccl_FOUND)
     include(FetchContent)
     fetchcontent_declare(
-        rccl-tests GIT_REPOSITORY https://github.com/ROCmSoftwarePlatform/rccl-tests.git)
+        rccl-tests GIT_REPOSITORY https://github.com/ROCm/rccl-tests.git)
 
     # After the following call, the CMake targets defined by googletest and Catch2 will be
     # available to the rest of the build

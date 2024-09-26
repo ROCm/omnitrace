@@ -206,7 +206,7 @@ strvec_t lib_search_paths = tim::delimit(
 strvec_t bin_search_paths = tim::delimit(tim::get_env<std::string>("PATH"), ":");
 
 auto _dyn_api_rt_paths = tim::delimit(
-    JOIN(":", get_internal_libpath(), JOIN("/", get_internal_libpath(), "omnitrace")),
+    JOIN(":", get_internal_libpath(), JOIN("/", get_internal_libpath(), "rocprofsys")),
     ":");
 
 std::string
@@ -315,13 +315,13 @@ main(int argc, char** argv)
     if(!_omni_root.empty() && exists(_omni_root))
     {
         bin_search_paths.emplace_back(JOIN('/', _omni_root, "bin"));
-        bin_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace"));
-        bin_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace", "bin"));
+        bin_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "rocprofsys"));
+        bin_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "rocprofsys", "bin"));
         lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib"));
-        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace"));
-        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace", "lib"));
-        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace", "lib64"));
-        OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace root path: ", _omni_root);
+        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "rocprofsys"));
+        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "rocprofsys", "lib"));
+        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "rocprofsys", "lib64"));
+        OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "rocprofsys root path: ", _omni_root);
     }
 
     auto _omni_exe_path = get_realpath(get_absolute_exe_filepath(argv[0]));
@@ -332,19 +332,19 @@ main(int argc, char** argv)
 
     auto _omni_lib_path =
         JOIN('/', filepath::dirname(filepath::dirname(_omni_exe_path)), "lib");
-    bin_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace"));
-    bin_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace", "bin"));
+    bin_search_paths.emplace_back(JOIN('/', _omni_lib_path, "rocprofsys"));
+    bin_search_paths.emplace_back(JOIN('/', _omni_lib_path, "rocprofsys", "bin"));
     lib_search_paths.emplace_back(_omni_lib_path);
-    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace"));
-    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace", "lib"));
-    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace", "lib64"));
+    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "rocprofsys"));
+    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "rocprofsys", "lib"));
+    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "rocprofsys", "lib64"));
 
-    OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace bin path: ", _omni_exe_path);
-    OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace lib path: ", _omni_lib_path);
+    OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "rocprofsys bin path: ", _omni_exe_path);
+    OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "rocprofsys lib path: ", _omni_lib_path);
 
     for(const auto& itr : omnitrace_get_link_map(nullptr))
     {
-        if(itr.find("omnitrace") != std::string::npos ||
+        if(itr.find("rocprofsys") != std::string::npos ||
            itr.find("rocprof-sys") != std::string::npos ||
            std::regex_search(
                itr, std::regex{ "lib(dyninstAPI|stackwalk|pcontrol|patchAPI|parseAPI|"

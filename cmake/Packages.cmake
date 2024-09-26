@@ -8,49 +8,49 @@ include_guard(DIRECTORY)
 # ########################################################################################
 
 omnitrace_add_interface_library(
-    omnitrace-headers "Provides minimal set of include flags to compile with omnitrace")
-omnitrace_add_interface_library(omnitrace-threading "Enables multithreading support")
+    rocprofsys-headers "Provides minimal set of include flags to compile with rocprofsys")
+omnitrace_add_interface_library(rocprofsys-threading "Enables multithreading support")
 omnitrace_add_interface_library(
-    omnitrace-dyninst
+    rocprofsys-dyninst
     "Provides flags and libraries for Dyninst (dynamic instrumentation)")
-omnitrace_add_interface_library(omnitrace-hip "Provides flags and libraries for HIP")
-omnitrace_add_interface_library(omnitrace-roctracer
+omnitrace_add_interface_library(rocprofsys-hip "Provides flags and libraries for HIP")
+omnitrace_add_interface_library(rocprofsys-roctracer
                                 "Provides flags and libraries for roctracer")
-omnitrace_add_interface_library(omnitrace-rocprofiler
+omnitrace_add_interface_library(rocprofsys-rocprofiler
                                 "Provides flags and libraries for rocprofiler")
-omnitrace_add_interface_library(omnitrace-rocm-smi
+omnitrace_add_interface_library(rocprofsys-rocm-smi
                                 "Provides flags and libraries for rocm-smi")
 omnitrace_add_interface_library(
-    omnitrace-rccl "Provides flags for ROCm Communication Collectives Library (RCCL)")
-omnitrace_add_interface_library(omnitrace-mpi "Provides MPI or MPI headers")
-omnitrace_add_interface_library(omnitrace-bfd "Provides Binary File Descriptor (BFD)")
-omnitrace_add_interface_library(omnitrace-ptl "Enables PTL support (tasking)")
-omnitrace_add_interface_library(omnitrace-papi "Enable PAPI support")
-omnitrace_add_interface_library(omnitrace-ompt "Enable OMPT support")
-omnitrace_add_interface_library(omnitrace-python "Enables Python support")
-omnitrace_add_interface_library(omnitrace-elfutils "Provides ElfUtils")
-omnitrace_add_interface_library(omnitrace-perfetto "Enables Perfetto support")
-omnitrace_add_interface_library(omnitrace-timemory "Provides timemory libraries")
-omnitrace_add_interface_library(omnitrace-timemory-config
+    rocprofsys-rccl "Provides flags for ROCm Communication Collectives Library (RCCL)")
+omnitrace_add_interface_library(rocprofsys-mpi "Provides MPI or MPI headers")
+omnitrace_add_interface_library(rocprofsys-bfd "Provides Binary File Descriptor (BFD)")
+omnitrace_add_interface_library(rocprofsys-ptl "Enables PTL support (tasking)")
+omnitrace_add_interface_library(rocprofsys-papi "Enable PAPI support")
+omnitrace_add_interface_library(rocprofsys-ompt "Enable OMPT support")
+omnitrace_add_interface_library(rocprofsys-python "Enables Python support")
+omnitrace_add_interface_library(rocprofsys-elfutils "Provides ElfUtils")
+omnitrace_add_interface_library(rocprofsys-perfetto "Enables Perfetto support")
+omnitrace_add_interface_library(rocprofsys-timemory "Provides timemory libraries")
+omnitrace_add_interface_library(rocprofsys-timemory-config
                                 "CMake interface library applied to all timemory targets")
-omnitrace_add_interface_library(omnitrace-compile-definitions "Compile definitions")
+omnitrace_add_interface_library(rocprofsys-compile-definitions "Compile definitions")
 
 # libraries with relevant compile definitions
 set(OMNITRACE_EXTENSION_LIBRARIES
-    omnitrace::omnitrace-hip
-    omnitrace::omnitrace-roctracer
-    omnitrace::omnitrace-rocprofiler
-    omnitrace::omnitrace-rocm-smi
-    omnitrace::omnitrace-rccl
-    omnitrace::omnitrace-bfd
-    omnitrace::omnitrace-mpi
-    omnitrace::omnitrace-ptl
-    omnitrace::omnitrace-ompt
-    omnitrace::omnitrace-papi
-    omnitrace::omnitrace-perfetto)
+    rocprofsys::rocprofsys-hip
+    rocprofsys::rocprofsys-roctracer
+    rocprofsys::rocprofsys-rocprofiler
+    rocprofsys::rocprofsys-rocm-smi
+    rocprofsys::rocprofsys-rccl
+    rocprofsys::rocprofsys-bfd
+    rocprofsys::rocprofsys-mpi
+    rocprofsys::rocprofsys-ptl
+    rocprofsys::rocprofsys-ompt
+    rocprofsys::rocprofsys-papi
+    rocprofsys::rocprofsys-perfetto)
 
 target_include_directories(
-    omnitrace-headers
+    rocprofsys-headers
     INTERFACE $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/source/lib>
               $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/source/lib/core>
               $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source/lib>
@@ -59,7 +59,7 @@ target_include_directories(
               $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source/lib/omnitrace-user>)
 
 # include threading because of rooflines
-target_link_libraries(omnitrace-headers INTERFACE omnitrace::omnitrace-threading)
+target_link_libraries(rocprofsys-headers INTERFACE rocprofsys::rocprofsys-threading)
 
 # ensure the env overrides the appending /opt/rocm later
 string(REPLACE ":" ";" CMAKE_PREFIX_PATH "$ENV{CMAKE_PREFIX_PATH};${CMAKE_PREFIX_PATH}")
@@ -94,11 +94,11 @@ find_library(pthread_LIBRARY NAMES pthread pthreads)
 find_package_handle_standard_args(pthread-library REQUIRED_VARS pthread_LIBRARY)
 
 if(pthread_LIBRARY)
-    target_link_libraries(omnitrace-threading INTERFACE ${pthread_LIBRARY})
+    target_link_libraries(rocprofsys-threading INTERFACE ${pthread_LIBRARY})
 else()
-    find_package(Threads ${omnitrace_FIND_QUIETLY} ${omnitrace_FIND_REQUIREMENT})
+    find_package(Threads ${rocprofsys_FIND_QUIETLY} ${rocprofsys_FIND_REQUIREMENT})
     if(Threads_FOUND)
-        target_link_libraries(omnitrace-threading INTERFACE Threads::Threads)
+        target_link_libraries(rocprofsys-threading INTERFACE Threads::Threads)
     endif()
 endif()
 
@@ -106,7 +106,7 @@ foreach(_LIB dl rt)
     find_library(${_LIB}_LIBRARY NAMES ${_LIB})
     find_package_handle_standard_args(${_LIB}-library REQUIRED_VARS ${_LIB}_LIBRARY)
     if(${_LIB}_LIBRARY)
-        target_link_libraries(omnitrace-threading INTERFACE ${${_LIB}_LIBRARY})
+        target_link_libraries(rocprofsys-threading INTERFACE ${${_LIB}_LIBRARY})
     endif()
 endforeach()
 
@@ -123,7 +123,7 @@ if(OMNITRACE_USE_HIP
     find_package(ROCmVersion)
 
     if(NOT ROCmVersion_FOUND)
-        find_package(hip ${omnitrace_FIND_QUIETLY} REQUIRED HINTS
+        find_package(hip ${rocprofsys_FIND_QUIETLY} REQUIRED HINTS
                      ${OMNITRACE_DEFAULT_ROCM_PATH} PATHS ${OMNITRACE_DEFAULT_ROCM_PATH})
         if(SPACK_BUILD)
             find_package(ROCmVersion HINTS ${ROCM_PATH} PATHS ${ROCM_PATH})
@@ -162,7 +162,7 @@ if(OMNITRACE_USE_HIP
         set(roctracer_kfdwrapper_LIBRARY)
     endif()
 
-    omnitrace_add_feature(OMNITRACE_ROCM_VERSION "ROCm version used by omnitrace")
+    omnitrace_add_feature(OMNITRACE_ROCM_VERSION "ROCm version used by rocprofsys")
 else()
     set(OMNITRACE_HIP_VERSION "0.0.0")
     set(OMNITRACE_HIP_VERSION_MAJOR 0)
@@ -177,9 +177,9 @@ endif()
 # ----------------------------------------------------------------------------------------#
 
 if(OMNITRACE_USE_HIP)
-    find_package(hip ${omnitrace_FIND_QUIETLY} REQUIRED)
-    omnitrace_target_compile_definitions(omnitrace-hip INTERFACE OMNITRACE_USE_HIP)
-    target_link_libraries(omnitrace-hip INTERFACE hip::host)
+    find_package(hip ${rocprofsys_FIND_QUIETLY} REQUIRED)
+    omnitrace_target_compile_definitions(rocprofsys-hip INTERFACE OMNITRACE_USE_HIP)
+    target_link_libraries(rocprofsys-hip INTERFACE hip::host)
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -189,11 +189,11 @@ endif()
 # ----------------------------------------------------------------------------------------#
 
 if(OMNITRACE_USE_ROCTRACER)
-    find_package(roctracer ${omnitrace_FIND_QUIETLY} REQUIRED)
-    omnitrace_target_compile_definitions(omnitrace-roctracer
+    find_package(roctracer ${rocprofsys_FIND_QUIETLY} REQUIRED)
+    omnitrace_target_compile_definitions(rocprofsys-roctracer
                                          INTERFACE OMNITRACE_USE_ROCTRACER)
-    target_link_libraries(omnitrace-roctracer INTERFACE roctracer::roctracer
-                                                        omnitrace::omnitrace-hip)
+    target_link_libraries(rocprofsys-roctracer INTERFACE roctracer::roctracer
+                                                        rocprofsys::rocprofsys-hip)
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -202,10 +202,10 @@ endif()
 #
 # ----------------------------------------------------------------------------------------#
 if(OMNITRACE_USE_ROCPROFILER)
-    find_package(rocprofiler ${omnitrace_FIND_QUIETLY} REQUIRED)
-    omnitrace_target_compile_definitions(omnitrace-rocprofiler
+    find_package(rocprofiler ${rocprofsys_FIND_QUIETLY} REQUIRED)
+    omnitrace_target_compile_definitions(rocprofsys-rocprofiler
                                          INTERFACE OMNITRACE_USE_ROCPROFILER)
-    target_link_libraries(omnitrace-rocprofiler INTERFACE rocprofiler::rocprofiler)
+    target_link_libraries(rocprofsys-rocprofiler INTERFACE rocprofiler::rocprofiler)
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -215,10 +215,10 @@ endif()
 # ----------------------------------------------------------------------------------------#
 
 if(OMNITRACE_USE_ROCM_SMI)
-    find_package(rocm-smi ${omnitrace_FIND_QUIETLY} REQUIRED)
-    omnitrace_target_compile_definitions(omnitrace-rocm-smi
+    find_package(rocm-smi ${rocprofsys_FIND_QUIETLY} REQUIRED)
+    omnitrace_target_compile_definitions(rocprofsys-rocm-smi
                                          INTERFACE OMNITRACE_USE_ROCM_SMI)
-    target_link_libraries(omnitrace-rocm-smi INTERFACE rocm-smi::rocm-smi)
+    target_link_libraries(rocprofsys-rocm-smi INTERFACE rocm-smi::rocm-smi)
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -228,9 +228,9 @@ endif()
 # ----------------------------------------------------------------------------------------#
 
 if(OMNITRACE_USE_RCCL)
-    find_package(RCCL-Headers ${omnitrace_FIND_QUIETLY} REQUIRED)
-    target_link_libraries(omnitrace-rccl INTERFACE roc::rccl-headers)
-    omnitrace_target_compile_definitions(omnitrace-rccl INTERFACE OMNITRACE_USE_RCCL)
+    find_package(RCCL-Headers ${rocprofsys_FIND_QUIETLY} REQUIRED)
+    target_link_libraries(rocprofsys-rccl INTERFACE roc::rccl-headers)
+    omnitrace_target_compile_definitions(rocprofsys-rccl INTERFACE OMNITRACE_USE_RCCL)
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -243,15 +243,15 @@ endif()
 set(_OMNITRACE_MPI_HEADERS_ALLOW_MPICH ${MPI_HEADERS_ALLOW_MPICH})
 
 if(OMNITRACE_USE_MPI)
-    find_package(MPI ${omnitrace_FIND_QUIETLY} REQUIRED)
-    target_link_libraries(omnitrace-mpi INTERFACE MPI::MPI_C MPI::MPI_CXX)
-    omnitrace_target_compile_definitions(omnitrace-mpi INTERFACE TIMEMORY_USE_MPI=1
+    find_package(MPI ${rocprofsys_FIND_QUIETLY} REQUIRED)
+    target_link_libraries(rocprofsys-mpi INTERFACE MPI::MPI_C MPI::MPI_CXX)
+    omnitrace_target_compile_definitions(rocprofsys-mpi INTERFACE TIMEMORY_USE_MPI=1
                                                                  OMNITRACE_USE_MPI)
 elseif(OMNITRACE_USE_MPI_HEADERS)
-    find_package(MPI-Headers ${omnitrace_FIND_QUIETLY} REQUIRED)
+    find_package(MPI-Headers ${rocprofsys_FIND_QUIETLY} REQUIRED)
     omnitrace_target_compile_definitions(
-        omnitrace-mpi INTERFACE TIMEMORY_USE_MPI_HEADERS=1 OMNITRACE_USE_MPI_HEADERS)
-    target_link_libraries(omnitrace-mpi INTERFACE MPI::MPI_HEADERS)
+        rocprofsys-mpi INTERFACE TIMEMORY_USE_MPI_HEADERS=1 OMNITRACE_USE_MPI_HEADERS)
+    target_link_libraries(rocprofsys-mpi INTERFACE MPI::MPI_HEADERS)
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -261,7 +261,7 @@ endif()
 # ----------------------------------------------------------------------------------------#
 
 omnitrace_target_compile_definitions(
-    omnitrace-ompt INTERFACE OMNITRACE_USE_OMPT=$<BOOL:${OMNITRACE_USE_OMPT}>)
+    rocprofsys-ompt INTERFACE OMNITRACE_USE_OMPT=$<BOOL:${OMNITRACE_USE_OMPT}>)
 
 # ----------------------------------------------------------------------------------------#
 #
@@ -271,10 +271,10 @@ omnitrace_target_compile_definitions(
 
 include(ElfUtils)
 
-target_include_directories(omnitrace-elfutils SYSTEM INTERFACE ${ElfUtils_INCLUDE_DIRS})
-target_compile_definitions(omnitrace-elfutils INTERFACE ${ElfUtils_DEFINITIONS})
-target_link_directories(omnitrace-elfutils INTERFACE ${ElfUtils_LIBRARY_DIRS})
-target_link_libraries(omnitrace-elfutils INTERFACE ${ElfUtils_LIBRARIES})
+target_include_directories(rocprofsys-elfutils SYSTEM INTERFACE ${ElfUtils_INCLUDE_DIRS})
+target_compile_definitions(rocprofsys-elfutils INTERFACE ${ElfUtils_DEFINITIONS})
+target_link_directories(rocprofsys-elfutils INTERFACE ${ElfUtils_LIBRARY_DIRS})
+target_link_libraries(rocprofsys-elfutils INTERFACE ${ElfUtils_LIBRARIES})
 
 # ----------------------------------------------------------------------------------------#
 #
@@ -321,13 +321,13 @@ if(OMNITRACE_BUILD_DYNINST)
                       CMAKE_BUILD_RPATH CMAKE_INSTALL_RPATH_USE_LINK_PATH)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH OFF)
-    set(CMAKE_BUILD_RPATH "\$ORIGIN:\$ORIGIN/omnitrace")
-    set(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/omnitrace")
+    set(CMAKE_BUILD_RPATH "\$ORIGIN:\$ORIGIN/rocprofsys")
+    set(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/rocprofsys")
     set(DYNINST_TPL_INSTALL_PREFIX
-        "omnitrace"
+        "rocprofsys"
         CACHE PATH "Third-party library install-tree install prefix" FORCE)
     set(DYNINST_TPL_INSTALL_LIB_DIR
-        "omnitrace"
+        "rocprofsys"
         CACHE PATH "Third-party library install-tree install library prefix" FORCE)
     add_subdirectory(external/dyninst EXCLUDE_FROM_ALL)
     omnitrace_restore_variables(
@@ -354,35 +354,35 @@ if(OMNITRACE_BUILD_DYNINST)
         if(TARGET ${_LIB})
             install(
                 TARGETS ${_LIB}
-                DESTINATION ${CMAKE_INSTALL_LIBDIR}/omnitrace
+                DESTINATION ${CMAKE_INSTALL_LIBDIR}/rocprofsys
                 COMPONENT dyninst
-                PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/omnitrace/dyninst)
+                PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rocprofsys/dyninst)
         endif()
     endforeach()
 
     # for packaging
     install(
         DIRECTORY ${DYNINST_TPL_STAGING_PREFIX}/lib/
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/omnitrace
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/rocprofsys
         COMPONENT dyninst
         FILES_MATCHING
         PATTERN "*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
 
-    target_link_libraries(omnitrace-dyninst INTERFACE Dyninst::Dyninst)
+    target_link_libraries(rocprofsys-dyninst INTERFACE Dyninst::Dyninst)
 
 else()
-    find_package(Dyninst ${omnitrace_FIND_QUIETLY} REQUIRED
+    find_package(Dyninst ${rocprofsys_FIND_QUIETLY} REQUIRED
                  COMPONENTS dyninstAPI parseAPI instructionAPI symtabAPI)
 
     if(TARGET Dyninst::Dyninst) # updated Dyninst CMake system was found
-        target_link_libraries(omnitrace-dyninst INTERFACE Dyninst::Dyninst)
+        target_link_libraries(rocprofsys-dyninst INTERFACE Dyninst::Dyninst)
     else() # updated Dyninst CMake system was not found
         set(_BOOST_COMPONENTS atomic system thread date_time)
-        set(omnitrace_BOOST_COMPONENTS
+        set(rocprofsys_BOOST_COMPONENTS
             "${_BOOST_COMPONENTS}"
-            CACHE STRING "Boost components used by Dyninst in omnitrace")
+            CACHE STRING "Boost components used by Dyninst in rocprofsys")
         set(Boost_NO_BOOST_CMAKE ON)
-        find_package(Boost QUIET REQUIRED COMPONENTS ${omnitrace_BOOST_COMPONENTS})
+        find_package(Boost QUIET REQUIRED COMPONENTS ${rocprofsys_BOOST_COMPONENTS})
 
         # some installs of dyninst don't set this properly
         if(EXISTS "${DYNINST_INCLUDE_DIR}" AND NOT DYNINST_HEADER_DIR)
@@ -413,7 +413,7 @@ else()
                 PATH_SUFFIXES include)
         endif()
 
-        target_link_libraries(omnitrace-dyninst INTERFACE ${DYNINST_LIBRARIES}
+        target_link_libraries(rocprofsys-dyninst INTERFACE ${DYNINST_LIBRARIES}
                                                           ${Boost_LIBRARIES})
         foreach(
             _TARG
@@ -429,17 +429,17 @@ else()
             date_time
             TBB)
             if(TARGET Dyninst::${_TARG})
-                target_link_libraries(omnitrace-dyninst INTERFACE Dyninst::${_TARG})
+                target_link_libraries(rocprofsys-dyninst INTERFACE Dyninst::${_TARG})
             elseif(TARGET Boost::${_TARG})
-                target_link_libraries(omnitrace-dyninst INTERFACE Boost::${_TARG})
+                target_link_libraries(rocprofsys-dyninst INTERFACE Boost::${_TARG})
             elseif(TARGET ${_TARG})
-                target_link_libraries(omnitrace-dyninst INTERFACE ${_TARG})
+                target_link_libraries(rocprofsys-dyninst INTERFACE ${_TARG})
             endif()
         endforeach()
         target_include_directories(
-            omnitrace-dyninst SYSTEM INTERFACE ${TBB_INCLUDE_DIR} ${Boost_INCLUDE_DIRS}
+            rocprofsys-dyninst SYSTEM INTERFACE ${TBB_INCLUDE_DIR} ${Boost_INCLUDE_DIRS}
                                                ${DYNINST_HEADER_DIR})
-        omnitrace_target_compile_definitions(omnitrace-dyninst
+        omnitrace_target_compile_definitions(rocprofsys-dyninst
                                              INTERFACE OMNITRACE_USE_DYNINST)
     endif()
 endif()
@@ -521,22 +521,22 @@ endif()
 # ----------------------------------------------------------------------------------------#
 
 target_compile_definitions(
-    omnitrace-timemory-config
+    rocprofsys-timemory-config
     INTERFACE TIMEMORY_PAPI_ARRAY_SIZE=12 TIMEMORY_USE_ROOFLINE=0 TIMEMORY_USE_ERT=0
               TIMEMORY_USE_CONTAINERS=0 TIMEMORY_USE_ERT_EXTERN=0
               TIMEMORY_USE_CONTAINERS_EXTERN=0)
 
 if(OMNITRACE_BUILD_STACK_PROTECTOR)
-    add_target_flag_if_avail(omnitrace-timemory-config "-fstack-protector-strong"
+    add_target_flag_if_avail(rocprofsys-timemory-config "-fstack-protector-strong"
                              "-Wstack-protector")
 endif()
 
 if(OMNITRACE_BUILD_DEBUG)
-    add_target_flag_if_avail(omnitrace-timemory-config "-fno-omit-frame-pointer" "-g3")
+    add_target_flag_if_avail(rocprofsys-timemory-config "-fno-omit-frame-pointer" "-g3")
 endif()
 
 set(TIMEMORY_EXTERNAL_INTERFACE_LIBRARY
-    omnitrace-timemory-config
+    rocprofsys-timemory-config
     CACHE STRING "timemory configuration interface library")
 set(TIMEMORY_INSTALL_HEADERS
     OFF
@@ -636,7 +636,7 @@ set(TIMEMORY_SETTINGS_PREFIX
     "OMNITRACE_"
     CACHE STRING "Prefix used for settings and environment variables")
 set(TIMEMORY_PROJECT_NAME
-    "omnitrace"
+    "rocprofsys"
     CACHE STRING "Name for configuration")
 set(TIMEMORY_CXX_LIBRARY_EXCLUDE
     "kokkosp.cpp;pthread.cpp;timemory_c.cpp;trace.cpp;weak.cpp;library.cpp"
@@ -673,12 +673,12 @@ add_subdirectory(external/timemory EXCLUDE_FROM_ALL)
 
 install(
     TARGETS gotcha
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/omnitrace
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/rocprofsys
     COMPONENT gotcha)
 if(OMNITRACE_BUILD_LIBUNWIND)
     install(
         DIRECTORY ${PROJECT_BINARY_DIR}/external/timemory/external/libunwind/install/lib/
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/omnitrace
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/rocprofsys
         COMPONENT libunwind
         FILES_MATCHING
         PATTERN "*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
@@ -688,30 +688,30 @@ omnitrace_restore_variables(
     BUILD_CONFIG VARIABLES BUILD_SHARED_LIBS BUILD_STATIC_LIBS
                            CMAKE_POSITION_INDEPENDENT_CODE CMAKE_PREFIX_PATH)
 
-if(TARGET omnitrace-papi-build)
+if(TARGET rocprofsys-papi-build)
     foreach(_TARGET PAPI::papi timemory-core timemory-common timemory-papi-component
                     timemory-cxx)
         if(TARGET "${_TARGET}")
-            add_dependencies(${_TARGET} omnitrace-papi-build)
+            add_dependencies(${_TARGET} rocprofsys-papi-build)
         endif()
         foreach(_LINK shared static)
             if(TARGET "${_TARGET}-${_LINK}")
-                add_dependencies(${_TARGET}-${_LINK} omnitrace-papi-build)
+                add_dependencies(${_TARGET}-${_LINK} rocprofsys-papi-build)
             endif()
         endforeach()
     endforeach()
 endif()
 
 target_link_libraries(
-    omnitrace-timemory
+    rocprofsys-timemory
     INTERFACE $<BUILD_INTERFACE:timemory::timemory-headers>
               $<BUILD_INTERFACE:timemory::timemory-gotcha>
               $<BUILD_INTERFACE:timemory::timemory-cxx-static>)
 
-target_link_libraries(omnitrace-bfd INTERFACE $<BUILD_INTERFACE:timemory::timemory-bfd>)
+target_link_libraries(rocprofsys-bfd INTERFACE $<BUILD_INTERFACE:timemory::timemory-bfd>)
 
 if(OMNITRACE_USE_BFD)
-    omnitrace_target_compile_definitions(omnitrace-bfd INTERFACE OMNITRACE_USE_BFD)
+    omnitrace_target_compile_definitions(rocprofsys-bfd INTERFACE OMNITRACE_USE_BFD)
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -758,10 +758,10 @@ if(NOT TARGET PTL::ptl-shared)
                   CMAKE_VISIBILITY_INLINES_HIDDEN)
 endif()
 
-target_sources(omnitrace-ptl
+target_sources(rocprofsys-ptl
                INTERFACE $<BUILD_INTERFACE:$<TARGET_OBJECTS:PTL::ptl-object>>)
 target_include_directories(
-    omnitrace-ptl INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/PTL/source>
+    rocprofsys-ptl INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/PTL/source>
                             $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/PTL/source>)
 
 # ----------------------------------------------------------------------------------------#
@@ -913,10 +913,10 @@ set(CMAKE_INSTALL_PYTHONDIR ${OMNITRACE_INSTALL_PYTHONDIR})
 # ----------------------------------------------------------------------------------------#
 
 if("${CMAKE_BUILD_TYPE}" MATCHES "Release" AND NOT OMNITRACE_BUILD_DEBUG)
-    add_target_flag_if_avail(omnitrace-compile-options "-g1")
+    add_target_flag_if_avail(rocprofsys-compile-options "-g1")
 endif()
 
-target_compile_definitions(omnitrace-compile-definitions
+target_compile_definitions(rocprofsys-compile-definitions
                            INTERFACE OMNITRACE_MAX_THREADS=${OMNITRACE_MAX_THREADS})
 
 foreach(_LIB ${OMNITRACE_EXTENSION_LIBRARIES})
@@ -924,7 +924,7 @@ foreach(_LIB ${OMNITRACE_EXTENSION_LIBRARIES})
     if(_COMPILE_DEFS)
         foreach(_DEF ${_COMPILE_DEFS})
             if("${_DEF}" MATCHES "OMNITRACE_")
-                target_compile_definitions(omnitrace-compile-definitions
+                target_compile_definitions(rocprofsys-compile-definitions
                                            INTERFACE ${_DEF})
             endif()
         endforeach()

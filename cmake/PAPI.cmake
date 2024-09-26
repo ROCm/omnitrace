@@ -1,7 +1,7 @@
 # ======================================================================================
 # PAPI.cmake
 #
-# Configure papi for omnitrace
+# Configure papi for rocprofsys
 #
 # ======================================================================================
 
@@ -199,7 +199,7 @@ set(PAPI_C_COMPILER
 
 include(ExternalProject)
 externalproject_add(
-    omnitrace-papi-build
+    rocprofsys-papi-build
     PREFIX ${PROJECT_BINARY_DIR}/external/papi
     SOURCE_DIR ${OMNITRACE_PAPI_SOURCE_DIR}/src
     BUILD_IN_SOURCE 1
@@ -218,7 +218,7 @@ externalproject_add(
 
 # target for re-executing the installation
 add_custom_target(
-    omnitrace-papi-install
+    rocprofsys-papi-install
     COMMAND ${CMAKE_COMMAND} -E env CFLAGS=-fPIC\ -O3\ -Wno-stringop-truncation
             ${OMNITRACE_PAPI_EXTRA_ENV} ${MAKE_EXECUTABLE} static install -s
     COMMAND ${CMAKE_COMMAND} -E env CFLAGS=-fPIC\ -O3\ -Wno-stringop-truncation
@@ -227,7 +227,7 @@ add_custom_target(
     COMMENT "Installing PAPI...")
 
 add_custom_target(
-    omnitrace-papi-clean
+    rocprofsys-papi-clean
     COMMAND ${MAKE_EXECUTABLE} distclean
     COMMAND ${CMAKE_COMMAND} -E rm -rf ${OMNITRACE_PAPI_INSTALL_DIR}/include/*
     COMMAND ${CMAKE_COMMAND} -E rm -rf ${OMNITRACE_PAPI_INSTALL_DIR}/lib/*
@@ -257,16 +257,16 @@ set(PAPI_pfm_STATIC_LIBRARY
     ${OMNITRACE_PAPI_INSTALL_DIR}/lib/libpfm.a
     CACHE FILEPATH "PAPI library" FORCE)
 
-target_include_directories(omnitrace-papi SYSTEM
+target_include_directories(rocprofsys-papi SYSTEM
                            INTERFACE $<BUILD_INTERFACE:${PAPI_INCLUDE_DIR}>)
-target_link_libraries(omnitrace-papi INTERFACE $<BUILD_INTERFACE:${PAPI_LIBRARY}>
+target_link_libraries(rocprofsys-papi INTERFACE $<BUILD_INTERFACE:${PAPI_LIBRARY}>
                                                $<BUILD_INTERFACE:${PAPI_pfm_LIBRARY}>)
 omnitrace_target_compile_definitions(
-    omnitrace-papi INTERFACE OMNITRACE_USE_PAPI $<BUILD_INTERFACE:TIMEMORY_USE_PAPI=1>)
+    rocprofsys-papi INTERFACE OMNITRACE_USE_PAPI $<BUILD_INTERFACE:TIMEMORY_USE_PAPI=1>)
 
 install(
     DIRECTORY ${OMNITRACE_PAPI_INSTALL_DIR}/lib/
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/omnitrace
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/rocprofsys
     COMPONENT papi
     FILES_MATCHING
     PATTERN "*.so*")
@@ -289,7 +289,7 @@ foreach(
     papi_version
     papi_xml_event_info)
 
-    string(REPLACE "_" "-" _UTIL_EXE_INSTALL_NAME "omnitrace-${_UTIL_EXE}")
+    string(REPLACE "_" "-" _UTIL_EXE_INSTALL_NAME "rocprofsys-${_UTIL_EXE}")
 
     # RPM installer on RedHat/RockyLinux throws error that #!/usr/bin/python should either
     # be #!/usr/bin/python2 or #!/usr/bin/python3

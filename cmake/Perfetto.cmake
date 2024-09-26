@@ -1,7 +1,7 @@
 # ======================================================================================
 # Perfetto.cmake
 #
-# Configure perfetto for omnitrace
+# Configure perfetto for rocprofsys
 #
 # ======================================================================================
 
@@ -143,7 +143,7 @@ if(OMNITRACE_INSTALL_PERFETTO_TOOLS)
     endif()
 
     externalproject_add(
-        omnitrace-perfetto-build
+        rocprofsys-perfetto-build
         PREFIX ${PROJECT_BINARY_DIR}/external/perfetto
         SOURCE_DIR ${OMNITRACE_PERFETTO_SOURCE_DIR}
         BUILD_IN_SOURCE 1
@@ -156,25 +156,25 @@ if(OMNITRACE_INSTALL_PERFETTO_TOOLS)
         BUILD_BYPRODUCTS ${OMNITRACE_PERFETTO_BINARY_DIR}/args.gn)
 
     add_custom_target(
-        omnitrace-perfetto-clean
+        rocprofsys-perfetto-clean
         COMMAND ${OMNITRACE_NINJA_EXECUTABLE} -t clean
         COMMAND ${CMAKE_COMMAND} -E rm -rf
-                ${PROJECT_BINARY_DIR}/external/perfetto/src/omnitrace-perfetto-build-stamp
+                ${PROJECT_BINARY_DIR}/external/perfetto/src/rocprofsys-perfetto-build-stamp
         WORKING_DIRECTORY ${OMNITRACE_PERFETTO_BINARY_DIR}
         COMMENT "Cleaning Perfetto...")
 
     install(
         DIRECTORY ${OMNITRACE_PERFETTO_INSTALL_DIR}/
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/omnitrace
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/rocprofsys
         COMPONENT perfetto
         FILES_MATCHING
         PATTERN "*libperfetto.so*")
 
     foreach(_FILE perfetto traced tracebox traced_probes traced_perf trigger_perfetto)
         if("${_FILE}" STREQUAL "perfetto")
-            string(REPLACE "_" "-" _INSTALL_FILE "omnitrace-${_FILE}")
+            string(REPLACE "_" "-" _INSTALL_FILE "rocprofsys-${_FILE}")
         else()
-            string(REPLACE "_" "-" _INSTALL_FILE "omnitrace-perfetto-${_FILE}")
+            string(REPLACE "_" "-" _INSTALL_FILE "rocprofsys-perfetto-${_FILE}")
         endif()
         install(
             PROGRAMS ${OMNITRACE_PERFETTO_INSTALL_DIR}/${_FILE}
@@ -191,17 +191,17 @@ endif()
 #
 # ---------------------------------------------------------------------------------------#
 
-add_library(omnitrace-perfetto-library STATIC)
-add_library(omnitrace::omnitrace-perfetto-library ALIAS omnitrace-perfetto-library)
+add_library(rocprofsys-perfetto-library STATIC)
+add_library(rocprofsys::rocprofsys-perfetto-library ALIAS rocprofsys-perfetto-library)
 target_sources(
-    omnitrace-perfetto-library PRIVATE ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.cc
+    rocprofsys-perfetto-library PRIVATE ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.cc
                                        ${OMNITRACE_PERFETTO_SOURCE_DIR}/sdk/perfetto.h)
 target_link_libraries(
-    omnitrace-perfetto-library
-    PRIVATE omnitrace::omnitrace-threading omnitrace::omnitrace-static-libgcc
-            omnitrace::omnitrace-static-libstdcxx)
+    rocprofsys-perfetto-library
+    PRIVATE rocprofsys::rocprofsys-threading rocprofsys::rocprofsys-static-libgcc
+            rocprofsys::rocprofsys-static-libstdcxx)
 set_target_properties(
-    omnitrace-perfetto-library
+    rocprofsys-perfetto-library
     PROPERTIES OUTPUT_NAME perfetto
                ARCHIVE_OUTPUT_DIRECTORY ${OMNITRACE_PERFETTO_BINARY_DIR}
                POSITION_INDEPENDENT_CODE ON
@@ -228,9 +228,9 @@ mark_as_advanced(PERFETTO_LIBRARY)
 #
 # ---------------------------------------------------------------------------------------#
 
-omnitrace_target_compile_definitions(omnitrace-perfetto INTERFACE OMNITRACE_USE_PERFETTO)
-target_include_directories(omnitrace-perfetto SYSTEM
+omnitrace_target_compile_definitions(rocprofsys-perfetto INTERFACE OMNITRACE_USE_PERFETTO)
+target_include_directories(rocprofsys-perfetto SYSTEM
                            INTERFACE $<BUILD_INTERFACE:${PERFETTO_INCLUDE_DIR}>)
 target_link_libraries(
-    omnitrace-perfetto INTERFACE $<BUILD_INTERFACE:${PERFETTO_LIBRARY}>
-                                 $<BUILD_INTERFACE:omnitrace::omnitrace-threading>)
+    rocprofsys-perfetto INTERFACE $<BUILD_INTERFACE:${PERFETTO_LIBRARY}>
+                                 $<BUILD_INTERFACE:rocprofsys::rocprofsys-threading>)

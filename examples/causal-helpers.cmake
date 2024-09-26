@@ -3,8 +3,8 @@
 #
 include_guard(DIRECTORY)
 
-if(NOT TARGET omnitrace::omnitrace-user-library)
-    find_package(omnitrace REQUIRED COMPONENTS user)
+if(NOT TARGET rocprofsys::rocprofsys-user-library)
+    find_package(rocprofsys REQUIRED COMPONENTS user)
 endif()
 
 if(NOT coz-profiler_FOUND)
@@ -40,7 +40,7 @@ function(omnitrace_causal_example_executable _NAME)
     target_include_directories(${_NAME} PRIVATE ${OMNITRACE_EXAMPLE_ROOT_DIR}/causal
                                                 ${CAUSAL_INCLUDE_DIRECTORIES})
     target_link_libraries(
-        ${_NAME} PRIVATE ${CAUSAL_LINK_LIBRARIES} omnitrace::omnitrace-user-library
+        ${_NAME} PRIVATE ${CAUSAL_LINK_LIBRARIES} rocprofsys::rocprofsys-user-library
                          omni-causal-example-lib-debug)
 
     add_executable(${_NAME}-omni ${CAUSAL_SOURCES})
@@ -49,7 +49,7 @@ function(omnitrace_causal_example_executable _NAME)
     target_include_directories(${_NAME}-omni PRIVATE ${OMNITRACE_EXAMPLE_ROOT_DIR}/causal
                                                      ${CAUSAL_INCLUDE_DIRECTORIES})
     target_link_libraries(
-        ${_NAME}-omni PRIVATE ${CAUSAL_LINK_LIBRARIES} omnitrace::omnitrace-user-library
+        ${_NAME}-omni PRIVATE ${CAUSAL_LINK_LIBRARIES} rocprofsys::rocprofsys-user-library
                               omni-causal-example-lib-debug)
 
     add_executable(${_NAME}-ndebug ${CAUSAL_SOURCES})
@@ -60,7 +60,7 @@ function(omnitrace_causal_example_executable _NAME)
                                 ${CAUSAL_INCLUDE_DIRECTORIES})
     target_link_libraries(
         ${_NAME}-ndebug
-        PRIVATE ${CAUSAL_LINK_LIBRARIES} omnitrace::omnitrace-user-library
+        PRIVATE ${CAUSAL_LINK_LIBRARIES} rocprofsys::rocprofsys-user-library
                 omni-causal-example-lib-no-debug)
 
     add_executable(${_NAME}-omni-ndebug ${CAUSAL_SOURCES})
@@ -71,7 +71,7 @@ function(omnitrace_causal_example_executable _NAME)
                                      ${CAUSAL_INCLUDE_DIRECTORIES})
     target_link_libraries(
         ${_NAME}-omni-ndebug
-        PRIVATE ${CAUSAL_LINK_LIBRARIES} omnitrace::omnitrace-user-library
+        PRIVATE ${CAUSAL_LINK_LIBRARIES} rocprofsys::rocprofsys-user-library
                 omni-causal-example-lib-no-debug)
 
     add_dependencies(omni-causal-examples ${_NAME} ${_NAME}-omni ${_NAME}-ndebug
@@ -98,7 +98,7 @@ function(omnitrace_causal_example_executable _NAME)
         install(
             TARGETS ${_NAME} ${_NAME}-omni ${_NAME}-coz
             DESTINATION bin
-            COMPONENT omnitrace-examples
+            COMPONENT rocprofsys-examples
             OPTIONAL)
     endif()
 endfunction()

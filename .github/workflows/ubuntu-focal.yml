@@ -167,7 +167,7 @@ jobs:
         source /usr/share/modules/init/$(basename ${SHELL})
         module use ./share/modulefiles
         module avail
-        module load omnitrace
+        module load rocprofsys
         echo $(which rocprof-sys-instrument)
         ldd $(which rocprof-sys-instrument)
         rocprof-sys-instrument --help
@@ -179,7 +179,7 @@ jobs:
       shell: bash
       run: |
         cd build
-        source ./share/omnitrace/setup-env.sh
+        source ./share/rocprofsys/setup-env.sh
         echo $(which rocprof-sys-instrument)
         ldd $(which rocprof-sys-instrument)
         rocprof-sys-instrument --help
@@ -198,7 +198,7 @@ jobs:
         source /usr/share/modules/init/$(basename ${SHELL})
         module use /opt/omnitrace/share/modulefiles
         module avail
-        module load omnitrace
+        module load rocprofsys
         ./scripts/test-install.sh --test-rocprof-sys-{instrument,avail,sample,rewrite,runtime}=1 --test-rocprof-sys-python=${{ matrix.python }}
 
     - name: Test User API
@@ -358,7 +358,7 @@ jobs:
       timeout-minutes: 15
       shell: bash
       run: |
-        source /opt/omnitrace/share/omnitrace/setup-env.sh
+        source /opt/omnitrace/share/rocprofsys/setup-env.sh
         ./scripts/test-install.sh --test-rocprof-sys-{instrument,avail,sample,python,rewrite,runtime}=1
 
     - name: Test User API
@@ -502,13 +502,13 @@ jobs:
         source /usr/share/modules/init/$(basename ${SHELL})
         module use ${{ github.workspace }}/build/share/modulefiles
         module avail
-        module load omnitrace
+        module load rocprofsys
         module list
         env
-        module unload omnitrace
+        module unload rocprofsys
         module list
         env
-        source ${{ github.workspace }}/build/share/omnitrace/setup-env.sh
+        source ${{ github.workspace }}/build/share/rocprofsys/setup-env.sh
         env
 
     - name: Install
@@ -522,7 +522,7 @@ jobs:
       timeout-minutes: 15
       run: |
         set -v
-        source /opt/omnitrace/share/omnitrace/setup-env.sh
+        source /opt/omnitrace/share/rocprofsys/setup-env.sh
         ${{ github.workspace }}/scripts/test-install.sh --test-rocprof-sys-{instrument,avail,sample,python,rewrite,runtime}=1
 
     - name: Test Install with Modulefile
@@ -531,7 +531,7 @@ jobs:
         set -v
         source /usr/share/modules/init/$(basename ${SHELL})
         module use /opt/omnitrace/share/modulefiles
-        module load omnitrace
+        module load rocprofsys
         ${{ github.workspace }}/scripts/test-install.sh --test-rocprof-sys-{instrument,avail,sample,python,rewrite,runtime}=1
 
     - name: Test User API

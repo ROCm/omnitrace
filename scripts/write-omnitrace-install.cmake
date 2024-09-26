@@ -13,7 +13,7 @@ endif()
 
 message(
     STATUS
-        "Writing ${OUTPUT_DIR}/omnitrace-install.py for omnitrace v${OMNITRACE_VERSION}")
+        "Writing ${OUTPUT_DIR}/rocprofsys-install.py for rocprofsys v${OMNITRACE_VERSION}")
 
-configure_file(${CMAKE_CURRENT_LIST_DIR}/../cmake/Templates/omnitrace-install.py.in
-               ${OUTPUT_DIR}/omnitrace-install.py @ONLY)
+configure_file(${CMAKE_CURRENT_LIST_DIR}/../cmake/Templates/rocprofsys-install.py.in
+               ${OUTPUT_DIR}/rocprofsys-install.py @ONLY)

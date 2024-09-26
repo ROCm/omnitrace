@@ -13,4 +13,4 @@ set(component_headers
     ${CMAKE_CURRENT_LIST_DIR}/progress_point.hpp
     ${CMAKE_CURRENT_LIST_DIR}/unblocking_gotcha.hpp)
 
-target_sources(omnitrace-object-library PRIVATE ${component_sources} ${component_headers})
+target_sources(rocprofsys-object-library PRIVATE ${component_sources} ${component_headers})

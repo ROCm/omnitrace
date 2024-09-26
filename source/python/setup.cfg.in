@@ -1,5 +1,5 @@
 [metadata]
-name = rocprofsys
+name = @PROJECT_NAME@
 url = @PROJECT_HOMEPAGE_URL@
 download_url = @PROJECT_HOMEPAGE_URL@.git
 maintainer = AMD ROCm
@@ -30,6 +30,6 @@ classifiers =
     Topic :: Utilities
 
 [options]
-packages = rocprofsys
+packages = @PROJECT_NAME@
 zip_safe = false
 include_package_data = false

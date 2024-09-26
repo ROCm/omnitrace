@@ -137,7 +137,7 @@ jobs:
       shell: bash
       run: |
         set -v
-        source /opt/omnitrace/share/omnitrace/setup-env.sh
+        source /opt/omnitrace/share/rocprofsys/setup-env.sh
         ./scripts/test-install.sh --test-rocprof-sys-{instrument,avail,sample,rewrite,runtime,python}=1
 
     - name: Test User API

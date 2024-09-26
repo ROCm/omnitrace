@@ -18,11 +18,11 @@ if(OMNITRACE_USE_PYTHON)
 endif()
 
 if(OMNITRACE_BUILD_DEVELOPER)
-    add_custom_target(omnitrace-precommit)
-    foreach(_TARGET format-omnitrace-source format-omnitrace-cmake format-timemory-source
+    add_custom_target(rocprofsys-precommit)
+    foreach(_TARGET format-rocprofsys-source format-rocprofsys-cmake format-timemory-source
                     format-timemory-cmake)
         if(TARGET ${_TARGET})
-            add_dependencies(omnitrace-precommit ${_TARGET})
+            add_dependencies(rocprofsys-precommit ${_TARGET})
         endif()
     endforeach()
 endif()
