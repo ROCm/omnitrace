@@ -444,7 +444,9 @@ module_function::is_internal_constrained() const
     auto _module_base = _basename(module_name);
     auto _module_real = _realpath(module_name);
 
-    if(std::regex_search(module_name, std::regex{ "lib(rocprof-sys|rocprofsys|omnitrace|timemory|perfetto)" }))
+    if(std::regex_search(
+           module_name,
+           std::regex{ "lib(rocprof-sys|rocprofsys|omnitrace|timemory|perfetto)" }))
         return _report("Excluding", "module", "omnitrace", 3);
     else if(std::regex_match(module_name,
                              std::regex{ ".*/source/lib/"

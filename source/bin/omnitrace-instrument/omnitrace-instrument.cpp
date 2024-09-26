@@ -320,7 +320,8 @@ main(int argc, char** argv)
         lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib"));
         lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "rocprofsys"));
         lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "rocprofsys", "lib"));
-        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "rocprofsys", "lib64"));
+        lib_search_paths.emplace_back(
+            JOIN('/', _omni_root, "lib", "rocprofsys", "lib64"));
         OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "rocprofsys root path: ", _omni_root);
     }
 

@@ -498,10 +498,12 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
     parser
         .add_argument(
             { "-l", "--launcher" },
-            "When running MPI jobs, rocprof-sys-causal needs to be *before* the executable "
+            "When running MPI jobs, rocprof-sys-causal needs to be *before* the "
+            "executable "
             "which launches the MPI processes (i.e. before `mpirun`, `srun`, etc.). Pass "
             "the name of the target executable (or a regex for matching to the name of "
-            "the target) for causal profiling, e.g., `rocprof-sys-causal -l foo -- mpirun "
+            "the target) for causal profiling, e.g., `rocprof-sys-causal -l foo -- "
+            "mpirun "
             "-n 4 foo`. This ensures that the omnitrace library is LD_PRELOADed on the "
             "proper target")
         .count(1)
