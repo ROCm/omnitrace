@@ -373,6 +373,11 @@ if(NOT OMNITRACE_USE_ROCPROFILER)
 endif()
 
 configure_file(
+    ${PROJECT_SOURCE_DIR}/LICENSE
+    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/doc/${PACKAGE_NAME}/LICENSE
+    COPYONLY)
+
+configure_file(
     ${PROJECT_SOURCE_DIR}/perfetto.cfg
     ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PACKAGE_NAME}/perfetto.cfg
     COPYONLY)
@@ -399,8 +404,8 @@ install(
     COMPONENT setup)
 
 install(
-    FILES ${PROJECT_SOURCE_DIR}/LICENSE
-    DESTINATION ${CMAKE_INSTALL_DOCDIR}
+    FILES ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/doc/${PACKAGE_NAME}/LICENSE
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/${PACKAGE_NAME}
     COMPONENT setup)
 
 # ------------------------------------------------------------------------------#
