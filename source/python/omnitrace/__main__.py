@@ -102,9 +102,9 @@ def parse_args(args=None):
         _default_label.append("line")
 
     parser = argparse.ArgumentParser(
-        "omnitrace",
+        "rocprof-sys",
         add_help=True,
-        epilog="usage: {} -m omnitrace <OMNITRACE_ARGS> -- <SCRIPT> <SCRIPT_ARGS>".format(
+        epilog="usage: {} -m rocprof-sys <ROCPROFSYS_ARGS> -- <SCRIPT> <SCRIPT_ARGS>".format(
             os.path.basename(sys.executable)
         ),
     )
@@ -130,7 +130,7 @@ def parse_args(args=None):
         default=None,
         type=str,
         metavar="FILE",
-        help="Omnitrace configuration file",
+        help="rocprof-sys configuration file",
     )
     parser.add_argument(
         "-s",
@@ -290,7 +290,7 @@ def main(main_args=sys.argv):
                 raise RuntimeError(
                     "Could not determine input script in '{}'. Use '--' before "
                     "the script and its arguments to ensure correct parsing. \nE.g. "
-                    "python -m omnitrace -- ./script.py".format(" ".join(argv))
+                    "python -m rocprof-sys -- ./script.py".format(" ".join(argv))
                 )
 
     if len(argv) > 1:
@@ -335,7 +335,7 @@ def main(main_args=sys.argv):
     _profiler_config.annotate_trace = opts.annotate_trace
     _profiler_config.verbosity = opts.verbosity
 
-    print("[omnitrace]> profiling: {}".format(argv))
+    print("[rocprof-sys]> profiling: {}".format(argv))
 
     main_args[:] = argv
     if opts.setup is not None:
