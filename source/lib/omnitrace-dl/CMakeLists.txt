@@ -45,6 +45,6 @@ set_target_properties(
 omnitrace_strip_target(rocprofsys-dl-library)
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dl/dl.hpp
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rocprofsys/dl)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PACKAGE_NAME}/dl)
 
 install(TARGETS rocprofsys-dl-library DESTINATION ${CMAKE_INSTALL_LIBDIR})

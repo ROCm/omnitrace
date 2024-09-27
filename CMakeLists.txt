@@ -27,6 +27,9 @@ project(
     DESCRIPTION "CPU/GPU Application tracing with static/dynamic binary instrumentation"
     HOMEPAGE_URL "https://github.com/ROCm/rocprofiler-systems")
 
+set(PACKAGE_NAME "rocprof-sys")
+set(PACKAGE_NAME_UNDERSCORE "rocprof_sys")
+
 find_package(Git)
 
 if(Git_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
@@ -371,28 +374,28 @@ endif()
 
 configure_file(
     ${PROJECT_SOURCE_DIR}/perfetto.cfg
-    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/perfetto.cfg
+    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PACKAGE_NAME}/perfetto.cfg
     COPYONLY)
 
 configure_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/setup-env.sh.in
-    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/setup-env.sh @ONLY)
+    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PACKAGE_NAME}/setup-env.sh @ONLY)
 
 configure_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/modulefile.in
-    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PROJECT_NAME}/${OMNITRACE_VERSION}
+    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PACKAGE_NAME}/${OMNITRACE_VERSION}
     @ONLY)
 
 install(
-    FILES ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/setup-env.sh
-          ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/perfetto.cfg
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}
+    FILES ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PACKAGE_NAME}/setup-env.sh
+          ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PACKAGE_NAME}/perfetto.cfg
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PACKAGE_NAME}
     COMPONENT setup)
 
 install(
     FILES
-        ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PROJECT_NAME}/${OMNITRACE_VERSION}
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PROJECT_NAME}
+        ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PACKAGE_NAME}/${OMNITRACE_VERSION}
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PACKAGE_NAME}
     COMPONENT setup)
 
 install(

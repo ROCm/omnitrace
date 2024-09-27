@@ -99,7 +99,7 @@ test-install()
     verbose-run rocprof-sys-instrument --help
     verbose-run rocprof-sys-avail --help
     verbose-run rocprof-sys-avail --all
-    if [ -d "${1}/lib/python/site-packages/omnitrace" ]; then
+    if [ -d "${1}/lib/python/site-packages/rocprofsys" ]; then
         verbose-run omnitrace-python --help
     fi
 }

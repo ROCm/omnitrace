@@ -9,7 +9,7 @@ install(
     EXPORT rocprofsys-library-targets
     FILE rocprofsys-library-targets.cmake
     NAMESPACE rocprofsys::
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/rocprofsys)
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PACKAGE_NAME})
 
 # ------------------------------------------------------------------------------#
 # install tree
@@ -21,24 +21,24 @@ set(PROJECT_BUILD_TARGETS user)
 
 configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}-config.cmake.in
-    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake
-    INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/rocprofsys
+    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PACKAGE_NAME}/${PROJECT_NAME}-config.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PACKAGE_NAME}
     INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}
     PATH_VARS PROJECT_INSTALL_DIR INCLUDE_INSTALL_DIR LIB_INSTALL_DIR)
 
 write_basic_package_version_file(
-    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
+    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PACKAGE_NAME}/${PROJECT_NAME}-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMinorVersion)
 
 install(
     FILES
-        ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake
-        ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
+        ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PACKAGE_NAME}/${PROJECT_NAME}-config.cmake
+        ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PACKAGE_NAME}/${PROJECT_NAME}-version.cmake
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PACKAGE_NAME}
     OPTIONAL)
 
-export(PACKAGE ${PROJECT_NAME})
+export(PACKAGE ${PACKAGE_NAME})
 
 # ------------------------------------------------------------------------------#
 # install the validate-causal-json python script as a utility
@@ -54,7 +54,7 @@ install(PROGRAMS ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/rocprof-sys-causa
 # build tree
 #
 set(_BUILDTREE_EXPORT_DIR
-    "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/rocprofsys")
+    "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PACKAGE_NAME}")
 
 if(NOT EXISTS "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
     file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")

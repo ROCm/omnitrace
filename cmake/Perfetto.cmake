@@ -166,16 +166,16 @@ if(OMNITRACE_INSTALL_PERFETTO_TOOLS)
 
     install(
         DIRECTORY ${OMNITRACE_PERFETTO_INSTALL_DIR}/
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/rocprofsys
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PACKAGE_NAME}
         COMPONENT perfetto
         FILES_MATCHING
         PATTERN "*libperfetto.so*")
 
     foreach(_FILE perfetto traced tracebox traced_probes traced_perf trigger_perfetto)
         if("${_FILE}" STREQUAL "perfetto")
-            string(REPLACE "_" "-" _INSTALL_FILE "rocprofsys-${_FILE}")
+            string(REPLACE "_" "-" _INSTALL_FILE "rocprof-sys-${_FILE}")
         else()
-            string(REPLACE "_" "-" _INSTALL_FILE "rocprofsys-perfetto-${_FILE}")
+            string(REPLACE "_" "-" _INSTALL_FILE "rocprof-sys-perfetto-${_FILE}")
         endif()
         install(
             PROGRAMS ${OMNITRACE_PERFETTO_INSTALL_DIR}/${_FILE}

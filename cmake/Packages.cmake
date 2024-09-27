@@ -354,16 +354,16 @@ if(OMNITRACE_BUILD_DYNINST)
         if(TARGET ${_LIB})
             install(
                 TARGETS ${_LIB}
-                DESTINATION ${CMAKE_INSTALL_LIBDIR}/rocprofsys
+                DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PACKAGE_NAME}
                 COMPONENT dyninst
-                PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rocprofsys/dyninst)
+                PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PACKAGE_NAME}/dyninst)
         endif()
     endforeach()
 
     # for packaging
     install(
         DIRECTORY ${DYNINST_TPL_STAGING_PREFIX}/lib/
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/rocprofsys
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PACKAGE_NAME}
         COMPONENT dyninst
         FILES_MATCHING
         PATTERN "*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
@@ -673,12 +673,12 @@ add_subdirectory(external/timemory EXCLUDE_FROM_ALL)
 
 install(
     TARGETS gotcha
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/rocprofsys
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PACKAGE_NAME}
     COMPONENT gotcha)
 if(OMNITRACE_BUILD_LIBUNWIND)
     install(
         DIRECTORY ${PROJECT_BINARY_DIR}/external/timemory/external/libunwind/install/lib/
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/rocprofsys
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PACKAGE_NAME}
         COMPONENT libunwind
         FILES_MATCHING
         PATTERN "*${CMAKE_SHARED_LIBRARY_SUFFIX}*")

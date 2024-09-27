@@ -266,7 +266,7 @@ omnitrace_target_compile_definitions(
 
 install(
     DIRECTORY ${OMNITRACE_PAPI_INSTALL_DIR}/lib/
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/rocprofsys
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PACKAGE_NAME}
     COMPONENT papi
     FILES_MATCHING
     PATTERN "*.so*")
@@ -289,7 +289,7 @@ foreach(
     papi_version
     papi_xml_event_info)
 
-    string(REPLACE "_" "-" _UTIL_EXE_INSTALL_NAME "rocprofsys-${_UTIL_EXE}")
+    string(REPLACE "_" "-" _UTIL_EXE_INSTALL_NAME "rocprof-sys-${_UTIL_EXE}")
 
     # RPM installer on RedHat/RockyLinux throws error that #!/usr/bin/python should either
     # be #!/usr/bin/python2 or #!/usr/bin/python3
