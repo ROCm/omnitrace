@@ -45,7 +45,7 @@ foreach(_HEADER ${_user_headers})
                    "${CMAKE_CURRENT_SOURCE_DIR}/${PACKAGE_NAME}/" _DEST ${_HEADER})
     string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/"
                    "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/" _DEST "${_DEST}")
-    message(STATUS "Copying ${_HEADER} to ${_DEST}")
+
     configure_file(${_HEADER} ${_DEST} COPYONLY)
 endforeach()
 
