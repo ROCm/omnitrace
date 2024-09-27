@@ -42,11 +42,9 @@ omnitrace_strip_target(rocprofsys-user-library)
 
 foreach(_HEADER ${_user_headers})
     string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/omnitrace/"
-                   "${CMAKE_CURRENT_SOURCE_DIR}/${PACKAGE_NAME}/"
-                   _DEST ${_HEADER})
+                   "${CMAKE_CURRENT_SOURCE_DIR}/${PACKAGE_NAME}/" _DEST ${_HEADER})
     string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/"
-                   "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/"
-                   _DEST "${_DEST}")
+                   "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/" _DEST "${_DEST}")
     message(STATUS "Copying ${_HEADER} to ${_DEST}")
     configure_file(${_HEADER} ${_DEST} COPYONLY)
 endforeach()

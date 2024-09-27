@@ -356,7 +356,8 @@ if(OMNITRACE_BUILD_DYNINST)
                 TARGETS ${_LIB}
                 DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PACKAGE_NAME}
                 COMPONENT dyninst
-                PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PACKAGE_NAME}/dyninst)
+                PUBLIC_HEADER
+                    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PACKAGE_NAME}/dyninst)
         endif()
     endforeach()
 
