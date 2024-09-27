@@ -143,18 +143,18 @@ def main():
             settings[key] = value
 
     my_parser = argparse.ArgumentParser(
-        description="AMD's OmniTrace Causal Profiling GUI",
+        description="AMD's ROCm Systems Profiler Causal Profiling GUI",
         prog="tool",
         allow_abbrev=False,
         formatter_class=lambda prog: argparse.RawTextHelpFormatter(
             prog, max_help_position=40
         ),
         usage="""
-        omnitrace-causal-plot [ARGS...]
+        rocprof-sys-causal-plot [ARGS...]
 
         -------------------------------------------------------------------------------
         Examples:
-        \tomnitrace-causal-plot --path workloads/toy -n 0
+        \trocprof-sys-causal-plot --path workloads/toy -n 0
         -------------------------------------------------------------------------------
         """,
     )
@@ -162,7 +162,7 @@ def main():
     my_parser.add_argument(
         "--version",
         action="version",
-        version="OmniTrace Causal Viewer v{}\n".format(f"{__version__}".strip("\n")),
+        version="ROCm Systems Profiler Causal Viewer v{}\n".format(f"{__version__}".strip("\n")),
     )
 
     my_parser.add_argument(
