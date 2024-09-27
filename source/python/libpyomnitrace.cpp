@@ -82,7 +82,7 @@ PYBIND11_MODULE(libpyomnitrace, omni)
 {
     using namespace pyomnitrace;
 
-    py::doc("Omnitrace Python bindings for profiling, user API, and code coverage "
+    py::doc("rocprof-sys Python bindings for profiling, user API, and code coverage "
             "post-processing");
 
     static bool _is_initialized = false;
@@ -110,18 +110,18 @@ PYBIND11_MODULE(libpyomnitrace, omni)
         "initialize",
         [](const std::string& _v) {
             if(_is_initialized)
-                throw std::runtime_error("Error! omnitrace is already initialized");
+                throw std::runtime_error("Error! rocprof-sys is already initialized");
             _is_initialized = true;
             omnitrace_set_mpi(_get_use_mpi(), false);
             omnitrace_init("trace", false, _v.c_str());
         },
-        "Initialize omnitrace");
+        "Initialize rocprof-sys");
 
     omni.def(
         "initialize",
         [](const py::list& _v) {
             if(_is_initialized)
-                throw std::runtime_error("Error! omnitrace is already initialized");
+                throw std::runtime_error("Error! rocprof-sys is already initialized");
             _is_initialized = true;
             omnitrace_set_instrumented(
                 static_cast<int>(omnitrace::dl::InstrumentMode::PythonProfile));
@@ -140,17 +140,17 @@ PYBIND11_MODULE(libpyomnitrace, omni)
             }
             omnitrace_init("trace", false, _cmd.c_str());
         },
-        "Initialize omnitrace");
+        "Initialize rocprof-sys");
 
     omni.def(
         "finalize",
         []() {
             if(_is_finalized)
-                throw std::runtime_error("Error! omnitrace is already finalized");
+                throw std::runtime_error("Error! rocprof-sys is already finalized");
             _is_finalized = true;
             omnitrace_finalize();
         },
-        "Finalize omnitrace");
+        "Finalize rocprof-sys");
 
     pyprofile::generate(omni);
     pycoverage::generate(omni);
@@ -168,7 +168,7 @@ PYBIND11_MODULE(libpyomnitrace, omni)
         auto _msg =
             TIMEMORY_JOIN("", "dlopen(\"", _libpath, "\", RTLD_NOW | RTLD_GLOBAL)");
         perror(_msg.c_str());
-        fprintf(stderr, "[omnitrace][dl][pid=%i] %s :: %s\n", getpid(), _msg.c_str(),
+        fprintf(stderr, "[rocprof-sys][dl][pid=%i] %s :: %s\n", getpid(), _msg.c_str(),
                 dlerror());
     }
 }
