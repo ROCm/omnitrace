@@ -12,7 +12,7 @@ endif()
 if(NOT UNIX OR APPLE)
     message(
         AUTHOR_WARNING
-            "rocprofsys only supports Linux. Configure and/or build is likely to fail")
+            "rocprof-sys only supports Linux. Configure and/or build is likely to fail")
 endif()
 
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" FULL_VERSION_STRING LIMIT_COUNT 1)
