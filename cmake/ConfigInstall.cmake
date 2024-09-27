@@ -75,4 +75,4 @@ export(
 
 set(rocprofsys_DIR
     "${_BUILDTREE_EXPORT_DIR}"
-    CACHE PATH "rocprofsys" FORCE)
+    CACHE PATH "${PACKAGE_NAME}" FORCE)

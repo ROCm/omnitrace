@@ -17,9 +17,9 @@ if(OMNITRACE_USE_ROCPROFILER
    AND ROCmVersion_TRIPLE_VERSION VERSION_LESS 5.2.0
    AND NOT CMAKE_INSTALL_RPATH_USE_LINK_PATH)
     set(OMNITRACE_LIB_INSTALL_RPATH
-        "\$ORIGIN:\$ORIGIN/rocprofsys:${rocprofiler_LIBRARY_DIR}")
+        "\$ORIGIN:\$ORIGIN/${PACKAGE_NAME}:${rocprofiler_LIBRARY_DIR}")
 else()
-    set(OMNITRACE_LIB_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/rocprofsys")
+    set(OMNITRACE_LIB_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/${PACKAGE_NAME}")
 endif()
 
 # ------------------------------------------------------------------------------#

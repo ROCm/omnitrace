@@ -321,13 +321,14 @@ if(OMNITRACE_BUILD_DYNINST)
                       CMAKE_BUILD_RPATH CMAKE_INSTALL_RPATH_USE_LINK_PATH)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH OFF)
-    set(CMAKE_BUILD_RPATH "\$ORIGIN:\$ORIGIN/rocprofsys")
-    set(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/rocprofsys")
+
+    set(CMAKE_BUILD_RPATH "\$ORIGIN:\$ORIGIN/${PACKAGE_NAME}")
+    set(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/${PACKAGE_NAME}")
     set(DYNINST_TPL_INSTALL_PREFIX
-        "rocprofsys"
+        "${PACKAGE_NAME}"
         CACHE PATH "Third-party library install-tree install prefix" FORCE)
     set(DYNINST_TPL_INSTALL_LIB_DIR
-        "rocprofsys"
+        "${PACKAGE_NAME}"
         CACHE PATH "Third-party library install-tree install library prefix" FORCE)
     add_subdirectory(external/dyninst EXCLUDE_FROM_ALL)
     omnitrace_restore_variables(
