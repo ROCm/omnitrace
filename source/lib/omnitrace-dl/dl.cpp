@@ -1264,7 +1264,7 @@ omnitrace_preload()
         }
     }
 
-    verify_instrumented_preloaded();
+    //verify_instrumented_preloaded();
 
     static bool _once = false;
     if(_once) return _preload;
