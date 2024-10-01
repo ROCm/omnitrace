@@ -111,20 +111,20 @@ jobs:
       run: |
         set -v
         export OMNITRACE_DEBUG=ON
-        which omnitrace-avail
-        ldd $(which omnitrace-avail)
-        omnitrace-avail --help
-        omnitrace-avail -a
-        which omnitrace
-        ldd $(which omnitrace)
-        omnitrace-instrument --help
-        omnitrace-instrument -e -v 1 -o ls.inst --simulate -- ls
+        which rocprof-sys-avail
+        ldd $(which rocprof-sys-avail)
+        rocprof-sys-avail --help
+        rocprof-sys-avail -a
+        which rocprof-sys-instrument
+        ldd $(which rocprof-sys-instrument)
+        rocprof-sys-instrument --help
+        rocprof-sys-instrument -e -v 1 -o ls.inst --simulate -- ls
         for i in $(find omnitrace-ls.inst-output -type f); do echo -e "\n\n --> ${i} \n\n"; cat ${i}; done
-        omnitrace-instrument -e -v 1 -o ls.inst -- ls
-        omnitrace-run -- ./ls.inst
-        omnitrace-instrument -e -v 1 --simulate -- ls
+        rocprof-sys-instrument -e -v 1 -o ls.inst -- ls
+        rocprof-sys-run -- ./ls.inst
+        rocprof-sys-instrument -e -v 1 --simulate -- ls
         for i in $(find omnitrace-ls-output -type f); do echo -e "\n\n --> ${i} \n\n"; cat ${i}; done
-        omnitrace-instrument -e -v 1 -- ls
+        rocprof-sys-instrument -e -v 1 -- ls
 
     - name: Test User API
       timeout-minutes: 10

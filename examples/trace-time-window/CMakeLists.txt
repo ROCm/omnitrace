@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
-project(omnitrace-trace-time-window-example LANGUAGES CXX)
+project(rocprofsys-trace-time-window-example LANGUAGES CXX)
 
 if(OMNITRACE_DISABLE_EXAMPLES)
     get_filename_component(_DIR ${CMAKE_CURRENT_LIST_DIR} NAME)
@@ -20,5 +20,5 @@ if(OMNITRACE_INSTALL_EXAMPLES)
     install(
         TARGETS trace-time-window
         DESTINATION bin
-        COMPONENT omnitrace-examples)
+        COMPONENT rocprofsys-examples)
 endif()

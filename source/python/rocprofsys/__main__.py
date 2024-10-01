@@ -1,7 +1,7 @@
 #!/usr/bin/env python@_VERSION@
 # MIT License
 #
-# Copyright (c) 2022 Advanced Micro Devices, Inc. All Rights Reserved.
+# Copyright (c) 2024 Advanced Micro Devices, Inc. All Rights Reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,11 +23,11 @@
 
 from __future__ import absolute_import
 
-__author__ = "AMD Research"
-__copyright__ = "Copyright 2022, Advanced Micro Devices, Inc."
+__author__ = "AMD ROCm"
+__copyright__ = "Copyright 2024, Advanced Micro Devices, Inc."
 __license__ = "MIT"
 __version__ = "@PROJECT_VERSION@"
-__maintainer__ = "AMD Research"
+__maintainer__ = "AMD ROCm"
 __status__ = "Development"
 
 """ @file __main__.py
@@ -81,7 +81,7 @@ def parse_args(args=None):
     if args is None:
         args = sys.argv[1:]
 
-    from .libpyomnitrace.profiler import config as _profiler_config
+    from .libpyrocprofsys.profiler import config as _profiler_config
 
     def str2bool(v):
         if isinstance(v, bool):
@@ -102,9 +102,9 @@ def parse_args(args=None):
         _default_label.append("line")
 
     parser = argparse.ArgumentParser(
-        "omnitrace",
+        "rocprofsys",
         add_help=True,
-        epilog="usage: {} -m omnitrace <OMNITRACE_ARGS> -- <SCRIPT> <SCRIPT_ARGS>".format(
+        epilog="usage: {} -m rocprofsys <OMNITRACE_ARGS> -- <SCRIPT> <SCRIPT_ARGS>".format(
             os.path.basename(sys.executable)
         ),
     )
@@ -290,7 +290,7 @@ def main(main_args=sys.argv):
                 raise RuntimeError(
                     "Could not determine input script in '{}'. Use '--' before "
                     "the script and its arguments to ensure correct parsing. \nE.g. "
-                    "python -m omnitrace -- ./script.py".format(" ".join(argv))
+                    "python -m rocprofsys -- ./script.py".format(" ".join(argv))
                 )
 
     if len(argv) > 1:
@@ -312,14 +312,14 @@ def main(main_args=sys.argv):
             [os.environ.get("OMNITRACE_CONFIG_FILE", ""), opts.config]
         )
 
-    from .libpyomnitrace import initialize
+    from .libpyrocprofsys import initialize
 
     if os.path.isfile(argv[0]):
         argv[0] = os.path.realpath(argv[0])
 
     initialize(argv)
 
-    from .libpyomnitrace.profiler import config as _profiler_config
+    from .libpyrocprofsys.profiler import config as _profiler_config
 
     _profiler_config.trace_c = opts.trace_c
     _profiler_config.include_args = "args" in opts.label
@@ -335,7 +335,7 @@ def main(main_args=sys.argv):
     _profiler_config.annotate_trace = opts.annotate_trace
     _profiler_config.verbosity = opts.verbosity
 
-    print("[omnitrace]> profiling: {}".format(argv))
+    print("[rocprofsys]> profiling: {}".format(argv))
 
     main_args[:] = argv
     if opts.setup is not None:
@@ -408,6 +408,6 @@ if __name__ == "__main__":
         os.environ["OMNITRACE_USE_PID"] = "ON"
 
     main(args)
-    from .libpyomnitrace import finalize
+    from .libpyrocprofsys import finalize
 
     finalize()

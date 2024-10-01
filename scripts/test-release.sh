@@ -96,10 +96,10 @@ setup-env()
 
 test-install()
 {
-    verbose-run omnitrace-instrument --help
-    verbose-run omnitrace-avail --help
-    verbose-run omnitrace-avail --all
-    if [ -d "${1}/lib/python/site-packages/omnitrace" ]; then
+    verbose-run rocprof-sys-instrument --help
+    verbose-run rocprof-sys-avail --help
+    verbose-run rocprof-sys-avail --all
+    if [ -d "${1}/lib/python/site-packages/rocprofsys" ]; then
         verbose-run omnitrace-python --help
     fi
 }

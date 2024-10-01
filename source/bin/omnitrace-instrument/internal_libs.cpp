@@ -418,7 +418,7 @@ get_internal_libs_data_impl()
     for(const auto* itr : { "lib", "lib64" })
     {
         for(const auto* litr :
-            { "libomnitrace-dl.so", "libomnitrace-user.so", "libomnitrace-rt.so" })
+            { "librocprof-sys-dl.so", "librocprof-sys-user.so", "librocprof-sys-rt.so" })
         {
             auto _libpath = join('/', _omnitrace_base_path, itr, litr);
             if(filepath::exists(_libpath))

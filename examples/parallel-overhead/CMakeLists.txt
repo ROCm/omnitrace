@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(omnitrace-parallel-overhead-example LANGUAGES CXX)
+project(rocprofsys-parallel-overhead-example LANGUAGES CXX)
 
 if(OMNITRACE_DISABLE_EXAMPLES)
     get_filename_component(_DIR ${CMAKE_CURRENT_LIST_DIR} NAME)
@@ -30,5 +30,5 @@ if(OMNITRACE_INSTALL_EXAMPLES)
     install(
         TARGETS parallel-overhead parallel-overhead-locks
         DESTINATION bin
-        COMPONENT omnitrace-examples)
+        COMPONENT rocprofsys-examples)
 endif()

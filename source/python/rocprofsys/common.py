@@ -1,7 +1,7 @@
 #!/usr/bin/env python@_VERSION@
 # MIT License
 #
-# Copyright (c) 2022 Advanced Micro Devices, Inc. All Rights Reserved.
+# Copyright (c) 2024 Advanced Micro Devices, Inc. All Rights Reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,19 +23,19 @@
 
 from __future__ import absolute_import
 
-__author__ = "AMD Research"
-__copyright__ = "Copyright 2022, Advanced Micro Devices, Inc."
+__author__ = "AMD ROCm"
+__copyright__ = "Copyright 2024, Advanced Micro Devices, Inc."
 __license__ = "MIT"
 __version__ = "@PROJECT_VERSION@"
-__maintainer__ = "AMD Research"
+__maintainer__ = "AMD ROCm"
 __status__ = "Development"
 
 import os
 import sys
 
-from . import libpyomnitrace
-from .libpyomnitrace.profiler import profiler_init as _profiler_init
-from .libpyomnitrace.profiler import profiler_finalize as _profiler_fini
+from . import libpyrocprofsys
+from .libpyrocprofsys.profiler import profiler_init as _profiler_init
+from .libpyrocprofsys.profiler import profiler_finalize as _profiler_fini
 
 
 __all__ = ["exec_", "_file", "_get_argv", "_initialize", "_finalize"]
@@ -127,10 +127,10 @@ def _get_argv(init_file, argv=None):
 
 
 def _initialize(_file):
-    if not libpyomnitrace.is_initialized():
-        libpyomnitrace.initialize(_get_argv(_file))
+    if not libpyrocprofsys.is_initialized():
+        libpyrocprofsys.initialize(_get_argv(_file))
 
 
 def _finalize():
-    if libpyomnitrace.is_initialized() and not libpyomnitrace.is_finalized():
+    if libpyrocprofsys.is_initialized() and not libpyrocprofsys.is_finalized():
         _profiler_fini()

@@ -45,15 +45,15 @@ fi
 
 usage()
 {
-    print_option() { printf "    --%-10s %-24s     %s (default: %s)\n" "${1}" "${2}" "${3}" "${4}"; }
+    print_option() { printf "    --%-10s %-30s     %s (default: %s)\n" "${1}" "${2}" "${3}" "${4}"; }
     echo "Options:"
     print_option source-dir "<PATH>" "Location of source directory" "${SOURCE_DIR}"
-    print_option test-omnitrace-instrument "0|1" "Enable testing omnitrace-instrument exe" "${ENABLE_OMNITRACE_INSTRUMENT}"
-    print_option test-omnitrace-avail "0|1" "Enable testing omnitrace-avail" "${ENABLE_OMNITRACE_AVAIL}"
-    print_option test-omnitrace-sample "0|1" "Enable testing omnitrace-sample" "${ENABLE_OMNITRACE_SAMPLE}"
-    print_option test-omnitrace-python "0|1" "Enable testing omnitrace-python" "${ENABLE_OMNITRACE_PYTHON}"
-    print_option test-omnitrace-rewrite "0|1" "Enable testing omnitrace-instrument binary rewrite" "${ENABLE_OMNITRACE_REWRITE}"
-    print_option test-omnitrace-runtime "0|1" "Enable testing omnitrace-instrument runtime instrumentation" "${ENABLE_OMNITRACE_RUNTIME}"
+    print_option test-rocprof-sys-instrument "0|1" "Enable testing rocprof-sys-instrument" "${ENABLE_OMNITRACE_INSTRUMENT}"
+    print_option test-rocprof-sys-avail "0|1" "Enable testing rocprof-sys-avail" "${ENABLE_OMNITRACE_AVAIL}"
+    print_option test-rocprof-sys-sample "0|1" "Enable testing rocprof-sys-sample" "${ENABLE_OMNITRACE_SAMPLE}"
+    print_option test-rocprof-sys-python "0|1" "Enable testing rocprof-sys-python" "${ENABLE_OMNITRACE_PYTHON}"
+    print_option test-rocprof-sys-rewrite "0|1" "Enable testing rocprof-sys-instrument binary rewrite" "${ENABLE_OMNITRACE_REWRITE}"
+    print_option test-rocprof-sys-runtime "0|1" "Enable testing rocprof-sys-instrument runtime instrumentation" "${ENABLE_OMNITRACE_RUNTIME}"
 }
 
 cat << EOF > ${CONFIG_DIR}/omnitrace.cfg
@@ -100,27 +100,27 @@ do
     fi
 
     case "${ARG}" in
-        --test-omnitrace-instrument)
+        --test-rocprof-sys-instrument)
             ENABLE_OMNITRACE_INSTRUMENT=${VAL}
             continue
             ;;
-        --test-omnitrace-avail)
+        --test-rocprof-sys-avail)
             ENABLE_OMNITRACE_AVAIL=${VAL}
             continue
             ;;
-        --test-omnitrace-sample)
+        --test-rocprof-sys-sample)
             ENABLE_OMNITRACE_SAMPLE=${VAL}
             continue
             ;;
-        --test-omnitrace-python)
+        --test-rocprof-sys-python)
             ENABLE_OMNITRACE_PYTHON=${VAL}
             continue
             ;;
-        --test-omnitrace-rewrite)
+        --test-rocprof-sys-rewrite)
             ENABLE_OMNITRACE_REWRITE=${VAL}
             continue
             ;;
-        --test-omnitrace-runtime)
+        --test-rocprof-sys-runtime)
             ENABLE_OMNITRACE_RUNTIME=${VAL}
             continue
             ;;
@@ -136,40 +136,40 @@ do
     esac
 done
 
-test-omnitrace()
+test-rocprof-sys-instrument()
 {
-    verbose-run which omnitrace
-    verbose-run ldd $(which omnitrace)
-    verbose-run omnitrace-instrument --help
+    verbose-run which rocprof-sys-instrument
+    verbose-run ldd $(which rocprof-sys-instrument)
+    verbose-run rocprof-sys-instrument --help
 }
 
-test-omnitrace-avail()
+test-rocprof-sys-avail()
 {
-    verbose-run which omnitrace-avail
-    verbose-run ldd $(which omnitrace-avail)
-    verbose-run omnitrace-avail --help
-    verbose-run omnitrace-avail -a
+    verbose-run which rocprof-sys-avail
+    verbose-run ldd $(which rocprof-sys-avail)
+    verbose-run rocprof-sys-avail --help
+    verbose-run rocprof-sys-avail -a
 }
 
-test-omnitrace-sample()
+test-rocprof-sys-sample()
 {
-    verbose-run which omnitrace-sample
-    verbose-run ldd $(which omnitrace-sample)
-    verbose-run omnitrace-sample --help
-    verbose-run omnitrace-sample --cputime 100 --realtime 50 --hsa-interrupt 0 -TPH -- python3 ${SOURCE_DIR}/examples/python/external.py -n 5 -v 20
+    verbose-run which rocprof-sys-sample
+    verbose-run ldd $(which rocprof-sys-sample)
+    verbose-run rocprof-sys-sample --help
+    verbose-run rocprof-sys-sample --cputime 100 --realtime 50 --hsa-interrupt 0 -TPH -- python3 ${SOURCE_DIR}/examples/python/external.py -n 5 -v 20
 }
 
-test-omnitrace-python()
+test-rocprof-sys-python()
 {
-    verbose-run which omnitrace-python
-    verbose-run omnitrace-python --help
-    verbose-run omnitrace-python -b -- ${SOURCE_DIR}/examples/python/builtin.py -n 5 -v 5
-    verbose-run omnitrace-python -b -- ${SOURCE_DIR}/examples/python/noprofile.py -n 5 -v 5
-    verbose-run omnitrace-python -- ${SOURCE_DIR}/examples/python/external.py -n 5 -v 5
+    verbose-run which rocprof-sys-python
+    verbose-run rocprof-sys-python --help
+    verbose-run rocprof-sys-python -b -- ${SOURCE_DIR}/examples/python/builtin.py -n 5 -v 5
+    verbose-run rocprof-sys-python -b -- ${SOURCE_DIR}/examples/python/noprofile.py -n 5 -v 5
+    verbose-run rocprof-sys-python -- ${SOURCE_DIR}/examples/python/external.py -n 5 -v 5
     verbose-run python3 ${SOURCE_DIR}/examples/python/source.py -n 5 -v 5
 }
 
-test-omnitrace-rewrite()
+test-rocprof-sys-rewrite()
 {
     if [ -f /usr/bin/coreutils ]; then
         local LS_NAME=coreutils
@@ -178,13 +178,13 @@ test-omnitrace-rewrite()
         local LS_NAME=ls
         local LS_ARGS=""
     fi
-    verbose-run omnitrace-instrument -e -v 1 -o ${CONFIG_DIR}/ls.inst --simulate -- ${LS_NAME}
+    verbose-run rocprof-sys-instrument -e -v 1 -o ${CONFIG_DIR}/ls.inst --simulate -- ${LS_NAME}
     for i in $(find ${CONFIG_DIR}/omnitrace-tests-output/ls.inst -type f); do verbose-run ls ${i}; done
-    verbose-run omnitrace-instrument -e -v 1 -o ${CONFIG_DIR}/ls.inst -- ${LS_NAME}
-    verbose-run omnitrace-run -- ${CONFIG_DIR}/ls.inst ${LS_ARGS}
+    verbose-run rocprof-sys-instrument -e -v 1 -o ${CONFIG_DIR}/ls.inst -- ${LS_NAME}
+    verbose-run rocprof-sys-run -- ${CONFIG_DIR}/ls.inst ${LS_ARGS}
 }
 
-test-omnitrace-runtime()
+test-rocprof-sys-runtime()
 {
     if [ -f /usr/bin/coreutils ]; then
         local LS_NAME=coreutils
@@ -193,14 +193,14 @@ test-omnitrace-runtime()
         local LS_NAME=ls
         local LS_ARGS=""
     fi
-    verbose-run omnitrace-instrument -e -v 1 --simulate -- ${LS_NAME} ${LS_ARGS}
+    verbose-run rocprof-sys-instrument -e -v 1 --simulate -- ${LS_NAME} ${LS_ARGS}
     for i in $(find ${CONFIG_DIR}/omnitrace-tests-output/$(basename ${LS_NAME}) -type f); do verbose-run ls ${i}; done
-    verbose-run omnitrace-instrument -e -v 1 -- ${LS_NAME} ${LS_ARGS}
+    verbose-run rocprof-sys-instrument -e -v 1 -- ${LS_NAME} ${LS_ARGS}
 }
 
-if [ "${ENABLE_OMNITRACE_INSTRUMENT}" -ne 0 ]; then verbose-run test-omnitrace; fi
-if [ "${ENABLE_OMNITRACE_AVAIL}" -ne 0 ]; then verbose-run test-omnitrace-avail; fi
-if [ "${ENABLE_OMNITRACE_SAMPLE}" -ne 0 ]; then verbose-run test-omnitrace-sample; fi
-if [ "${ENABLE_OMNITRACE_PYTHON}" -ne 0 ]; then verbose-run test-omnitrace-python; fi
-if [ "${ENABLE_OMNITRACE_REWRITE}" -ne 0 ]; then verbose-run test-omnitrace-rewrite; fi
-if [ "${ENABLE_OMNITRACE_RUNTIME}" -ne 0 ]; then verbose-run test-omnitrace-runtime; fi
+if [ "${ENABLE_OMNITRACE_INSTRUMENT}" -ne 0 ]; then verbose-run test-rocprof-sys-instrument; fi
+if [ "${ENABLE_OMNITRACE_AVAIL}" -ne 0 ]; then verbose-run test-rocprof-sys-avail; fi
+if [ "${ENABLE_OMNITRACE_SAMPLE}" -ne 0 ]; then verbose-run test-rocprof-sys-sample; fi
+if [ "${ENABLE_OMNITRACE_PYTHON}" -ne 0 ]; then verbose-run test-rocprof-sys-python; fi
+if [ "${ENABLE_OMNITRACE_REWRITE}" -ne 0 ]; then verbose-run test-rocprof-sys-rewrite; fi
+if [ "${ENABLE_OMNITRACE_RUNTIME}" -ne 0 ]; then verbose-run test-rocprof-sys-runtime; fi

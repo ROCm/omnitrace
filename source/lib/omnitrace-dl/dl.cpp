@@ -113,7 +113,7 @@ get_omnitrace_is_preloaded()
 {
     static bool _v = []() {
         auto&& _preload_libs = get_env("LD_PRELOAD", std::string{});
-        return (_preload_libs.find("libomnitrace-dl.so") != std::string::npos);
+        return (_preload_libs.find("librocprof-sys-dl.so") != std::string::npos);
     }();
     return _v;
 }
@@ -125,7 +125,7 @@ get_omnitrace_preload()
         auto&& _preload      = get_env("OMNITRACE_PRELOAD", true);
         auto&& _preload_libs = get_env("LD_PRELOAD", std::string{});
         return (_preload &&
-                _preload_libs.find("libomnitrace-dl.so") != std::string::npos);
+                _preload_libs.find("librocprof-sys-dl.so") != std::string::npos);
     }();
     return _v;
 }
@@ -134,14 +134,14 @@ inline void
 reset_omnitrace_preload()
 {
     auto&& _preload_libs = get_env("LD_PRELOAD", std::string{});
-    if(_preload_libs.find("libomnitrace-dl.so") != std::string::npos)
+    if(_preload_libs.find("librocprof-sys-dl.so") != std::string::npos)
     {
         (void) get_omnitrace_is_preloaded();
         (void) get_omnitrace_preload();
         auto _modified_preload = std::string{};
         for(const auto& itr : delimit(_preload_libs, ":"))
         {
-            if(itr.find("libomnitrace") != std::string::npos) continue;
+            if(itr.find("librocprof-sys") != std::string::npos) continue;
             _modified_preload += common::join("", ":", itr);
         }
         if(!_modified_preload.empty() && _modified_preload.find(':') == 0)
@@ -176,8 +176,8 @@ int _omnitrace_dl_verbose = get_omnitrace_dl_env();
 
 // The docs for dlopen suggest that the combination of RTLD_LOCAL + RTLD_DEEPBIND
 // (when available) helps ensure that the symbols in the instrumentation library
-// libomnitrace.so will use it's own symbols... not symbols that are potentially
-// instrumented. However, this only applies to the symbols in libomnitrace.so,
+// librocprof-sys.so will use it's own symbols... not symbols that are potentially
+// instrumented. However, this only applies to the symbols in librocprof-sys.so,
 // which is NOT self-contained, i.e. symbols in timemory and the libs it links to
 // (such as libpapi.so) are not protected by the deep-bind option. Additionally,
 // it should be noted that DynInst does *NOT* add instrumentation by manipulating the
@@ -396,7 +396,7 @@ struct OMNITRACE_INTERNAL_API indirect
 public:
     using user_cb_t = omnitrace_user_callbacks_t;
 
-    // libomnitrace functions
+    // librocprof-sys functions
     void (*omnitrace_init_library_f)(void)                                   = nullptr;
     void (*omnitrace_init_tooling_f)(void)                                   = nullptr;
     void (*omnitrace_init_f)(const char*, bool, const char*)                 = nullptr;
@@ -418,7 +418,7 @@ public:
     void (*omnitrace_annotated_progress_f)(const char*, omnitrace_annotation_t*,
                                            size_t)                           = nullptr;
 
-    // libomnitrace-user functions
+    // librocprof-sys-user functions
     int (*omnitrace_user_configure_f)(int, user_cb_t, user_cb_t*) = nullptr;
 
     // KokkosP functions
@@ -492,9 +492,9 @@ get_indirect()
 {
     omnitrace_preinit_library();
 
-    static auto  _libomni = get_env("OMNITRACE_LIBRARY", "libomnitrace.so");
-    static auto  _libuser = get_env("OMNITRACE_USER_LIBRARY", "libomnitrace-user.so");
-    static auto  _libdlib = get_env("OMNITRACE_DL_LIBRARY", "libomnitrace-dl.so");
+    static auto  _libomni = get_env("OMNITRACE_LIBRARY", "librocprof-sys.so");
+    static auto  _libuser = get_env("OMNITRACE_USER_LIBRARY", "librocprof-sys-user.so");
+    static auto  _libdlib = get_env("OMNITRACE_DL_LIBRARY", "librocprof-sys-dl.so");
     static auto* _v       = new indirect{ _libomni, _libuser, _libdlib };
     return *_v;
 }
@@ -1086,11 +1086,12 @@ extern "C"
 #if OMNITRACE_USE_ROCPROFILER > 0
     void OnLoadToolProp(void* settings)
     {
-        OMNITRACE_DL_LOG(-16,
-                         "invoking %s(rocprofiler_settings_t*) within omnitrace-dl.so "
-                         "will cause a silent failure for rocprofiler. ROCP_TOOL_LIB "
-                         "should be set to libomnitrace.so\n",
-                         __FUNCTION__);
+        OMNITRACE_DL_LOG(
+            -16,
+            "invoking %s(rocprofiler_settings_t*) within librocprof-sys-dl.so "
+            "will cause a silent failure for rocprofiler. ROCP_TOOL_LIB "
+            "should be set to librocprof-sys.so\n",
+            __FUNCTION__);
         abort();
         return OMNITRACE_DL_INVOKE(get_indirect().rocp_on_load_tool_prop_f, settings);
     }
@@ -1175,7 +1176,7 @@ get_default_mode()
     auto _link_map = get_link_map(nullptr);
     for(const auto& itr : _link_map)
     {
-        if(itr.find("libomnitrace-rt.so") != std::string::npos ||
+        if(itr.find("librocprof-sys-rt.so") != std::string::npos ||
            itr.find("libdyninstAPI_RT.so") != std::string::npos)
             return "trace";
     }
@@ -1256,7 +1257,7 @@ omnitrace_preload()
         get_env("OMNITRACE_INSTRUMENT_MODE", dl::InstrumentMode::BinaryRewrite);
     for(const auto& itr : _link_map)
     {
-        if(itr.find("libomnitrace-rt.so") != std::string::npos ||
+        if(itr.find("librocprof-sys-rt.so") != std::string::npos ||
            itr.find("libdyninstAPI_RT.so") != std::string::npos)
         {
             omnitrace_set_instrumented(static_cast<int>(_instr_mode));
@@ -1344,11 +1345,13 @@ verify_instrumented_preloaded()
                     \____/|_|  |_|_| \_|_____|  |_|  |_|  \_\/_/    \_\_____|______|    |_|  \_\\____/|_| \_|
 
 
-    Due to a variety of edge cases we've encountered, OmniTrace now requires that binary rewritten executables and libraries be launched
-    with the 'omnitrace-run' executable.
+    Due to a variety of edge cases we've encountered, ROCm Systems Profiller now requires that binary rewritten
+    executables and libraries be launched with the 'rocprof-sys-run' executable.
 
-    In order to launch the executable with 'omnitrace-run', prefix the current command with 'omnitrace-run' and a standalone double hyphen ('--').
-    For MPI applications, place 'omnitrace-run --' after the MPI command.
+    In order to launch the executable with 'rocprof-sys-run', prefix the current command with 'rocprof-sys-run'
+    and a standalone double hyphen ('--').
+
+    For MPI applications, place 'rocprof-sys-run --' after the MPI command.
     E.g.:
 
         <EXECUTABLE> <ARGS...>
@@ -1356,23 +1359,23 @@ verify_instrumented_preloaded()
 
     should be:
 
-        omnitrace-run -- <EXECUTABLE> <ARGS...>
-        mpirun -n 2 omnitrace-run -- <EXECUTABLE> <ARGS...>
+        rocprof-sys-run -- <EXECUTABLE> <ARGS...>
+        mpirun -n 2 rocprof-sys-run -- <EXECUTABLE> <ARGS...>
 
-    Note: the command-line arguments passed to 'omnitrace-run' (which are specified before the double hyphen) will override configuration variables
-    and/or any configuration values specified to 'omnitrace-instrument' via the '--config' or '--env' options.
+    Note: the command-line arguments passed to 'rocprof-sys-run' (which are specified before the double hyphen) will override configuration variables
+    and/or any configuration values specified to 'rocprof-sys-instrument' via the '--config' or '--env' options.
     E.g.:
 
-        $ omnitrace-instrument -o ./sleep.inst --env OMNITRACE_SAMPLING_DELAY=5.0 -- sleep
+        $ rocprof-sys-instrument -o ./sleep.inst --env OMNITRACE_SAMPLING_DELAY=5.0 -- sleep
         $ echo "OMNITRACE_SAMPLING_FREQ = 500" > omnitrace.cfg
         $ export OMNITRACE_CONFIG_FILE=omnitrace.cfg
-        $ omnitrace-run --sampling-freq=100 --sampling-delay=1.0 -- ./sleep.inst 10
+        $ rocprof-sys-run --sampling-freq=100 --sampling-delay=1.0 -- ./sleep.inst 10
 
     In the first command, a default sampling delay of 5 seconds in embedded into the instrumented 'sleep.inst'.
-    In the second command, the sampling frequency will be set to 500 interrupts per second when OmniTrace reads the config file
+    In the second command, the sampling frequency will be set to 500 interrupts per second when ROCm Systems Profiller reads the config file
     In the fourth command, the sampling frequency and sampling delay are overridden to 100 interrupts per second and 1 second, respectively, when sleep.inst runs
 
-    Thanks for using OmniTrace and happy optimizing!
+    Thanks for using ROCm Systems Profiler and happy optimizing!
     )notice";
 
     // emit notice
@@ -1419,7 +1422,7 @@ extern "C"
             {
                 auto _env_v = std::string_view{ envp[_idx++] };
                 if(_env_v.find("OMNITRACE") != 0 &&
-                   _env_v.find("libomnitrace") == std::string_view::npos)
+                   _env_v.find("librocprof-sys") == std::string_view::npos)
                     continue;
                 auto _pos = _env_v.find('=');
                 if(_pos < _env_v.length())

@@ -1,7 +1,7 @@
 #!/usr/bin/env python@_VERSION@
 # MIT License
 #
-# Copyright (c) 2022 Advanced Micro Devices, Inc. All Rights Reserved.
+# Copyright (c) 2024 Advanced Micro Devices, Inc. All Rights Reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,11 +23,11 @@
 
 from __future__ import absolute_import
 
-__author__ = "AMD Research"
-__copyright__ = "Copyright 2022, Advanced Micro Devices, Inc."
+__author__ = "AMD ROCm"
+__copyright__ = "Copyright 2024, Advanced Micro Devices, Inc."
 __license__ = "MIT"
 __version__ = "@PROJECT_VERSION@"
-__maintainer__ = "AMD Research"
+__maintainer__ = "AMD ROCm"
 __status__ = "Development"
 
 """
@@ -41,19 +41,19 @@ try:
         os.path.join(os.path.dirname(__file__), "../../..")
     )
 
-    from .libpyomnitrace import coverage
+    from .libpyrocprofsys import coverage
     from . import user
     from .profiler import Profiler, FakeProfiler
-    from .libpyomnitrace.profiler import (
+    from .libpyrocprofsys.profiler import (
         profiler_function,
         profiler_init,
         profiler_finalize,
     )
-    from .libpyomnitrace import initialize
-    from .libpyomnitrace import finalize
-    from .libpyomnitrace import is_initialized
-    from .libpyomnitrace import is_finalized
-    from .libpyomnitrace.profiler import config as Config
+    from .libpyrocprofsys import initialize
+    from .libpyrocprofsys import finalize
+    from .libpyrocprofsys import is_initialized
+    from .libpyrocprofsys import is_finalized
+    from .libpyrocprofsys.profiler import config as Config
 
     config = Config
     profile = Profiler

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(omnitrace-openmp LANGUAGES CXX)
+project(rocprofsys-openmp LANGUAGES CXX)
 
 file(GLOB common_source ${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp)
 add_library(openmp-common OBJECT ${common_source})
@@ -17,7 +17,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_link_libraries(openmp-common PUBLIC OpenMP::OpenMP_CXX)
     set(OMNITRACE_OPENMP_USING_LIBOMP_LIBRARY
         ON
-        CACHE INTERNAL "Used by omnitrace testing" FORCE)
+        CACHE INTERNAL "Used by rocprofsys testing" FORCE)
 else()
     find_program(CLANGXX_EXECUTABLE NAMES clang++)
     find_library(
@@ -34,13 +34,13 @@ else()
         omnitrace_custom_compilation(COMPILER ${CLANGXX_EXECUTABLE} TARGET openmp-lu)
         set(OMNITRACE_OPENMP_USING_LIBOMP_LIBRARY
             ON
-            CACHE INTERNAL "Used by omnitrace testing" FORCE)
+            CACHE INTERNAL "Used by rocprofsys testing" FORCE)
     else()
         find_package(OpenMP REQUIRED)
         target_link_libraries(openmp-common PUBLIC OpenMP::OpenMP_CXX)
         set(OMNITRACE_OPENMP_USING_LIBOMP_LIBRARY
             OFF
-            CACHE INTERNAL "Used by omnitrace testing" FORCE)
+            CACHE INTERNAL "Used by rocprofsys testing" FORCE)
     endif()
 endif()
 
@@ -51,5 +51,5 @@ if(OMNITRACE_INSTALL_EXAMPLES)
     install(
         TARGETS openmp-cg openmp-lu
         DESTINATION bin
-        COMPONENT omnitrace-examples)
+        COMPONENT rocprofsys-examples)
 endif()

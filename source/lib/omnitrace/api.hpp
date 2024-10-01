@@ -44,7 +44,7 @@ extern "C"
     /// shuts down all tooling and generates output
     void omnitrace_finalize(void) OMNITRACE_PUBLIC_API;
 
-    /// remove libomnitrace from LD_PRELOAD
+    /// remove librocprof-sys from LD_PRELOAD
     void omnitrace_reset_preload(void) OMNITRACE_PUBLIC_API;
 
     /// sets an environment variable

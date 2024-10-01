@@ -260,7 +260,7 @@ std::pair<binary_info_t, binary_info_t>&
 get_cached_binary_info()
 {
     static auto _v = []() {
-        // get the linked binaries for the exe (excluding ones from libomnitrace)
+        // get the linked binaries for the exe (excluding ones from librocprof-sys)
         auto _link_map = binary::get_link_map();
         auto _files    = std::vector<std::string>{};
         _files.reserve(_link_map.size());
@@ -634,11 +634,11 @@ perform_experiment_impl(std::shared_ptr<std::promise<void>> _started)  // NOLINT
                 }
                 std::cerr << std::flush;
 
-                // if launched via omnitrace-causal, allow end-to-end runs that do not
+                // if launched via rocprof-sys-causal, allow end-to-end runs that do not
                 // start experiments
                 auto _omni_causal_launcher =
                     get_env<std::string>("OMNITRACE_LAUNCHER", "", false) ==
-                    "omnitrace-causal";
+                    "rocprof-sys-causal";
 
                 if(!(get_causal_end_to_end() && _omni_causal_launcher))
                 {

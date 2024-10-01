@@ -130,8 +130,8 @@ get_initial_environment()
         }
     }
 
-    auto _dl_libpath   = get_realpath(get_internal_libpath("libomnitrace-dl.so"));
-    auto _omni_libpath = get_realpath(get_internal_libpath("libomnitrace.so"));
+    auto _dl_libpath   = get_realpath(get_internal_libpath("librocprof-sys-dl.so"));
+    auto _omni_libpath = get_realpath(get_internal_libpath("librocprof-sys.so"));
 
     update_env(_env, "LD_PRELOAD", _dl_libpath, UPD_APPEND);
     update_env(_env, "LD_LIBRARY_PATH", tim::filepath::dirname(_dl_libpath), UPD_APPEND);
@@ -315,9 +315,9 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
     };
 
     auto* _dl_libpath =
-        realpath(get_internal_libpath("libomnitrace-dl.so").c_str(), nullptr);
+        realpath(get_internal_libpath("librocprof-sys-dl.so").c_str(), nullptr);
     auto* _omni_libpath =
-        realpath(get_internal_libpath("libomnitrace.so").c_str(), nullptr);
+        realpath(get_internal_libpath("librocprof-sys.so").c_str(), nullptr);
 
     auto parser = parser_t(argv[0]);
 
@@ -372,7 +372,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
 
     parser.set_use_color(true);
     parser.enable_help();
-    parser.enable_version("omnitrace-sample", OMNITRACE_ARGPARSE_VERSION_INFO);
+    parser.enable_version("rocprof-sys-sample", OMNITRACE_ARGPARSE_VERSION_INFO);
 
     auto _cols = std::get<0>(tim::utility::console::get_columns());
     if(_cols > parser.get_help_width() + 8)
@@ -837,11 +837,11 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
                 remove_env(_env, "KOKKOS_PROFILE_LIBRARY");
         });
 
-    parser.start_group("HARDWARE COUNTER OPTIONS", "See also: omnitrace-avail -H");
+    parser.start_group("HARDWARE COUNTER OPTIONS", "See also: rocprof-sys-avail -H");
     parser
         .add_argument({ "-C", "--cpu-events" },
                       "Set the CPU hardware counter events to record (ref: "
-                      "`omnitrace-avail -H -c CPU`)")
+                      "`rocprof-sys-avail -H -c CPU`)")
         .action([&](parser_t& p) {
             auto _events =
                 join(array_config{ "," }, p.get<std::vector<std::string>>("cpu-events"));
@@ -852,7 +852,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
     parser
         .add_argument({ "-G", "--gpu-events" },
                       "Set the GPU hardware counter events to record (ref: "
-                      "`omnitrace-avail -H -c GPU`)")
+                      "`rocprof-sys-avail -H -c GPU`)")
         .action([&](parser_t& p) {
             auto _events =
                 join(array_config{ "," }, p.get<std::vector<std::string>>("gpu-events"));

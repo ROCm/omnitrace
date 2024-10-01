@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(omnitrace-causal-example LANGUAGES CXX)
+project(rocprofsys-causal-example LANGUAGES CXX)
 
 if(OMNITRACE_DISABLE_EXAMPLES)
     get_filename_component(_DIR ${CMAKE_CURRENT_LIST_DIR} NAME)
@@ -13,8 +13,8 @@ endif()
 
 set(CMAKE_BUILD_TYPE "Release")
 find_package(Threads REQUIRED)
-if(NOT TARGET omnitrace::omnitrace-user-library)
-    find_package(omnitrace REQUIRED COMPONENTS user)
+if(NOT TARGET rocprofsys::rocprofsys-user-library)
+    find_package(rocprofsys REQUIRED COMPONENTS user)
 endif()
 
 add_library(causal-interface-library INTERFACE)

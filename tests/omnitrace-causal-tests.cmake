@@ -47,7 +47,7 @@ omnitrace_add_causal_test(
         3
         --monochrome
         -g
-        ${CMAKE_BINARY_DIR}/omnitrace-tests-config/causal-both-omni-func
+        ${CMAKE_BINARY_DIR}/rocprofsys-tests-config/causal-both-omni-func
         -l
         causal-both-omni
         -v
@@ -108,12 +108,12 @@ macro(
     _V30
     _TOL # tolerance for virtual speedup
     )
-    # arguments to omnitrace-causal
+    # arguments to rocprof-sys-causal
     set(${_NAME}_args "${_causal_common_args} ${_MODE} ${_EXPER}")
 
     # arguments to validate-causal-json.py
     set(${_NAME}_valid
-        "-n 0 -i omnitrace-tests-output/causal-cpu-omni-${_TEST}-e2e/causal/experiments.json -v ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 10 ${_V10} ${_TOL} ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 20 ${_V20} ${_TOL} ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 30 ${_V30} ${_TOL}"
+        "-n 0 -i rocprofsys-tests-output/causal-cpu-omni-${_TEST}-e2e/causal/experiments.json -v ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 10 ${_V10} ${_TOL} ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 20 ${_V20} ${_TOL} ${_EXPER} $<TARGET_FILE_BASE_NAME:causal-cpu-omni> 30 ${_V30} ${_TOL}"
         )
 
     # patch string for command-line

@@ -206,7 +206,7 @@ strvec_t lib_search_paths = tim::delimit(
 strvec_t bin_search_paths = tim::delimit(tim::get_env<std::string>("PATH"), ":");
 
 auto _dyn_api_rt_paths = tim::delimit(
-    JOIN(":", get_internal_libpath(), JOIN("/", get_internal_libpath(), "omnitrace")),
+    JOIN(":", get_internal_libpath(), JOIN("/", get_internal_libpath(), "rocprofsys")),
     ":");
 
 std::string
@@ -315,13 +315,14 @@ main(int argc, char** argv)
     if(!_omni_root.empty() && exists(_omni_root))
     {
         bin_search_paths.emplace_back(JOIN('/', _omni_root, "bin"));
-        bin_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace"));
-        bin_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace", "bin"));
+        bin_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "rocprofsys"));
+        bin_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "rocprofsys", "bin"));
         lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib"));
-        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace"));
-        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace", "lib"));
-        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "omnitrace", "lib64"));
-        OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace root path: ", _omni_root);
+        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "rocprofsys"));
+        lib_search_paths.emplace_back(JOIN('/', _omni_root, "lib", "rocprofsys", "lib"));
+        lib_search_paths.emplace_back(
+            JOIN('/', _omni_root, "lib", "rocprofsys", "lib64"));
+        OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "rocprofsys root path: ", _omni_root);
     }
 
     auto _omni_exe_path = get_realpath(get_absolute_exe_filepath(argv[0]));
@@ -332,19 +333,20 @@ main(int argc, char** argv)
 
     auto _omni_lib_path =
         JOIN('/', filepath::dirname(filepath::dirname(_omni_exe_path)), "lib");
-    bin_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace"));
-    bin_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace", "bin"));
+    bin_search_paths.emplace_back(JOIN('/', _omni_lib_path, "rocprofsys"));
+    bin_search_paths.emplace_back(JOIN('/', _omni_lib_path, "rocprofsys", "bin"));
     lib_search_paths.emplace_back(_omni_lib_path);
-    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace"));
-    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace", "lib"));
-    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "omnitrace", "lib64"));
+    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "rocprofsys"));
+    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "rocprofsys", "lib"));
+    lib_search_paths.emplace_back(JOIN('/', _omni_lib_path, "rocprofsys", "lib64"));
 
-    OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace bin path: ", _omni_exe_path);
-    OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "omnitrace lib path: ", _omni_lib_path);
+    OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "rocprofsys bin path: ", _omni_exe_path);
+    OMNITRACE_ADD_LOG_ENTRY(argv[0], "::", "rocprofsys lib path: ", _omni_lib_path);
 
     for(const auto& itr : omnitrace_get_link_map(nullptr))
     {
-        if(itr.find("omnitrace") != std::string::npos ||
+        if(itr.find("rocprofsys") != std::string::npos ||
+           itr.find("rocprof-sys") != std::string::npos ||
            std::regex_search(
                itr, std::regex{ "lib(dyninstAPI|stackwalk|pcontrol|patchAPI|parseAPI|"
                                 "instructionAPI|symtabAPI|dynDwarf|common|dynElf|tbb|"
@@ -376,7 +378,7 @@ main(int argc, char** argv)
     string_t              mutname       = {};
     string_t              outfile       = {};
     string_t              logfile       = {};
-    std::vector<string_t> inputlib      = { "libomnitrace-dl" };
+    std::vector<string_t> inputlib      = { "librocprof-sys-dl" };
     std::vector<string_t> libname       = {};
     std::vector<string_t> sharedlibname = {};
     std::vector<string_t> staticlibname = {};
@@ -465,11 +467,11 @@ main(int argc, char** argv)
     // it is unrecognized, then set the errflag to report an error.  When we come to a
     // non '-' charcter, then we must be at the application name.
     using parser_t = tim::argparse::argument_parser;
-    parser_t parser("omnitrace-instrument");
+    parser_t parser("rocprof-sys-instrument");
     string_t extra_help = "-- <CMD> <ARGS>";
 
     parser.enable_help();
-    parser.enable_version("omnitrace-instrument", OMNITRACE_ARGPARSE_VERSION_INFO);
+    parser.enable_version("rocprof-sys-instrument", OMNITRACE_ARGPARSE_VERSION_INFO);
 
     parser.add_argument({ "" }, "");
     parser.add_argument({ "[DEBUG OPTIONS]" }, "");
@@ -1163,10 +1165,10 @@ main(int argc, char** argv)
         {
             fflush(stdout);
             std::stringstream _separator{};
-            // 18 is approximate length of '[omnitrace][exe] '
+            // 20 is approximate length of '[rocprof-sys][exe] '
             // 32 is approximate length of 'Warning! "" is not executable!'
             size_t _width =
-                std::min<size_t>(std::get<0>(tim::utility::console::get_columns()) - 18,
+                std::min<size_t>(std::get<0>(tim::utility::console::get_columns()) - 20,
                                  strlen(_cmdv[0]) + 32);
             _separator.fill('=');
             _separator << "#" << std::setw(_width - 2) << ""
@@ -1225,12 +1227,12 @@ main(int argc, char** argv)
     {
         auto* _save = _cmdv[0];
         _cmdv[0]    = const_cast<char*>(outfile.c_str());
-        tim::timemory_init(_cmdc, _cmdv, "omnitrace-");
+        tim::timemory_init(_cmdc, _cmdv, "rocprofsys-");
         _cmdv[0] = _save;
     }
     else
     {
-        tim::timemory_init(_cmdc, _cmdv, "omnitrace-");
+        tim::timemory_init(_cmdc, _cmdv, "rocprofsys-");
     }
 
     if(!logfile.empty())
@@ -1757,9 +1759,9 @@ main(int argc, char** argv)
         if(_pos != npos_v) _name = _name.substr(_pos + 1);
         _pos = _name.find('.');
         if(_pos != npos_v) _name = _name.substr(0, _pos);
-        _pos = _name.find("libomnitrace-");
+        _pos = _name.find("librocprof-sys-");
         if(_pos != npos_v)
-            _name = _name.erase(_pos, std::string("libomnitrace-").length());
+            _name = _name.erase(_pos, std::string("librocprof-sys-").length());
         _pos = _name.find("lib");
         if(_pos == 0) _name = _name.substr(_pos + std::string("lib").length());
         while((_pos = _name.find('-')) != npos_v)
@@ -1768,7 +1770,7 @@ main(int argc, char** argv)
         verbprintf(2,
                    "Supplemental instrumentation library '%s' is named '%s' after "
                    "removing everything before last '/', everything after first '.', and "
-                   "'libomnitrace-'...\n",
+                   "'librocprof-sys-'...\n",
                    itr.c_str(), _name.c_str());
 
         use_stubs[_name] = false;
@@ -1927,7 +1929,7 @@ main(int argc, char** argv)
     {
         if(_libname.empty()) _libname = get_absolute_lib_filepath(itr);
     }
-    if(_libname.empty()) _libname = "libomnitrace-dl.so";
+    if(_libname.empty()) _libname = "librocprof-sys-dl.so";
 
     if(!binary_rewrite && !is_attached) env_vars.clear();
 
@@ -2076,7 +2078,7 @@ main(int argc, char** argv)
             size_t _ninits = 0;
             for(auto* itr : _objs)
             {
-                if(itr->name().find("libomnitrace") != std::string::npos) continue;
+                if(itr->name().find("librocprof-sys") != std::string::npos) continue;
                 try
                 {
                     verbprintf(2, "Adding main init callbacks (via %s)...\n",
@@ -2815,7 +2817,7 @@ find_dyn_api_rt()
 {
 #if defined(OMNITRACE_BUILD_DYNINST)
     std::string _dyn_api_rt_base =
-        (binary_rewrite) ? "libomnitrace-rt" : "libdyninstAPI_RT";
+        (binary_rewrite) ? "librocprof-sys-rt" : "libdyninstAPI_RT";
 #else
     std::string _dyn_api_rt_base = "libdyninstAPI_RT";
 #endif

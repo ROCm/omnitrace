@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(omnitrace-transpose-example LANGUAGES CXX)
+project(rocprofsys-transpose-example LANGUAGES CXX)
 
 if(OMNITRACE_DISABLE_EXAMPLES)
     get_filename_component(_DIR ${CMAKE_CURRENT_LIST_DIR} NAME)
@@ -56,7 +56,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang"
    AND NOT HIPCC_EXECUTABLE)
     target_link_libraries(
         transpose
-        PRIVATE $<TARGET_NAME_IF_EXISTS:omnitrace::omnitrace-compile-options>
+        PRIVATE $<TARGET_NAME_IF_EXISTS:rocprofsys::rocprofsys-compile-options>
                 $<TARGET_NAME_IF_EXISTS:hip::host> $<TARGET_NAME_IF_EXISTS:hip::device>)
 else()
     target_compile_options(transpose PRIVATE -W -Wall)
@@ -80,5 +80,5 @@ if(OMNITRACE_INSTALL_EXAMPLES)
     install(
         TARGETS transpose
         DESTINATION bin
-        COMPONENT omnitrace-examples)
+        COMPONENT rocprofsys-examples)
 endif()

@@ -216,7 +216,7 @@ extern "C"
         {
             auto _kokkos_profile_lib =
                 tim::get_env<std::string>("KOKKOS_PROFILE_LIBRARY");
-            if(_kokkos_profile_lib.find("libomnitrace.so") != std::string::npos)
+            if(_kokkos_profile_lib.find("librocprof-sys.so") != std::string::npos)
             {
                 auto _maps = tim::procfs::read_maps(tim::process::get_id());
                 auto _libs = std::set<std::string>{};
@@ -229,17 +229,17 @@ extern "C"
                 }
                 for(const auto& itr : _libs)
                 {
-                    if(itr.find("libomnitrace-dl.so") != std::string::npos)
+                    if(itr.find("librocprof-sys-dl.so") != std::string::npos)
                     {
                         std::stringstream _libs_str{};
                         for(const auto& litr : _libs)
                             _libs_str << "    " << litr << "\n";
                         OMNITRACE_ABORT(
-                            "%s was invoked with libomnitrace.so as the "
+                            "%s was invoked with librocprof-sys.so as the "
                             "KOKKOS_PROFILE_LIBRARY.\n"
-                            "However, libomnitrace-dl.so has already been loaded by the "
-                            "process.\nTo avoid duplicate collections culminating is an "
-                            "error, please set KOKKOS_PROFILE_LIBRARY=%s.\nLoaded "
+                            "However, librocprof-sys-dl.so has already been loaded by "
+                            "the process.\nTo avoid duplicate collections culminating "
+                            "is an error, please set KOKKOS_PROFILE_LIBRARY=%s.\nLoaded "
                             "libraries:\n%s",
                             __FUNCTION__, itr.c_str(), _libs_str.str().c_str());
                     }

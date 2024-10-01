@@ -6,7 +6,7 @@ import glob
 
 """
 This script reads in function prototypes can generates the implementation pieces
-needed to dlsym the function in libomnitrace
+needed to dlsym the function in librocprof-sys.
 
 Example input file:
 

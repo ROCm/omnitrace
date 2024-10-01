@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #pragma once
+#define PYBIND11_DETAILED_ERROR_MESSAGES
 
 #include <pybind11/cast.h>
 #include <pybind11/embed.h>
@@ -48,9 +49,9 @@
 #include <thread>
 #include <vector>
 
-namespace pyomnitrace
+namespace pyrocprofsys
 {
 namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
-}  // namespace pyomnitrace
+}  // namespace pyrocprofsys

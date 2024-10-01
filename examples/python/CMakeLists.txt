@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-project(omnitrace-python)
+project(rocprofsys-python)
 
 if(OMNITRACE_DISABLE_EXAMPLES)
     get_filename_component(_DIR ${CMAKE_CURRENT_LIST_DIR} NAME)
@@ -26,7 +26,7 @@ if(Python3_FOUND)
             install(
                 PROGRAMS ${PROJECT_BINARY_DIR}/${_FILE}
                 DESTINATION bin
-                COMPONENT omnitrace-examples)
+                COMPONENT rocprofsys-examples)
         endif()
     endforeach()
 endif()

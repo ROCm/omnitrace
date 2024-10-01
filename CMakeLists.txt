@@ -12,7 +12,7 @@ endif()
 if(NOT UNIX OR APPLE)
     message(
         AUTHOR_WARNING
-            "omnitrace only supports Linux. Configure and/or build is likely to fail")
+            "rocprof-sys only supports Linux. Configure and/or build is likely to fail")
 endif()
 
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" FULL_VERSION_STRING LIMIT_COUNT 1)
@@ -21,11 +21,14 @@ string(REGEX REPLACE "([0-9]+)\.([0-9]+)\.([0-9]+)(.*)" "\\1.\\2.\\3" OMNITRACE_
                      "${FULL_VERSION_STRING}")
 
 project(
-    omnitrace
+    rocprofsys
     LANGUAGES C CXX
     VERSION ${OMNITRACE_VERSION}
     DESCRIPTION "CPU/GPU Application tracing with static/dynamic binary instrumentation"
-    HOMEPAGE_URL "https://github.com/ROCm/omnitrace")
+    HOMEPAGE_URL "https://github.com/ROCm/rocprofiler-systems")
+
+set(PACKAGE_NAME "rocprof-sys")
+set(PACKAGE_NAME_UNDERSCORE "rocprof_sys")
 
 find_package(Git)
 
@@ -370,34 +373,39 @@ if(NOT OMNITRACE_USE_ROCPROFILER)
 endif()
 
 configure_file(
+    ${PROJECT_SOURCE_DIR}/LICENSE
+    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/doc/${PACKAGE_NAME}/LICENSE
+    COPYONLY)
+
+configure_file(
     ${PROJECT_SOURCE_DIR}/perfetto.cfg
-    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/perfetto.cfg
+    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PACKAGE_NAME}/perfetto.cfg
     COPYONLY)
 
 configure_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/setup-env.sh.in
-    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/setup-env.sh @ONLY)
+    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PACKAGE_NAME}/setup-env.sh @ONLY)
 
 configure_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/modulefile.in
-    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PROJECT_NAME}/${OMNITRACE_VERSION}
+    ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PACKAGE_NAME}/${OMNITRACE_VERSION}
     @ONLY)
 
 install(
-    FILES ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/setup-env.sh
-          ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/perfetto.cfg
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}
+    FILES ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PACKAGE_NAME}/setup-env.sh
+          ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/${PACKAGE_NAME}/perfetto.cfg
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PACKAGE_NAME}
     COMPONENT setup)
 
 install(
     FILES
-        ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PROJECT_NAME}/${OMNITRACE_VERSION}
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PROJECT_NAME}
+        ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PACKAGE_NAME}/${OMNITRACE_VERSION}
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/modulefiles/${PACKAGE_NAME}
     COMPONENT setup)
 
 install(
-    FILES ${PROJECT_SOURCE_DIR}/LICENSE
-    DESTINATION ${CMAKE_INSTALL_DOCDIR}
+    FILES ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_DATAROOTDIR}/doc/${PACKAGE_NAME}/LICENSE
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/${PACKAGE_NAME}
     COMPONENT setup)
 
 # ------------------------------------------------------------------------------#

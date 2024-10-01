@@ -1,7 +1,7 @@
 # ======================================================================================
 # elfutils.cmake
 #
-# Configure elfutils for omnitrace
+# Configure elfutils for rocprofsys
 #
 # ----------------------------------------
 #
@@ -100,7 +100,7 @@ set(_eu_build_byproducts "${_eu_root}/lib/libdw${CMAKE_STATIC_LIBRARY_SUFFIX}"
                          "${_eu_root}/lib/libelf${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
 externalproject_add(
-    omnitrace-elfutils-build
+    rocprofsys-elfutils-build
     PREFIX ${PROJECT_BINARY_DIR}/external/elfutils
     URL ${ElfUtils_DOWNLOAD_URL}
         "https://sourceware.org/elfutils/ftp/${ElfUtils_DOWNLOAD_VERSION}/elfutils-${ElfUtils_DOWNLOAD_VERSION}.tar.bz2"
@@ -119,7 +119,7 @@ externalproject_add(
 
 # target for re-executing the installation
 add_custom_target(
-    omnitrace-elfutils-install
+    rocprofsys-elfutils-install
     COMMAND ${MAKE_COMMAND} install -s
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/elfutils/src/ElfUtils-External
     COMMENT "Installing ElfUtils...")

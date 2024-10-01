@@ -54,14 +54,14 @@ foreach(_VAR FIND_STRATEGY FIND_VIRTUALENV FIND_FRAMEWORK FIND_IMPLEMENTATIONS
     if(DEFINED Python3_${_VAR})
         set(Python_${_VAR}
             "${Python3_${_VAR}}"
-            CACHE STRING "Set via Python3_${_VAR} setting (omnitrace)")
+            CACHE STRING "Set via Python3_${_VAR} setting (rocprofsys)")
         mark_as_advanced(Python_${_VAR})
         mark_as_advanced(Python3_${_VAR})
     endif()
 endforeach()
 
 # display version
-omnitrace_add_feature(OMNITRACE_PYTHON_VERSIONS "Python version for omnitrace" DOC)
+omnitrace_add_feature(OMNITRACE_PYTHON_VERSIONS "Python version for rocprofsys" DOC)
 
 option(PYBIND11_INSTALL "Enable Pybind11 installation" OFF)
 

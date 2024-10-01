@@ -34,7 +34,7 @@ if(NOT _SYSTEM_NAME)
 endif()
 
 # Add packaging directives
-set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_NAME ${PACKAGE_NAME})
 set(CPACK_PACKAGE_VENDOR "Advanced Micro Devices, Inc.")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
     "Runtime instrumentation and binary rewriting for Perfetto via Dyninst")
@@ -42,7 +42,7 @@ set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 
-set(CPACK_PACKAGE_CONTACT "jonathan.madsen@amd.com")
+set(CPACK_PACKAGE_CONTACT "https://github.com/ROCm/rocprofiler-systems")
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
 set(OMNITRACE_CPACK_SYSTEM_NAME
@@ -126,7 +126,7 @@ omnitrace_add_feature(OMNITRACE_PACKAGE_FILE_NAME "CPack filename")
 #
 # -------------------------------------------------------------------------------------- #
 
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/ROCm/omnitrace")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/ROCm/rocprofiler-systems")
 set(CPACK_DEBIAN_PACKAGE_RELEASE
     "${OMNITRACE_CPACK_SYSTEM_NAME}${OMNITRACE_CPACK_PACKAGE_SUFFIX}")
 string(REGEX REPLACE "([a-zA-Z])-([0-9])" "\\1\\2" CPACK_DEBIAN_PACKAGE_RELEASE
