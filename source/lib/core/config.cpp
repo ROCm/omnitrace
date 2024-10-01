@@ -97,7 +97,7 @@ get_config()
 std::string
 get_setting_name(std::string _v)
 {
-    static const auto _prefix = tim::string_view_t{ "omnitrace_" };
+    static const auto _prefix = tim::string_view_t{ "rocprofsys_" };
     for(auto& itr : _v)
         itr = tolower(itr);
     auto _pos = _v.find(_prefix);
@@ -121,7 +121,7 @@ using utility::parse_numeric_range;
     [&]() {                                                                              \
         auto _ret = _config->insert<TYPE, TYPE>(                                         \
             ENV_NAME, get_setting_name(ENV_NAME), DESCRIPTION, TYPE{ INITIAL_VALUE },    \
-            std::set<std::string>{ "custom", "omnitrace", "librocprof-sys",              \
+            std::set<std::string>{ "custom", "rocprofsys", "librocprof-sys",              \
                                    __VA_ARGS__ });                                       \
         if(!_ret.second)                                                                 \
         {                                                                                \
@@ -136,7 +136,7 @@ using utility::parse_numeric_range;
     [&]() {                                                                              \
         auto _ret = _config->insert<TYPE, TYPE>(                                         \
             ENV_NAME, get_setting_name(ENV_NAME), DESCRIPTION, TYPE{ INITIAL_VALUE },    \
-            std::set<std::string>{ "custom", "omnitrace", __VA_ARGS__ });                \
+            std::set<std::string>{ "custom", "rocprofsys", __VA_ARGS__ });                \
         if(!_ret.second)                                                                 \
         {                                                                                \
             OMNITRACE_PRINT("Warning! Duplicate setting: %s / %s\n",                     \
@@ -151,7 +151,7 @@ using utility::parse_numeric_range;
     [&]() {                                                                              \
         auto _ret = _config->insert<TYPE, TYPE>(                                         \
             ENV_NAME, get_setting_name(ENV_NAME), DESCRIPTION, TYPE{ INITIAL_VALUE },    \
-            std::set<std::string>{ "custom", "omnitrace", "librocprof-sys",              \
+            std::set<std::string>{ "custom", "rocprofsys", "librocprof-sys",              \
                                    __VA_ARGS__ },                                        \
             std::vector<std::string>{ CMD_LINE });                                       \
         if(!_ret.second)                                                                 \
@@ -1040,7 +1040,7 @@ configure_settings(bool _init)
     {
         using argparser_t = tim::argparse::argument_parser;
         argparser_t _parser{ _exe };
-        tim::timemory_init(_cmd, _parser, "omnitrace-");
+        tim::timemory_init(_cmd, _parser, "rocprofsys-");
     }
 
 #if !defined(OMNITRACE_USE_MPI) && !defined(OMNITRACE_USE_MPI_HEADERS)

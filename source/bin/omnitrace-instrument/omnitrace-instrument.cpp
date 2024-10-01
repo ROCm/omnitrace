@@ -1165,10 +1165,10 @@ main(int argc, char** argv)
         {
             fflush(stdout);
             std::stringstream _separator{};
-            // 18 is approximate length of '[omnitrace][exe] '
+            // 20 is approximate length of '[rocprof-sys][exe] '
             // 32 is approximate length of 'Warning! "" is not executable!'
             size_t _width =
-                std::min<size_t>(std::get<0>(tim::utility::console::get_columns()) - 18,
+                std::min<size_t>(std::get<0>(tim::utility::console::get_columns()) - 20,
                                  strlen(_cmdv[0]) + 32);
             _separator.fill('=');
             _separator << "#" << std::setw(_width - 2) << ""
@@ -1227,12 +1227,12 @@ main(int argc, char** argv)
     {
         auto* _save = _cmdv[0];
         _cmdv[0]    = const_cast<char*>(outfile.c_str());
-        tim::timemory_init(_cmdc, _cmdv, "omnitrace-");
+        tim::timemory_init(_cmdc, _cmdv, "rocprofsys-");
         _cmdv[0] = _save;
     }
     else
     {
-        tim::timemory_init(_cmdc, _cmdv, "omnitrace-");
+        tim::timemory_init(_cmdc, _cmdv, "rocprofsys-");
     }
 
     if(!logfile.empty())
