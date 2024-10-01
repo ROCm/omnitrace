@@ -440,7 +440,7 @@ main(int argc, char** argv)
                       "Dump a configuration to a specified file.")
         .max_count(1)
         .dtype("filename")
-        .set_default(std::string{ "omnitrace-config" })
+        .set_default(std::string{ "rocprof-sys-config" })
         .action([&_config_file](parser_t& _p) {
             auto _out =
                 (_p.exists("output")) ? _p.get<std::string>("output") : std::string{};
