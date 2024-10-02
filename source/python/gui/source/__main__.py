@@ -162,7 +162,9 @@ def main():
     my_parser.add_argument(
         "--version",
         action="version",
-        version="ROCm Systems Profiler Causal Viewer v{}\n".format(f"{__version__}".strip("\n")),
+        version="ROCm Systems Profiler Causal Viewer v{}\n".format(
+            f"{__version__}".strip("\n")
+        ),
     )
 
     my_parser.add_argument(

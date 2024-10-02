@@ -1320,7 +1320,8 @@ get_use_sampling_cputime()
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
-std::set<int> get_sampling_signals(int64_t)
+std::set<int>
+get_sampling_signals(int64_t)
 {
     auto _v = std::set<int>{};
     if(get_use_causal())
@@ -1594,7 +1595,7 @@ print_settings(
             {
                 size_t _wextra = (_md && i < 2) ? 2 : 0;
                 _widths.at(i)  = std::max<size_t>(_widths.at(i),
-                                                 _data.back().at(i).length() + _wextra);
+                                                  _data.back().at(i).length() + _wextra);
             }
         }
     }
@@ -1915,8 +1916,8 @@ get_use_sampling()
     static auto _v = get_config()->find("OMNITRACE_USE_SAMPLING");
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 #else
-    OMNITRACE_THROW(
-        "Error! sampling was enabled but rocprof-sys was not built with libunwind support");
+    OMNITRACE_THROW("Error! sampling was enabled but rocprof-sys was not built with "
+                    "libunwind support");
     static bool _v = false;
     return _v;
 #endif

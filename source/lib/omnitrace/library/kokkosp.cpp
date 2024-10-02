@@ -208,7 +208,8 @@ extern "C"
         tim::consume_parameters(devInfoCount, deviceInfo);
 
         OMNITRACE_BASIC_VERBOSE_F(
-            0, "Initializing rocprof-sys kokkos connector (sequence %d, version: %llu)... ",
+            0,
+            "Initializing rocprof-sys kokkos connector (sequence %d, version: %llu)... ",
             loadSeq, (unsigned long long) interfaceVer);
 
         if(_standalone_initialized || (!omnitrace::config::settings_are_configured() &&

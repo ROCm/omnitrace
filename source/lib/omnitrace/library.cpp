@@ -598,7 +598,8 @@ omnitrace_init_hidden(const char* _mode, bool _is_binary_rewrite, const char* _a
             OMNITRACE_WARNING_F(
                 0,
                 "omnitrace_init(mode=%s, is_binary_rewrite=%s, argv0=%s) "
-                "called after rocprof-sys was initialized. state = %s. Mode-based settings "
+                "called after rocprof-sys was initialized. state = %s. Mode-based "
+                "settings "
                 "(via -M <MODE> passed to rocprof-sys exe) may not be properly "
                 "configured.\n",
                 _mode, std::to_string(_is_binary_rewrite).c_str(), _argv0.c_str(),

@@ -63,14 +63,14 @@
         if(VARNAME == nullptr && _omnitrace_dl_verbose >= _warn_verbose)                 \
         {                                                                                \
             OMNITRACE_COMMON_LIBRARY_LOG_START                                           \
-            fprintf(stderr, "[rocprof-sys][dl][pid=%i]> %s :: %s\n", getpid(), FUNCNAME,   \
+            fprintf(stderr, "[rocprof-sys][dl][pid=%i]> %s :: %s\n", getpid(), FUNCNAME, \
                     dlerror());                                                          \
             OMNITRACE_COMMON_LIBRARY_LOG_END                                             \
         }                                                                                \
         else if(_omnitrace_dl_verbose > _info_verbose)                                   \
         {                                                                                \
             OMNITRACE_COMMON_LIBRARY_LOG_START                                           \
-            fprintf(stderr, "[rocprof-sys][dl][pid=%i]> %s :: success\n", getpid(),        \
+            fprintf(stderr, "[rocprof-sys][dl][pid=%i]> %s :: success\n", getpid(),      \
                     FUNCNAME);                                                           \
             OMNITRACE_COMMON_LIBRARY_LOG_END                                             \
         }                                                                                \
@@ -258,7 +258,8 @@ struct OMNITRACE_INTERNAL_API indirect
             if(_omnitrace_dl_verbose >= 2)
             {
                 OMNITRACE_COMMON_LIBRARY_LOG_START
-                fprintf(stderr, "[rocprof-sys][dl][pid=%i] dlopen(\"%s\", %s) :: success\n",
+                fprintf(stderr,
+                        "[rocprof-sys][dl][pid=%i] dlopen(\"%s\", %s) :: success\n",
                         getpid(), _lib.c_str(), _omnitrace_dl_dlopen_descr);
                 OMNITRACE_COMMON_LIBRARY_LOG_END
             }
@@ -584,7 +585,7 @@ bool _omnitrace_dl_fini = (std::atexit([]() {
     {                                                                                    \
         fflush(stderr);                                                                  \
         OMNITRACE_COMMON_LIBRARY_LOG_START                                               \
-        fprintf(stderr, "[rocprof-sys][" OMNITRACE_COMMON_LIBRARY_NAME "][%i] ",           \
+        fprintf(stderr, "[rocprof-sys][" OMNITRACE_COMMON_LIBRARY_NAME "][%i] ",         \
                 getpid());                                                               \
         fprintf(stderr, __VA_ARGS__);                                                    \
         OMNITRACE_COMMON_LIBRARY_LOG_END                                                 \
@@ -1426,8 +1427,8 @@ extern "C"
                 {
                     auto _var = std::string{ _env_v }.substr(0, _pos);
                     auto _val = std::string{ _env_v }.substr(_pos + 1);
-                    OMNITRACE_DL_LOG(1, "%s(%s, %s)\n", "rocprof-sys_set_env", _var.c_str(),
-                                     _val.c_str());
+                    OMNITRACE_DL_LOG(1, "%s(%s, %s)\n", "rocprof-sys_set_env",
+                                     _var.c_str(), _val.c_str());
                     setenv(_var.c_str(), _val.c_str(), 0);
                 }
             }
