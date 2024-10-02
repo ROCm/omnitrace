@@ -54,7 +54,7 @@ foreach(_VAR FIND_STRATEGY FIND_VIRTUALENV FIND_FRAMEWORK FIND_IMPLEMENTATIONS
     if(DEFINED Python3_${_VAR})
         set(Python_${_VAR}
             "${Python3_${_VAR}}"
-            CACHE STRING "Set via Python3_${_VAR} setting (omnitrace)")
+            CACHE STRING "Set via Python3_${_VAR} setting (rocprof-sys)")
         mark_as_advanced(Python_${_VAR})
         mark_as_advanced(Python3_${_VAR})
     endif()
