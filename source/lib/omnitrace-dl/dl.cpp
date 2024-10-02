@@ -63,14 +63,14 @@
         if(VARNAME == nullptr && _omnitrace_dl_verbose >= _warn_verbose)                 \
         {                                                                                \
             OMNITRACE_COMMON_LIBRARY_LOG_START                                           \
-            fprintf(stderr, "[omnitrace][dl][pid=%i]> %s :: %s\n", getpid(), FUNCNAME,   \
+            fprintf(stderr, "[rocprof-sys][dl][pid=%i]> %s :: %s\n", getpid(), FUNCNAME,   \
                     dlerror());                                                          \
             OMNITRACE_COMMON_LIBRARY_LOG_END                                             \
         }                                                                                \
         else if(_omnitrace_dl_verbose > _info_verbose)                                   \
         {                                                                                \
             OMNITRACE_COMMON_LIBRARY_LOG_START                                           \
-            fprintf(stderr, "[omnitrace][dl][pid=%i]> %s :: success\n", getpid(),        \
+            fprintf(stderr, "[rocprof-sys][dl][pid=%i]> %s :: success\n", getpid(),        \
                     FUNCNAME);                                                           \
             OMNITRACE_COMMON_LIBRARY_LOG_END                                             \
         }                                                                                \
@@ -229,11 +229,11 @@ struct OMNITRACE_INTERNAL_API indirect
         if(_omnitrace_dl_verbose >= 1)
         {
             OMNITRACE_COMMON_LIBRARY_LOG_START
-            fprintf(stderr, "[omnitrace][dl][pid=%i] %s resolved to '%s'\n", getpid(),
+            fprintf(stderr, "[rocprof-sys][dl][pid=%i] %s resolved to '%s'\n", getpid(),
                     ::basename(_omnilib.c_str()), m_omnilib.c_str());
-            fprintf(stderr, "[omnitrace][dl][pid=%i] %s resolved to '%s'\n", getpid(),
+            fprintf(stderr, "[rocprof-sys][dl][pid=%i] %s resolved to '%s'\n", getpid(),
                     ::basename(_dllib.c_str()), m_dllib.c_str());
-            fprintf(stderr, "[omnitrace][dl][pid=%i] %s resolved to '%s'\n", getpid(),
+            fprintf(stderr, "[rocprof-sys][dl][pid=%i] %s resolved to '%s'\n", getpid(),
                     ::basename(_userlib.c_str()), m_userlib.c_str());
             OMNITRACE_COMMON_LIBRARY_LOG_END
         }
@@ -258,7 +258,7 @@ struct OMNITRACE_INTERNAL_API indirect
             if(_omnitrace_dl_verbose >= 2)
             {
                 OMNITRACE_COMMON_LIBRARY_LOG_START
-                fprintf(stderr, "[omnitrace][dl][pid=%i] dlopen(\"%s\", %s) :: success\n",
+                fprintf(stderr, "[rocprof-sys][dl][pid=%i] dlopen(\"%s\", %s) :: success\n",
                         getpid(), _lib.c_str(), _omnitrace_dl_dlopen_descr);
                 OMNITRACE_COMMON_LIBRARY_LOG_END
             }
@@ -269,7 +269,7 @@ struct OMNITRACE_INTERNAL_API indirect
             {
                 perror("dlopen");
                 OMNITRACE_COMMON_LIBRARY_LOG_START
-                fprintf(stderr, "[omnitrace][dl][pid=%i] dlopen(\"%s\", %s) :: %s\n",
+                fprintf(stderr, "[rocprof-sys][dl][pid=%i] dlopen(\"%s\", %s) :: %s\n",
                         getpid(), _lib.c_str(), _omnitrace_dl_dlopen_descr, dlerror());
                 OMNITRACE_COMMON_LIBRARY_LOG_END
             }
@@ -584,7 +584,7 @@ bool _omnitrace_dl_fini = (std::atexit([]() {
     {                                                                                    \
         fflush(stderr);                                                                  \
         OMNITRACE_COMMON_LIBRARY_LOG_START                                               \
-        fprintf(stderr, "[omnitrace][" OMNITRACE_COMMON_LIBRARY_NAME "][%i] ",           \
+        fprintf(stderr, "[rocprof-sys][" OMNITRACE_COMMON_LIBRARY_NAME "][%i] ",           \
                 getpid());                                                               \
         fprintf(stderr, __VA_ARGS__);                                                    \
         OMNITRACE_COMMON_LIBRARY_LOG_END                                                 \
@@ -1087,9 +1087,9 @@ extern "C"
     void OnLoadToolProp(void* settings)
     {
         OMNITRACE_DL_LOG(-16,
-                         "invoking %s(rocprofiler_settings_t*) within omnitrace-dl.so "
+                         "invoking %s(rocprofiler_settings_t*) within rocprof-sys-dl.so "
                          "will cause a silent failure for rocprofiler. ROCP_TOOL_LIB "
-                         "should be set to libomnitrace.so\n",
+                         "should be set to librocprof-sys.so\n",
                          __FUNCTION__);
         abort();
         return OMNITRACE_DL_INVOKE(get_indirect().rocp_on_load_tool_prop_f, settings);
