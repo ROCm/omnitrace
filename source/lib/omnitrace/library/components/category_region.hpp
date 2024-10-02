@@ -290,7 +290,7 @@ category_region<CategoryT>::mark(std::string_view name, Args&&...)
     {
         OMNITRACE_CONDITIONAL_PRINT(
             tracing::debug_mark,
-            "[%s][PID=%i][state=%s][thread_state=%s] omnitrace_progress(%s)\n",
+            "[%s][PID=%i][state=%s][thread_state=%s] rocprof-sys_progress(%s)\n",
             category_name, process::get_id(), std::to_string(get_state()).c_str(),
             std::to_string(get_thread_state()).c_str(), name.data());
 

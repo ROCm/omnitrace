@@ -278,7 +278,7 @@ omnitrace_set_env_hidden(const char* env_name, const char* env_val)
     {
         OMNITRACE_WARNING_F(
             0,
-            "omnitrace_set_env(\"%s\", \"%s\") called after omnitrace was initialized. "
+            "omnitrace_set_env(\"%s\", \"%s\") called after rocprof-sys was initialized. "
             "state = %s. This environment variable will have no effect\n",
             env_name, env_val, std::to_string(get_state()).c_str());
     }
@@ -336,7 +336,7 @@ omnitrace_set_mpi_hidden(bool use, bool attached)
     {
         OMNITRACE_WARNING_F(
             0,
-            "omnitrace_set_mpi(use=%s, attached=%s) called after omnitrace was "
+            "omnitrace_set_mpi(use=%s, attached=%s) called after rocprof-sys was "
             "initialized. state = %s. MPI support may not be properly initialized. Use "
             "OMNITRACE_USE_MPIP=ON and OMNITRACE_USE_PID=ON to ensure full support\n",
             std::to_string(use).c_str(), std::to_string(attached).c_str(),
@@ -598,8 +598,8 @@ omnitrace_init_hidden(const char* _mode, bool _is_binary_rewrite, const char* _a
             OMNITRACE_WARNING_F(
                 0,
                 "omnitrace_init(mode=%s, is_binary_rewrite=%s, argv0=%s) "
-                "called after omnitrace was initialized. state = %s. Mode-based settings "
-                "(via -M <MODE> passed to omnitrace exe) may not be properly "
+                "called after rocprof-sys was initialized. state = %s. Mode-based settings "
+                "(via -M <MODE> passed to rocprof-sys exe) may not be properly "
                 "configured.\n",
                 _mode, std::to_string(_is_binary_rewrite).c_str(), _argv0.c_str(),
                 std::to_string(get_state()).c_str());

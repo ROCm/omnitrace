@@ -192,7 +192,7 @@ shutdown()
 
     if(get_thread_pool_state() == State::Active)
     {
-        OMNITRACE_DEBUG_F("Destroying the omnitrace thread pool...\n");
+        OMNITRACE_DEBUG_F("Destroying the rocprof-sys thread pool...\n");
         get_thread_pool().destroy_threadpool();
         get_thread_pool_state() = State::Finalized;
     }

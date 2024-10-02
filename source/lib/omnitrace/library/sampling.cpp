@@ -421,7 +421,7 @@ offload_buffer(int64_t _seq, sampler_buffer_t&& _buf)
 {
     OMNITRACE_REQUIRE(get_use_tmp_files())
         << "Error! sampling allocator tries to offload buffer of samples but "
-           "omnitrace was configured to not use temporary files\n";
+           "rocprof-sys was configured to not use temporary files\n";
 
     // use homemade atomic_mutex/atomic_lock since contention will be low
     // and using pthread_lock might trigger our wrappers

@@ -309,7 +309,7 @@ get_timemory(CategoryT, std::string_view name)
     auto& _data = tracing::get_instrumentation_bundles();
     if(OMNITRACE_UNLIKELY(_data == nullptr || _data->empty()))
     {
-        OMNITRACE_DEBUG("[%s] skipped %s :: empty bundle stack\n", "omnitrace_pop_trace",
+        OMNITRACE_DEBUG("[%s] skipped %s :: empty bundle stack\n", "rocprof-sys_pop_trace",
                         name.data());
         return return_type{ nullptr, -1 };
     }
