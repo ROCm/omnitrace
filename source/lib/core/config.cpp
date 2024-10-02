@@ -1595,7 +1595,7 @@ print_settings(
             {
                 size_t _wextra = (_md && i < 2) ? 2 : 0;
                 _widths.at(i)  = std::max<size_t>(_widths.at(i),
-                                                  _data.back().at(i).length() + _wextra);
+                                                _data.back().at(i).length() + _wextra);
             }
         }
     }

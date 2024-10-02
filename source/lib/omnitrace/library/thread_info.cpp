@@ -97,11 +97,12 @@ init_index_data(int64_t _tid, bool _offset = false)
         }
         else
         {
-            OMNITRACE_VERBOSE_F(_verb,
-                                "Thread %li on PID %i (rank: %i) assigned rocprof-sys TID "
-                                "%li (internal: %li)\n",
-                                itr->system_value, process::get_id(), dmp::rank(),
-                                itr->sequent_value, itr->internal_value);
+            OMNITRACE_VERBOSE_F(
+                _verb,
+                "Thread %li on PID %i (rank: %i) assigned rocprof-sys TID "
+                "%li (internal: %li)\n",
+                itr->system_value, process::get_id(), dmp::rank(), itr->sequent_value,
+                itr->internal_value);
         }
     }
     return itr;
