@@ -97,7 +97,7 @@ get_config()
 std::string
 get_setting_name(std::string _v)
 {
-    static const auto _prefix = tim::string_view_t{ "omnitrace_" };
+    static const auto _prefix = tim::string_view_t{ "omnitrac=_" };
     for(auto& itr : _v)
         itr = tolower(itr);
     auto _pos = _v.find(_prefix);
@@ -172,7 +172,7 @@ auto cfg_fini_callbacks = std::vector<std::function<void()>>{};
 void
 finalize()
 {
-    OMNITRACE_DEBUG("[omnitrace_finalize] Disabling signal handling...\n");
+    OMNITRACE_DEBUG("[rocprof-sys_finalize] Disabling signal handling...\n");
     tim::signals::disable_signal_detection();
     _settings_are_configured() = false;
     for(const auto& itr : cfg_fini_callbacks)
@@ -255,7 +255,7 @@ configure_settings(bool _init)
 
     OMNITRACE_CONFIG_EXT_SETTING(int, "OMNITRACE_DL_VERBOSE",
                                  "Verbosity within the omnitrace-dl library", 0,
-                                 "debugging", "libomnitrace-dl", "advanced");
+                                 "debugging", "librocprof-sys-dl", "advanced");
 
     OMNITRACE_CONFIG_SETTING(
         size_t, "OMNITRACE_NUM_THREADS_HINT",
@@ -1320,7 +1320,8 @@ get_use_sampling_cputime()
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 }
 
-std::set<int> get_sampling_signals(int64_t)
+std::set<int>
+get_sampling_signals(int64_t)
 {
     auto _v = std::set<int>{};
     if(get_use_causal())
@@ -1521,17 +1522,16 @@ print_banner(std::ostream& _os)
 {
     static const char* _banner = R"banner(
 
-      ______   .___  ___. .__   __.  __  .___________..______          ___       ______  _______
-     /  __  \  |   \/   | |  \ |  | |  | |           ||   _  \        /   \     /      ||   ____|
-    |  |  |  | |  \  /  | |   \|  | |  | `---|  |----`|  |_)  |      /  ^  \   |  ,----'|  |__
-    |  |  |  | |  |\/|  | |  . `  | |  |     |  |     |      /      /  /_\  \  |  |     |   __|
-    |  `--'  | |  |  |  | |  |\   | |  |     |  |     |  |\  \----./  _____  \ |  `----.|  |____
-     \______/  |__|  |__| |__| \__| |__|     |__|     | _| `._____/__/     \__\ \______||_______|
+    ____   ___   ____ __  __   ______   ______ _____ _____ __  __ ____    ____  ____   ___  _____ ___ _     _____ ____
+    |  _ \ / _ \ / ___|  \/  | / ___\ \ / / ___|_   _| ____|  \/  / ___|  |  _ \|  _ \ / _ \|  ___|_ _| |   | ____|  _ \
+    | |_) | | | | |   | |\/| | \___ \\ V /\___ \ | | |  _| | |\/| \___ \  | |_) | |_) | | | | |_   | || |   |  _| | |_) |
+    |  _ <| |_| | |___| |  | |  ___) || |  ___) || | | |___| |  | |___) | |  __/|  _ <| |_| |  _|  | || |___| |___|  _ <
+    |_| \_\\___/ \____|_|  |_| |____/ |_| |____/ |_| |_____|_|  |_|____/  |_|   |_| \_\\___/|_|   |___|_____|_____|_| \_\
 
     )banner";
 
     std::stringstream _version_info{};
-    _version_info << "omnitrace v" << OMNITRACE_VERSION_STRING;
+    _version_info << "rocprof-sys v" << OMNITRACE_VERSION_STRING;
 
     namespace join = ::timemory::join;
 
@@ -1595,7 +1595,7 @@ print_settings(
             {
                 size_t _wextra = (_md && i < 2) ? 2 : 0;
                 _widths.at(i)  = std::max<size_t>(_widths.at(i),
-                                                 _data.back().at(i).length() + _wextra);
+                                                _data.back().at(i).length() + _wextra);
             }
         }
     }
@@ -1916,8 +1916,8 @@ get_use_sampling()
     static auto _v = get_config()->find("OMNITRACE_USE_SAMPLING");
     return static_cast<tim::tsettings<bool>&>(*_v->second).get();
 #else
-    OMNITRACE_THROW(
-        "Error! sampling was enabled but omnitrace was not built with libunwind support");
+    OMNITRACE_THROW("Error! sampling was enabled but rocprof-sys was not built with "
+                    "libunwind support");
     static bool _v = false;
     return _v;
 #endif

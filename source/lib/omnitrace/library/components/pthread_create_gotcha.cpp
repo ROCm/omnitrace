@@ -276,7 +276,7 @@ pthread_create_gotcha::wrapper::operator()() const
     {
         OMNITRACE_BASIC_VERBOSE(
             2,
-            "[PID=%i][rank=%i] Thread %s (parent: %s) created [started by omnitrace]\n",
+            "[PID=%i][rank=%i] Thread %s (parent: %s) created [started by rocprof-sys]\n",
             process::get_id(), dmp::rank(), _info->index_data->as_string().c_str(),
             _parent_info->index_data->as_string().c_str());
     }

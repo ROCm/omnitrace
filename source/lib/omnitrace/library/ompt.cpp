@@ -117,7 +117,7 @@ tool_initialize(ompt_function_lookup_t lookup, int initial_device_num,
     {
         OMNITRACE_BASIC_WARNING(
             0,
-            "[%s] invoked before omnitrace was initialized. In instrumentation mode, "
+            "[%s] invoked before rocprof-sys was initialized. In instrumentation mode, "
             "settings exported to the environment have not been propagated yet...\n",
             __FUNCTION__);
         omnitrace::configure_settings();

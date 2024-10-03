@@ -63,14 +63,14 @@
         if(VARNAME == nullptr && _omnitrace_dl_verbose >= _warn_verbose)                 \
         {                                                                                \
             OMNITRACE_COMMON_LIBRARY_LOG_START                                           \
-            fprintf(stderr, "[omnitrace][dl][pid=%i]> %s :: %s\n", getpid(), FUNCNAME,   \
+            fprintf(stderr, "[rocprof-sys][dl][pid=%i]> %s :: %s\n", getpid(), FUNCNAME, \
                     dlerror());                                                          \
             OMNITRACE_COMMON_LIBRARY_LOG_END                                             \
         }                                                                                \
         else if(_omnitrace_dl_verbose > _info_verbose)                                   \
         {                                                                                \
             OMNITRACE_COMMON_LIBRARY_LOG_START                                           \
-            fprintf(stderr, "[omnitrace][dl][pid=%i]> %s :: success\n", getpid(),        \
+            fprintf(stderr, "[rocprof-sys][dl][pid=%i]> %s :: success\n", getpid(),      \
                     FUNCNAME);                                                           \
             OMNITRACE_COMMON_LIBRARY_LOG_END                                             \
         }                                                                                \
@@ -229,11 +229,11 @@ struct OMNITRACE_INTERNAL_API indirect
         if(_omnitrace_dl_verbose >= 1)
         {
             OMNITRACE_COMMON_LIBRARY_LOG_START
-            fprintf(stderr, "[omnitrace][dl][pid=%i] %s resolved to '%s'\n", getpid(),
+            fprintf(stderr, "[rocprof-sys][dl][pid=%i] %s resolved to '%s'\n", getpid(),
                     ::basename(_omnilib.c_str()), m_omnilib.c_str());
-            fprintf(stderr, "[omnitrace][dl][pid=%i] %s resolved to '%s'\n", getpid(),
+            fprintf(stderr, "[rocprof-sys][dl][pid=%i] %s resolved to '%s'\n", getpid(),
                     ::basename(_dllib.c_str()), m_dllib.c_str());
-            fprintf(stderr, "[omnitrace][dl][pid=%i] %s resolved to '%s'\n", getpid(),
+            fprintf(stderr, "[rocprof-sys][dl][pid=%i] %s resolved to '%s'\n", getpid(),
                     ::basename(_userlib.c_str()), m_userlib.c_str());
             OMNITRACE_COMMON_LIBRARY_LOG_END
         }
@@ -258,7 +258,8 @@ struct OMNITRACE_INTERNAL_API indirect
             if(_omnitrace_dl_verbose >= 2)
             {
                 OMNITRACE_COMMON_LIBRARY_LOG_START
-                fprintf(stderr, "[omnitrace][dl][pid=%i] dlopen(\"%s\", %s) :: success\n",
+                fprintf(stderr,
+                        "[rocprof-sys][dl][pid=%i] dlopen(\"%s\", %s) :: success\n",
                         getpid(), _lib.c_str(), _omnitrace_dl_dlopen_descr);
                 OMNITRACE_COMMON_LIBRARY_LOG_END
             }
@@ -269,7 +270,7 @@ struct OMNITRACE_INTERNAL_API indirect
             {
                 perror("dlopen");
                 OMNITRACE_COMMON_LIBRARY_LOG_START
-                fprintf(stderr, "[omnitrace][dl][pid=%i] dlopen(\"%s\", %s) :: %s\n",
+                fprintf(stderr, "[rocprof-sys][dl][pid=%i] dlopen(\"%s\", %s) :: %s\n",
                         getpid(), _lib.c_str(), _omnitrace_dl_dlopen_descr, dlerror());
                 OMNITRACE_COMMON_LIBRARY_LOG_END
             }
@@ -584,7 +585,7 @@ bool _omnitrace_dl_fini = (std::atexit([]() {
     {                                                                                    \
         fflush(stderr);                                                                  \
         OMNITRACE_COMMON_LIBRARY_LOG_START                                               \
-        fprintf(stderr, "[omnitrace][" OMNITRACE_COMMON_LIBRARY_NAME "][%i] ",           \
+        fprintf(stderr, "[rocprof-sys][" OMNITRACE_COMMON_LIBRARY_NAME "][%i] ",         \
                 getpid());                                                               \
         fprintf(stderr, __VA_ARGS__);                                                    \
         OMNITRACE_COMMON_LIBRARY_LOG_END                                                 \
@@ -1087,9 +1088,9 @@ extern "C"
     void OnLoadToolProp(void* settings)
     {
         OMNITRACE_DL_LOG(-16,
-                         "invoking %s(rocprofiler_settings_t*) within omnitrace-dl.so "
+                         "invoking %s(rocprofiler_settings_t*) within rocprof-sys-dl.so "
                          "will cause a silent failure for rocprofiler. ROCP_TOOL_LIB "
-                         "should be set to libomnitrace.so\n",
+                         "should be set to librocprof-sys.so\n",
                          __FUNCTION__);
         abort();
         return OMNITRACE_DL_INVOKE(get_indirect().rocp_on_load_tool_prop_f, settings);
@@ -1336,19 +1337,19 @@ verify_instrumented_preloaded()
                                                     | |__| |____) | |____
                                                      \____/|_____/|______|
 
-                     ____  __  __ _   _ _____ _______ _____            _____ ______      _____  _    _ _   _
-                    / __ \|  \/  | \ | |_   _|__   __|  __ \     /\   / ____|  ____|    |  __ \| |  | | \ | |
-                   | |  | | \  / |  \| | | |    | |  | |__) |   /  \ | |    | |__ ______| |__) | |  | |  \| |
-                   | |  | | |\/| | . ` | | |    | |  |  _  /   / /\ \| |    |  __|______|  _  /| |  | | . ` |
-                   | |__| | |  | | |\  |_| |_   | |  | | \ \  / ____ \ |____| |____     | | \ \| |__| | |\  |
-                    \____/|_|  |_|_| \_|_____|  |_|  |_|  \_\/_/    \_\_____|______|    |_|  \_\\____/|_| \_|
+                                                         __                                            
+                         _ __ ___   ___ _ __  _ __ ___  / _|      ___ _   _ ___       _ __ _   _ _ __  
+                        | '__/ _ \ / __| '_ \| '__/ _ \| |_ _____/ __| | | / __|_____| '__| | | | '_ \ 
+                        | | | (_) | (__| |_) | | | (_) |  _|_____\__ \ |_| \__ \_____| |  | |_| | | | |
+                        |_|  \___/ \___| .__/|_|  \___/|_|       |___/\__, |___/     |_|   \__,_|_| |_|
+                                       |_|                            |___/                            
 
 
-    Due to a variety of edge cases we've encountered, OmniTrace now requires that binary rewritten executables and libraries be launched
-    with the 'omnitrace-run' executable.
+    Due to a variety of edge cases we've encountered, rocprof-sys now requires that binary rewritten executables and libraries be launched
+    with the 'rocprof-sys-run' executable.
 
-    In order to launch the executable with 'omnitrace-run', prefix the current command with 'omnitrace-run' and a standalone double hyphen ('--').
-    For MPI applications, place 'omnitrace-run --' after the MPI command.
+    In order to launch the executable with 'rocprof-sys-run', prefix the current command with 'rocprof-sys-run' and a standalone double hyphen ('--').
+    For MPI applications, place 'rocprof-sys-run --' after the MPI command.
     E.g.:
 
         <EXECUTABLE> <ARGS...>
@@ -1356,23 +1357,23 @@ verify_instrumented_preloaded()
 
     should be:
 
-        omnitrace-run -- <EXECUTABLE> <ARGS...>
-        mpirun -n 2 omnitrace-run -- <EXECUTABLE> <ARGS...>
+        rocprof-sys-run -- <EXECUTABLE> <ARGS...>
+        mpirun -n 2 rocprof-sys-run -- <EXECUTABLE> <ARGS...>
 
-    Note: the command-line arguments passed to 'omnitrace-run' (which are specified before the double hyphen) will override configuration variables
-    and/or any configuration values specified to 'omnitrace-instrument' via the '--config' or '--env' options.
+    Note: the command-line arguments passed to 'rocprof-sys-run' (which are specified before the double hyphen) will override configuration variables
+    and/or any configuration values specified to 'rocprof-sys-instrument' via the '--config' or '--env' options.
     E.g.:
 
-        $ omnitrace-instrument -o ./sleep.inst --env OMNITRACE_SAMPLING_DELAY=5.0 -- sleep
-        $ echo "OMNITRACE_SAMPLING_FREQ = 500" > omnitrace.cfg
-        $ export OMNITRACE_CONFIG_FILE=omnitrace.cfg
-        $ omnitrace-run --sampling-freq=100 --sampling-delay=1.0 -- ./sleep.inst 10
+        $ rocprof-sys-instrument -o ./sleep.inst --env ROCPROFSYS_SAMPLING_DELAY=5.0 -- sleep
+        $ echo "ROCPROFSYS_SAMPLING_FREQ = 500" > rocprof-sys.cfg
+        $ export ROCPROFSYS_CONFIG_FILE=rocprof-sys.cfg
+        $ rocprof-sys-run --sampling-freq=100 --sampling-delay=1.0 -- ./sleep.inst 10
 
     In the first command, a default sampling delay of 5 seconds in embedded into the instrumented 'sleep.inst'.
-    In the second command, the sampling frequency will be set to 500 interrupts per second when OmniTrace reads the config file
+    In the second command, the sampling frequency will be set to 500 interrupts per second when rocprof-sys reads the config file
     In the fourth command, the sampling frequency and sampling delay are overridden to 100 interrupts per second and 1 second, respectively, when sleep.inst runs
 
-    Thanks for using OmniTrace and happy optimizing!
+    Thanks for using rocprof-sys and happy optimizing!
     )notice";
 
     // emit notice
@@ -1409,7 +1410,7 @@ extern "C"
         _reentry = 1;
 
         if(!::omnitrace::dl::main_real)
-            throw std::runtime_error("[omnitrace][dl] Unsuccessful wrapping of main: "
+            throw std::runtime_error("[rocprof-sys][dl] Unsuccessful wrapping of main: "
                                      "nullptr to real main function");
 
         if(envp)
@@ -1426,8 +1427,8 @@ extern "C"
                 {
                     auto _var = std::string{ _env_v }.substr(0, _pos);
                     auto _val = std::string{ _env_v }.substr(_pos + 1);
-                    OMNITRACE_DL_LOG(1, "%s(%s, %s)\n", "omnitrace_set_env", _var.c_str(),
-                                     _val.c_str());
+                    OMNITRACE_DL_LOG(1, "%s(%s, %s)\n", "rocprof-sys_set_env",
+                                     _var.c_str(), _val.c_str());
                     setenv(_var.c_str(), _val.c_str(), 0);
                 }
             }

@@ -180,7 +180,7 @@ perf_event::open(struct perf_event_attr& _pe, pid_t _pid, int _cpu)
             true, "Failed to open perf event. Consider tweaking "
                       << path << " to 2 or less "
                       << "(current value is " << value << "), "
-                      << "or run omnitrace as a privileged user (with CAP_SYS_ADMIN).");
+                      << "or run rocprof-sys as a privileged user (with CAP_SYS_ADMIN).");
     }
 
     // If sampling, map the perf event file

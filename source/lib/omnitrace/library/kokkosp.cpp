@@ -208,7 +208,8 @@ extern "C"
         tim::consume_parameters(devInfoCount, deviceInfo);
 
         OMNITRACE_BASIC_VERBOSE_F(
-            0, "Initializing omnitrace kokkos connector (sequence %d, version: %llu)... ",
+            0,
+            "Initializing rocprof-sys kokkos connector (sequence %d, version: %llu)... ",
             loadSeq, (unsigned long long) interfaceVer);
 
         if(_standalone_initialized || (!omnitrace::config::settings_are_configured() &&
@@ -235,7 +236,7 @@ extern "C"
                         for(const auto& litr : _libs)
                             _libs_str << "    " << litr << "\n";
                         OMNITRACE_ABORT(
-                            "%s was invoked with libomnitrace.so as the "
+                            "%s was invoked with librocprof-sys.so as the "
                             "KOKKOS_PROFILE_LIBRARY.\n"
                             "However, libomnitrace-dl.so has already been loaded by the "
                             "process.\nTo avoid duplicate collections culminating is an "
@@ -246,7 +247,7 @@ extern "C"
                 }
             }
 
-            OMNITRACE_BASIC_VERBOSE_F(0, "Initializing omnitrace (standalone)... ");
+            OMNITRACE_BASIC_VERBOSE_F(0, "Initializing rocprof-sys (standalone)... ");
             auto _mode = tim::get_env<std::string>("OMNITRACE_MODE", "trace");
             auto _arg0 = (_initialize_arguments.empty()) ? std::string{ "unknown" }
                                                          : _initialize_arguments.at(0);
@@ -287,12 +288,12 @@ extern "C"
         {
             omnitrace_pop_trace_hidden("kokkos_main");
             OMNITRACE_VERBOSE_F(
-                0, "Finalizing kokkos omnitrace connector (standalone)...\n");
+                0, "Finalizing kokkos rocprof-sys connector (standalone)...\n");
             omnitrace_finalize_hidden();
         }
         else
         {
-            OMNITRACE_VERBOSE_F(0, "Finalizing kokkos omnitrace connector... ");
+            OMNITRACE_VERBOSE_F(0, "Finalizing kokkos rocprof-sys connector... ");
             kokkosp::cleanup();
             if(omnitrace::get_verbose() >= 0) fprintf(stderr, "Done\n");
         }
