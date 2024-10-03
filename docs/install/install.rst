@@ -69,45 +69,47 @@ might be more portable.
 Installing Omnitrace from binary distributions
 ================================================
 
-Every Omnitrace release provides binary installer scripts of the form:
+.. datatemplate:nodata::
 
-.. code-block:: shell
-
-   omnitrace-{VERSION}-{OS_DISTRIB}-{OS_VERSION}[-ROCm-{ROCM_VERSION}[-{EXTRA}]].sh
-
-For example,
-
-.. code-block:: shell
-
-   omnitrace-1.0.0-ubuntu-18.04-OMPT-PAPI-Python3.sh
-   omnitrace-1.0.0-ubuntu-18.04-ROCm-405000-OMPT-PAPI-Python3.sh
-   ...
-   omnitrace-1.0.0-ubuntu-20.04-ROCm-50000-OMPT-PAPI-Python3.sh
-
-Any of the ``EXTRA`` fields with a CMake build option
-(for example, PAPI, as referenced in a following section) or
-with no link requirements (such as OMPT) have
-self-contained support for these packages.
-
-To install Omnitrace using a binary installer script, follow these steps:
-
-#. Download the appropriate binary distribution
+   Every Omnitrace release provides binary installer scripts of the form:
 
    .. code-block:: shell
 
-      wget https://github.com/ROCm/omnitrace/releases/download/v<VERSION>/<SCRIPT>
+      omnitrace-{{ config.version }}-{OS_DISTRIB}-{OS_VERSION}[-ROCm-{ROCM_VERSION}[-{EXTRA}]].sh
 
-#. Create the target installation directory
-
-   .. code-block:: shell
-
-      mkdir /opt/omnitrace
-
-#. Run the installer script
+   For example,
 
    .. code-block:: shell
 
-      ./omnitrace-1.0.0-ubuntu-18.04-ROCm-405000-OMPT-PAPI.sh --prefix=/opt/omnitrace --exclude-subdir
+      omnitrace-{{ config.version }}-ubuntu-18.04-OMPT-PAPI-Python3.sh
+      omnitrace-{{ config.version }}-ubuntu-18.04-ROCm-405000-OMPT-PAPI-Python3.sh
+      ...
+      omnitrace-{{ config.version }}-ubuntu-20.04-ROCm-50000-OMPT-PAPI-Python3.sh
+
+   Any of the ``EXTRA`` fields with a CMake build option 
+   (for example, PAPI, as referenced in a following section) or 
+   with no link requirements (such as OMPT) have
+   self-contained support for these packages.
+
+   To install Omnitrace using a binary installer script, follow these steps:
+
+   #. Download the appropriate binary distribution
+
+      .. code-block:: shell
+
+         wget https://github.com/ROCm/omnitrace/releases/download/v{{ config.version }}/<SCRIPT>
+
+   #. Create the target installation directory
+
+      .. code-block:: shell
+
+         mkdir /opt/omnitrace
+
+   #. Run the installer script
+
+      .. code-block:: shell
+
+         ./omnitrace-{{ version }}-ubuntu-18.04-ROCm-405000-OMPT-PAPI.sh --prefix=/opt/omnitrace --exclude-subdir
 
 Installing Omnitrace from source
 ========================================
@@ -319,18 +321,20 @@ You should also test the executables to confirm Omnitrace is correctly installed
 Configure the environment
 -----------------------------------
 
-If environment modules are available and preferred, add them using these commands:
+.. datatemplate:nodata::
 
-.. code-block:: shell
+   If environment modules are available and preferred, add them using these commands:
 
-   module use /opt/omnitrace/share/modulefiles
-   module load omnitrace/1.0.0
+   .. code-block:: shell
 
-Alternatively, you can directly source the ``setup-env.sh`` script:
+      module use /opt/omnitrace/share/modulefiles
+      module load omnitrace/{{ config.version }}
 
-.. code-block:: shell
+   Alternatively, you can directly source the ``setup-env.sh`` script:
 
-   source /opt/omnitrace/share/omnitrace/setup-env.sh
+   .. code-block:: shell
+
+      source /opt/omnitrace/share/omnitrace/setup-env.sh
 
 Test the executables
 -----------------------------------
