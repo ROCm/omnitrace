@@ -112,14 +112,13 @@ inline bool
 get_omnitrace_is_preloaded()
 {
     auto preloaded_env = get_env("OMNITRACE_DL_IS_PRELOADED", std::string{});
-    if(preloaded_env == "true")
-        return true;
+    if(preloaded_env == "true") return true;
 
     static bool _v = []() {
         auto&& _preload_libs = get_env("LD_PRELOAD", std::string{});
-        auto&& preloaded_f = _preload_libs.find("libomnitrace-dl.so") != std::string::npos;
-        if(preloaded_f)
-            setenv("OMNITRACE_DL_IS_PRELOADED", "true", 1);
+        auto&& preloaded_f =
+            _preload_libs.find("libomnitrace-dl.so") != std::string::npos;
+        if(preloaded_f) setenv("OMNITRACE_DL_IS_PRELOADED", "true", 1);
         return (preloaded_f);
     }();
     return _v;
