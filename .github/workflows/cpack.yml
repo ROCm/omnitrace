@@ -4,7 +4,7 @@ run-name: cpack
 on:
   workflow_dispatch:
   push:
-    branches: [main, release/**]
+    branches: release/**
     tags:
       - "v[1-9].[0-9]+.[0-9]+*"
       - "rocm-[1-9].[0-9]+.[0-9]+*"
@@ -12,7 +12,7 @@ on:
       - '*.md'
       - 'source/docs/**'
   pull_request:
-    branches: [main]
+    branches: release/**
     paths:
       - '.github/workflows/cpack.yml'
       - 'docker/**'
