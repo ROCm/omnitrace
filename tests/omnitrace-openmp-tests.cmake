@@ -37,6 +37,15 @@ omnitrace_add_test(
     REWRITE_RUN_PASS_REGEX "${_OMPT_PASS_REGEX}"
     REWRITE_FAIL_REGEX "0 instrumented loops in procedure")
 
+omnitrace_add_test(
+    SKIP_RUNTIME SKIP_REWRITE
+    NAME openmp-target
+    TARGET openmp-target
+    GPU ON
+    LABELS "openmp;openmp-target"
+    ENVIRONMENT
+        "${_ompt_environment};OMNITRACE_ROCTRACER_HSA_ACTIVITY=OFF;OMNITRACE_ROCTRACER_HSA_API=OFF")
+
 set(_ompt_sampling_environ
     "${_ompt_environment}"
     "OMNITRACE_VERBOSE=2"
