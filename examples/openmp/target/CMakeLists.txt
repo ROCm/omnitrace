@@ -16,6 +16,9 @@ if(NOT OMP_TARGET_COMPILER)
         set(OMP_TARGET_COMPILER
             "${amdclangpp_EXECUTABLE}"
             CACHE FILEPATH "OpenMP target compiler")
+    else()
+        message(WARNING "OpenMP target compiler not found. Skipping this example.")
+        return()
     endif()
 endif()
 
@@ -54,10 +57,15 @@ foreach(_TARGET ${GPU_TARGETS})
     target_link_options(openmp-target-lib PUBLIC --offload-arch=${_TARGET})
 endforeach()
 
+message(STATUS "Using OpenMP target compiler: ${OMP_TARGET_COMPILER}")
+
 get_filename_component(OMP_TARGET_COMPILER_DIR ${OMP_TARGET_COMPILER} PATH)
 get_filename_component(OMP_TARGET_COMPILER_DIR ${OMP_TARGET_COMPILER_DIR} PATH)
-if(NOT EXISTS ${OMP_TARGET_COMPILER_DIR}/lib/llvm/lib)
-    message(FATAL_ERROR "${OMP_TARGET_COMPILER_DIR}/lib/llvm/lib does not exist")
+
+message(STATUS "Using OpemMP target compiler directory: ${OMP_TARGET_COMPILER_DIR}")
+
+if(NOT EXISTS ${OMP_TARGET_COMPILER_DIR}/llvm/lib)
+    message(FATAL_ERROR "${OMP_TARGET_COMPILER_DIR}/llvm/lib does not exist")
 endif()
 set_target_properties(
     openmp-target-lib
