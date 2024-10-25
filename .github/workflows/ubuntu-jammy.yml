@@ -109,7 +109,7 @@ jobs:
           apt-get update &&
           apt-get install -y software-properties-common &&
           apt-get upgrade -y &&
-          apt-get install -y build-essential m4 autoconf libtool python3-pip libiberty-dev clang libomp-dev libopenmpi-dev libfabric-dev openmpi-bin environment-modules ${{ matrix.compiler }} &&
+            apt-get install -y autoconf bison build-essential clang environment-modules libfabric-dev libiberty-dev libomp-dev libopenmpi-dev libtool m4 openmpi-bin python3-pip texinfo ${{ matrix.compiler }} &&
           wget https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v46.0/linux-amd64/trace_processor_shell -P /opt/trace_processor/bin &&
           chmod +x /opt/trace_processor/bin/trace_processor_shell &&
           python3 -m pip install --upgrade pip &&

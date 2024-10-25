@@ -93,7 +93,7 @@ jobs:
           add-apt-repository -y ppa:ubuntu-toolchain-r/test &&
           apt-get update &&
           apt-get upgrade -y &&
-          apt-get install -y build-essential m4 autoconf libtool python3-pip libiberty-dev clang libmpich-dev mpich environment-modules ${{ matrix.compiler }} &&
+          apt-get install -y autoconf bison build-essential clang environment-modules libiberty-dev libmpich-dev libtool m4 mpich python3-pip texinfo ${{ matrix.compiler }} &&
           wget https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v46.0/linux-amd64/trace_processor_shell -P /opt/trace_processor/bin &&
           chmod +x /opt/trace_processor/bin/trace_processor_shell &&
           python3 -m pip install --upgrade pip &&
@@ -275,7 +275,7 @@ jobs:
           wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | apt-key add - &&
           echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{ matrix.rocm-version }}/ ubuntu main" | tee /etc/apt/sources.list.d/rocm.list &&
           apt-get update &&
-          apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev ${{ matrix.compiler }} libudev1 libnuma1 rocm-dev rocm-utils rocm-smi-lib roctracer-dev rocprofiler-dev rccl-dev hip-base hsa-amd-aqlprofile hsa-rocr-dev hsakmt-roct-dev libpapi-dev curl libopenmpi-dev openmpi-bin libfabric-dev &&
+          apt-get install -y autoconf bison build-essential clang curl hip-base hsa-amd-aqlprofile hsa-rocr-dev hsakmt-roct-dev libfabric-dev libnuma1 libomp-dev libopenmpi-dev libpapi-dev libtool libudev1 m4 openmpi-bin python3-pip rccl-dev rocm-dev rocm-smi-lib rocm-utils rocprofiler-dev roctracer-dev texinfo ${{ matrix.compiler }} &&
           wget https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v46.0/linux-amd64/trace_processor_shell -P /opt/trace_processor/bin &&
           chmod +x /opt/trace_processor/bin/trace_processor_shell &&
           python3 -m pip install --upgrade pip &&
@@ -436,7 +436,7 @@ jobs:
         max_attempts: 5
         command: |
           sudo apt-get update &&
-          sudo apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev environment-modules ${{ matrix.deps }} ${{ matrix.compiler }} &&
+          sudo apt-get install -y autoconf bison build-essential clang environment-modules libomp-dev libtool m4 python3-pip texinfo ${{ matrix.compiler }} ${{ matrix.deps }} &&
           if [ "${{ matrix.mpi }}" = "mpich" ]; then sudo apt-get install -y libmpich-dev mpich; fi &&
           if [ "${{ matrix.mpi }}" = "openmpi" ]; then sudo apt-get install -y libopenmpi-dev openmpi-bin libfabric-dev; fi &&
           wget https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v46.0/linux-amd64/trace_processor_shell -P /opt/trace_processor/bin &&
@@ -591,7 +591,7 @@ jobs:
         max_attempts: 5
         command: |
           apt-get update &&
-          apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev environment-modules gcc g++ mpich libmpich-dev texinfo &&
+          apt-get install -y autoconf bison build-essential clang environment-modules gcc g++ libmpich-dev libomp-dev libtool m4 mpich python3-pip texinfo &&
           wget https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v46.0/linux-amd64/trace_processor_shell -P /opt/trace_processor/bin &&
           chmod +x /opt/trace_processor/bin/trace_processor_shell &&
           python3 -m pip install --upgrade pip &&
