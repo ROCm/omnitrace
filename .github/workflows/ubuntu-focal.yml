@@ -93,11 +93,12 @@ jobs:
           add-apt-repository -y ppa:ubuntu-toolchain-r/test &&
           apt-get update &&
           apt-get upgrade -y &&
-            apt-get install -y autoconf build-essential clang cmake environment-modules libiberty-dev libmpich-dev libtool m4 mpich python3-pip ${{ matrix.compiler }} &&
+          apt-get install -y build-essential m4 autoconf libtool python3-pip libiberty-dev clang libmpich-dev mpich environment-modules ${{ matrix.compiler }} &&
           wget https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v46.0/linux-amd64/trace_processor_shell -P /opt/trace_processor/bin &&
           chmod +x /opt/trace_processor/bin/trace_processor_shell &&
           python3 -m pip install --upgrade pip &&
           python3 -m pip install numpy perfetto dataclasses &&
+          python3 -m pip install 'cmake==3.16.3' &&
           for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done &&
           apt-get -y --purge autoremove &&
           apt-get -y clean &&
@@ -274,11 +275,12 @@ jobs:
           wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | apt-key add - &&
           echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{ matrix.rocm-version }}/ ubuntu main" | tee /etc/apt/sources.list.d/rocm.list &&
           apt-get update &&
-            apt-get install -y autoconf build-essential clang cmake curl hip-base hsa-amd-aqlprofile hsa-rocr-dev hsakmt-roct-dev libfabric-dev libnuma1 libomp-dev libopenmpi-dev libpapi-dev libtool libudev1 m4 openmpi-bin python3-pip rccl-dev rocm-dev rocm-smi-lib rocm-utils roctracer-dev rocprofiler-dev ${{ matrix.compiler }} &&
+          apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev ${{ matrix.compiler }} libudev1 libnuma1 rocm-dev rocm-utils rocm-smi-lib roctracer-dev rocprofiler-dev rccl-dev hip-base hsa-amd-aqlprofile hsa-rocr-dev hsakmt-roct-dev libpapi-dev curl libopenmpi-dev openmpi-bin libfabric-dev &&
           wget https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v46.0/linux-amd64/trace_processor_shell -P /opt/trace_processor/bin &&
           chmod +x /opt/trace_processor/bin/trace_processor_shell &&
           python3 -m pip install --upgrade pip &&
           python3 -m pip install numpy perfetto dataclasses &&
+          python3 -m pip install 'cmake==3.21.4' &&
           for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done &&
           apt-get -y --purge autoremove &&
           apt-get -y clean &&
@@ -434,13 +436,14 @@ jobs:
         max_attempts: 5
         command: |
           sudo apt-get update &&
-            sudo apt-get install -y autoconf build-essential clang cmake environment-modules libomp-dev libtool m4 python3-pip ${{ matrix.deps }} ${{ matrix.compiler }} &&
+          sudo apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev environment-modules ${{ matrix.deps }} ${{ matrix.compiler }} &&
           if [ "${{ matrix.mpi }}" = "mpich" ]; then sudo apt-get install -y libmpich-dev mpich; fi &&
           if [ "${{ matrix.mpi }}" = "openmpi" ]; then sudo apt-get install -y libopenmpi-dev openmpi-bin libfabric-dev; fi &&
           wget https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v46.0/linux-amd64/trace_processor_shell -P /opt/trace_processor/bin &&
           chmod +x /opt/trace_processor/bin/trace_processor_shell &&
           python3 -m pip install --upgrade pip &&
           python3 -m pip install numpy perfetto dataclasses &&
+          python3 -m pip install 'cmake==3.16.3' &&
           sudo apt-get -y --purge autoremove &&
           sudo apt-get -y clean
 
@@ -588,11 +591,12 @@ jobs:
         max_attempts: 5
         command: |
           apt-get update &&
-            apt-get install -y autoconf build-essential clang cmake environment-modules gcc g++ libmpich-dev libomp-dev libtool m4 mpich python3-pip texinfo &&
+          apt-get install -y build-essential m4 autoconf libtool python3-pip clang libomp-dev environment-modules gcc g++ mpich libmpich-dev texinfo &&
           wget https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v46.0/linux-amd64/trace_processor_shell -P /opt/trace_processor/bin &&
           chmod +x /opt/trace_processor/bin/trace_processor_shell &&
           python3 -m pip install --upgrade pip &&
           python3 -m pip install numpy perfetto dataclasses &&
+          python3 -m pip install 'cmake==3.24.1' &&
           for i in 6 7 8 9 10; do /opt/conda/envs/py3.${i}/bin/python -m pip install numpy perfetto dataclasses; done &&
           apt-get -y --purge autoremove &&
           apt-get -y clean &&
