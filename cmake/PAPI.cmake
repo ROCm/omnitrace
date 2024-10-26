@@ -45,6 +45,14 @@ if(NOT EXISTS "${OMNITRACE_PAPI_INSTALL_DIR}")
         ${OMNITRACE_PAPI_INSTALL_DIR}/lib/libpfm.so)
 endif()
 
+#Set OMNITRACE_PAPI_CONFIGURE_JOBS for configure command of omnitrace-papi-build
+#Certain distros need to be run nonparallel for this step because of timing issues building external papi
+if(${DISTRO} MATCHES "*azurelinux*")
+    set(OMNITRACE_PAPI_CONFIGURE_JOBS 1)
+else()
+    set(OMNITRACE_PAPI_CONFIGURE_JOBS ${CMAKE_BUILD_PARALLEL_LEVEL})
+endif()
+
 omnitrace_add_option(OMNITRACE_PAPI_AUTO_COMPONENTS "Automatically enable components" OFF)
 
 # -------------- PACKAGES -----------------------------------------------------
@@ -210,7 +218,7 @@ externalproject_add(
         --prefix=${OMNITRACE_PAPI_INSTALL_DIR} --with-static-lib=yes --with-shared-lib=no
         --with-perf-events --with-tests=no --with-components=${_OMNITRACE_PAPI_COMPONENTS}
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env CFLAGS=-fPIC\ -O3\ -Wno-stringop-truncation
-                      ${OMNITRACE_PAPI_EXTRA_ENV} ${MAKE_EXECUTABLE} static install -s
+                      ${OMNITRACE_PAPI_EXTRA_ENV} ${MAKE_EXECUTABLE} static install -s  -j ${OMNITRACE_PAPI_CONFIGURE_JOBS}
     BUILD_COMMAND ${CMAKE_COMMAND} -E env CFLAGS=-fPIC\ -O3\ -Wno-stringop-truncation
                   ${OMNITRACE_PAPI_EXTRA_ENV} ${MAKE_EXECUTABLE} utils install-utils -s
     INSTALL_COMMAND ""
