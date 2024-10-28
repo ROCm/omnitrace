@@ -72,7 +72,7 @@ jobs:
       run: |
           wget https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v46.0/linux-amd64/trace_processor_shell -P /opt/trace_processor/bin &&
           chmod +x /opt/trace_processor/bin/trace_processor_shell
-          yum install -y epel-release && crb enable && \
+          yum install -y epel-release && yum install -y 'dnf-command(config-manager)' && crb enable && \
           yum install -y curl dpkg-devel numactl-devel openmpi-devel papi-devel python3-pip texinfo wget which zlib-devel &&
           python3 -m pip install --upgrade pip &&
           python3 -m pip install --upgrade numpy perfetto dataclasses &&
