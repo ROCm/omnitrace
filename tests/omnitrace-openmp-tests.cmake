@@ -44,7 +44,8 @@ omnitrace_add_test(
     GPU ON
     LABELS "openmp;openmp-target"
     ENVIRONMENT
-        "${_ompt_environment};OMNITRACE_ROCTRACER_HSA_ACTIVITY=OFF;OMNITRACE_ROCTRACER_HSA_API=OFF")
+        "${_ompt_environment};OMNITRACE_ROCTRACER_HSA_ACTIVITY=OFF;OMNITRACE_ROCTRACER_HSA_API=OFF"
+    )
 
 set(_ompt_sampling_environ
     "${_ompt_environment}"
