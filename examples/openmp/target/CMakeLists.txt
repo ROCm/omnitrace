@@ -70,7 +70,7 @@ endif()
 set_target_properties(
     openmp-target-lib
     PROPERTIES BUILD_RPATH
-               "${OMP_TARGET_COMPILER_DIR}/lib:${OMP_TARGET_COMPILER_DIR}/lib/llvm/lib"
+               "${OMP_TARGET_COMPILER_DIR}/llvm/lib:${OMP_TARGET_COMPILER_DIR}/lib"
                OUTPUT_NAME "openmp-target"
                POSITION_INDEPENDENT_CODE ON)
 
@@ -84,7 +84,7 @@ target_compile_options(openmp-target PRIVATE -ggdb)
 set_target_properties(
     openmp-target
     PROPERTIES BUILD_RPATH
-               "${OMP_TARGET_COMPILER_DIR}/lib:${OMP_TARGET_COMPILER_DIR}/lib/llvm/lib"
+               "${OMP_TARGET_COMPILER_DIR}/llvm/lib:${OMP_TARGET_COMPILER_DIR}/lib"
                POSITION_INDEPENDENT_CODE ON)
 
 omnitrace_custom_compilation(TARGET openmp-target COMPILER ${OMP_TARGET_COMPILER})
