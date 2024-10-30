@@ -53,3 +53,5 @@ if(OMNITRACE_INSTALL_EXAMPLES)
         DESTINATION bin
         COMPONENT omnitrace-examples)
 endif()
+
+add_subdirectory(target)
