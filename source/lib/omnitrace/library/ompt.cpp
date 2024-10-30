@@ -300,15 +300,11 @@ tool_initialize(ompt_function_lookup_t lookup, int initial_device_num,
 
                 if(!codeptr_ra) return _generate_key(_key, _args);
 
+                static thread_local auto _once = std::once_flag{};
+                std::call_once(_once, []() { ::tim::unwind::update_file_maps(); });
+
                 auto _info = ::omnitrace::binary::lookup_ipaddr_entry<false>(
                     reinterpret_cast<uintptr_t>(codeptr_ra));
-
-                if(!_info)
-                {
-                    ::tim::unwind::update_file_maps();
-                    _info = ::omnitrace::binary::lookup_ipaddr_entry<false>(
-                        reinterpret_cast<uintptr_t>(codeptr_ra));
-                }
 
                 if(_info)
                 {
