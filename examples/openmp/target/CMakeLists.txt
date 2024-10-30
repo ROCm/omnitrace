@@ -1,7 +1,7 @@
 #
 #
 #
-cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18.4 FATAL_ERROR)
 
 # try to find a compatible HIP version
 if(ROCmVersion_MAJOR_VERSION AND ROCmVersion_MAJOR_VERSION GREATER_EQUAL 6)
