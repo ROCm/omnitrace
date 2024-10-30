@@ -62,11 +62,11 @@ auto&
 get_sampling_on_child_threads_history(int64_t _idx = utility::get_thread_index())
 {
     static auto _v = utility::get_filled_array<OMNITRACE_MAX_THREADS>(
-        []() { return utility::get_reserved_vector<bool>(32); });
+        []() { return utility::get_reserved_vector<bool>(64); });
 
     if(_idx >= OMNITRACE_MAX_THREADS)
     {
-        static thread_local auto _tl_v = utility::get_reserved_vector<bool>(32);
+        static thread_local auto _tl_v = utility::get_reserved_vector<bool>(128);
         return _tl_v;
     }
 

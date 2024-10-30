@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18.4 FATAL_ERROR)
 
 project(omnitrace-openmp LANGUAGES CXX)
 
@@ -53,3 +53,5 @@ if(OMNITRACE_INSTALL_EXAMPLES)
         DESTINATION bin
         COMPONENT omnitrace-examples)
 endif()
+
+add_subdirectory(target)
