@@ -8,8 +8,9 @@
 [![Documentation](https://github.com/ROCm/omnitrace/actions/workflows/docs.yml/badge.svg)](https://github.com/ROCm/omnitrace/actions/workflows/docs.yml)
 
 > [!NOTE]
-> Perfetto validation is done with trace_processor v46.0, as there is a known issue with v47.0.
-If you are experiencing problems viewing your trace in the latest version of [Perfetto](http://ui.perfetto.dev), then try using [Perfetto UI v46.0](https://ui.perfetto.dev/v46.0-35b3d9845/#!/).
+> Omnitrace is being rebranded to ROCm Systems Profiler and its new home is <https://github.com/ROCm/rocprofiler-systems>.
+All future development will occur in the new repository; this includes upgrading the tool to use [rocprofiler-sdk](https://github.com/ROCm/rocprofiler-sdk).
+This repository will remain open for some time and can be used with versions of ROCm before the introduction of rocprofiler-sdk (ie., pre ROCm-6.2).
 
 ## Overview
 
