@@ -3,6 +3,13 @@
 #
 cmake_minimum_required(VERSION 3.21.0 FATAL_ERROR)
 
+find_package(hip 5.6)
+
+if(NOT hip_FOUND)
+    message(WARNING "ROCm >= 5.6 not found. Skipping this example.")
+    return()
+endif()
+
 if(NOT OMP_TARGET_COMPILER)
     find_program(
         amdclangpp_EXECUTABLE
