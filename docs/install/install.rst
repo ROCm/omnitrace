@@ -250,11 +250,6 @@ into Perfetto support for Omnitrace, for example, ``OMNITRACE_USE_PAPI=<VAL>`` a
 is passed along to Perfetto and is displayed when the ``.proto`` file is visualized
 in `the Perfetto UI <https://ui.perfetto.dev>`_.
 
-.. important::
-   Perfetto validation is done with trace_processor v46.0 as there is a known issue with v47.0.
-   If you are experiencing problems viewing your trace in the latest version of `Perfetto <http://ui.perfetto.dev>`_,
-   then try using `Perfetto UI v46.0 <https://ui.perfetto.dev/v46.0-35b3d9845/#!/>`_.
-
 .. code-block:: shell
 
    git clone https://github.com/ROCm/omnitrace.git omnitrace-source
