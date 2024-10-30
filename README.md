@@ -10,7 +10,7 @@
 > [!NOTE]
 > Omnitrace is being rebranded to ROCm Systems Profiler and its new home is <https://github.com/ROCm/rocprofiler-systems>.
 All future development will occur in the new repository; this includes upgrading the tool to use [rocprofiler-sdk](https://github.com/ROCm/rocprofiler-sdk).
-This repository will remain open for some time and can be used with versions of ROCm before the introduction of rocprofiler-sdk (ie., pre ROCm-6.2).
+This repository will remain open for some time and can be used with versions of ROCm before the introduction of rocprofiler-sdk (that is, before ROCm version 6.2).
 
 ## Overview
 
