@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18.4 FATAL_ERROR)
 
 project(omnitrace-rewrite-caller-example LANGUAGES CXX)
 
