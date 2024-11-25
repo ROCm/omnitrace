@@ -70,7 +70,7 @@ def upload_file():
     )
 
 
-def minPoints(name, values):
+def minPoints(num_points, values):
     return html.Div(
         className="filter",
         id="min-points",
@@ -82,7 +82,7 @@ def minPoints(name, values):
                 min=0,
                 max=values,
                 step=1,
-                value=1,
+                value=num_points,
                 id="points-filt",
                 handleLabel={"showCurrentValue": True, "label": " "},
                 size=120,
@@ -162,11 +162,11 @@ def get_header(dropDownMenuItems, input_filters):
         header_nav = children_[0].children[0].children
 
         if filter["type"] == "int":
-            filter_children.append(minPoints(filter["Name"], filter["values"]))
-        elif filter["type"] == "Name":
+            filter_children.append(minPoints(filter["num_points"], filter["values"]))
+        elif filter["type"] == "name":
             filter_children.append(
                 sortBy(
-                    filter["Name"],
+                    filter["name"],
                     filter["values"],
                     filter["default"],
                     filter["multi"],

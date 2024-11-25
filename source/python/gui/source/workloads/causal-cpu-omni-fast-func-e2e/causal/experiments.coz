@@ -1,0 +1,367 @@
+startup	time=92841745145319
+experiment	selected=cpu_fast_func(long, int)	speedup=0.00	duration=3002944106	selected-samples=2357
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3002944106
+samples	location=0x000055d76a8a6927 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055d76a8a6863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=4
+samples	location=0x000055d76a8a6f1e :: _start	count=5
+
+startup	time=92844935182844
+experiment	selected=cpu_fast_func(long, int)	speedup=0.10	duration=3066541877	selected-samples=2394
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3303245961
+samples	location=0x00005583fcbab863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x00005583fcbabf1e :: _start	count=1
+
+startup	time=92848406488031
+experiment	selected=cpu_fast_func(long, int)	speedup=0.20	duration=3080221154	selected-samples=2385
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3603603849
+samples	location=0x000055cc590068e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055cc59006863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055cc59006f1e :: _start	count=2
+
+startup	time=92852192509283
+experiment	selected=cpu_fast_func(long, int)	speedup=0.30	duration=3018606478	selected-samples=2353
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3802757055
+samples	location=0x0000558580d9411a :: /home/jose/omnitrace/examples/causal/causal.cpp:153	count=3987
+
+startup	time=92856202974971
+experiment	selected=cpu_fast_func(long, int)	speedup=0.00	duration=3002235968	selected-samples=2394
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3002235968
+samples	location=0x000055e2f28c28e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=3
+samples	location=0x000055e2f28c2863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055e2f28c2f1e :: _start	count=4
+
+startup	time=92859401870224
+experiment	selected=cpu_fast_func(long, int)	speedup=0.10	duration=3067154283	selected-samples=2352
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3302825722
+samples	location=0x0000558a8bf198e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x0000558a8bf19863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x0000558a8bf19f1e :: _start	count=3
+
+startup	time=92862881011187
+experiment	selected=cpu_fast_func(long, int)	speedup=0.20	duration=2979199832	selected-samples=2396
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3502388178
+samples	location=0x00005613020618e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=3
+samples	location=0x0000561302061863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x0000561302061f1e :: _start	count=4
+
+startup	time=92866593280702
+experiment	selected=cpu_fast_func(long, int)	speedup=0.30	duration=3019319266	selected-samples=2396
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3802906780
+samples	location=0x0000559a6f8c88e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x0000559a6f8c8863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x0000559a6f8c8f1e :: _start	count=4
+
+startup	time=92870601357591
+experiment	selected=cpu_fast_func(long, int)	speedup=0.00	duration=3002815921	selected-samples=2366
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3002815921
+samples	location=0x000055c506ac48e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055c506ac4863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055c506ac4f1e :: _start	count=3
+
+startup	time=92873815594084
+experiment	selected=cpu_fast_func(long, int)	speedup=0.10	duration=3065502234	selected-samples=2394
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3302604248
+samples	location=0x0000557b7bb548e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x0000557b7bb54f1e :: _start	count=2
+
+startup	time=92877308897150
+experiment	selected=cpu_fast_func(long, int)	speedup=0.20	duration=3083678883	selected-samples=2346
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3602990492
+samples	location=0x0000559f3f3168e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x0000559f3f316f1e :: _start	count=1
+
+startup	time=92881128948780
+experiment	selected=cpu_fast_func(long, int)	speedup=0.30	duration=3017959366	selected-samples=2387
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3803406432
+samples	location=0x000055f1318908e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055f131890863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055f131890f1e :: _start	count=3
+
+startup	time=92885153533011
+experiment	selected=cpu_fast_func(long, int)	speedup=0.00	duration=3002406342	selected-samples=2396
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3002406342
+samples	location=0x0000562880ef58e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x0000562880ef5863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x0000562880ef5f1e :: _start	count=2
+
+startup	time=92888381120341
+experiment	selected=cpu_fast_func(long, int)	speedup=0.10	duration=3043438148	selected-samples=2394
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3304282016
+samples	location=0x000055ad55f098e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055ad55f09f1e :: _start	count=1
+
+startup	time=92891918441351
+experiment	selected=cpu_fast_func(long, int)	speedup=0.20	duration=3080243411	selected-samples=2397
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3604180680
+samples	location=0x000055cdc19bf8e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055cdc19bf863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055cdc19bff1e :: _start	count=4
+
+startup	time=92895751887159
+experiment	selected=cpu_fast_func(long, int)	speedup=0.30	duration=3090694430	selected-samples=2395
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3803936260
+samples	location=0x0000558e05adc863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x0000558e05adcf1e :: _start	count=2
+
+startup	time=92899767995996
+experiment	selected=cpu_fast_func(long, int)	speedup=0.00	duration=3002551038	selected-samples=2360
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3002551038
+samples	location=0x00005642ec3b48e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=3
+samples	location=0x00005642ec3b4f1e :: _start	count=3
+
+startup	time=92903000684080
+experiment	selected=cpu_fast_func(long, int)	speedup=0.10	duration=3040633375	selected-samples=2395
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3302401482
+samples	location=0x00005591e44ac8e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x00005591e44ac863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=3
+samples	location=0x00005591e44acf1e :: _start	count=4
+
+startup	time=92906544482773
+experiment	selected=cpu_fast_func(long, int)	speedup=0.20	duration=3083013169	selected-samples=2395
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3604809676
+samples	location=0x00005628112148e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=3
+samples	location=0x0000562811214f1e :: _start	count=3
+
+startup	time=92910393957345
+experiment	selected=cpu_fast_func(long, int)	speedup=0.30	duration=3018799850	selected-samples=2396
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3805296991
+samples	location=0x000056075b7a68e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000056075b7a6863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=4
+samples	location=0x000056075b7a6f1e :: _start	count=5
+
+startup	time=92914458940288
+experiment	selected=cpu_fast_func(long, int)	speedup=0.00	duration=3002450059	selected-samples=2392
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3002450059
+samples	location=0x000055f3af988927 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055f3af9888e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055f3af988863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055f3af988f1e :: _start	count=3
+
+startup	time=92917692912178
+experiment	selected=cpu_fast_func(long, int)	speedup=0.10	duration=3042593864	selected-samples=2396
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3304003759
+samples	location=0x000055996eadd863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055996eaddf1e :: _start	count=1
+
+startup	time=92921261037186
+experiment	selected=cpu_fast_func(long, int)	speedup=0.20	duration=3080730112	selected-samples=2393
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3603549382
+samples	location=0x000055f91fb2011a :: /home/jose/omnitrace/examples/causal/causal.cpp:153	count=3794
+
+startup	time=92925127670275
+experiment	selected=cpu_fast_func(long, int)	speedup=0.30	duration=3093792837	selected-samples=2392
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3803840306
+samples	location=0x000055f91aba88e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055f91aba8863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055f91aba8f1e :: _start	count=3
+
+startup	time=92929173265285
+experiment	selected=cpu_fast_func(long, int)	speedup=0.00	duration=3003118928	selected-samples=2392
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3003118928
+samples	location=0x000056125f1188e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000056125f118863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000056125f118f1e :: _start	count=4
+
+startup	time=92932443341247
+experiment	selected=cpu_fast_func(long, int)	speedup=0.10	duration=3065300929	selected-samples=2382
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3302858537
+samples	location=0x000056486c5388e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=4
+samples	location=0x000056486c538f1e :: _start	count=4
+
+startup	time=92935998007120
+experiment	selected=cpu_fast_func(long, int)	speedup=0.20	duration=2980206807	selected-samples=2398
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3504284796
+samples	location=0x00005635c837b863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x00005635c837bf1e :: _start	count=2
+
+startup	time=92939778728505
+experiment	selected=cpu_fast_func(long, int)	speedup=0.30	duration=3017746910	selected-samples=2396
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3803645922
+samples	location=0x000055c7032af8e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055c7032af863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055c7032aff1e :: _start	count=3
+
+startup	time=92943855416543
+experiment	selected=cpu_fast_func(long, int)	speedup=0.00	duration=3005220804	selected-samples=2393
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3005220804
+samples	location=0x00005596943d38e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x00005596943d3863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x00005596943d3f1e :: _start	count=3
+
+startup	time=92947123493938
+experiment	selected=cpu_fast_func(long, int)	speedup=0.10	duration=3065135923	selected-samples=2391
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3302441214
+samples	location=0x000055723f269863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055723f269f1e :: _start	count=2
+
+startup	time=92950691655852
+experiment	selected=cpu_fast_func(long, int)	speedup=0.20	duration=3029309331	selected-samples=2363
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3502836246
+samples	location=0x000055def25dd8e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=3
+samples	location=0x000055def25dd863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055def25ddf1e :: _start	count=4
+
+startup	time=92954459474359
+experiment	selected=cpu_fast_func(long, int)	speedup=0.30	duration=3053812406	selected-samples=2392
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3704725557
+samples	location=0x000055e0a8b5e8e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055e0a8b5e863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=3
+samples	location=0x000055e0a8b5ef1e :: _start	count=4
+
+startup	time=92958436383717
+experiment	selected=cpu_fast_func(long, int)	speedup=0.00	duration=3002610918	selected-samples=2391
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3002610918
+samples	location=0x000055d6345378e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055d634537863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=4
+samples	location=0x000055d634537f1e :: _start	count=5
+
+startup	time=92961752286375
+experiment	selected=cpu_fast_func(long, int)	speedup=0.10	duration=3041878219	selected-samples=2394
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3303337441
+samples	location=0x0000561dc3787863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x0000561dc3787f1e :: _start	count=2
+
+startup	time=92965375891897
+experiment	selected=cpu_fast_func(long, int)	speedup=0.20	duration=3070297325	selected-samples=2356
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3503219368
+samples	location=0x000055d8e829f8e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055d8e829f863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=3
+samples	location=0x000055d8e829ff1e :: _start	count=4
+
+startup	time=92969171916944
+experiment	selected=cpu_fast_func(long, int)	speedup=0.30	duration=3092559093	selected-samples=2394
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3804107596
+samples	location=0x00005600f87738e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=3
+samples	location=0x00005600f8773863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x00005600f8773f1e :: _start	count=4
+
+startup	time=92973279110529
+experiment	selected=cpu_fast_func(long, int)	speedup=0.00	duration=3003855350	selected-samples=2393
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3003855350
+samples	location=0x0000562392e6a863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x0000562392e6af1e :: _start	count=2
+
+startup	time=92976590910316
+experiment	selected=cpu_fast_func(long, int)	speedup=0.10	duration=3064679215	selected-samples=2391
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3302589877
+samples	location=0x00005567d4b7d8e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x00005567d4b7df1e :: _start	count=2
+
+startup	time=92980203096386
+experiment	selected=cpu_fast_func(long, int)	speedup=0.20	duration=3030319392	selected-samples=2395
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3504500229
+samples	location=0x000055c343bed9c7 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055c343bed863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=4
+samples	location=0x000055c343bedf1e :: _start	count=5
+
+startup	time=92984024895711
+experiment	selected=cpu_fast_func(long, int)	speedup=0.30	duration=3019788863	selected-samples=2397
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3804517401
+samples	location=0x000055b61be358e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055b61be35863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055b61be35f1e :: _start	count=2
+
+startup	time=92988159973783
+experiment	selected=cpu_fast_func(long, int)	speedup=0.00	duration=3003191945	selected-samples=2392
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3003191945
+samples	location=0x0000558aa15368e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x0000558aa1536863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x0000558aa1536f1e :: _start	count=4
+
+startup	time=92991483663419
+experiment	selected=cpu_fast_func(long, int)	speedup=0.10	duration=3067316822	selected-samples=2393
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3304219614
+samples	location=0x000055e0633408e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055e063340f1e :: _start	count=1
+
+startup	time=92995113596333
+experiment	selected=cpu_fast_func(long, int)	speedup=0.20	duration=3080836694	selected-samples=2396
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3603259447
+samples	location=0x000055578fe468e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=3
+samples	location=0x000055578fe46863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055578fe46f1e :: _start	count=5
+
+startup	time=92999063961945
+experiment	selected=cpu_fast_func(long, int)	speedup=0.30	duration=3094451627	selected-samples=2395
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3805707450
+samples	location=0x00005555f62138e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x00005555f6213863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=4
+samples	location=0x00005555f6213f1e :: _start	count=6
+
+startup	time=93003222210189
+experiment	selected=cpu_fast_func(long, int)	speedup=0.00	duration=3003546413	selected-samples=2395
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3003546413
+samples	location=0x0000564ce17708e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x0000564ce1770f1e :: _start	count=2
+
+startup	time=93006580660541
+experiment	selected=cpu_fast_func(long, int)	speedup=0.10	duration=3041866928	selected-samples=2395
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3303382553
+samples	location=0x000055efae2d2933 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055efae2d28e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055efae2d2863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=3
+samples	location=0x000055efae2d27f5 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055efae2d2f1e :: _start	count=6
+
+startup	time=93010247854703
+experiment	selected=cpu_fast_func(long, int)	speedup=0.20	duration=3029303857	selected-samples=2395
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3503344321
+samples	location=0x000055b012de38e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055b012de3863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=2
+samples	location=0x000055b012de37f5 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055b012de3f1e :: _start	count=5
+
+startup	time=93014099090264
+experiment	selected=cpu_fast_func(long, int)	speedup=0.30	duration=3093634964	selected-samples=2394
+throughput-point	name=causal-cpu-omni	delta=1
+runtime	time=3804008126
+samples	location=0x000055666bb528e0 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=1
+samples	location=0x000055666bb52863 :: /home/jose/omnitrace/examples/causal/causal.cpp:71	count=3
+samples	location=0x000055666bb52f1e :: _start	count=4
