@@ -12,19 +12,19 @@ Omnitrace user API example program
 ========================================
 
 You can use the Omnitrace API to define custom regions to profile and trace.
-The following C++ program demonstrates this technique by calling several functions from the 
-Omnitrace API, such as ``omnitrace_user_push_region`` and 
+The following C++ program demonstrates this technique by calling several functions from the
+Omnitrace API, such as ``omnitrace_user_push_region`` and
 ``omnitrace_user_stop_thread_trace``.
 
 .. note::
 
-   By default, when Omnitrace detects any ``omnitrace_user_start_*`` or 
+   By default, when Omnitrace detects any ``omnitrace_user_start_*`` or
    ``omnitrace_user_stop_*`` function, instrumentation
-   is disabled at start up, which means ``omnitrace_user_stop_trace()`` is not 
+   is disabled at start up, which means ``omnitrace_user_stop_trace()`` is not
    required at the beginning of ``main``. This behavior
-   can be manually controlled by using the ``OMNITRACE_INIT_ENABLED`` environment variable. 
+   can be manually controlled by using the ``OMNITRACE_INIT_ENABLED`` environment variable.
    User-defined regions are always
-   recorded, regardless of whether ``omnitrace_user_start_*`` or 
+   recorded, regardless of whether ``omnitrace_user_start_*`` or
    ``omnitrace_user_stop_*`` has been called.
 
 .. code-block:: shell
@@ -158,7 +158,7 @@ Omnitrace API, such as ``omnitrace_user_push_region`` and
 Linking the Omnitrace libraries to another program
 =======================================================
 
-To link the ``omnitrace-user-library`` to another program, 
+To link the ``omnitrace-user-library`` to another program,
 use the following CMake and ``g++`` directives.
 
 CMake
@@ -173,12 +173,12 @@ CMake
 g++ compilation
 -------------------------------------------------------
 
-Assuming Omnitrace is installed in ``/opt/omnitrace``, use the ``g++`` compiler 
+Assuming Omnitrace is installed in ``/opt/omnitrace``, use the ``g++`` compiler
 to build the application.
 
 .. code-block:: shell
 
-   g++ -I/opt/omnitrace foo.cpp -o foo -lomnitrace-user
+   g++ -g -I/opt/omnitrace/include -L/opt/omnitrace/lib foo.cpp -o foo -lomnitrace-user
 
 Output from the API example program
 ========================================
@@ -189,106 +189,149 @@ First, instrument and run the program.
 
    $ omnitrace-instrument -l --min-instructions=8 -E custom_push_region -o -- ./user-api
    ...
-   $ omnitrace-run --profile --use-pid off --time-output off -- ./user-api.inst 20 4 100
+   $ omnitrace-run --profile --use-pid off --time-output off -- ./user-api.inst 10 12 1000
+   OMNITRACE: HSA_TOOLS_LIB=/opt/omnitrace/lib/libomnitrace-dl.so.1.13.0
+   OMNITRACE: HSA_TOOLS_REPORT_LOAD_FAILURE=1
+   OMNITRACE: LD_PRELOAD=/opt/omnitrace/lib/libomnitrace-dl.so.1.13.0
+   OMNITRACE: OMNITRACE_PROFILE=true
+   OMNITRACE: OMNITRACE_TRACE=true
+   OMNITRACE: OMNITRACE_VERBOSE=0
+   OMNITRACE: OMP_TOOL_LIBRARIES=/opt/omnitrace/lib/libomnitrace-dl.so.1.13.0
+   OMNITRACE: ROCP_HSA_INTERCEPT=1
+   OMNITRACE: ROCP_TOOL_LIB=/opt/omnitrace/lib/libomnitrace.so.1.13.0
+   [omnitrace][dl][3099154] omnitrace_main
+   [omnitrace][3099154][omnitrace_init_tooling] Instrumentation mode: Trace
+
+
+        ______   .___  ___. .__   __.  __  .___________..______          ___       ______  _______
+       /  __  \  |   \/   | |  \ |  | |  | |           ||   _  \        /   \     /      ||   ____|
+      |  |  |  | |  \  /  | |   \|  | |  | `---|  |----`|  |_)  |      /  ^  \   |  ,----'|  |__
+      |  |  |  | |  |\/|  | |  . `  | |  |     |  |     |      /      /  /_\  \  |  |     |   __|
+      |  `--'  | |  |  |  | |  |\   | |  |     |  |     |  |\  \----./  _____  \ |  `----.|  |____
+       \______/  |__|  |__| |__| \__| |__|     |__|     | _| `._____/__/     \__\ \______||_______|
+
+      omnitrace v1.13.0 (rev: 0a76f6f62fdb671e5ee5c2f1ca186d34117ef7f8, tag: v1.11.4-33-g0a76f6f, x86_64-linux-gnu, compiler: GNU v11.4.0, rocm: v6.3.x)
+   [225.911]       perfetto.cc:47606 Configured tracing session 1, #sources:1, duration:0 ms, #buffers:1, total buffer size:1024000 KB, total sessions:1, uid:0 session name: ""
    Pushing custom region :: ./user-api.inst
-   [omnitrace][omnitrace_init_tooling] Instrumentation mode: Trace
-
-
-       ______   .___  ___. .__   __.  __  .___________..______          ___       ______  _______
-      /  __  \  |   \/   | |  \ |  | |  | |           ||   _  \        /   \     /      ||   ____|
-     |  |  |  | |  \  /  | |   \|  | |  | `---|  |----`|  |_)  |      /  ^  \   |  ,----'|  |__
-     |  |  |  | |  |\/|  | |  . `  | |  |     |  |     |      /      /  /_\  \  |  |     |   __|
-     |  `--'  | |  |  |  | |  |\   | |  |     |  |     |  |\  \----./  _____  \ |  `----.|  |____
-      \______/  |__|  |__| |__| \__| |__|     |__|     | _| `._____/__/     \__\ \______||_______|
-
-
-
    Pushing custom region :: initialization
-   [./user-api.inst] Threads: 4
-   [./user-api.inst] Iterations: 100
-   [./user-api.inst] fibonacci(20)...
+   [./user-api.inst] Threads: 12
+   [./user-api.inst] Iterations: 1000
+   [./user-api.inst] fibonacci(10)...
    Pushing custom region :: thread_creation
+   Pushing custom region :: run(10) x 1000
+   Pushing custom region :: run(10) x 1000
+   Pushing custom region :: run(10) x 1000
+   Pushing custom region :: run(10) x 1000
+   Pushing custom region :: run(10) x 1000
+   Pushing custom region :: run(10) x 1000
+   Pushing custom region :: run(10) x 1000
+   Pushing custom region :: run(10) x 1000
+   Pushing custom region :: run(10) x 1000
+   Pushing custom region :: run(10) x 1000
+   Pushing custom region :: run(10) x 1000
+   Pushing custom region :: run(10) x 1000
    Pushing custom region :: thread_wait
-   Pushing custom region :: run(20) x 100
-   Pushing custom region :: run(20) x 100
-   Pushing custom region :: run(20) x 100
-   Pushing custom region :: run(20) x 100
-   Pushing custom region :: run(20) x 100
-   [./user-api.inst] fibonacci(20) x 4 = 3382500
-   [omnitrace][86267][0][omnitrace_finalize] finalizing...
+   Pushing custom region :: run(10) x 1000
+   [./user-api.inst] fibonacci(10) x 12 = 715000
 
+   [omnitrace][3099154][0][omnitrace_finalize] finalizing...
+   [omnitrace][3099154][0][omnitrace_finalize]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154 : 0.969505 sec wall_clock,   25.856 MB peak_rss,   26.477 MB page_rss, 1.520000 sec cpu_clock,  156.8 % cpu_util [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/0 : 0.967630 sec wall_clock, 0.773075 sec thread_cpu_clock,   79.9 % thread_cpu_util,   25.216 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/1 : 0.027326 sec wall_clock, 0.027326 sec thread_cpu_clock,  100.0 % thread_cpu_util,    0.768 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/2 : 0.030120 sec wall_clock, 0.030097 sec thread_cpu_clock,   99.9 % thread_cpu_util,    3.968 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/3 : 0.034380 sec wall_clock, 0.034380 sec thread_cpu_clock,  100.0 % thread_cpu_util,    4.096 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/4 : 0.028657 sec wall_clock, 0.028651 sec thread_cpu_clock,  100.0 % thread_cpu_util,    3.968 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/5 : 0.032297 sec wall_clock, 0.032290 sec thread_cpu_clock,  100.0 % thread_cpu_util,    3.968 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/6 : 0.027747 sec wall_clock, 0.027735 sec thread_cpu_clock,  100.0 % thread_cpu_util,    3.840 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/7 : 0.034457 sec wall_clock, 0.034457 sec thread_cpu_clock,  100.0 % thread_cpu_util,    0.768 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/8 : 0.029121 sec wall_clock, 0.029121 sec thread_cpu_clock,  100.0 % thread_cpu_util,    0.768 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/9 : 0.032374 sec wall_clock, 0.032363 sec thread_cpu_clock,  100.0 % thread_cpu_util,    0.768 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/10 : 0.032084 sec wall_clock, 0.032084 sec thread_cpu_clock,  100.0 % thread_cpu_util,    0.512 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/11 : 0.029105 sec wall_clock, 0.029093 sec thread_cpu_clock,  100.0 % thread_cpu_util,    0.640 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize] omnitrace/process/3099154/thread/12 : 0.030908 sec wall_clock, 0.030901 sec thread_cpu_clock,  100.0 % thread_cpu_util,    0.384 MB peak_rss [laps: 1]
+   [omnitrace][3099154][0][omnitrace_finalize]
+   [omnitrace][3099154][0][omnitrace_finalize] Finalizing perfetto...
+   [omnitrace][3099154][perfetto]> Outputting '/home/gliff/opt/user-api-omni-test/omnitrace-user-api.inst-output/2025-01-06_17.25/perfetto-trace-3099154.proto' (16728.65 KB / 16.73 MB / 0.02 GB)... Done
+   [omnitrace][3099154][wall_clock]> Outputting 'omnitrace-user-api.inst-output/2025-01-06_17.25/wall_clock-3099154.json'
+   [omnitrace][3099154][wall_clock]> Outputting 'omnitrace-user-api.inst-output/2025-01-06_17.25/wall_clock-3099154.txt'
+   [omnitrace][3099154][roctracer]> Outputting 'omnitrace-user-api.inst-output/2025-01-06_17.25/roctracer-3099154.json'
+   [omnitrace][3099154][roctracer]> Outputting 'omnitrace-user-api.inst-output/2025-01-06_17.25/roctracer-3099154.txt'
+   [omnitrace][3099154][metadata]> Outputting 'omnitrace-user-api.inst-output/2025-01-06_17.25/metadata-3099154.json' and 'omnitrace-user-api.inst-output/2025-01-06_17.25/functions-3099154.json'
+   [omnitrace][3099154][0][omnitrace_finalize] Finalized: 0.278750 sec wall_clock,   21.888 MB peak_rss,    6.250 MB page_rss, 0.250000 sec cpu_clock,   89.7 % cpu_util
+   [227.163]       perfetto.cc:49204 Tracing session 1 ended, total sessions:0
 
-   [omnitrace][86267][0] omnitrace : 5.190895 sec wall_clock,    2.748 mb peak_rss, 6.330000 sec cpu_clock,  121.9 % cpu_util [laps: 1]
-   [omnitrace][86267][0] user-api.inst/thread-0 : 5.078713 sec wall_clock, 4.722415 sec thread_cpu_clock,   93.0 % thread_cpu_util,    1.276 mb peak_rss [laps: 1]
-   [omnitrace][86267][0] user-api.inst/thread-1 : 0.322248 sec wall_clock, 0.322191 sec thread_cpu_clock,  100.0 % thread_cpu_util,    1.000 mb peak_rss [laps: 1]
-   [omnitrace][86267][0] user-api.inst/thread-2 : 0.323255 sec wall_clock, 0.323194 sec thread_cpu_clock,  100.0 % thread_cpu_util,    0.000 mb peak_rss [laps: 1]
-   [omnitrace][86267][0] user-api.inst/thread-3 : 0.323569 sec wall_clock, 0.323484 sec thread_cpu_clock,  100.0 % thread_cpu_util,    1.092 mb peak_rss [laps: 1]
-   [omnitrace][86267][0] user-api.inst/thread-4 : 0.324178 sec wall_clock, 0.324057 sec thread_cpu_clock,  100.0 % thread_cpu_util,    1.184 mb peak_rss [laps: 1]
-   [omnitrace][86267][0] Post-processing 51 cpu frequency and memory usage entries...
-
-   [omnitrace][wall_clock]|0> Outputting 'omnitrace-user-api.inst-output/wall_clock.json'...
-   [omnitrace][wall_clock]|0> Outputting 'omnitrace-user-api.inst-output/wall_clock.tree.json'...
-   [omnitrace][wall_clock]|0> Outputting 'omnitrace-user-api.inst-output/wall_clock.txt'...
-
-   [omnitrace][manager::finalize][metadata]> Outputting 'omnitrace-user-api.inst-output/metadata.json' and 'omnitrace-user-api.inst-output/functions.json'...
-   [omnitrace][86267][0][omnitrace_finalize] Finalized
 
 Then review the output.
 
 .. code-block:: shell
 
    $ cat omnitrace-example-output/wall_clock.txt
-   |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-   |                                                                              REAL-CLOCK TIMER (I.E. WALL-CLOCK TIMER)                                                                              |
-   |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-   |                                     LABEL                                       | COUNT  | DEPTH  |   METRIC   | UNITS  |   SUM    |   MEAN   |   MIN    |   MAX    |   VAR    | STDDEV   | % SELF |
-   |---------------------------------------------------------------------------------|--------|--------|------------|--------|----------|----------|----------|----------|----------|----------|--------|
-   | |0>>> ./user-api.inst                                                           |      1 |      0 | wall_clock | sec    | 5.078521 | 5.078521 | 5.078521 | 5.078521 | 0.000000 | 0.000000 |    0.0 |
-   | |0>>> |_initialization                                                          |      1 |      1 | wall_clock | sec    | 0.000004 | 0.000004 | 0.000004 | 0.000004 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>> |_thread_creation                                                         |      1 |      1 | wall_clock | sec    | 0.000159 | 0.000159 | 0.000159 | 0.000159 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>> |_thread_wait                                                             |      1 |      1 | wall_clock | sec    | 0.355307 | 0.355307 | 0.355307 | 0.355307 | 0.000000 | 0.000000 |    0.0 |
-   | |0>>>   |_std::vector<std::thread, std::allocator<std::thread> >::begin         |      1 |      2 | wall_clock | sec    | 0.000001 | 0.000001 | 0.000001 | 0.000001 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>>   |_std::vector<std::thread, std::allocator<std::thread> >::end           |      1 |      2 | wall_clock | sec    | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>>   |_pthread_join                                                          |      4 |      2 | wall_clock | sec    | 0.355257 | 0.088814 | 0.000001 | 0.333144 | 0.026559 | 0.162970 |  100.0 |
-   | |2>>>     |_start_thread                                                        |      1 |      3 | wall_clock | sec    | 0.000032 | 0.000032 | 0.000032 | 0.000032 | 0.000000 | 0.000000 |  100.0 |
-   | |1>>>     |_start_thread                                                        |      1 |      3 | wall_clock | sec    | 0.000036 | 0.000036 | 0.000036 | 0.000036 | 0.000000 | 0.000000 |  100.0 |
-   | |3>>>     |_start_thread                                                        |      1 |      3 | wall_clock | sec    | 0.000034 | 0.000034 | 0.000034 | 0.000034 | 0.000000 | 0.000000 |  100.0 |
-   | |4>>>     |_start_thread                                                        |      1 |      3 | wall_clock | sec    | 0.000039 | 0.000039 | 0.000039 | 0.000039 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>> |_run                                                                     |      1 |      1 | wall_clock | sec    | 4.722993 | 4.722993 | 4.722993 | 4.722993 | 0.000000 | 0.000000 |    0.0 |
-   | |0>>>   |_std::char_traits<char>::length                                        |      1 |      2 | wall_clock | sec    | 0.000001 | 0.000001 | 0.000001 | 0.000001 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>>   |_std::distance<char const*>                                            |      1 |      2 | wall_clock | sec    | 0.000001 | 0.000001 | 0.000001 | 0.000001 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>>   |_std::operator+<char, std::char_traits<char>, std::allocator<char> >   |      2 |      2 | wall_clock | sec    | 0.000002 | 0.000001 | 0.000001 | 0.000001 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>>   |_run(20) x 100                                                         |      1 |      2 | wall_clock | sec    | 4.722951 | 4.722951 | 4.722951 | 4.722951 | 0.000000 | 0.000000 |    0.0 |
-   | |0>>>     |_run [{94,25}-{96,25}]                                               |      1 |      3 | wall_clock | sec    | 4.722925 | 4.722925 | 4.722925 | 4.722925 | 0.000000 | 0.000000 |    0.0 |
-   | |0>>>       |_fib                                                               |    100 |      4 | wall_clock | sec    | 4.722718 | 0.047227 | 0.046713 | 0.051987 | 0.000000 | 0.000625 |    0.0 |
-   | |0>>>         |_fib                                                             |    200 |      5 | wall_clock | sec    | 4.722302 | 0.023612 | 0.017827 | 0.034091 | 0.000032 | 0.005627 |    0.0 |
-   | |0>>>           |_fib                                                           |    400 |      6 | wall_clock | sec    | 4.721485 | 0.011804 | 0.006790 | 0.023003 | 0.000016 | 0.004024 |    0.0 |
-   | |0>>>             |_fib                                                         |    800 |      7 | wall_clock | sec    | 4.719858 | 0.005900 | 0.002564 | 0.016078 | 0.000006 | 0.002498 |    0.1 |
-   | |0>>>               |_fib                                                       |   1600 |      8 | wall_clock | sec    | 4.716572 | 0.002948 | 0.000977 | 0.011849 | 0.000002 | 0.001465 |    0.1 |
-   | |0>>>                 |_fib                                                     |   3200 |      9 | wall_clock | sec    | 4.709918 | 0.001472 | 0.000371 | 0.008246 | 0.000001 | 0.000831 |    0.3 |
-   | |0>>>                   |_fib                                                   |   6400 |     10 | wall_clock | sec    | 4.696775 | 0.000734 | 0.000140 | 0.005111 | 0.000000 | 0.000461 |    0.6 |
-   | |0>>>                     |_fib                                                 |  12800 |     11 | wall_clock | sec    | 4.670093 | 0.000365 | 0.000050 | 0.003166 | 0.000000 | 0.000253 |    1.1 |
-   | |0>>>                       |_fib                                               |  25600 |     12 | wall_clock | sec    | 4.617496 | 0.000180 | 0.000017 | 0.001959 | 0.000000 | 0.000137 |    2.3 |
-   | |0>>>                         |_fib                                             |  51200 |     13 | wall_clock | sec    | 4.512671 | 0.000088 | 0.000004 | 0.001212 | 0.000000 | 0.000074 |    4.6 |
-   | |0>>>                           |_fib                                           | 102400 |     14 | wall_clock | sec    | 4.304142 | 0.000042 | 0.000000 | 0.000752 | 0.000000 | 0.000039 |    9.6 |
-   | |0>>>                             |_fib                                         | 202600 |     15 | wall_clock | sec    | 3.892580 | 0.000019 | 0.000000 | 0.000469 | 0.000000 | 0.000021 |   19.0 |
-   | |0>>>                               |_fib                                       | 363200 |     16 | wall_clock | sec    | 3.151143 | 0.000009 | 0.000000 | 0.000293 | 0.000000 | 0.000011 |   33.2 |
-   | |0>>>                                 |_fib                                     | 502000 |     17 | wall_clock | sec    | 2.105217 | 0.000004 | 0.000000 | 0.000183 | 0.000000 | 0.000006 |   49.1 |
-   | |0>>>                                   |_fib                                   | 476000 |     18 | wall_clock | sec    | 1.071652 | 0.000002 | 0.000000 | 0.000114 | 0.000000 | 0.000004 |   63.6 |
-   | |0>>>                                     |_fib                                 | 294200 |     19 | wall_clock | sec    | 0.390193 | 0.000001 | 0.000000 | 0.000071 | 0.000000 | 0.000003 |   75.3 |
-   | |0>>>                                       |_fib                               | 115200 |     20 | wall_clock | sec    | 0.096190 | 0.000001 | 0.000000 | 0.000043 | 0.000000 | 0.000002 |   84.4 |
-   | |0>>>                                         |_fib                             |  27400 |     21 | wall_clock | sec    | 0.015020 | 0.000001 | 0.000000 | 0.000025 | 0.000000 | 0.000001 |   91.1 |
-   | |0>>>                                           |_fib                           |   3600 |     22 | wall_clock | sec    | 0.001336 | 0.000000 | 0.000000 | 0.000013 | 0.000000 | 0.000001 |   96.3 |
-   | |0>>>                                             |_fib                         |    200 |     23 | wall_clock | sec    | 0.000050 | 0.000000 | 0.000000 | 0.000001 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>>     |_std::char_traits<char>::length                                      |      1 |      3 | wall_clock | sec    | 0.000001 | 0.000001 | 0.000001 | 0.000001 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>>     |_std::distance<char const*>                                          |      1 |      3 | wall_clock | sec    | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>>     |_std::operator+<char, std::char_traits<char>, std::allocator<char> > |      2 |      3 | wall_clock | sec    | 0.000001 | 0.000001 | 0.000000 | 0.000001 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>> |_std::operator&                                                          |      1 |      1 | wall_clock | sec    | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>> std::vector<std::thread, std::allocator<std::thread> >::~vector           |      1 |      0 | wall_clock | sec    | 0.000045 | 0.000045 | 0.000045 | 0.000045 | 0.000000 | 0.000000 |   32.7 |
-   | |0>>> |_std::thread::~thread                                                    |      4 |      1 | wall_clock | sec    | 0.000030 | 0.000007 | 0.000007 | 0.000009 | 0.000000 | 0.000001 |   31.2 |
-   | |0>>>   |_std::thread::joinable                                                 |      4 |      2 | wall_clock | sec    | 0.000021 | 0.000005 | 0.000005 | 0.000006 | 0.000000 | 0.000001 |   89.4 |
-   | |0>>>     |_std::thread::id::id                                                 |      4 |      3 | wall_clock | sec    | 0.000001 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>>     |_std::operator==                                                     |      4 |      3 | wall_clock | sec    | 0.000001 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>> |_std::allocator_traits<std::allocator<std::thread> >::deallocate         |      1 |      1 | wall_clock | sec    | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 |  100.0 |
-   | |0>>> |_std::allocator<std::thread>::~allocator                                 |      1 |      1 | wall_clock | sec    | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 |  100.0 |
-   |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+   |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+   |                                                                                          REAL-CLOCK TIMER (I.E. WALL-CLOCK TIMER)                                                                                          |
+   |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+   |                                                 LABEL                                                   | COUNT  | DEPTH  |   METRIC   | UNITS  |   SUM    |   MEAN   |   MIN    |   MAX    |   VAR    | STDDEV   | % SELF |
+   |---------------------------------------------------------------------------------------------------------|--------|--------|------------|--------|----------|----------|----------|----------|----------|----------|--------|
+   | |00>>> ./user-api.inst                                                                                  |      1 |      0 | wall_clock | sec    | 0.866498 | 0.866498 | 0.866498 | 0.866498 | 0.000000 | 0.000000 |    0.0 |
+   | |00>>> |_initialization                                                                                 |      1 |      1 | wall_clock | sec    | 0.000014 | 0.000014 | 0.000014 | 0.000014 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>> |_thread_creation                                                                                |      1 |      1 | wall_clock | sec    | 0.064493 | 0.064493 | 0.064493 | 0.064493 | 0.000000 | 0.000000 |    0.7 |
+   | |00>>>   |_pthread_create                                                                               |     12 |      2 | wall_clock | sec    | 0.064047 | 0.005337 | 0.004141 | 0.007329 | 0.000001 | 0.001020 |    0.0 |
+   | |01>>>     |_start_thread                                                                               |      1 |      3 | wall_clock | sec    | 0.027309 | 0.027309 | 0.027309 | 0.027309 | 0.000000 | 0.000000 |    0.1 |
+   | |01>>>       |_run(10) x 1000                                                                           |      1 |      4 | wall_clock | sec    | 0.027270 | 0.027270 | 0.027270 | 0.027270 | 0.000000 | 0.000000 |  100.0 |
+   | |02>>>     |_start_thread                                                                               |      1 |      3 | wall_clock | sec    | 0.030069 | 0.030069 | 0.030069 | 0.030069 | 0.000000 | 0.000000 |    0.3 |
+   | |02>>>       |_run(10) x 1000                                                                           |      1 |      4 | wall_clock | sec    | 0.029977 | 0.029977 | 0.029977 | 0.029977 | 0.000000 | 0.000000 |  100.0 |
+   | |04>>>     |_start_thread                                                                               |      1 |      3 | wall_clock | sec    | 0.028631 | 0.028631 | 0.028631 | 0.028631 | 0.000000 | 0.000000 |    0.2 |
+   | |04>>>       |_run(10) x 1000                                                                           |      1 |      4 | wall_clock | sec    | 0.028582 | 0.028582 | 0.028582 | 0.028582 | 0.000000 | 0.000000 |  100.0 |
+   | |03>>>     |_start_thread                                                                               |      1 |      3 | wall_clock | sec    | 0.034353 | 0.034353 | 0.034353 | 0.034353 | 0.000000 | 0.000000 |    0.1 |
+   | |03>>>       |_run(10) x 1000                                                                           |      1 |      4 | wall_clock | sec    | 0.034305 | 0.034305 | 0.034305 | 0.034305 | 0.000000 | 0.000000 |  100.0 |
+   | |06>>>     |_start_thread                                                                               |      1 |      3 | wall_clock | sec    | 0.027728 | 0.027728 | 0.027728 | 0.027728 | 0.000000 | 0.000000 |    0.1 |
+   | |06>>>       |_run(10) x 1000                                                                           |      1 |      4 | wall_clock | sec    | 0.027688 | 0.027688 | 0.027688 | 0.027688 | 0.000000 | 0.000000 |  100.0 |
+   | |05>>>     |_start_thread                                                                               |      1 |      3 | wall_clock | sec    | 0.032277 | 0.032277 | 0.032277 | 0.032277 | 0.000000 | 0.000000 |    0.1 |
+   | |05>>>       |_run(10) x 1000                                                                           |      1 |      4 | wall_clock | sec    | 0.032232 | 0.032232 | 0.032232 | 0.032232 | 0.000000 | 0.000000 |  100.0 |
+   | |08>>>     |_start_thread                                                                               |      1 |      3 | wall_clock | sec    | 0.029103 | 0.029103 | 0.029103 | 0.029103 | 0.000000 | 0.000000 |    0.2 |
+   | |08>>>       |_run(10) x 1000                                                                           |      1 |      4 | wall_clock | sec    | 0.029056 | 0.029056 | 0.029056 | 0.029056 | 0.000000 | 0.000000 |  100.0 |
+   | |07>>>     |_start_thread                                                                               |      1 |      3 | wall_clock | sec    | 0.034426 | 0.034426 | 0.034426 | 0.034426 | 0.000000 | 0.000000 |    0.2 |
+   | |07>>>       |_run(10) x 1000                                                                           |      1 |      4 | wall_clock | sec    | 0.034361 | 0.034361 | 0.034361 | 0.034361 | 0.000000 | 0.000000 |  100.0 |
+   | |09>>>     |_start_thread                                                                               |      1 |      3 | wall_clock | sec    | 0.032357 | 0.032357 | 0.032357 | 0.032357 | 0.000000 | 0.000000 |    0.1 |
+   | |09>>>       |_run(10) x 1000                                                                           |      1 |      4 | wall_clock | sec    | 0.032313 | 0.032313 | 0.032313 | 0.032313 | 0.000000 | 0.000000 |  100.0 |
+   | |10>>>     |_start_thread                                                                               |      1 |      3 | wall_clock | sec    | 0.032066 | 0.032066 | 0.032066 | 0.032066 | 0.000000 | 0.000000 |    0.1 |
+   | |10>>>       |_run(10) x 1000                                                                           |      1 |      4 | wall_clock | sec    | 0.032027 | 0.032027 | 0.032027 | 0.032027 | 0.000000 | 0.000000 |  100.0 |
+   | |11>>>     |_start_thread                                                                               |      1 |      3 | wall_clock | sec    | 0.029081 | 0.029081 | 0.029081 | 0.029081 | 0.000000 | 0.000000 |    0.2 |
+   | |11>>>       |_run(10) x 1000                                                                           |      1 |      4 | wall_clock | sec    | 0.029023 | 0.029023 | 0.029023 | 0.029023 | 0.000000 | 0.000000 |  100.0 |
+   | |12>>>     |_start_thread                                                                               |      1 |      3 | wall_clock | sec    | 0.030888 | 0.030888 | 0.030888 | 0.030888 | 0.000000 | 0.000000 |    0.1 |
+   | |12>>>       |_run(10) x 1000                                                                           |      1 |      4 | wall_clock | sec    | 0.030849 | 0.030849 | 0.030849 | 0.030849 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>> |_thread_wait                                                                                    |      1 |      1 | wall_clock | sec    | 0.031091 | 0.031091 | 0.031091 | 0.031091 | 0.000000 | 0.000000 |    0.7 |
+   | |00>>>   |_std::vector<std::thread, std::allocator<std::thread> >::begin                                |      1 |      2 | wall_clock | sec    | 0.000003 | 0.000003 | 0.000003 | 0.000003 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>>   |_std::vector<std::thread, std::allocator<std::thread> >::end                                  |      1 |      2 | wall_clock | sec    | 0.000002 | 0.000002 | 0.000002 | 0.000002 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>>   |___gnu_cxx::operator!=<std::thread*, std::vector<std::thread, std::allocator<std::thread> > > |     13 |      2 | wall_clock | sec    | 0.000017 | 0.000001 | 0.000001 | 0.000002 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>>   |_pthread_join                                                                                 |     12 |      2 | wall_clock | sec    | 0.030837 | 0.002570 | 0.000002 | 0.010114 | 0.000014 | 0.003801 |  100.0 |
+   | |00>>>     |_std::distance<char const*>                                                                 |      4 |      3 | wall_clock | sec    | 0.000002 | 0.000001 | 0.000001 | 0.000001 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>> |_run                                                                                            |      1 |      1 | wall_clock | sec    | 0.770776 | 0.770776 | 0.770776 | 0.770776 | 0.000000 | 0.000000 |    0.0 |
+   | |00>>>   |_std::char_traits<char>::length                                                               |      1 |      2 | wall_clock | sec    | 0.000002 | 0.000002 | 0.000002 | 0.000002 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>>   |_std::distance<char const*>                                                                   |      1 |      2 | wall_clock | sec    | 0.000001 | 0.000001 | 0.000001 | 0.000001 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>>   |_std::operator+<char, std::char_traits<char>, std::allocator<char> >                          |      4 |      2 | wall_clock | sec    | 0.000005 | 0.000001 | 0.000001 | 0.000002 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>>   |_run(10) x 1000                                                                               |      1 |      2 | wall_clock | sec    | 0.770734 | 0.770734 | 0.770734 | 0.770734 | 0.000000 | 0.000000 |    0.0 |
+   | |00>>>     |_run [{95,25}-{97,25}]                                                                      |      1 |      3 | wall_clock | sec    | 0.770693 | 0.770693 | 0.770693 | 0.770693 | 0.000000 | 0.000000 |    0.4 |
+   | |00>>>       |_fib                                                                                      |   1000 |      4 | wall_clock | sec    | 0.767246 | 0.000767 | 0.000748 | 0.001192 | 0.000000 | 0.000018 |    1.0 |
+   | |00>>>         |_fib                                                                                    |   2000 |      5 | wall_clock | sec    | 0.759546 | 0.000380 | 0.000278 | 0.000892 | 0.000000 | 0.000092 |    2.0 |
+   | |00>>>           |_fib                                                                                  |   4000 |      6 | wall_clock | sec    | 0.744236 | 0.000186 | 0.000100 | 0.000716 | 0.000000 | 0.000066 |    4.0 |
+   | |00>>>             |_fib                                                                                |   8000 |      7 | wall_clock | sec    | 0.714185 | 0.000089 | 0.000034 | 0.000537 | 0.000000 | 0.000041 |    8.6 |
+   | |00>>>               |_fib                                                                              |  16000 |      8 | wall_clock | sec    | 0.652740 | 0.000041 | 0.000009 | 0.000464 | 0.000000 | 0.000024 |   18.7 |
+   | |00>>>                 |_fib                                                                            |  32000 |      9 | wall_clock | sec    | 0.530611 | 0.000017 | 0.000001 | 0.000446 | 0.000000 | 0.000014 |   38.8 |
+   | |00>>>                   |_fib                                                                          |  52000 |     10 | wall_clock | sec    | 0.324687 | 0.000006 | 0.000001 | 0.000428 | 0.000000 | 0.000008 |   61.7 |
+   | |00>>>                     |_fib                                                                        |  44000 |     11 | wall_clock | sec    | 0.124277 | 0.000003 | 0.000001 | 0.000056 | 0.000000 | 0.000004 |   79.8 |
+   | |00>>>                       |_fib                                                                      |  16000 |     12 | wall_clock | sec    | 0.025094 | 0.000002 | 0.000001 | 0.000029 | 0.000000 | 0.000002 |   91.8 |
+   | |00>>>                         |_fib                                                                    |   2000 |     13 | wall_clock | sec    | 0.002057 | 0.000001 | 0.000001 | 0.000012 | 0.000000 | 0.000001 |  100.0 |
+   | |00>>>     |_std::char_traits<char>::length                                                             |      1 |      3 | wall_clock | sec    | 0.000001 | 0.000001 | 0.000001 | 0.000001 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>>     |_std::distance<char const*>                                                                 |      1 |      3 | wall_clock | sec    | 0.000001 | 0.000001 | 0.000001 | 0.000001 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>>     |_std::operator+<char, std::char_traits<char>, std::allocator<char> >                        |      4 |      3 | wall_clock | sec    | 0.000005 | 0.000001 | 0.000001 | 0.000002 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>> |_std::operator&                                                                                 |      1 |      1 | wall_clock | sec    | 0.000002 | 0.000002 | 0.000002 | 0.000002 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>> std::vector<std::thread, std::allocator<std::thread> >::~vector                                  |      1 |      0 | wall_clock | sec    | 0.000239 | 0.000239 | 0.000239 | 0.000239 | 0.000000 | 0.000000 |   22.1 |
+   | |00>>> |_std::thread::~thread                                                                           |     12 |      1 | wall_clock | sec    | 0.000176 | 0.000015 | 0.000013 | 0.000018 | 0.000000 | 0.000002 |   32.5 |
+   | |00>>>   |_std::thread::joinable                                                                        |     12 |      2 | wall_clock | sec    | 0.000119 | 0.000010 | 0.000009 | 0.000012 | 0.000000 | 0.000001 |   79.1 |
+   | |00>>>     |_std::thread::id::id                                                                        |     12 |      3 | wall_clock | sec    | 0.000013 | 0.000001 | 0.000001 | 0.000002 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>>     |_std::operator==                                                                            |     12 |      3 | wall_clock | sec    | 0.000012 | 0.000001 | 0.000001 | 0.000001 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>> |_std::allocator_traits<std::allocator<std::thread> >::deallocate                                |      1 |      1 | wall_clock | sec    | 0.000008 | 0.000008 | 0.000008 | 0.000008 | 0.000000 | 0.000000 |   75.6 |
+   | |00>>>   |___gnu_cxx::new_allocator<std::thread>::deallocate                                            |      1 |      2 | wall_clock | sec    | 0.000002 | 0.000002 | 0.000002 | 0.000002 | 0.000000 | 0.000000 |  100.0 |
+   | |00>>> |_std::allocator<std::thread>::~allocator                                                        |      1 |      1 | wall_clock | sec    | 0.000002 | 0.000002 | 0.000002 | 0.000002 | 0.000000 | 0.000000 |  100.0 |
+   |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
