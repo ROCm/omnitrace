@@ -54,3 +54,7 @@ docs_core.enable_api_reference()
 
 for sphinx_var in ROCmDocs.SPHINX_VARS:
     globals()[sphinx_var] = getattr(docs_core, sphinx_var)
+
+html_theme_options = {
+    "announcement": "This is legacy documentation. The successor to Omnitrace is at <a href='https://rocm.docs.amd.com/projects/rocprofiler-systems/en/latest/index.html' id='rocm-banner'>ROCm Systems Profiler</a>."
+}
