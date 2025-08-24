@@ -637,7 +637,7 @@ function(OMNITRACE_ADD_CAUSAL_TEST)
 
     if(TARGET ${TEST_TARGET})
         set(COMMAND_PREFIX $<TARGET_FILE:omnitrace-causal> --reset -m ${TEST_CAUSAL_MODE}
-                           ${TEST_CAUSAL_ARGS} --)
+                   ${TEST_CAUSAL_ARGS} --nrccl --)
 
         if(NOT TEST_SKIP_BASELINE)
             add_test(

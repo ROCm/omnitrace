@@ -607,6 +607,11 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
         .action([&](parser_t& p) {
             update_env(_env, "OMNITRACE_CAUSAL_DURATION", p.get<double>("duration"));
         });
+    
+    parser
+        .add_argument({ "--nrccl" },
+                      "Don't set Use_RCCLP environment variable to true.")
+        .max_count(1);
 
     int64_t _niterations       = 1;
     auto    _virtual_speedups  = std::vector<std::string>{};
@@ -828,7 +833,17 @@ parse_args(int argc, char** argv, std::vector<char*>& _env,
 #endif
 
 #if defined(OMNITRACE_USE_RCCL) && OMNITRACE_USE_RCCL > 0
-        add_default_env(_env, "OMNITRACE_USE_RCCLP", true);
+        bool add_to_env = true;
+        for(int i = 0; i < argc; ++i)
+        {
+            if(std::string_view{ argv[i] } == "--nrccl")
+            {
+                add_to_env = false;
+            }
+        }
+        if (add_to_env){
+            add_default_env(_env, "OMNITRACE_USE_RCCLP", true);
+        }
 #endif
     }
 
